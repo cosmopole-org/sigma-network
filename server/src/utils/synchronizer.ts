@@ -1,5 +1,5 @@
 
-const isObject = (variable) => {
+const isObject = (variable: any) => {
     return (
         (typeof variable === 'object') &&
         (typeof variable !== 'string') &&
@@ -8,7 +8,7 @@ const isObject = (variable) => {
     );
 }
 
-function updateObject(obj, updates) {
+function updateObject(obj: any, updates: any) {
     if (Array.isArray(obj) && updates.__type__ === 'array') {
         let sortedIndices = Object.keys(updates).filter(key => key !== '__type__' && key !== '__deleted__').map(index => Number(index)).sort().reverse();
         for (let i = 0; i < sortedIndices.length; i++) {
@@ -55,4 +55,6 @@ function updateObject(obj, updates) {
     }
 }
 
-module.exports.updateObject = updateObject;
+export {
+    updateObject
+}
