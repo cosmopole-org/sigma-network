@@ -4,15 +4,19 @@
   "dependencies": {
     "acorn": "^8.10.0",
     "acorn-jsx": "^5.3.2",
+    "connect-redis": "^7.1.0",
     "express": "^4.17.19",
+    "express-session": "^1.17.3",
     "inversify": "^6.0.1",
     "mongoose": "^7.6.2",
+    "redis": "^4.6.10",
     "reflect-metadata": "^0.1.13",
     "socket.io": "^4.7.2",
     "tslib": "^2.6.2"
   },
   "devDependencies": {
     "@types/express": "^4.17.19",
+    "@types/express-session": "^1.17.8",
     "ts-loader": "^9.5.0",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",

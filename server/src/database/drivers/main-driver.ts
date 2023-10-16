@@ -1,5 +1,5 @@
 import { connect } from 'mongoose';
-import addresses from '../config/config';
+import addresses from '../../config.json';
 
 const mongodbUri = addresses.MONGODB_URI;
 

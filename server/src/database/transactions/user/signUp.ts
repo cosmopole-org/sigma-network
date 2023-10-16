@@ -1,8 +1,8 @@
 
 import mongoose from 'mongoose';
-import { isEmpty } from '../../../../utils/strings';
+import { isEmpty } from '../../../utils/strings';
 import PendingFactory from '../../factories/pending-factory';
-import { makeUniqueId } from '../../../../utils/generator';
+import { makeUniqueId } from '../../../utils/generator';
 
 const signUp = async ({ email }) => {
   if (isEmpty(email)) {

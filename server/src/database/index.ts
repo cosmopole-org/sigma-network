@@ -1,5 +1,4 @@
 
-import { setupDatabase } from './initiators/main-initiator';
 import HumanFactory from './factories/human-factory';
 import TowerFactory from './factories/tower-factory';
 import RoomFactory from './factories/room-factory';
@@ -7,6 +6,8 @@ import SessionFactory from './factories/session-factory';
 import MemberFactory from './factories/member-factory';
 import PendingFactory from './factories/pending-factory';
 import InviteFactory from './factories/invite-factory';
+import { connectMongoClient } from './drivers/main-driver';
+import { buildSchemas } from './schema/build';
 
 class StorageDriver {
     static _instancce: StorageDriver;
@@ -24,7 +25,8 @@ class StorageDriver {
     sessionFactory;
     constructor() {
         StorageDriver._instancce = this;
-        setupDatabase()
+        connectMongoClient();
+        buildSchemas();
         this.userFactory = HumanFactory.initialize();
         this.towerFactory = TowerFactory.initialize();
         this.roomFactory = RoomFactory.initialize();

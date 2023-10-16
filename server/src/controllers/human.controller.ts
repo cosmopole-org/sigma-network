@@ -1,7 +1,7 @@
 
-import Client from "../../../network/client";
-import UserService from "../../../services/human.service";
-import BaseController from "../../base/base.controller";
+import Client from "../drivers/network/client";
+import UserService from "../services/human.service";
+import BaseController from "./base.controller";
 
 class HumanController extends BaseController {
     service: UserService

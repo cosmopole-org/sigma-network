@@ -1,6 +1,6 @@
 
 import { Server, Socket } from "socket.io";
-import * as express from 'express';
+import express from 'express';
 import { Request, Response, Express } from "express"
 import { createServer, Server as HttpServer } from 'node:http';
 import "reflect-metadata";
