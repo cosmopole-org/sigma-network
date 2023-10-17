@@ -1,11 +1,11 @@
 
-import HumanFactory from './factories/human-factory';
-import TowerFactory from './factories/tower-factory';
-import RoomFactory from './factories/room-factory';
-import SessionFactory from './factories/session-factory';
-import MemberFactory from './factories/member-factory';
-import PendingFactory from './factories/pending-factory';
-import InviteFactory from './factories/invite-factory';
+import HumanFactory from './factories/human.factory';
+import TowerFactory from './factories/tower.factory';
+import RoomFactory from './factories/room.factory';
+import SessionFactory from './factories/session.factory';
+import MemberFactory from './factories/member.factory';
+import PendingFactory from './factories/pending.factory';
+import InviteFactory from './factories/invite.factory';
 import { connectMongoClient } from './drivers/main-driver';
 import { buildSchemas } from './schema/build';
 

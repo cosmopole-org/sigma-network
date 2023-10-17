@@ -1,7 +1,7 @@
 
 import mongoose, { ClientSession } from 'mongoose';
 import { isEmpty } from '../../../utils/strings';
-import PendingFactory from '../../factories/pending-factory';
+import PendingFactory from '../../factories/pending.factory';
 import { makeUniqueId } from '../../../utils/generator';
 
 const signUp = async ({ email }, _session?: ClientSession) => {

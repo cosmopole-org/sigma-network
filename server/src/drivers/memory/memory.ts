@@ -4,8 +4,8 @@ import * as redis from 'redis';
 import config from '../../config.json';
 import session from 'express-session';
 import bodyParser from 'body-parser';
-import SessionFactory from '../../database/factories/session-factory';
-import MemberFactory from '../../database/factories/member-factory';
+import SessionFactory from '../../database/factories/session.factory';
+import MemberFactory from '../../database/factories/member.factory';
 import cors from "cors";
 import { ISession } from '../../models/session.model'
 import RedisStore from "connect-redis"
