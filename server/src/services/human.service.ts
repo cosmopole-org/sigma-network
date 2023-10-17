@@ -5,12 +5,15 @@ import MemoryDriver from "../drivers/memory/memory";
 
 class HumanService {
     async signUp(client: Client, body: { email: string }, session?: ClientSession) {
-        return transactions.signUp({ email: body.email }, session)
+        return transactions.human.signUp(body, session)
     }
     async signIn(client: Client, body: { token: string }, session?: ClientSession) {
         let userId = await MemoryDriver.instance.fetch(`auth:${body.token}`)
-        await transactions.signIn({ userId }, session)
+        await transactions.human.signIn({ userId }, session)
         return { status: 'success' }
+    }
+    async verify(client: Client, body: { cCode: string, vCode: string }, session?: ClientSession) {
+        return transactions.human.verify(body, session)
     }
 }
 

@@ -1,8 +1,6 @@
 
-import signUp from './human/signUp'
-import signIn from './human/signIn'
+import * as human from './human'
 
 export {
-    signUp,
-    signIn
+    human
 }

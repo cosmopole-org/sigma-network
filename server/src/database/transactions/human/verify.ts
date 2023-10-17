@@ -1,11 +1,11 @@
 
 import mongoose, { ClientSession } from 'mongoose'
-import * as Factories from '../factories';
-import { makeUniqueId } from '../../utils/generator';
-import MemoryDriver from '../../drivers/memory/memory';
+import * as Factories from '../../factories';
+import { makeUniqueId } from '../../../utils/generator';
+import MemoryDriver from '../../../drivers/memory/memory';
 import { IPending } from 'src/models/pending.model';
 import { ISession } from 'src/models/session.model';
-import { IHuman } from 'src/models/human.model';
+import { IHuman } from '../../../models/human.model';
 
 const verify = async (args: { cCode: string, vCode: string }, _session?: ClientSession) => {
     const session = _session ? _session : await mongoose.startSession();
