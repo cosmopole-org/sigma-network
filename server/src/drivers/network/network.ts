@@ -4,8 +4,8 @@ import express from 'express';
 import { Request, Response, Express } from "express"
 import { createServer, Server as HttpServer } from 'node:http';
 import "reflect-metadata";
-import BaseController from "src/models/base/base.controller";
-import BaseService from "src/models/base/base.service";
+import BaseController from "../../controllers/base.controller";
+import BaseService from "../../services/base.service";
 import Client from "./client";
 
 class NetworkDriver {

@@ -1,12 +1,13 @@
 
-import UserController from "./controllers/human.controller"
-import UserService from "./services/human.service"
 import StorageDriver from "./database/index"
 import NetworkDriver from "./drivers/network/network"
+import MemoryDriver from "./drivers/memory/memory"
+import * as Controllers from './controllers'
 
 (async () => {
-    StorageDriver.initialize()
-    NetworkDriver
-        .initialize()
-        .registerController(UserController, UserService)
+    StorageDriver.initialize(() => {
+        MemoryDriver.initialize()
+        NetworkDriver.initialize()
+        Controllers.build()
+    })
 })()

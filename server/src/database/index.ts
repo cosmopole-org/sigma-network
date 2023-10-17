@@ -12,28 +12,22 @@ import { buildSchemas } from './schema/build';
 class StorageDriver {
     static _instancce: StorageDriver;
     public static get instance() { return StorageDriver._instancce }
-    static initialize() {
-        return new StorageDriver();
+    static initialize(callback: () => void) {
+        return new StorageDriver(callback);
     }
-    userFactory;
-    towerFactory;
-    roomFactory;
-    workspaceFactory;
-    inviteFactory;
-    memberFactory;
-    pendingFactory;
-    sessionFactory;
-    constructor() {
+    constructor(callback: () => void) {
         StorageDriver._instancce = this;
-        connectMongoClient();
-        buildSchemas();
-        this.userFactory = HumanFactory.initialize();
-        this.towerFactory = TowerFactory.initialize();
-        this.roomFactory = RoomFactory.initialize();
-        this.inviteFactory = InviteFactory.initialize();
-        this.memberFactory = MemberFactory.initialize();
-        this.pendingFactory = PendingFactory.initialize();
-        this.sessionFactory = SessionFactory.initialize();
+        connectMongoClient().then(() => {
+            buildSchemas()
+            HumanFactory.initialize();
+            TowerFactory.initialize();
+            RoomFactory.initialize();
+            InviteFactory.initialize();
+            MemberFactory.initialize();
+            PendingFactory.initialize();
+            SessionFactory.initialize();
+            callback()
+        });
     }
 }
 

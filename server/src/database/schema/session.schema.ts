@@ -8,7 +8,7 @@ const SessionSchema = new Schema<ISession>({
     userId: String
 })
 
-let Session
+let Session: mongoose.Model<ISession>
 
 let prepare = () => {
     Session = mongoose.model<ISession>('Session', SessionSchema, 'Session')

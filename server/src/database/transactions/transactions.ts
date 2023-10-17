@@ -1,6 +1,6 @@
 
-import signUp from './user/signUp'
-import signIn from './user/signIn'
+import signUp from './human/signUp'
+import signIn from './human/signIn'
 
 export {
     signUp,

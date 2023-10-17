@@ -1,16 +1,16 @@
 
-import mongoose from 'mongoose';
+import mongoose, { ClientSession } from 'mongoose';
 import { isEmpty } from '../../../utils/strings';
 import PendingFactory from '../../factories/pending-factory';
 import { makeUniqueId } from '../../../utils/generator';
 
-const signUp = async ({ email }) => {
+const signUp = async ({ email }, _session?: ClientSession) => {
   if (isEmpty(email)) {
     console.error('email can not be empty');
     return { success: false };
   }
-  const session = await mongoose.startSession();
-  session.startTransaction();
+  const session = _session ? _session : await mongoose.startSession();
+  if (!_session) session.startTransaction();
   let pending;
   try {
     let success = false;
@@ -24,20 +24,20 @@ const signUp = async ({ email }) => {
         verificationCode: vCode,
         state: 0
       }, session);
-      await session.commitTransaction();
+      if (!_session) await session.commitTransaction();
       success = true;
     } else {
       if (pending.state < 1) {
         await PendingFactory.instance().update({ email: email }, { clientCode: cCode, verificationCode: vCode }, session);
-        await session.commitTransaction();
+        if (!_session) await session.commitTransaction();
         success = true;
       } else {
         await PendingFactory.instance().update({ email: email }, { clientCode: cCode, verificationCode: vCode, state: 0 }, session);
-        await session.commitTransaction();
+        if (!_session) await session.commitTransaction();
         success = true;
       }
     }
-    session.endSession();
+    if (!_session) session.endSession();
     if (success) {
       return { success: true, clientCode: cCode };
     } else {
@@ -46,8 +46,10 @@ const signUp = async ({ email }) => {
   } catch (error) {
     console.error(error);
     console.error('abort transaction');
-    await session.abortTransaction();
-    session.endSession();
+    if (!_session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
     return { success: false };
   }
 }
