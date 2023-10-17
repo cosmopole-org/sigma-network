@@ -13,7 +13,7 @@ const RoomSchema = new Schema<IRoom>({
     secret: Schema.Types.Mixed
 })
 
-let Room
+let Room: mongoose.Model<IRoom>
 
 let prepare = () => {
     Room = mongoose.model<IRoom>('Room', RoomSchema, 'Room')

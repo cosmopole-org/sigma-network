@@ -1,58 +1,48 @@
 
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import { Invite } from "../schema/invite.schema";
+import { IInvite } from "src/models/invite.model";
 
 class InviteFactory {
-    static inst;
-    static initialize() {
+    static _instance: InviteFactory;
+    static initialize(): InviteFactory {
         return new InviteFactory();
     }
-    static instance() {
-        return InviteFactory.inst;
+    static get instance(): InviteFactory {
+        return InviteFactory._instance;
     }
-    ModelName = 'Invite';
-    Model = Invite
     constructor() {
-        InviteFactory.inst = this;
+        InviteFactory._instance = this;
     }
-    async create(initData, session) {
-        return (await this.Model.create([initData], { session }))[0];
+    async create(initData: IInvite, session: ClientSession): Promise<IInvite> {
+        return (await Invite.create([initData], { session }))[0];
     }
-    async read(offset, count, query) {
-        let cursor;
-        let collection = mongoose.connection.db.collection(this.ModelName);
+    async read(offset?: number, count?: number, query?: any): Promise<Array<IInvite>> {
+        let cursor: mongoose.mongo.FindCursor
+        let collection = mongoose.connection.db.collection('Invite');
         if ((await collection.count()) - offset >= 0) {
-            if (query) {
-                cursor = collection.find(query).skip(offset).limit(count);
-            } else {
-                cursor = collection.find({}).skip(offset).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(offset).limit(count);
         } else {
-            if (query) {
-                cursor = collection.find(query).skip(0).limit(count);
-            } else {
-                cursor = collection.find({}).skip(0).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(0).limit(count);
         }
         return await cursor.toArray();
     }
-    async find(query, session) {
+    async find(query: any, session?: ClientSession): Promise<IInvite> {
         if (session) {
-            return await this.Model.findOne(query).session(session).exec();
+            return await Invite.findOne(query).session(session).exec();
         } else {
-            return await this.Model.findOne(query).exec();
+            return await Invite.findOne(query).exec();
         }
     }
-    async findGroup(query, session) {
-        return await this.Model.find(query).session(session).exec();
+    async findGroup(query: any, session: ClientSession): Promise<Array<IInvite>> {
+        return await Invite.find(query).session(session).exec();
     }
-    async update(query, update, session) {
-        await this.Model.updateOne(query, update).session(session);
+    async update(query: any, update: any, session: ClientSession): Promise<IInvite> {
+        return await Invite.findOneAndUpdate(query, update, { new: true }).session(session);
     }
-    async remove(query, session) {
-        await this.Model.deleteOne(query).session(session);
+    async remove(query: any, session: ClientSession): Promise<void> {
+        await Invite.deleteOne(query).session(session);
     }
 }
 
 export default InviteFactory
-

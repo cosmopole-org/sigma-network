@@ -1,9 +1,10 @@
 
 interface IPending {
-    id: string,
-    botId: string,
-    workspaceId: string,
-    secret: any
+    cCode: string,
+    vCode: string,
+    email: string,
+    userId?: string,
+    progress: string
 }
 
 export { IPending }

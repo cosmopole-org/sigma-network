@@ -1,6 +1,7 @@
 
 import mongoose, { ClientSession } from "mongoose";
 import { Session } from "../schema/session.schema";
+import { ISession } from "src/models/session.model";
 
 class SessionFactory {
     static _instance;
@@ -13,7 +14,7 @@ class SessionFactory {
     constructor() {
         SessionFactory._instance = this;
     }
-    async create(initData: any, session: ClientSession) {
+    async create(initData: ISession, session: ClientSession) {
         return (await Session.create([initData], { session }))[0];
     }
     async read(offset?: number, count?: number, query?: any) {
@@ -47,7 +48,7 @@ class SessionFactory {
     async update(query: any, update: any, session: ClientSession) {
         await Session.updateOne(query, update).session(session);
     }
-    async remove(query: any, session: ClientSession) {
+    async remove(query: any, session: ClientSession): Promise<void> {
         await Session.deleteOne(query).session(session);
     }
 }

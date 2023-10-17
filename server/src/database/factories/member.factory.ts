@@ -8,7 +8,7 @@ class MemberFactory {
     static initialize() : MemberFactory {
         return new MemberFactory();
     }
-    static instance(): MemberFactory {
+    static get instance(): MemberFactory {
         return MemberFactory._instance;
     }
     constructor() {
@@ -53,7 +53,7 @@ class MemberFactory {
     async update(query: any, update: any, session: ClientSession) : Promise<IMember> {
         return await Member.findOneAndUpdate(query, update, { new: true }).session(session);
     }
-    async remove(query: any, session: ClientSession) {
+    async remove(query: any, session: ClientSession): Promise<void> {
         await Member.deleteOne(query).session(session);
     }
 }

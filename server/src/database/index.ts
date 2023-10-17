@@ -7,7 +7,7 @@ import MemberFactory from './factories/member.factory';
 import PendingFactory from './factories/pending.factory';
 import InviteFactory from './factories/invite.factory';
 import { connectMongoClient } from './drivers/main-driver';
-import { buildSchemas } from './schema/build';
+import * as Schemas from './schema';
 
 class StorageDriver {
     static _instancce: StorageDriver;
@@ -18,7 +18,7 @@ class StorageDriver {
     constructor(callback: () => void) {
         StorageDriver._instancce = this;
         connectMongoClient().then(() => {
-            buildSchemas()
+            Schemas.build()
             HumanFactory.initialize();
             TowerFactory.initialize();
             RoomFactory.initialize();

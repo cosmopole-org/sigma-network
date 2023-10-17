@@ -1,49 +1,42 @@
 
-import mongoose from "mongoose";
+import mongoose, { ClientSession } from "mongoose";
 import { Pending } from "../schema/pending.schema";
+import { IPending } from "src/models/pending.model";
 
 class PendingFactory {
-    static inst;
-    static initialize() {
+    static _instance: PendingFactory;
+    static initialize(): PendingFactory {
         return new PendingFactory();
     }
-    static instance() {
-        return PendingFactory.inst;
+    static get instance(): PendingFactory {
+        return PendingFactory._instance;
     }
     constructor() {
-        PendingFactory.inst = this;
+        PendingFactory._instance = this;
     }
-    async create(initData, session) {
+    async create(initData: IPending, session: ClientSession): Promise<IPending> {
         return (await Pending.create([initData], { session }))[0];
     }
-    async read(offset, count, query) {
-        let cursor;
+    async read(offset: number, count: number, query: any): Promise<Array<IPending>> {
+        let cursor: mongoose.mongo.FindCursor;
         let collection = mongoose.connection.db.collection('Pending');
         if ((await collection.count()) - offset >= 0) {
-            if (query) {
-                cursor = collection.find(query).skip(offset).limit(count);
-            } else {
-                cursor = collection.find({}).skip(offset).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(offset).limit(count);
         } else {
-            if (query) {
-                cursor = collection.find(query).skip(0).limit(count);
-            } else {
-                cursor = collection.find({}).skip(0).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(0).limit(count);
         }
         return await cursor.toArray();
     }
-    async find(query, session) {
+    async find(query: any, session: ClientSession): Promise<IPending> {
         return await Pending.findOne(query).session(session).exec();
     }
-    async findGroup(query, session) {
+    async findGroup(query: any, session: ClientSession): Promise<Array<IPending>> {
         return await Pending.find(query).session(session).exec();
     }
-    async update(query, update, session) {
-        await Pending.updateOne(query, update).session(session);
+    async update(query: any, update: any, session: ClientSession): Promise<IPending> {
+        return await Pending.findOneAndUpdate(query, update, { new: true }).session(session);
     }
-    async remove(query, session) {
+    async remove(query: any, session: ClientSession): Promise<void> {
         await Pending.deleteOne(query).session(session);
     }
 }

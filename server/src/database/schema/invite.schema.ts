@@ -10,7 +10,7 @@ const InviteSchema = new Schema<IInvite>({
     text: String
 })
 
-let Invite
+let Invite: mongoose.Model<IInvite>
 
 let prepare = () => {
     Invite = mongoose.model<IInvite>('Invite', InviteSchema, 'Invite')

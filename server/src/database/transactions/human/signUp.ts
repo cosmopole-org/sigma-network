@@ -4,8 +4,8 @@ import { isEmpty } from '../../../utils/strings';
 import PendingFactory from '../../factories/pending.factory';
 import { makeUniqueId } from '../../../utils/generator';
 
-const signUp = async ({ email }, _session?: ClientSession) => {
-  if (isEmpty(email)) {
+const signUp = async (args: { email: string }, _session?: ClientSession) => {
+  if (isEmpty(args.email)) {
     console.error('email can not be empty');
     return { success: false };
   }
@@ -14,25 +14,24 @@ const signUp = async ({ email }, _session?: ClientSession) => {
   let pending;
   try {
     let success = false;
-    pending = await PendingFactory.instance().find({ "email": email }, session);
+    pending = await PendingFactory.instance.find({ email: args.email }, session);
     let vCode = '123', cCode = makeUniqueId();
     if (pending === null) {
-      pending = await PendingFactory.instance().create({
-        id: makeUniqueId(),
-        email: email,
-        clientCode: cCode,
-        verificationCode: vCode,
-        state: 0
+      pending = await PendingFactory.instance.create({
+        email: args.email,
+        cCode: cCode,
+        vCode: vCode,
+        progress: 'registered'
       }, session);
       if (!_session) await session.commitTransaction();
       success = true;
     } else {
       if (pending.state < 1) {
-        await PendingFactory.instance().update({ email: email }, { clientCode: cCode, verificationCode: vCode }, session);
+        await PendingFactory.instance.update({ email: args.email }, { clientCode: cCode, verificationCode: vCode }, session);
         if (!_session) await session.commitTransaction();
         success = true;
       } else {
-        await PendingFactory.instance().update({ email: email }, { clientCode: cCode, verificationCode: vCode, state: 0 }, session);
+        await PendingFactory.instance.update({ email: args.email }, { clientCode: cCode, verificationCode: vCode, state: 0 }, session);
         if (!_session) await session.commitTransaction();
         success = true;
       }

@@ -10,7 +10,7 @@ const TowerSchema = new Schema<ITower>({
     secret: Schema.Types.Mixed
 })
 
-let Tower
+let Tower: mongoose.Model<ITower>
 
 let prepare = () => {
     Tower = mongoose.model<ITower>('Tower', TowerSchema, 'Tower')

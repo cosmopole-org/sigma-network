@@ -8,7 +8,7 @@ import * as WorkerSchema from "./worker.schema"
 import * as PendingSchema from "./pending.schema"
 import * as SessionSchema from "./session.schema"
 
-let buildSchemas = () => {
+let build = () => {
     PendingSchema.prepare()
     SessionSchema.prepare()
     HumanSchema.prepare()
@@ -20,4 +20,15 @@ let buildSchemas = () => {
     WorkerSchema.prepare()
 }
 
-export { buildSchemas }
+export {
+    build,
+    HumanSchema,
+    BotSchema,
+    InviteSchema,
+    MemberSchema,
+    PendingSchema,
+    RoomSchema,
+    SessionSchema,
+    TowerSchema,
+    WorkerSchema
+}

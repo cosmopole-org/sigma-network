@@ -1,52 +1,42 @@
 
-import mongoose from "mongoose";
-import { Room } from "../schema/room.schema";
+import mongoose, { ClientSession } from "mongoose";
+import { IRoom, Room } from "../schema/room.schema";
 
 class RoomFactory {
-    static inst;
-    static initialize() {
+    static _instance: RoomFactory;
+    static initialize(): RoomFactory {
         return new RoomFactory();
     }
-    static instance() {
-        return RoomFactory.inst;
+    static get instance(): RoomFactory {
+        return RoomFactory._instance;
     }
-    ModelName = 'Room';
-    Model = Room
     constructor() {
-        RoomFactory.inst = this;
+        RoomFactory._instance = this;
     }
-    async create(initData, session) {
-        return (await this.Model.create([initData], { session }))[0];
+    async create(initData: IRoom, session: ClientSession): Promise<IRoom> {
+        return (await Room.create([initData], { session }))[0];
     }
-    async read(offset, count, query) {
-        let cursor;
-        let collection = mongoose.connection.db.collection(this.ModelName);
+    async read(offset?: number, count?: number, query?: any): Promise<Array<IRoom>> {
+        let cursor: mongoose.mongo.FindCursor
+        let collection = mongoose.connection.db.collection('Room');
         if ((await collection.count()) - offset >= 0) {
-            if (query) {
-                cursor = collection.find(query).skip(offset).limit(count);
-            } else {
-                cursor = collection.find({}).skip(offset).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(offset).limit(count);
         } else {
-            if (query) {
-                cursor = collection.find(query).skip(0).limit(count);
-            } else {
-                cursor = collection.find({}).skip(0).limit(count);
-            }
+            cursor = collection.find(query ? query : {}).skip(0).limit(count);
         }
         return await cursor.toArray();
     }
-    async find(query, session) {
-        return await this.Model.findOne(query).session(session).exec();
+    async find(query: any, session: ClientSession): Promise<IRoom> {
+        return await Room.findOne(query).session(session).exec();
     }
-    async findGroup(query, session) {
-        return await this.Model.find(query).session(session).exec();
+    async findGroup(query: any, session: ClientSession) : Promise<Array<IRoom>> {
+        return await Room.find(query).session(session).exec();
     }
-    async update(query, update, session) {
-        await this.Model.updateOne(query, update).session(session);
+    async update(query: any, update: any, session: ClientSession): Promise<IRoom> {
+        return await Room.findOneAndUpdate(query, update, { new: true }).session(session);
     }
-    async remove(query, session) {
-        await this.Model.deleteOne(query).session(session);
+    async remove(query: any, session: ClientSession): Promise<void> {
+        await Room.deleteOne(query).session(session);
     }
 }
 

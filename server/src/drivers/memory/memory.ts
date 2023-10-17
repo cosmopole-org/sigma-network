@@ -40,7 +40,7 @@ class MemoryDriver {
                 this.save(`auth:${s.token}`, s.userId);
             });
         });
-        MemberFactory.instance().read().then(ms => {
+        MemberFactory.instance.read().then(ms => {
             ms.forEach(m => {
                 this.save(`rights:${m.towerId}/${m.userId}`, JSON.stringify(m.secret.permissions));
             });
