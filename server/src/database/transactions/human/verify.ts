@@ -2,9 +2,8 @@
 import mongoose, { ClientSession } from 'mongoose'
 import * as Factories from '../../factories';
 import { makeUniqueId } from '../../../utils/generator';
-import MemoryDriver from '../../../drivers/memory/memory';
-import { IPending } from 'src/models/pending.model';
-import { ISession } from 'src/models/session.model';
+import { IPending } from '../../../models/pending.model';
+import { ISession } from '../../../models/session.model';
 import { IHuman } from '../../../models/human.model';
 
 const verify = async (args: { cCode: string, vCode: string }, _session?: ClientSession) => {
@@ -14,16 +13,15 @@ const verify = async (args: { cCode: string, vCode: string }, _session?: ClientS
     try {
         pending = await Factories.PendingFactory.instance.find({ vCode: args.vCode, cCode: args.cCode }, session);
         if (pending !== null) {
-            human = await Factories.HumanFactory.instance.find({ id: pending.userId }, session);
+            human = await Factories.HumanFactory.instance.find({ id: pending.humanId }, session);
             if (human !== null) {
                 userSession = await Factories.SessionFactory.instance.create({
                     id: makeUniqueId(),
                     token: makeUniqueId(),
-                    userId: human.id
+                    humanId: human.id
                 }, session);
-                await MemoryDriver.instance.save(`auth:${userSession.token}`, human.id);
                 human = await Factories.HumanFactory.instance.update({ id: human.id }, { $push: { sessionIds: userSession.id } }, session);
-                let memberships = await Factories.MemberFactory.instance.findGroup({ userId: human.id }, session);
+                let memberships = await Factories.MemberFactory.instance.findGroup({ humanId: human.id }, session);
                 let towers = await Factories.TowerFactory.instance.findGroup({ id: { $in: memberships.map(m => m.towerId) } }, session);
                 let rooms = await Factories.RoomFactory.instance.findGroup({ towerId: { $in: memberships.map(m => m.towerId) } }, session);
                 let allMemberships = await Factories.MemberFactory.instance.findGroup({ roomId: { $in: rooms.map(r => r.id) } }, session);
@@ -41,6 +39,7 @@ const verify = async (args: { cCode: string, vCode: string }, _session?: ClientS
                     allMemberships: allMemberships,
                 };
             } else {
+                await Factories.PendingFactory.instance.update({ cCode: args.cCode, vCode: args.vCode }, { progress: 'verified' }, session);
                 if (!_session) {
                     await session.commitTransaction();
                     session.endSession();
@@ -49,10 +48,10 @@ const verify = async (args: { cCode: string, vCode: string }, _session?: ClientS
             }
         } else {
             if (!_session) {
-                await session.commitTransaction();
+                await session.abortTransaction();
                 session.endSession();
             }
-            return { success: true };
+            return { success: false };
         }
     } catch (error) {
         console.error(error);

@@ -1,7 +1,7 @@
 
 interface IMember {
     id: string,
-    userId: string,
+    humanId: string,
     towerId: string,
     secret: any
 }

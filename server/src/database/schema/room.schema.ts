@@ -9,7 +9,6 @@ const RoomSchema = new Schema<IRoom>({
     towerId: String,
     floor: String,
     isPublic: Boolean,
-    wallpaperId: String,
     secret: Schema.Types.Mixed
 })
 

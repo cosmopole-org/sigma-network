@@ -6,7 +6,7 @@ const PendingSchema = new Schema<IPending>({
     cCode: { type: String, required: true },
     vCode: { type: String, required: true },
     email: { type: String, required: true },
-    userId: { type: String },
+    humanId: { type: String },
     progress: { type: String, required: true }
 })
 

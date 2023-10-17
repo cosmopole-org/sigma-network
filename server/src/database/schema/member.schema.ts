@@ -4,7 +4,7 @@ import { IMember } from "src/models/member.model";
 
 const MemberSchema = new Schema<IMember>({
     id: String,
-    userId: String,
+    humanId: String,
     towerId: String,
     secret: Schema.Types.Mixed
 })

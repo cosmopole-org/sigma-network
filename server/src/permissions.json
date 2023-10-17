@@ -1,0 +1,26 @@
+{
+    "DEFAULT_ROOM_MEMBER_PERMISSIONS": {
+        "createWorkspace": true,
+        "createFilespace": true,
+        "createDisk": true,
+        "createFolder": true,
+        "createFile": true,
+        "createPost": true,
+        "uploadFile": true,
+        "createBlog": true,
+        "inviteUser": true,
+        "createMessage": true
+    },
+    "DEFAULT_ROOM_ADMIN_PERMISSIONS": {
+        "createWorkspace": true,
+        "createFilespace": true,
+        "createDisk": true,
+        "createFolder": true,
+        "createFile": true,
+        "createPost": true,
+        "uploadFile": true,
+        "createBlog": true,
+        "inviteUser": true,
+        "createMessage": true
+    }
+}

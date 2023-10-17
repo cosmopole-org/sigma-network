@@ -37,12 +37,12 @@ class MemoryDriver {
     loadAuthIntoMemory() {
         SessionFactory.instance.read().then((ss: Array<ISession>) => {
             ss.forEach(s => {
-                this.save(`auth:${s.token}`, s.userId);
+                this.save(`auth:${s.token}`, s.humanId);
             });
         });
         MemberFactory.instance.read().then(ms => {
             ms.forEach(m => {
-                this.save(`rights:${m.towerId}/${m.userId}`, JSON.stringify(m.secret.permissions));
+                this.save(`rights:${m.towerId}/${m.humanId}`, JSON.stringify(m.secret.permissions));
             });
         });
     }

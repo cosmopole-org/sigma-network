@@ -3,7 +3,7 @@ interface IPending {
     cCode: string,
     vCode: string,
     email: string,
-    userId?: string,
+    humanId?: string,
     progress: string
 }
 

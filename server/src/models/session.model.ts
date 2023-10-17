@@ -2,7 +2,7 @@
 interface ISession {
     id: string,
     token: string,
-    userId: string
+    humanId: string
 }
 
 export { ISession }

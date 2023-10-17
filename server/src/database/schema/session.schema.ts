@@ -5,7 +5,7 @@ import { ISession } from "src/models/session.model";
 const SessionSchema = new Schema<ISession>({
     id: String,
     token: String,
-    userId: String
+    humanId: String
 })
 
 let Session: mongoose.Model<ISession>

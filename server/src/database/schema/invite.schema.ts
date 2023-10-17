@@ -4,7 +4,7 @@ import { IInvite } from "src/models/invite.model";
 
 const InviteSchema = new Schema<IInvite>({
     id: String,
-    userId: String,
+    humanId: String,
     roomId: String,
     title: String,
     text: String

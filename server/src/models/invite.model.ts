@@ -1,7 +1,7 @@
 
 interface IInvite {
     id: string,
-    userId: string,
+    humanId: string,
     roomId: string,
     title: string,
     text: string

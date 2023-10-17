@@ -3,6 +3,7 @@ import mongoose, { ClientSession } from 'mongoose';
 import { isEmpty } from '../../../utils/strings';
 import PendingFactory from '../../factories/pending.factory';
 import { makeUniqueId } from '../../../utils/generator';
+import { IPending } from '../../../models/pending.model';
 
 const signUp = async (args: { email: string }, _session?: ClientSession) => {
   if (isEmpty(args.email)) {
@@ -11,7 +12,7 @@ const signUp = async (args: { email: string }, _session?: ClientSession) => {
   }
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
-  let pending;
+  let pending: IPending
   try {
     let success = false;
     pending = await PendingFactory.instance.find({ email: args.email }, session);
@@ -26,19 +27,13 @@ const signUp = async (args: { email: string }, _session?: ClientSession) => {
       if (!_session) await session.commitTransaction();
       success = true;
     } else {
-      if (pending.state < 1) {
-        await PendingFactory.instance.update({ email: args.email }, { clientCode: cCode, verificationCode: vCode }, session);
-        if (!_session) await session.commitTransaction();
-        success = true;
-      } else {
-        await PendingFactory.instance.update({ email: args.email }, { clientCode: cCode, verificationCode: vCode, state: 0 }, session);
-        if (!_session) await session.commitTransaction();
-        success = true;
-      }
+      await PendingFactory.instance.update({ email: args.email }, { cCode, vCode, progress: 'registered' }, session);
+      if (!_session) await session.commitTransaction();
+      success = true;
     }
     if (!_session) session.endSession();
     if (success) {
-      return { success: true, clientCode: cCode };
+      return { success: true, cCode };
     } else {
       return { success: false };
     }

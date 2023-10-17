@@ -6,9 +6,6 @@ const HumanSchema = new Schema<IHuman>({
     id: String,
     firstName: String,
     lastName: String,
-    publicKey: String,
-    lastSeen: Number,
-    isGuest: Boolean,
     secret: Schema.Types.Mixed
 })
 

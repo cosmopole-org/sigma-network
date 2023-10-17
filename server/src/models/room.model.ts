@@ -6,7 +6,6 @@ interface IRoom {
     towerId: string,
     floor: string,
     isPublic: boolean,
-    wallpaperId: string,
     secret: any
 }
 
