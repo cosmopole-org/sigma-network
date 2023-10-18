@@ -20,15 +20,14 @@ class HumanFactory {
     async read(offset?: number, count?: number, query?: any): Promise<Array<IHuman>> {
         let cursor: mongoose.mongo.FindCursor;
         let collection = mongoose.connection.db.collection('Human');
-        if (offset && count && query) {
+        if (offset && count) {
             if ((await collection.count()) - offset >= 0) {
                 cursor = collection.find(query ? query : {}).skip(offset).limit(count);
             } else {
                 cursor = collection.find(query ? query : {}).skip(0).limit(count);
             }
-            return await cursor.toArray();
         } else {
-            cursor = collection.find({});
+            cursor = collection.find(query ? query : {});
         }
         return await cursor.toArray();
     }

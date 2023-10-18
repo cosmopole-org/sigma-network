@@ -4,29 +4,28 @@ import { ClientSession } from "mongoose";
 import MemoryDriver from "../drivers/memory/memory";
 
 class HumanService {
-    async signUp(client: Client, body: { email: string }, session?: ClientSession) {
-        return transactions.human.signUp(body, session)
+    async signUp(client: Client, body: { email: string }) {
+        return transactions.human.signUp(body)
     }
-    async signIn(client: Client, body: { token: string }, session?: ClientSession) {
+    async signIn(client: Client, body: { token: string }) {
         let humanId = await MemoryDriver.instance.fetch(`auth:${body.token}`)
         if (humanId) {
-            await transactions.human.signIn({ humanId }, session)
+            await transactions.human.signIn({ humanId })
             client.updateUserId(humanId)
             return { success: true }
         } else {
             return { success: false }
         }
     }
-    async verify(client: Client, body: { cCode: string, vCode: string }, session?: ClientSession) {
-        let result = await transactions.human.verify(body, session)
-        console.log(result)
+    async verify(client: Client, body: { cCode: string, vCode: string }) {
+        let result = await transactions.human.verify(body)
         if (result.success && result.human) {
             await MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id);
         }
         return result
     }
-    async complete(client: Client, body: { cCode: string, firstName: string, lastName?: string }, session?: ClientSession) {
-        let result = await transactions.human.complete(body, session)
+    async complete(client: Client, body: { cCode: string, firstName: string, lastName?: string }) {
+        let result = await transactions.human.complete(body)
         if (result.success) {
             await Promise.all([
                 MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id),
@@ -37,8 +36,11 @@ class HumanService {
         }
         return result
     }
-    async readById(client: Client, body: { targetHumanId: string }, session?: ClientSession) {
-        return transactions.human.readById(body, session)
+    async readById(client: Client, body: { targetHumanId: string }) {
+        return transactions.human.readById(body)
+    }
+    async search(client: Client, body: { query: string, offset?: number, count?: number }) {
+        return transactions.human.search(body)
     }
 }
 

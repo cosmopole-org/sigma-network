@@ -6,6 +6,9 @@ socket.emit('human/signUp', { email: 'test@test.com' }, (response1) => {
     const rest = (humanId) => {
         socket.emit('human/readById', { targetHumanId: humanId }, (response5) => {
             console.log(response5);
+            socket.emit('human/search', { query: 'edw' }, (response6) => {
+                console.log(response6);
+            });
         });
     }
     console.log(response1);

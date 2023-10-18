@@ -30,6 +30,10 @@ class HumanController extends BaseController {
         let result = await this.service.readById(client, body)
         response(result)
     }
+    async search(client: Client, body: any, response: any) {
+        let result = await this.service.search(client, body)
+        response(result)
+    }
 }
 
 export default HumanController
