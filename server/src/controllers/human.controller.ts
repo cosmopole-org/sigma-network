@@ -9,7 +9,7 @@ class HumanController extends BaseController {
         super()
         this.service = service
     }
-    getName() { return 'human' }
+    getName(): string { return 'human' }
     async signUp(client: Client, body: any, response: any) {
         let result = await this.service.signUp(client, body)
         response(result)
@@ -32,6 +32,10 @@ class HumanController extends BaseController {
     }
     async search(client: Client, body: any, response: any) {
         let result = await this.service.search(client, body)
+        response(result)
+    }
+    async signOut(client: Client, body: any, response: any) {
+        let result = await this.service.signOut(client)
         response(result)
     }
 }

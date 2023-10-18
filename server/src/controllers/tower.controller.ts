@@ -1,0 +1,35 @@
+
+import TowerService from "../services/tower.service";
+import Client from "../drivers/network/client";
+import BaseController from "./base.controller";
+
+class TowerController extends BaseController {
+    service: TowerService
+    constructor(service: TowerService) {
+        super()
+        this.service = service
+    }
+    getName() { return 'tower' }
+    async create(client: Client, body: any, response: any) {
+        let result = await this.service.create(client, body)
+        response(result)
+    }
+    async update(client: Client, body: any, response: any) {
+        let result = await this.service.update(client, body)
+        response(result)
+    }
+    async remove(client: Client, body: any, response: any) {
+        let result = await this.service.remove(client, body)
+        response(result)
+    }
+    async search(client: Client, body: any, response: any) {
+        let result = await this.service.search(client, body)
+        response(result)
+    }
+    async join(client: Client, body: any, response: any) {
+        let result = await this.service.join(client, body)
+        response(result)
+    }
+}
+
+export default TowerController

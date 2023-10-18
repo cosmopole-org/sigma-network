@@ -19,10 +19,9 @@ class NetworkDriver {
     io: Server
     controllers: { [id: string]: BaseController } = {}
     clients : { [id: string]: Client } = {}
-    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args : any[]): T ;}, type2: { new(...args : any[]): V ;} ): NetworkDriver {
+    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args : any[]): T ;}, type2: { new(...args : any[]): V ;} ) {
         let controller = new type(new type2())
         this.controllers[controller.getName()] = controller
-        return this
     }
     private creaateWelcomeRoute() {
         this.app.get('/', (req: Request, res: Response) => {

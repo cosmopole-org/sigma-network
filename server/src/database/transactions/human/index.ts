@@ -5,6 +5,7 @@ import verify from "./verify";
 import complete from "./complete";
 import readById from "./readById";
 import search from './search'
+import signOut from "./signOut";
 
 export {
     signIn,
@@ -12,5 +13,6 @@ export {
     verify,
     complete,
     readById,
-    search
+    search,
+    signOut
 }

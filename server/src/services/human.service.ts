@@ -42,6 +42,14 @@ class HumanService {
     async search(client: Client, body: { query: string, offset?: number, count?: number }) {
         return transactions.human.search(body)
     }
+    async signOut(client: Client) {
+        if (client.humanId) {
+            await transactions.human.signOut({ humanId: client.humanId })
+            return { success: true }
+        } else {
+            return { success: false }
+        }
+    }
 }
 
 export default HumanService
