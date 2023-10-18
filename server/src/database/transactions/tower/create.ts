@@ -58,7 +58,7 @@ const create = async (args: { title: string, avatarId: string, isPublic: boolean
       await session.commitTransaction();
       session.endSession();
     }
-    return { success: true, tower: tower, room: room, member: member };
+    return { success: true, tower, room, member };
   } catch (error) {
     console.error(error);
     console.error('abort transaction');

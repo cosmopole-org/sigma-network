@@ -1,5 +1,7 @@
 import Client from "../drivers/network/client";
 import * as transactions from '../database/transactions/transactions'
+import { secureObject } from "../utils/filter";
+import { ITower } from "../models/tower.model";
 
 class TowerService {
     async create(client: Client, body: { title: string, avatarId: string, isPublic: boolean }) {
@@ -25,7 +27,11 @@ class TowerService {
     }
     async search(client: Client, body: { query: string, offset?: number, count?: number, mine: boolean }) {
         if (client.humanId) {
-            return transactions.tower.search({ ...body, humanId: client.humanId })
+            let result = await transactions.tower.search({ ...body, humanId: client.humanId })
+            if (result.success && result.towers) {
+                result.towers = result.towers.map((t: ITower) => t.secret.ownerId === client.humanId ? t : secureObject(t, 'secret'))
+            }
+            return result
         } else {
             return { success: false }
         }

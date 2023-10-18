@@ -24,10 +24,8 @@ const verify = async (args: { cCode: string, vCode: string }, _session?: ClientS
                 human = await Factories.HumanFactory.instance.update({ id: human.id }, { $push: { sessionIds: userSession.id } }, session);
                 let memberships = await Factories.MemberFactory.instance.findGroup({ humanId: human.id }, session);
                 let towers = await Factories.TowerFactory.instance.findGroup({ id: { $in: memberships.map(m => m.towerId) } }, session);
-                towers = towers.map(tower => tower.secret.ownerId === human.id ? tower : secureObject(tower, 'secret'))
                 let rooms = await Factories.RoomFactory.instance.findGroup({ towerId: { $in: memberships.map(m => m.towerId) } }, session);
                 let allMemberships = await Factories.MemberFactory.instance.findGroup({ towerId: { $in: towers.map(t => t.id) } }, session);
-                allMemberships = allMemberships.map(m => m.humanId === human.id ? m : secureObject(m, 'secret'))
                 if (!_session) {
                     await session.commitTransaction();
                     session.endSession();

@@ -11,9 +11,24 @@ const towerTest = () => {
                 console.log(response9);
                 socket.emit('tower/join', { towerId: response7.tower.id }, (response10) => {
                     console.log(response10);
-                    socket.emit('tower/remove', { towerId: response7.tower.id }, (response11) => {
-                        console.log(response11);
-                    });
+                    //socket.emit('tower/remove', { towerId: response7.tower.id }, (response11) => {
+                    //    console.log(response11);
+                    roomTest(response7.tower.id)
+                    //});
+                });
+            });
+        });
+    });
+}
+const roomTest = (towerId) => {
+    socket.emit('room/create', { title: 'games', isPublic: true, towerId }, (response12) => {
+        console.log(response12);
+        socket.emit('room/readById', { towerId, roomId: response12.room.id }, (response13) => {
+            console.log(response13);
+            socket.emit('room/search', { towerId, query: 'g' }, (response14) => {
+                console.log(response14);
+                socket.emit('room/remove', { towerId, roomId: response12.room.id }, (response15) => {
+                    console.log(response15);
                 });
             });
         });

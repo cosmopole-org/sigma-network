@@ -11,7 +11,7 @@ const search = async (args: { query: string, offset?: number, count?: number }, 
         { lastName: { '$regex': args.query, '$options': 'i' } }
       ],
     });
-    return { success: true, users: data.map(u => secureObject(u, 'secret')) };
+    return { success: true, humans: data };
   } catch (error) {
     return { success: false };
   }

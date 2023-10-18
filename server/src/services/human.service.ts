@@ -1,7 +1,7 @@
 import Client from "../drivers/network/client";
 import * as transactions from '../database/transactions/transactions'
-import { ClientSession } from "mongoose";
 import MemoryDriver from "../drivers/memory/memory";
+import { secureObject } from "../utils/filter";
 
 class HumanService {
     async signUp(client: Client, body: { email: string }) {
@@ -20,6 +20,8 @@ class HumanService {
     async verify(client: Client, body: { cCode: string, vCode: string }) {
         let result = await transactions.human.verify(body)
         if (result.success && result.human) {
+            result.towers = result.towers.map(tower => tower.secret.ownerId === result.human.id ? tower : secureObject(tower, 'secret'))
+            result.allMemberships = result.allMemberships.map(m => m.humanId === result.human.id ? m : secureObject(m, 'secret'))
             await MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id);
         }
         return result
@@ -37,10 +39,17 @@ class HumanService {
         return result
     }
     async readById(client: Client, body: { targetHumanId: string }) {
-        return transactions.human.readById(body)
+        let result = await transactions.human.readById(body)
+        if (result.success && result.human) {
+            result.human = secureObject(result.human, 'secret')
+        }
+        return result
     }
     async search(client: Client, body: { query: string, offset?: number, count?: number }) {
-        return transactions.human.search(body)
+        let result = await transactions.human.search(body)
+        if (result.success && result.humans)
+        result.humans = result.humans.map(u => secureObject(u, 'secret'))
+        return result
     }
     async signOut(client: Client) {
         if (client.humanId) {
