@@ -28,13 +28,13 @@ class PendingFactory {
         return await cursor.toArray();
     }
     async find(query: any, session: ClientSession): Promise<IPending> {
-        return await Pending.findOne(query).session(session).exec();
+        return await Pending.findOne(query).session(session).lean().exec();
     }
     async findGroup(query: any, session: ClientSession): Promise<Array<IPending>> {
-        return await Pending.find(query).session(session).exec();
+        return await Pending.find(query).session(session).lean().exec();
     }
     async update(query: any, update: any, session: ClientSession): Promise<IPending> {
-        return await Pending.findOneAndUpdate(query, update, { new: true }).session(session);
+        return await Pending.findOneAndUpdate(query, update, { new: true }).session(session).lean();
     }
     async remove(query: any, session: ClientSession): Promise<void> {
         await Pending.deleteOne(query).session(session);

@@ -48,6 +48,7 @@ module.exports.createTower = async ({ title, avatarId, isPublic }, userId) => {
       avatarId: isEmpty(avatarId) ? defaultAvatars.EMPTY_TOWER_AVATAR_ID : avatarId,
       isPublic: isPublic,
       secret: {
+        ownerId: userId,
         adminIds: [
           userId
         ]

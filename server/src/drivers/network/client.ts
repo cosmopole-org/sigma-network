@@ -4,11 +4,11 @@ class Client {
 
     socket: Socket
     isGuest: boolean
-    userId: string
+    humanId: string
     towerId: string
 
-    public updateUserId(userId: string) {
-        this.userId = userId
+    public updateUserId(humanId: string) {
+        this.humanId = humanId
     }
 
     public updateTowerId(towerId: string) {

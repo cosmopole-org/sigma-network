@@ -29,16 +29,16 @@ class InviteFactory {
     }
     async find(query: any, session?: ClientSession): Promise<IInvite> {
         if (session) {
-            return await Invite.findOne(query).session(session).exec();
+            return await Invite.findOne(query).session(session).lean().exec();
         } else {
-            return await Invite.findOne(query).exec();
+            return await Invite.findOne(query).lean().exec();
         }
     }
     async findGroup(query: any, session: ClientSession): Promise<Array<IInvite>> {
-        return await Invite.find(query).session(session).exec();
+        return await Invite.find(query).session(session).lean().exec();
     }
     async update(query: any, update: any, session: ClientSession): Promise<IInvite> {
-        return await Invite.findOneAndUpdate(query, update, { new: true }).session(session);
+        return await Invite.findOneAndUpdate(query, update, { new: true }).session(session).lean();
     }
     async remove(query: any, session: ClientSession): Promise<void> {
         await Invite.deleteOne(query).session(session);

@@ -1,11 +1,7 @@
 
-const secureObject = function (obj: any, forbiddenKey: string) {
-    let newObj = {};
-    Object.keys(obj).forEach(key => {
-        if (key !== forbiddenKey) {
-            newObj[key] = obj[key];
-        }
-    });
+function secureObject(obj: any, forbiddenKey: string) {
+    let newObj = {...obj};
+    delete newObj[forbiddenKey]
     return newObj;
 }
 

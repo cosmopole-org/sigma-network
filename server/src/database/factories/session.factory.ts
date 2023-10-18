@@ -40,13 +40,13 @@ class SessionFactory {
         return await cursor.toArray();
     }
     async find(query: any, session: ClientSession) {
-        return await Session.findOne(query).session(session).exec();
+        return await Session.findOne(query).session(session).lean().exec();
     }
     async findGroup(query: any, session: ClientSession) {
-        return await Session.find(query).session(session).exec();
+        return await Session.find(query).session(session).lean().exec();
     }
     async update(query: any, update: any, session: ClientSession) {
-        await Session.updateOne(query, update).session(session);
+        await Session.findOneAndUpdate(query, update, { new: true }).session(session).lean();
     }
     async remove(query: any, session: ClientSession): Promise<void> {
         await Session.deleteOne(query).session(session);

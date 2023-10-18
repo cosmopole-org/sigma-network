@@ -19,10 +19,10 @@ class MemoryDriver {
         return MemoryDriver._instance;
     }
     redisClient: redis.RedisClientType;
-    async save(key: string, value: any) {
+    async save(key: string, value: any): Promise<any> {
         await this.redisClient.set(key, JSON.stringify(value));
     }
-    fetch(key: string) {
+    fetch(key: string): Promise<any> {
         return new Promise(resolve => {
             this.redisClient.get(key).then(function (obj) {
                 if (!obj) {
@@ -30,7 +30,7 @@ class MemoryDriver {
                     resolve(undefined);
                     return;
                 }
-                resolve(obj);
+                resolve(JSON.parse(obj));
             });
         })
     }
@@ -51,7 +51,8 @@ class MemoryDriver {
         this.redisClient = redis.createClient();
         const app = express();
         app.use(cors());
-        this.redisClient.connect().then(() => {
+        this.redisClient.connect().then(async () => {
+            await this.redisClient.flushAll()
             this.redisClient.on('error', function (err) {
                 console.log('Could not establish a connection with redis. ' + err);
             });

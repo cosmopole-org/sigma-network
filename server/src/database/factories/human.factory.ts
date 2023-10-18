@@ -32,18 +32,18 @@ class HumanFactory {
         }
         return await cursor.toArray();
     }
-    async find(query: any, session: ClientSession): Promise<IHuman> {
+    async find(query: any, session?: ClientSession): Promise<IHuman> {
         if (session) {
-            return await Human.findOne(query).session(session).exec();
+            return await Human.findOne(query).session(session).lean().exec();
         } else {
-            return await Human.findOne(query).exec();
+            return await Human.findOne(query).lean().exec();
         }
     }
     async update(query: any, update: any, session?: ClientSession): Promise<IHuman> {
         if (session) {
-            return await Human.findOneAndUpdate(query, update, { new: true }).session(session);
+            return await Human.findOneAndUpdate(query, update, { new: true }).session(session).lean().exec();
         } else {
-            return await Human.findOneAndUpdate(query, update, { new: true });
+            return await Human.findOneAndUpdate(query, update, { new: true }).lean();
         }
     }
     async remove(query: any, session: ClientSession): Promise<void> {
