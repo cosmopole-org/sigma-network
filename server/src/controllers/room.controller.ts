@@ -26,6 +26,10 @@ class RoomController extends BaseController {
         let result = await this.service.readById(client, body)
         response(result)
     }
+    async update(client: Client, body: any, response: any) {
+        let result = await this.service.update(client, body)
+        response(result)
+    }
 }
 
 export default RoomController

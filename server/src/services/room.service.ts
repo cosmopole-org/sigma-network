@@ -38,6 +38,13 @@ class RoomService {
             return { success: false }
         }
     }
+    async update(client: Client, body: { towerId: string, roomId: string, title: string, avatarId: string, isPublic: string }) {
+        if (client.humanId) {
+            return transactions.room.update({ ...body, humanId: client.humanId })
+        } else {
+            return { success: false }
+        }
+    }
 }
 
 export default RoomService
