@@ -19,7 +19,7 @@ const update = async (args: { towerId: string, title: string, avatarId: string, 
     let tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
     if (tower !== null) {
       if (tower.secret.adminIds.includes(args.humanId)) {
-        await Factories.TowerFactory.instance.update({ id: tower.id }, {
+        tower = await Factories.TowerFactory.instance.update({ id: tower.id }, {
           title: args.title,
           avatarId: isEmpty(args.avatarId) ? 'EMPTY' : args.avatarId,
           isPublic: args.isPublic
@@ -37,7 +37,11 @@ const update = async (args: { towerId: string, title: string, avatarId: string, 
       if (!_session) await session.abortTransaction();
     }
     if (!_session) session.endSession();
-    return { success: success };
+    if (success) {
+      return { success: true, tower };
+    } else {
+      return { success: false };
+    }
   } catch (error) {
     console.error(error);
     console.error('abort transaction');

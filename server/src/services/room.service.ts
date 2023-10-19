@@ -2,23 +2,37 @@ import Client from "../drivers/network/client";
 import * as transactions from '../database/transactions/transactions'
 import { secureObject } from "../utils/filter";
 import { IRoom } from "../models/room.model";
+import NetworkDriver from "../drivers/network/network";
+import updater from "../updater";
 
 class RoomService {
-    async create(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string }) {
+    async create(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string }, requestId: string) {
         if (client.humanId) {
-            return transactions.room.create({ ...body, humanId: client.humanId })
+            let result = await transactions.room.create({ ...body, humanId: client.humanId })
+            if (result.success) {
+                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onCreate,
+                    secureObject(result.room, 'secret')
+                ))
+            }
+            return result
         } else {
             return { success: false }
         }
     }
-    async remove(client: Client, body: { towerId: string, roomId: string }) {
+    async remove(client: Client, body: { towerId: string, roomId: string }, requestId: string) {
         if (client.humanId) {
-            return transactions.room.remove({ ...body, humanId: client.humanId })
+            let result = await transactions.room.remove({ ...body, humanId: client.humanId })
+            if (result.success) {
+                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onRemove,
+                    secureObject(result.room, 'secret')
+                ))
+            }
+            return result
         } else {
             return { success: false }
         }
     }
-    async search(client: Client, body: { query: string, offset?: number, count?: number, towerId: string }) {
+    async search(client: Client, body: { query: string, offset?: number, count?: number, towerId: string }, requestId: string) {
         if (client.humanId) {
             let result = await transactions.room.search({ ...body, humanId: client.humanId })
             if (result.success && result.rooms) {
@@ -31,16 +45,22 @@ class RoomService {
             return { success: false }
         }
     }
-    async readById(client: Client, body: { towerId: string, roomId: string }) {
+    async readById(client: Client, body: { towerId: string, roomId: string }, requestId: string) {
         if (client.humanId) {
             return transactions.room.readById({ ...body, humanId: client.humanId })
         } else {
             return { success: false }
         }
     }
-    async update(client: Client, body: { towerId: string, roomId: string, title: string, avatarId: string, isPublic: string }) {
+    async update(client: Client, body: { towerId: string, roomId: string, title: string, avatarId: string, isPublic: string }, requestId: string) {
         if (client.humanId) {
-            return transactions.room.update({ ...body, humanId: client.humanId })
+            let result = await transactions.room.update({ ...body, humanId: client.humanId })
+            if (result.success) {
+                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onUpdate,
+                    secureObject(result.room, 'secret')
+                ))
+            }
+            return result
         } else {
             return { success: false }
         }

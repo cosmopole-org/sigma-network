@@ -17,7 +17,7 @@ class MemberFactory {
     async create(initData: any, session: ClientSession): Promise<IMember> {
         return (await Member.create([initData], { session }))[0];
     }
-    async read(offset?: number, count?: number, query?: any): Promise<Array<IMember>> {
+    async read(query?: any, offset?: number, count?: number): Promise<Array<IMember>> {
         let cursor: any;
         let collection = mongoose.connection.db.collection('Member');
         if (offset && count && query) {

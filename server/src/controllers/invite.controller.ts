@@ -10,20 +10,20 @@ class InviteController extends BaseController {
         this.service = service
     }
     getName() { return 'invite' }
-    async create(client: Client, body: any, response: any) {
-        let result = await this.service.create(client, body)
+    async create(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.create(client, body, requestId)
         response(result)
     }
-    async cancel(client: Client, body: any, response: any) {
-        let result = await this.service.cancel(client, body)
+    async cancel(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.cancel(client, body, requestId)
         response(result)
     }
-    async accept(client: Client, body: any, response: any) {
-        let result = await this.service.accept(client, body)
+    async accept(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.accept(client, body, requestId)
         response(result)
     }
-    async decline(client: Client, body: any, response: any) {
-        let result = await this.service.decline(client, body)
+    async decline(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.decline(client, body, requestId)
         response(result)
     }
 }

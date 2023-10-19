@@ -1,6 +1,5 @@
 
 import mongoose, { ClientSession } from 'mongoose';
-import { secureObject } from '../../../utils/filter';
 import * as Factories from '../../factories';
 
 const readById = async (args: { targetHumanId: string }, _session?: ClientSession) => {

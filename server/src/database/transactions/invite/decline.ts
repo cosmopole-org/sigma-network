@@ -2,6 +2,7 @@
 import mongoose, { ClientSession } from 'mongoose';
 import * as Factories from '../../factories'
 import { isIdEmpty } from '../../../utils/numbers';
+import { ITower } from 'src/models/tower.model';
 
 const decline = async (args: { inviteId: string, humanId: string }, _session?: ClientSession) => {
   if (isIdEmpty(args.inviteId)) {
@@ -10,10 +11,12 @@ const decline = async (args: { inviteId: string, humanId: string }, _session?: C
   }
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
+  let tower: ITower
   try {
     let success = false;
     let invite = await Factories.InviteFactory.instance.find({ id: args.inviteId, humanId: args.humanId }, session);
     if (invite !== null) {
+      tower = await Factories.TowerFactory.instance.find({ id: invite.towerId }, session)
       await Factories.InviteFactory.instance.remove({ id: invite.id }, session);
       success = true;
       if (!_session) await session.commitTransaction();
@@ -25,7 +28,11 @@ const decline = async (args: { inviteId: string, humanId: string }, _session?: C
       }
     }
     if (!_session) session.endSession();
-    return { success };
+    if (success) {
+      return { success: true, adminIds: tower.secret.adminIds };
+    } else {
+      return { success: false };
+    }
   } catch (error) {
     console.error(error);
     if (!_session) {

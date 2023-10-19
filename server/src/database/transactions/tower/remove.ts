@@ -25,7 +25,11 @@ const remove = async (args: { towerId: string, humanId: string }, _session?: Cli
       if (!_session) await session.abortTransaction();
     }
     if (!_session) session.endSession();
-    return { success: success };
+    if (success) {
+      return { success: true, tower };
+    } else {
+      return { success: false };
+    }
   } catch (error) {
     console.error(error);
     console.error('abort transaction');

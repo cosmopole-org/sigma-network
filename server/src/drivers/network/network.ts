@@ -7,6 +7,9 @@ import "reflect-metadata";
 import BaseController from "../../controllers/base.controller";
 import BaseService from "../../services/base.service";
 import Client from "./client";
+import { createAdapter } from "@socket.io/redis-adapter";
+import MemoryDriver from "../memory/memory";
+import { Emitter } from "@socket.io/redis-emitter";
 
 class NetworkDriver {
     static _instance: NetworkDriver
@@ -18,8 +21,22 @@ class NetworkDriver {
     server: HttpServer
     io: Server
     controllers: { [id: string]: BaseController } = {}
-    clients : { [id: string]: Client } = {}
-    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args : any[]): T ;}, type2: { new(...args : any[]): V ;} ) {
+    clients: { [id: string]: Client } = {}
+    private emitter: Emitter
+    public group(towerId: string) {
+        return {
+            emit: (packet: any) => {
+                this.emitter.to(towerId).emit(packet)
+            }
+        }
+    }
+    public keepClient(client: Client) {
+        this.clients[client.humanId] = client
+    }
+    public looseClient(client: Client) {
+        client.humanId && (delete this.clients[client.humanId])
+    }
+    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args: any[]): T; }, type2: { new(...args: any[]): V; }) {
         let controller = new type(new type2())
         this.controllers[controller.getName()] = controller
     }
@@ -42,14 +59,18 @@ class NetworkDriver {
         this.app = express()
         this.server = createServer(this.app)
         this.io = new Server(this.server)
+        let subClient = MemoryDriver.instance.redisClient.duplicate()
+        this.io.adapter(createAdapter(MemoryDriver.instance.redisClient, subClient));
+        this.emitter = new Emitter(MemoryDriver.instance.redisClient);
         this.creaateWelcomeRoute()
         this.startExpressServer()
         this.io.on('connection', (socket: Socket) => {
             console.log('a client connected');
+            let client = new Client(socket, this.emitter)
             socket.on('disconnect', () => {
                 console.log('client disconnected');
+                delete this.clients[client.humanId]
             });
-            let client = new Client(socket)
             socket.onAny((...args) => {
                 this.route(client, args[0], args[1], args[2]);
             })

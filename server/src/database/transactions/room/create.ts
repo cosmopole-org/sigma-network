@@ -18,7 +18,7 @@ const create = async (args: { towerId: string, title: string, avatarId: string, 
   }
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
-  let room: IRoom, member: IMember, member2: IMember;
+  let room: IRoom;
   try {
     let success = false;
     let tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
@@ -37,24 +37,6 @@ const create = async (args: { towerId: string, title: string, avatarId: string, 
             ]
           }
         }, session);
-        member = await Factories.MemberFactory.instance.create({
-          id: makeUniqueId(),
-          humanId: args.humanId,
-          towerId: tower.id,
-          secret: {
-            permissions: permissions.DEFAULT_ROOM_ADMIN_PERMISSIONS
-          }
-        }, session);
-        if (tower.secret.isContact) {
-          member2 = await Factories.MemberFactory.instance.create({
-            id: makeUniqueId(),
-            humanId: tower.secret.adminIds[0] === args.humanId ? tower.secret.adminIds[1] : tower.secret.adminIds[0],
-            towerId: tower.id,
-            secret: {
-              permissions: permissions.DEFAULT_ROOM_ADMIN_PERMISSIONS
-            }
-          }, session);
-        }
         success = true;
         if (!_session) await session.commitTransaction();
       } else {
@@ -70,7 +52,7 @@ const create = async (args: { towerId: string, title: string, avatarId: string, 
     if (!_session) session.endSession();
     if (success) {
       return {
-        success: true, room: room, member: member, member2: member2,
+        success: true, room
       };
     } else {
       return { success: false };

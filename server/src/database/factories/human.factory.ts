@@ -38,6 +38,13 @@ class HumanFactory {
             return await Human.findOne(query).lean().exec();
         }
     }
+    async findGroup(query: any, session?: ClientSession): Promise<Array<IHuman>> {
+        if (session) {
+            return await Human.find(query).session(session).lean().exec();
+        } else {
+            return await Human.find(query).lean().exec();
+        }
+    }
     async update(query: any, update: any, session?: ClientSession): Promise<IHuman> {
         if (session) {
             return await Human.findOneAndUpdate(query, update, { new: true }).session(session).lean().exec();

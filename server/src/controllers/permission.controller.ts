@@ -10,12 +10,12 @@ class PermissionController extends BaseController {
         this.service = service
     }
     getName() { return 'permission' }
-    async update(client: Client, body: any, response: any) {
-        let result = await this.service.update(client, body)
+    async update(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.update(client, body, requestId)
         response(result)
     }
-    async read(client: Client, body: any, response: any) {
-        let result = await this.service.read(client, body)
+    async read(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.read(client, body, requestId)
         response(result)
     }
 }

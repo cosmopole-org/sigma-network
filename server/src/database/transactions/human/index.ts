@@ -6,6 +6,7 @@ import complete from "./complete";
 import readById from "./readById";
 import search from './search'
 import signOut from "./signOut";
+import readGroupById from "./readGroupById";
 
 export {
     signIn,
@@ -14,5 +15,6 @@ export {
     complete,
     readById,
     search,
-    signOut
+    signOut,
+    readGroupById
 }

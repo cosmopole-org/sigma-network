@@ -15,9 +15,9 @@ const update = async (args: { towerId: string, roomId: string, title: string, av
   }
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
+  let room: IRoom
   try {
     let success = false;
-    let room: IRoom;
     let tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
     if (tower !== null) {
       room = await Factories.RoomFactory.instance.find({ id: args.roomId, towerId: args.towerId }, session);
@@ -45,7 +45,11 @@ const update = async (args: { towerId: string, roomId: string, title: string, av
       }
     }
     if (!_session) session.endSession();
-    return { success: success };
+    if (success) {
+      return { success: true, room };
+    } else {
+      return { success: false };
+    }
   } catch (error) {
     console.error(error);
     if (!_session) {

@@ -1,0 +1,13 @@
+import { IMember } from "src/models/member.model";
+import Update from "../base";
+import { IRoom } from "src/models/room.model";
+
+class onRoomCreate extends Update {
+    room: IRoom
+    constructor(requestId: string, room: IRoom) {
+        super(requestId)
+        this.room = room
+    }
+}
+
+export default onRoomCreate

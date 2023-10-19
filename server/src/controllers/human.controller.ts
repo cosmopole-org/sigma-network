@@ -10,32 +10,32 @@ class HumanController extends BaseController {
         this.service = service
     }
     getName(): string { return 'human' }
-    async signUp(client: Client, body: any, response: any) {
-        let result = await this.service.signUp(client, body)
+    async signUp(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.signUp(client, body, requestId)
         response(result)
     }
-    async signIn(client: Client, body: any, response: any) {
-        let result = await this.service.signIn(client, body)
+    async signIn(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.signIn(client, body, requestId)
         response(result)
     }
-    async verify(client: Client, body: any, response: any) {
-        let result = await this.service.verify(client, body)
+    async verify(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.verify(client, body, requestId)
         response(result)
     }
-    async complete(client: Client, body: any, response: any) {
-        let result = await this.service.complete(client, body)
+    async complete(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.complete(client, body, requestId)
         response(result)
     }
-    async readById(client: Client, body: any, response: any) {
-        let result = await this.service.readById(client, body)
+    async readById(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.readById(client, body, requestId)
         response(result)
     }
-    async search(client: Client, body: any, response: any) {
-        let result = await this.service.search(client, body)
+    async search(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.search(client, body, requestId)
         response(result)
     }
-    async signOut(client: Client, body: any, response: any) {
-        let result = await this.service.signOut(client)
+    async signOut(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.signOut(client, requestId)
         response(result)
     }
 }

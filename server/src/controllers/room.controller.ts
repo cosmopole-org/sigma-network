@@ -10,24 +10,24 @@ class RoomController extends BaseController {
         this.service = service
     }
     getName() { return 'room' }
-    async create(client: Client, body: any, response: any) {
-        let result = await this.service.create(client, body)
+    async create(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.create(client, body, requestId)
         response(result)
     }
-    async remove(client: Client, body: any, response: any) {
-        let result = await this.service.remove(client, body)
+    async remove(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.remove(client, body, requestId)
         response(result)
     }
-    async search(client: Client, body: any, response: any) {
-        let result = await this.service.search(client, body)
+    async search(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.search(client, body, requestId)
         response(result)
     }
-    async readById(client: Client, body: any, response: any) {
-        let result = await this.service.readById(client, body)
+    async readById(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.readById(client, body, requestId)
         response(result)
     }
-    async update(client: Client, body: any, response: any) {
-        let result = await this.service.update(client, body)
+    async update(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.update(client, body, requestId)
         response(result)
     }
 }
