@@ -7,7 +7,6 @@ import { IMember } from 'src/models/member.model';
 import { IRoom } from 'src/models/room.model';
 import { ITower } from 'src/models/tower.model';
 import permissions from '../../../permissions.json';
-import { secureAdmins } from 'src/utils/filter';
 
 const accept = async (args: { inviteId: string, humanId: string }, _session?: ClientSession) => {
   if (isIdEmpty(args.inviteId)) {

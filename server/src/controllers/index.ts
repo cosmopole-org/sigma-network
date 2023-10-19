@@ -7,12 +7,15 @@ import RoomService from "../services/room.service";
 import RoomController from "./room.controller";
 import InviteController from "./invite.controller";
 import InviteService from "../services/invite.service";
+import PermissionController from "./permission.controller";
+import PermissionService from "../services/permission.service";
 
 const build = () => {
     NetworkDriver.instance.registerController(HumanController, HumanService)
     NetworkDriver.instance.registerController(TowerController, TowerService)
     NetworkDriver.instance.registerController(RoomController, RoomService)
     NetworkDriver.instance.registerController(InviteController, InviteService)
+    NetworkDriver.instance.registerController(PermissionController, PermissionService)
 }
 
 export {
