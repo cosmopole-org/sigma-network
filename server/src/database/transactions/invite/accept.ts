@@ -8,7 +8,7 @@ import { IRoom } from 'src/models/room.model';
 import { ITower } from 'src/models/tower.model';
 import permissions from '../../../permissions.json';
 
-const accept = async (args: { inviteId: string, humanId: string }, _session?: ClientSession) => {
+const accept = async (args: { inviteId: string, humanId: string, towerId: string }, _session?: ClientSession) => {
   if (isIdEmpty(args.inviteId)) {
     console.error('invite id can not be empty');
     return { success: false };
@@ -17,7 +17,7 @@ const accept = async (args: { inviteId: string, humanId: string }, _session?: Cl
   if (!_session) session.startTransaction();
   let member: IMember, room: IRoom, tower: ITower, rooms: Array<IRoom>
   try {
-    let invite = await Factories.InviteFactory.instance.find({ id: args.inviteId, humanId: args.humanId });
+    let invite = await Factories.InviteFactory.instance.find({ id: args.inviteId, humanId: args.humanId, towerId: args.towerId });
     if (invite !== null) {
       await Promise.all([
         (async () => { tower = await Factories.TowerFactory.instance.find({ id: invite.towerId }, session); })(),

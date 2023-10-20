@@ -21,7 +21,8 @@ class TowerService {
         }
     }
     async update(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.tower.update({ ...body, humanId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onUpdate, secureObject(result.tower, 'secret')))
@@ -32,7 +33,8 @@ class TowerService {
         }
     }
     async remove(client: Client, body: { towerId: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.tower.remove({ ...body, humanId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.tower.onRemove, secureObject(result.tower, 'secret')))

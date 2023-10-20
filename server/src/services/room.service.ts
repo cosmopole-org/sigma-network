@@ -4,10 +4,12 @@ import { secureObject } from "../utils/filter";
 import { IRoom } from "../models/room.model";
 import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
+import guardian from "../guardian";
 
 class RoomService {
     async create(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.room.create({ ...body, humanId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onCreate,
@@ -20,7 +22,8 @@ class RoomService {
         }
     }
     async remove(client: Client, body: { towerId: string, roomId: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.room.remove({ ...body, humanId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onRemove,
@@ -33,7 +36,8 @@ class RoomService {
         }
     }
     async search(client: Client, body: { query: string, offset?: number, count?: number, towerId: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.room.search({ ...body, humanId: client.humanId })
             if (result.success && result.rooms) {
                 if (!result.tower.secret.adminIds.includes(client.humanId)) {
@@ -53,7 +57,8 @@ class RoomService {
         }
     }
     async update(client: Client, body: { towerId: string, roomId: string, title: string, avatarId: string, isPublic: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.room.update({ ...body, humanId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onUpdate,

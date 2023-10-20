@@ -8,7 +8,8 @@ import guardian from "../guardian"
 
 class InviteService {
     async create(client: Client, body: { towerId: string, targetHumanId: string }, requestId: string) {
-        if (client.humanId) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.invite.create({ ...body, senderId: client.humanId })
             if (result.success) {
                 NetworkDriver.instance.clients[body.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.invite.onCreate, result.invite))
@@ -18,11 +19,12 @@ class InviteService {
             return { success: false }
         }
     }
-    async cancel(client: Client, body: { inviteId: string }, requestId: string) {
-        if (client.humanId) {
+    async cancel(client: Client, body: { towerId: string, inviteId: string }, requestId: string) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.invite.cancel({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.clients[result.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.invite.onCreate, body.inviteId))
+                NetworkDriver.instance.clients[result.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.invite.onCancel, body.inviteId))
                 delete result.targetHumanId
             }
             return result
@@ -30,8 +32,9 @@ class InviteService {
             return { success: false }
         }
     }
-    async decline(client: Client, body: { inviteId: string }, requestId: string) {
-        if (client.humanId) {
+    async decline(client: Client, body: { towerId: string, inviteId: string }, requestId: string) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.invite.decline({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.adminIds.forEach((adminId: string) => {
@@ -44,8 +47,9 @@ class InviteService {
             return { success: false }
         }
     }
-    async accept(client: Client, body: { inviteId: string }, requestId: string) {
-        if (client.humanId) {
+    async accept(client: Client, body: { towerId: string, inviteId: string }, requestId: string) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
             let result = await transactions.invite.accept({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.tower.secret.adminIds.forEach((adminId: string) => {

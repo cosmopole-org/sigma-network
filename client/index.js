@@ -1,6 +1,8 @@
 
 let { io } = require('socket.io-client')
 
+let registeredHumanId;
+
 let socket = io('http://localhost:3000')
 const request = (path, body, callback) => {
     socket.emit(path, body, Math.random(), callback)
@@ -37,16 +39,22 @@ const roomTest = (towerId) => {
                 console.log(response14);
                 request('room/remove', { towerId, roomId: response12.room.id }, (response15) => {
                     console.log(response15);
-                    
+                    inviteTest(towerId)
                 });
             });
         });
     });
 }
-const invite = () => {
-
+const inviteTest = (towerId) => {
+    request('invite/create', { targetHumanId: registeredHumanId, towerId }, (response16) => {
+        console.log(response16);
+        request('invite/cancel', { inviteId: response16.invite.id }, (response17) => {
+            console.log(response17);
+        });
+    });
 }
 const rest = (humanId) => {
+    registeredHumanId = humanId
     request('human/readById', { targetHumanId: humanId }, (response5) => {
         console.log(response5);
         request('human/search', { query: 'edw' }, (response6) => {

@@ -4,7 +4,7 @@ import Client from "../drivers/network/client"
 
 const authorize = async (client: Client, towerId: string) => {
     if (client.towerId === towerId) {
-        return { granted: true, rightS: client.rights }
+        return { granted: true, rights: client.rights }
     }
     if (client.humanId) {
         let rights = await MemoryDriver.instance.fetch(`rights:${towerId}:${client.humanId}`)

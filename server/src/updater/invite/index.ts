@@ -1,10 +1,12 @@
 
-import onUpdate from './onAccept'
-import onRemove from './onCancel'
+import onAccept from './onAccept'
+import onCancel from './onCancel'
 import onCreate from './onCreate'
+import onDecline from './onDecline'
 
 export {
     onCreate,
-    onUpdate,
-    onRemove
+    onCancel,
+    onAccept,
+    onDecline
 }
