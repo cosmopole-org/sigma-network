@@ -2,12 +2,10 @@
   "name": "sigma",
   "version": "0.0.1",
   "dependencies": {
-    "@hokify/agenda": "^6.3.0",
     "@socket.io/redis-adapter": "^8.2.1",
     "@socket.io/redis-emitter": "^5.1.0",
     "acorn": "^8.10.0",
     "acorn-jsx": "^5.3.2",
-    "amqplib": "^0.10.3",
     "connect-redis": "^7.1.0",
     "express": "^4.17.19",
     "express-session": "^1.17.3",

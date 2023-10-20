@@ -7,10 +7,12 @@ const remove = async (args: { towerId: string, humanId: string }, _session?: Cli
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
   try {
+    let memberIds: Array<string>
     let success = false;
     let tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
     if (tower !== null) {
       if (tower.secret.adminIds.includes(args.humanId)) {
+        memberIds = (await Factories.MemberFactory.instance.findGroup({ towerId: args.towerId }, session)).map(m => m.humanId)
         await Factories.TowerFactory.instance.remove({ id: tower.id }, session);
         success = true;
         if (!_session) await session.commitTransaction();
@@ -26,7 +28,7 @@ const remove = async (args: { towerId: string, humanId: string }, _session?: Cli
     }
     if (!_session) session.endSession();
     if (success) {
-      return { success: true, tower };
+      return { success: true, tower, memberIds };
     } else {
       return { success: false };
     }

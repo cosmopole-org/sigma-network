@@ -1,8 +1,14 @@
 
 import * as tower from './tower'
+import * as room from './room'
+import * as permission from './permission'
+import * as invite from './invite'
 
 let updatesDict = {
-    tower
+    tower,
+    room,
+    permission,
+    invite
 }
 
 let buildUpdate = (requestId: string, path: { category: string, key: string }, ...args: Array<any>) => {

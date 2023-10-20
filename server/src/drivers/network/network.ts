@@ -10,6 +10,8 @@ import Client from "./client";
 import { createAdapter } from "@socket.io/redis-adapter";
 import MemoryDriver from "../memory/memory";
 import { Emitter } from "@socket.io/redis-emitter";
+import * as json from '../../utils/json'
+import HumanController from "../../controllers/human.controller";
 
 class NetworkDriver {
     static _instance: NetworkDriver
@@ -26,7 +28,12 @@ class NetworkDriver {
     public group(towerId: string) {
         return {
             emit: (packet: any) => {
-                this.emitter.to(towerId).emit(packet)
+                this.io.to(towerId).emit('update', JSON.parse(json.safeStringify(packet)))
+            },
+            boradcast: {
+                emit: (client: Client, packet: any) => {
+                    client.socket.broadcast.to(towerId).emit('update', JSON.parse(json.safeStringify(packet)))
+                }
             }
         }
     }
@@ -50,9 +57,9 @@ class NetworkDriver {
             console.log('server running at http://localhost:3000')
         })
     }
-    private route(client: Client, path: string, body: any, callback: any) {
+    private route(client: Client, path: string, body: any, requestId: string, callback: any) {
         let parts = path.split('/')
-        this.controllers[parts[0]][parts[1]](client, body, callback)
+        this.controllers[parts[0]][parts[1]](client, body, requestId, callback)
     }
     constructor() {
         NetworkDriver._instance = this
@@ -70,9 +77,11 @@ class NetworkDriver {
             socket.on('disconnect', () => {
                 console.log('client disconnected');
                 delete this.clients[client.humanId]
+                let controller: HumanController = this.controllers['human'] as HumanController
+                controller.service.signOut(client, 'EMPTY')
             });
             socket.onAny((...args) => {
-                this.route(client, args[0], args[1], args[2]);
+                this.route(client, args[0], args[1], args[2], args[3]);
             })
         });
     }

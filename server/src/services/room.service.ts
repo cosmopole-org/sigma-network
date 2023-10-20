@@ -10,7 +10,7 @@ class RoomService {
         if (client.humanId) {
             let result = await transactions.room.create({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onCreate,
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onCreate,
                     secureObject(result.room, 'secret')
                 ))
             }
@@ -23,7 +23,7 @@ class RoomService {
         if (client.humanId) {
             let result = await transactions.room.remove({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onRemove,
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onRemove,
                     secureObject(result.room, 'secret')
                 ))
             }

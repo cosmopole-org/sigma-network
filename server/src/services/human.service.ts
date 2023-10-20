@@ -3,16 +3,17 @@ import * as transactions from '../database/transactions/transactions'
 import MemoryDriver from "../drivers/memory/memory";
 import { secureObject } from "../utils/filter";
 import NetworkDriver from "../drivers/network/network";
+import guardian from "../guardian";
 
 class HumanService {
     async signUp(client: Client, body: { email: string }, requestId: string) {
         return transactions.human.signUp(body)
     }
     async signIn(client: Client, body: { token: string }, requestId: string) {
-        let humanId = await MemoryDriver.instance.fetch(`auth:${body.token}`)
-        if (humanId) {
+        let { humanId, granted } = await guardian.authenticate(body.token)
+        if (granted) {
             let result = await transactions.human.signIn({ humanId })
-            client.updateUserId(humanId)
+            client.updateHumanId(humanId)
             NetworkDriver.instance.keepClient(client)
             client.joinTowers(result.memberships.map(m => m.towerId))
             return { success: true }
@@ -34,9 +35,7 @@ class HumanService {
         if (result.success) {
             await Promise.all([
                 MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id),
-                MemoryDriver.instance.save(
-                    `rights:${result.member.towerId}/${result.member.humanId}`, JSON.stringify(result.member.secret.permissions)
-                )
+                guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
             ])
         }
         return result
@@ -65,9 +64,8 @@ class HumanService {
         if (client.humanId) {
             let result = await transactions.human.signOut({ humanId: client.humanId })
             NetworkDriver.instance.looseClient(client)
-            client.joinTowers(result.memberships.map(m => m.towerId))
-            client.updateTowerId(undefined)
-            client.updateUserId(undefined)
+            client.leaveTowers(result.memberships.map(m => m.towerId))
+            client.reset()
             return { success: true }
         } else {
             return { success: false }

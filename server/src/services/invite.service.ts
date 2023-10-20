@@ -4,6 +4,7 @@ import updater from "../updater"
 import NetworkDriver from "../drivers/network/network"
 import { secureObject } from "../utils/filter"
 import { IRoom } from "../models/room.model"
+import guardian from "../guardian"
 
 class InviteService {
     async create(client: Client, body: { towerId: string, targetHumanId: string }, requestId: string) {
@@ -50,6 +51,9 @@ class InviteService {
                 result.tower.secret.adminIds.forEach((adminId: string) => {
                     NetworkDriver.instance.clients[adminId].emit(updater.buildUpdate(requestId, updater.types.invite.onAccept, body.inviteId))
                 });
+                guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
+                client.updateTowerId(result.member.towerId, result.member.secret.permissions)
+                client.joinTower(result.member.towerId)
                 result.tower = secureObject(result.tower, 'secret')
                 result.room = secureObject(result.room, 'secret')
                 result.rooms = result.rooms.map((room: IRoom) => secureObject(room, 'secret'))

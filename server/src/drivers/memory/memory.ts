@@ -22,6 +22,9 @@ class MemoryDriver {
     async save(key: string, value: any): Promise<any> {
         await this.redisClient.set(key, JSON.stringify(value));
     }
+    async remove(key: string | Array<string>): Promise<void> {
+        await this.redisClient.del(key);
+    }
     fetch(key: string): Promise<any> {
         return new Promise(resolve => {
             this.redisClient.get(key).then(function (obj) {

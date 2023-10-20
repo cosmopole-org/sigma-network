@@ -1,5 +1,7 @@
 import { Emitter } from "@socket.io/redis-emitter";
 import { Socket } from "socket.io";
+import * as json from '../../utils/json'
+import NetworkDriver from "./network";
 
 class Client {
 
@@ -7,36 +9,43 @@ class Client {
     isGuest: boolean
     humanId: string
     towerId: string
+    rights: { [id: string]: boolean }
     emitter: Emitter
 
-    public updateUserId(humanId: string) {
+    public reset() {
+        this.updateHumanId(undefined)
+        this.updateTowerId(undefined, undefined)
+    }
+
+    public updateHumanId(humanId: string) {
         this.humanId = humanId
     }
 
-    public updateTowerId(towerId: string) {
+    public updateTowerId(towerId: string, rights: { [id: string]: boolean }) {
         this.towerId = towerId
+        this.rights = rights
     }
 
     public emit(update: any) {
-        this.socket.emit('update', update)
+        this.socket.emit('update', JSON.parse(json.safeStringify(update)))
     }
 
-    public joinTower(towerId: string) { 
-        this.emitter.socketsJoin(towerId)
+    public joinTower(towerId: string) {
+        this.socket.join(towerId)
     }
 
     public leaveTower(towerId: string) {
-        this.emitter.socketsLeave(towerId)
+        this.socket.leave(towerId)
     }
 
-    public joinTowers(towerIds: Array<string>) { 
-        this.emitter.socketsJoin(towerIds)
+    public joinTowers(towerIds: Array<string>) {
+        this.socket.join(towerIds)
     }
 
     public leaveTowers(towerIds: Array<string>) {
-        this.emitter.socketsLeave(towerIds)
+        towerIds.forEach(towerId => this.leaveTower(towerId))
     }
-    
+
     constructor(socket: Socket, emitter: Emitter) {
         this.socket = socket
         this.emitter = emitter
