@@ -12,6 +12,7 @@ import MemoryDriver from "../memory/memory";
 import { Emitter } from "@socket.io/redis-emitter";
 import * as json from '../../utils/json'
 import HumanController from "../../controllers/human.controller";
+import CustomController from "../../controllers/custom.controller";
 
 class NetworkDriver {
     static _instance: NetworkDriver
@@ -47,6 +48,9 @@ class NetworkDriver {
         let controller = new type(new type2())
         this.controllers[controller.getName()] = controller
     }
+    public registerCustomController(controller: CustomController) {
+        this.controllers[controller.getName()] = controller
+    }
     private creaateWelcomeRoute() {
         this.app.get('/', (req: Request, res: Response) => {
             res.send('<h1>Welcome to Sigma !</h1>')
@@ -59,7 +63,12 @@ class NetworkDriver {
     }
     private route(client: Client, path: string, body: any, requestId: string, callback: any) {
         let parts = path.split('/')
-        this.controllers[parts[0]][parts[1]](client, body, requestId, callback)
+        let controller = this.controllers[parts[0]]
+        if (controller instanceof CustomController) {
+            controller.route(parts[1], client, body, requestId, callback)
+        } else {
+            controller[parts[1]](client, body, requestId, callback)
+        }
     }
     constructor() {
         NetworkDriver._instance = this

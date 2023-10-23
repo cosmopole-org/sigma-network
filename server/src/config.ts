@@ -1,0 +1,13 @@
+
+export let config = {}
+
+const setupConfig = (conf: { [id: string]: any }) => {
+    for (let key in conf) {
+        config[key] = conf[key]
+    }
+}
+
+export default config
+export {
+    setupConfig
+}

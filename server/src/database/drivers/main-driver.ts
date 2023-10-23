@@ -1,10 +1,8 @@
 import mongoose, { connect } from 'mongoose';
-import addresses from '../../config.json';
-
-const mongodbUri = addresses.MONGODB_URI;
+import addresses from '../../config';
 
 const connectMongoClient = async () => {
-  await connect(mongodbUri)
+  await connect(addresses['MONGODB_URI'])
   await mongoose.connection.db.dropDatabase()
 }
 

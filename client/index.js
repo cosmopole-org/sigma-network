@@ -15,19 +15,22 @@ socket.on('update', update => {
 const towerTest = () => {
     request('tower/create', { title: 'libbrary', isPublic: true }, (response7) => {
         console.log(response7);
-        request('tower/update', { towerId: response7.tower.id, title: 'library', isPublic: true }, (response8) => {
+        request('messenger/createTextMessage', { towerId: response7.tower.id, name: 'keyhan' }, (response8) => {
             console.log(response8);
-            request('tower/search', { query: 'lib' }, (response9) => {
-                console.log(response9);
-                request('tower/join', { towerId: response7.tower.id }, (response10) => {
-                    console.log(response10);
-                    //request('tower/remove', { towerId: response7.tower.id }, (response11) => {
-                    //    console.log(response11);
-                    roomTest(response7.tower.id)
-                    //});
-                });
-            });
-        });
+        })
+        // request('tower/update', { towerId: response7.tower.id, title: 'library', isPublic: true }, (response8) => {
+        //     console.log(response8);
+        //     request('tower/search', { query: 'lib' }, (response9) => {
+        //         console.log(response9);
+        //         request('tower/join', { towerId: response7.tower.id }, (response10) => {
+        //             console.log(response10);
+        //             //request('tower/remove', { towerId: response7.tower.id }, (response11) => {
+        //             //    console.log(response11);
+        //             roomTest(response7.tower.id)
+        //             //});
+        //         });
+        //     });
+        // });
     });
 }
 const roomTest = (towerId) => {

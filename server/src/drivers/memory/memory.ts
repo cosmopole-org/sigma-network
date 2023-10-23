@@ -1,7 +1,7 @@
 
 import express from 'express'
 import * as redis from 'redis';
-import config from '../../config.json';
+import config from '../../config';
 import session from 'express-session';
 import bodyParser from 'body-parser';
 import SessionFactory from '../../database/factories/session.factory';
@@ -71,18 +71,18 @@ class MemoryDriver {
                 prefix: "sigma:",
             })
             app.use(session({
-                name: config.REDIS_SESSION_NAME,
+                name: config['REDIS_SESSION_NAME'],
                 resave: false,
                 saveUninitialized: false,
                 store: redisStore,
-                secret: config.REDIS_SESSION_SECRET,
+                secret: config['REDIS_SESSION_SECRET'],
                 cookie: {
                     maxAge: 1000 * 60 * 60 * 2,
                     sameSite: true,
                     secure: true
                 }
             }));
-            app.listen(config.REDIS_EXPRESS_PORT, () => { console.log(`server is listening on ${config.REDIS_EXPRESS_PORT}`) });
+            app.listen(config['REDIS_EXPRESS_PORT'], () => { console.log(`server is listening on ${config['REDIS_EXPRESS_PORT']}`) });
             this.loadAuthIntoMemory();
         });
     }

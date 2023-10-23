@@ -4,12 +4,9 @@
   "dependencies": {
     "@socket.io/redis-adapter": "^8.2.1",
     "@socket.io/redis-emitter": "^5.1.0",
-    "acorn": "^8.10.0",
-    "acorn-jsx": "^5.3.2",
     "connect-redis": "^7.1.0",
     "express": "^4.17.19",
     "express-session": "^1.17.3",
-    "inversify": "^6.0.1",
     "mongoose": "^7.6.2",
     "redis": "^4.6.10",
     "reflect-metadata": "^0.1.13",
@@ -22,14 +19,10 @@
     "ts-loader": "^9.5.0",
     "ts-node-dev": "^2.0.0",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.2.2",
-    "webpack": "^5.88.2",
-    "webpack-cli": "^5.1.4"
+    "typescript": "^5.2.2"
   },
   "scripts": {
-    "build": "npx webpack -w",
-    "start": "ts-node-esm src/app.ts",
-    "dev": "nodemon index.ts"
+    "start": "ts-node-esm src/index.ts"
   },
   "eslintConfig": {
     "extends": [

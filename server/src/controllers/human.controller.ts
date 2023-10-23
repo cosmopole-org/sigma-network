@@ -1,11 +1,11 @@
 
 import Client from "../drivers/network/client";
-import UserService from "../services/human.service";
+import HumanService from "../services/human.service";
 import BaseController from "./base.controller";
 
 class HumanController extends BaseController {
-    service: UserService
-    constructor(service: UserService) {
+    service: HumanService
+    constructor(service: HumanService) {
         super()
         this.service = service
     }
