@@ -37,9 +37,9 @@ declare class Action {
         roomId?: string;
     }) => any;
     constructor(guardian: {
-        authenticate: boolean;
-        authorize: boolean;
-        inRoom: boolean;
+        authenticate?: boolean;
+        authorize?: boolean;
+        inRoom?: boolean;
     }, func: (client: Client, body: any, guardianReport?: {
         towerId: string;
         permissions: {

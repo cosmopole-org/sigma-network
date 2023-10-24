@@ -8,7 +8,7 @@ class Action {
     }
     func: (client: Client, body: any, guardianReport?: { towerId: string, permissions: { [id: string]: boolean }, roomId?: string }) => any
     constructor(
-        guardian: { authenticate: boolean, authorize: boolean, inRoom: boolean },
+        guardian: { authenticate?: boolean, authorize?: boolean, inRoom?: boolean },
         func: (client: Client, body: any, guardianReport?: { towerId: string, permissions: { [id: string]: boolean }, roomId?: string }) => any
     ) {
         this.guardian = guardian
