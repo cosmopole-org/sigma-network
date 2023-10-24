@@ -19226,15 +19226,31 @@ var authenticate = (token) => __async(void 0, null, function* () {
 var authenticate_default = authenticate;
 
 // guardian/authorize.ts
-var authorize = (client, towerId) => __async(void 0, null, function* () {
+var authorize = (client, towerId, roomId) => __async(void 0, null, function* () {
   if (client.towerId === towerId) {
-    return { granted: true, rights: client.rights };
+    if (roomId) {
+      if (yield memory_default.instance.fetch(`struct:${towerId}:${roomId}`)) {
+        return { granted: true, rights: client.rights, roomId };
+      } else {
+        return { granted: false };
+      }
+    } else {
+      return { granted: true, rights: client.rights };
+    }
   }
   if (client.humanId) {
     let rights = yield memory_default.instance.fetch(`rights:${towerId}:${client.humanId}`);
     if (rights) {
       client.towerId = towerId;
-      return { granted: true, rights };
+      if (roomId) {
+        if (yield memory_default.instance.fetch(`struct:${towerId}:${roomId}`)) {
+          return { granted: true, rights, roomId };
+        } else {
+          return { granted: false };
+        }
+      } else {
+        return { granted: true, rights };
+      }
     } else {
       return { granted: false };
     }
@@ -19742,6 +19758,7 @@ var RoomService = class {
             updater_default.types.room.onCreate,
             secureObject(result.room, "secret")
           ));
+          yield memory_default.instance.save(`struct:${body.towerId}:${result.room.id}`, true);
         }
         return result;
       } else {
@@ -19760,6 +19777,7 @@ var RoomService = class {
             updater_default.types.room.onRemove,
             secureObject(result.room, "secret")
           ));
+          yield memory_default.instance.remove(`struct:${body.towerId}:${result.room.id}`);
         }
         return result;
       } else {
@@ -20025,15 +20043,16 @@ var build2 = () => {
 };
 
 // sigma.ts
+import mongoose37 from "mongoose";
 var Sigma = class {
   start() {
     return __async(this, null, function* () {
       return new Promise((resolve) => {
         database_default.initialize(() => {
+          resolve(mongoose37.connection);
           memory_default.initialize();
           network_default.initialize();
           build2();
-          resolve();
         });
       });
     });
@@ -20069,9 +20088,9 @@ var BaseMachine = class extends base_service_default {
         }
         let report = void 0;
         if (action.guardian.authorize) {
-          let result = yield guardian_default.authorize(client, body["towerId"]);
+          let result = yield guardian_default.authorize(client, body["towerId"], body["roomId"]);
           if (result == null ? void 0 : result.granted) {
-            report = { towerId: body.towerId, rights: result.rights };
+            report = { towerId: body.towerId, rights: result.rights, roomId: result.roomId };
           } else {
             reject();
             return;

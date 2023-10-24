@@ -5,6 +5,7 @@ import { IRoom } from "../models/room.model";
 import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
 import guardian from "../guardian";
+import MemoryDriver from "drivers/memory/memory";
 
 class RoomService {
     async create(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string }, requestId: string) {
@@ -15,6 +16,7 @@ class RoomService {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onCreate,
                     secureObject(result.room, 'secret')
                 ))
+                await MemoryDriver.instance.save(`struct:${body.towerId}:${result.room.id}`, true)
             }
             return result
         } else {
@@ -29,6 +31,7 @@ class RoomService {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onRemove,
                     secureObject(result.room, 'secret')
                 ))
+                await MemoryDriver.instance.remove(`struct:${body.towerId}:${result.room.id}`)
             }
             return result
         } else {

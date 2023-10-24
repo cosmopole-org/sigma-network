@@ -19,9 +19,9 @@ abstract class BaseMachine extends BaseService {
                 }
                 let report = undefined
                 if (action.guardian.authorize) {
-                    let result = await guardian.authorize(client, body['towerId'])
+                    let result = await guardian.authorize(client, body['towerId'], body['roomId'])
                     if (result?.granted) {
-                        report = { towerId: body.towerId, rights: result.rights }
+                        report = { towerId: body.towerId, rights: result.rights, roomId: result.roomId }
                     } else {
                         reject()
                         return

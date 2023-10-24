@@ -6,6 +6,7 @@ import * as Controllers from './controllers'
 import CustomController from "./controllers/custom.controller"
 import BaseMachine from "./machines/base.machine"
 import { setupConfig } from "./config"
+import mongoose from "mongoose"
 
 class Sigma {
     async start(): Promise<void> {

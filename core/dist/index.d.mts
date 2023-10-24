@@ -1,5 +1,6 @@
 import { Emitter } from '@socket.io/redis-emitter';
 import { Socket } from 'socket.io';
+import mongoose from 'mongoose';
 
 declare class Client {
     socket: Socket;
@@ -58,7 +59,7 @@ declare abstract class BaseMachine extends BaseService {
 }
 
 declare class Sigma {
-    start(): Promise<void>;
+    start(): Promise<mongoose.Connection>;
     shell(machines: Array<BaseMachine>): void;
     constructor(conf: any);
 }
