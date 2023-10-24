@@ -2,12 +2,12 @@ import Client from "../../drivers/network/client"
 
 class Action {
     guardian: {
-        authenticate: true,
-        authorize: true
+        authenticate: boolean,
+        authorize: boolean
     }
     func: (client: Client, body: any, guardianReport?: { towerId: string, permissions: { [id: string]: boolean } }) => any
     constructor(
-        guardian: { authenticate: true, authorize: true },
+        guardian: { authenticate: boolean, authorize: boolean },
         func: (client: Client, body: any, guardianReport?: { towerId: string, permissions: { [id: string]: boolean } }) => any
     ) {
         this.guardian = guardian
