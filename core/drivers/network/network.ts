@@ -66,7 +66,7 @@ class NetworkDriver {
         let parts = path.split('/')
         let controller = this.controllers[parts[0]]
         if (controller instanceof CustomController) {
-            controller.route(parts[1], client, body, requestId, callback)
+            controller.route(parts.slice(1), client, body, requestId, callback)
         } else {
             controller[parts[1]](client, body, requestId, callback)
         }

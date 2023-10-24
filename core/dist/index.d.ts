@@ -23,6 +23,24 @@ declare class Client {
     constructor(socket: Socket, emitter: Emitter);
 }
 
+declare class BaseService {
+}
+
+declare abstract class BaseMachine extends BaseService {
+    abstract getName(): string;
+    abstract getService(): {
+        [id: string]: any;
+    };
+    abstract getClient(): string;
+    route(key: Array<string>, client: Client, body: any): Promise<unknown>;
+}
+
+declare class Sigma {
+    start(): Promise<void>;
+    shell(machines: Array<BaseMachine>): void;
+    constructor(conf: any);
+}
+
 declare class Action {
     guardian: {
         authenticate?: boolean;
@@ -47,24 +65,6 @@ declare class Action {
         };
         roomId?: string;
     }) => any);
-}
-
-declare class BaseService {
-}
-
-declare abstract class BaseMachine extends BaseService {
-    abstract getName(): string;
-    abstract getService(): {
-        [id: string]: Action;
-    };
-    abstract getClient(): string;
-    route(key: string, client: Client, body: any): Promise<unknown>;
-}
-
-declare class Sigma {
-    start(): Promise<void>;
-    shell(machines: Array<BaseMachine>): void;
-    constructor(conf: any);
 }
 
 declare class Update {

@@ -5,11 +5,14 @@ import BaseService from "../services/base.service";
 
 abstract class BaseMachine extends BaseService {
     abstract getName(): string
-    abstract getService(): { [id: string]: Action }
+    abstract getService(): { [id: string]: any }
     abstract getClient(): string
-    route(key: string, client: Client, body: any,) {
+    route(key: Array<string>, client: Client, body: any) {
         return new Promise(async (resolve, reject) => {
-            let action = this.getService()[key]
+            let action = this.getService()
+            for (let i = 0; i < key.length; i++) {
+                action = action[key[i]]
+            }
             if (action) {
                 if (action.guardian.authenticate) {
                     if (!client.humanId) {

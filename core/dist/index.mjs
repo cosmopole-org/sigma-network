@@ -17832,7 +17832,7 @@ var NetworkDriver = class _NetworkDriver {
     let parts = path.split("/");
     let controller = this.controllers[parts[0]];
     if (controller instanceof custom_controller_default) {
-      controller.route(parts[1], client, body, requestId, callback);
+      controller.route(parts.slice(1), client, body, requestId, callback);
     } else {
       controller[parts[1]](client, body, requestId, callback);
     }
@@ -20077,7 +20077,10 @@ var base_service_default = BaseService;
 var BaseMachine = class extends base_service_default {
   route(key, client, body) {
     return new Promise((resolve, reject) => __async(this, null, function* () {
-      let action = this.getService()[key];
+      let action = this.getService();
+      for (let i = 0; i < key.length; i++) {
+        action = action[key[i]];
+      }
       if (action) {
         if (action.guardian.authenticate) {
           if (!client.humanId) {

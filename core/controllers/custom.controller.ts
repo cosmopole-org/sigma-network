@@ -12,7 +12,7 @@ class CustomController extends BaseController {
         this.service = service
     }
     getName(): string { return this.name }
-    async route(key: string, client: Client, body: any, requestId: string, response: any) {
+    async route(key: Array<string>, client: Client, body: any, requestId: string, response: any) {
         let result = await this.service.route(key, client, body)
         response(result)
     }
