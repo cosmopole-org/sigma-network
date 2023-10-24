@@ -1,6 +1,5 @@
 import { Emitter } from '@socket.io/redis-emitter';
 import { Socket } from 'socket.io';
-import mongoose from 'mongoose';
 
 declare class Client {
     socket: Socket;
@@ -26,23 +25,27 @@ declare class Client {
 
 declare class Action {
     guardian: {
-        authenticate: boolean;
-        authorize: boolean;
+        authenticate?: boolean;
+        authorize?: boolean;
+        inRoom?: boolean;
     };
     func: (client: Client, body: any, guardianReport?: {
         towerId: string;
         permissions: {
             [id: string]: boolean;
         };
+        roomId?: string;
     }) => any;
     constructor(guardian: {
         authenticate: boolean;
         authorize: boolean;
+        inRoom: boolean;
     }, func: (client: Client, body: any, guardianReport?: {
         towerId: string;
         permissions: {
             [id: string]: boolean;
         };
+        roomId?: string;
     }) => any);
 }
 
@@ -59,7 +62,7 @@ declare abstract class BaseMachine extends BaseService {
 }
 
 declare class Sigma {
-    start(): Promise<mongoose.Connection>;
+    start(): Promise<void>;
     shell(machines: Array<BaseMachine>): void;
     constructor(conf: any);
 }

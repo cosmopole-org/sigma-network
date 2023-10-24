@@ -18,6 +18,10 @@ abstract class BaseMachine extends BaseService {
                     }
                 }
                 let report = undefined
+                if (action.guardian.inRoom && !body['roomId']) {
+                    reject()
+                    return
+                }
                 if (action.guardian.authorize) {
                     let result = await guardian.authorize(client, body['towerId'], body['roomId'])
                     if (result?.granted) {

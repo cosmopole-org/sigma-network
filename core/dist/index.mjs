@@ -20043,16 +20043,15 @@ var build2 = () => {
 };
 
 // sigma.ts
-import mongoose37 from "mongoose";
 var Sigma = class {
   start() {
     return __async(this, null, function* () {
       return new Promise((resolve) => {
         database_default.initialize(() => {
-          resolve(mongoose37.connection);
           memory_default.initialize();
           network_default.initialize();
           build2();
+          resolve();
         });
       });
     });
@@ -20087,6 +20086,10 @@ var BaseMachine = class extends base_service_default {
           }
         }
         let report = void 0;
+        if (action.guardian.inRoom && !body["roomId"]) {
+          reject();
+          return;
+        }
         if (action.guardian.authorize) {
           let result = yield guardian_default.authorize(client, body["towerId"], body["roomId"]);
           if (result == null ? void 0 : result.granted) {
