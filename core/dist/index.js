@@ -16986,14 +16986,15 @@ var require_lib3 = __commonJS({
 });
 
 // index.ts
-var sigma_exports = {};
-__export(sigma_exports, {
+var core_exports = {};
+__export(core_exports, {
   Action: () => action_default,
   BaseMachine: () => base_machine_default,
   Client: () => client_default,
-  Sigma: () => sigma_default
+  Sigma: () => sigma_default,
+  Updater: () => updater_default
 });
-module.exports = __toCommonJS(sigma_exports);
+module.exports = __toCommonJS(core_exports);
 
 // database/factories/human.factory.ts
 var import_mongoose2 = __toESM(require("mongoose"));
@@ -17828,8 +17829,8 @@ var NetworkDriver = class _NetworkDriver {
     });
   }
   startExpressServer() {
-    this.server.listen(3e3, () => {
-      console.log("server running at http://localhost:3000");
+    this.server.listen(config_default["SOCKET_PORT"], () => {
+      console.log(`server running at http://localhost:${config_default["SOCKET_PORT"]}`);
     });
   }
   route(client, path, body, requestId, callback) {
@@ -19638,9 +19639,22 @@ var types = {
     onDecline: { category: "invite", key: "onDecline" }
   }
 };
+var registerUpdateType = (type, path) => {
+  if (!types[path.category]) {
+    types[path.category] = {};
+    updatesDict[path.category] = {};
+  }
+  types[path.category][path.key] = path;
+  updatesDict[path.category][path.key] = type;
+};
+var group = (towerId) => {
+  return network_default.instance.group(towerId);
+};
 var updater_default = {
   types,
-  buildUpdate
+  buildUpdate,
+  registerUpdateType,
+  group
 };
 
 // services/tower.service.ts
@@ -20091,7 +20105,8 @@ var action_default = Action;
   Action,
   BaseMachine,
   Client,
-  Sigma
+  Sigma,
+  Updater
 });
 /*! Bundled license information:
 

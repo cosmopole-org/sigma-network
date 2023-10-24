@@ -17824,8 +17824,8 @@ var NetworkDriver = class _NetworkDriver {
     });
   }
   startExpressServer() {
-    this.server.listen(3e3, () => {
-      console.log("server running at http://localhost:3000");
+    this.server.listen(config_default["SOCKET_PORT"], () => {
+      console.log(`server running at http://localhost:${config_default["SOCKET_PORT"]}`);
     });
   }
   route(client, path, body, requestId, callback) {
@@ -19634,9 +19634,22 @@ var types = {
     onDecline: { category: "invite", key: "onDecline" }
   }
 };
+var registerUpdateType = (type, path) => {
+  if (!types[path.category]) {
+    types[path.category] = {};
+    updatesDict[path.category] = {};
+  }
+  types[path.category][path.key] = path;
+  updatesDict[path.category][path.key] = type;
+};
+var group = (towerId) => {
+  return network_default.instance.group(towerId);
+};
 var updater_default = {
   types,
-  buildUpdate
+  buildUpdate,
+  registerUpdateType,
+  group
 };
 
 // services/tower.service.ts
@@ -20086,7 +20099,8 @@ export {
   action_default as Action,
   base_machine_default as BaseMachine,
   client_default as Client,
-  sigma_default as Sigma
+  sigma_default as Sigma,
+  updater_default as Updater
 };
 /*! Bundled license information:
 

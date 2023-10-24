@@ -3,6 +3,8 @@ import * as tower from './tower'
 import * as room from './room'
 import * as permission from './permission'
 import * as invite from './invite'
+import Update from './base'
+import NetworkDriver from '../drivers/network/network'
 
 let updatesDict = {
     tower,
@@ -38,7 +40,22 @@ let types = {
     }
 }
 
+const registerUpdateType = <T extends Update>(type: T, path: { category: 'string', key: 'string'}) => {
+    if (!types[path.category]) {
+        types[path.category] = {}
+        updatesDict[path.category] = {}
+    }
+    types[path.category][path.key] = path
+    updatesDict[path.category][path.key] = type
+}
+
+const group = (towerId: string) => {
+    return NetworkDriver.instance.group(towerId)
+}
+
 export default {
     types,
-    buildUpdate
+    buildUpdate,
+    registerUpdateType,
+    group
 }

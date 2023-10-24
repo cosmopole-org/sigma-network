@@ -63,4 +63,80 @@ declare class Sigma {
     constructor(conf: any);
 }
 
-export { Action, BaseMachine, Client, Sigma };
+declare class Update {
+    requestId: string;
+    constructor(requestId: string);
+}
+
+declare const _default: {
+    types: {
+        tower: {
+            onUpdate: {
+                category: string;
+                key: string;
+            };
+            onRemove: {
+                category: string;
+                key: string;
+            };
+            onHumanJoin: {
+                category: string;
+                key: string;
+            };
+        };
+        room: {
+            onCreate: {
+                category: string;
+                key: string;
+            };
+            onUpdate: {
+                category: string;
+                key: string;
+            };
+            onRemove: {
+                category: string;
+                key: string;
+            };
+        };
+        permission: {
+            onUpdate: {
+                category: string;
+                key: string;
+            };
+        };
+        invite: {
+            onCreate: {
+                category: string;
+                key: string;
+            };
+            onCancel: {
+                category: string;
+                key: string;
+            };
+            onAccept: {
+                category: string;
+                key: string;
+            };
+            onDecline: {
+                category: string;
+                key: string;
+            };
+        };
+    };
+    buildUpdate: (requestId: string, path: {
+        category: string;
+        key: string;
+    }, ...args: any[]) => any;
+    registerUpdateType: <T extends Update>(type: T, path: {
+        category: "string";
+        key: "string";
+    }) => void;
+    group: (towerId: string) => {
+        emit: (packet: any) => void;
+        boradcast: {
+            emit: (client: Client, packet: any) => void;
+        };
+    };
+};
+
+export { Action, BaseMachine, Client, Sigma, _default as Updater };
