@@ -25,8 +25,8 @@ declare class Client {
 
 declare class Action {
     guardian: {
-        authenticate: true;
-        authorize: true;
+        authenticate: boolean;
+        authorize: boolean;
     };
     func: (client: Client, body: any, guardianReport?: {
         towerId: string;
@@ -35,8 +35,8 @@ declare class Action {
         };
     }) => any;
     constructor(guardian: {
-        authenticate: true;
-        authorize: true;
+        authenticate: boolean;
+        authorize: boolean;
     }, func: (client: Client, body: any, guardianReport?: {
         towerId: string;
         permissions: {
