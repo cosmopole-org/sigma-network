@@ -6,6 +6,8 @@ import InviteFactory from "./invite.factory";
 import MemberFactory from "./member.factory";
 import PendingFactory from "./pending.factory";
 import SessionFactory from "./session.factory";
+import MachineFactory from "./machine.factory";
+import WorkerFactory from "./worker.factory";
 
 export {
     RoomFactory,
@@ -14,5 +16,7 @@ export {
     InviteFactory,
     MemberFactory,
     PendingFactory,
-    SessionFactory
+    SessionFactory,
+    MachineFactory,
+    WorkerFactory
 }

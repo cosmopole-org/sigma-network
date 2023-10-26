@@ -4,12 +4,12 @@ import { IWorker } from "models/worker.model";
 
 const WorkerSchema = new Schema<IWorker>({
     id: String,
-    botId: String,
-    workspaceId: String,
+    machineId: String,
+    roomId: String,
     secret: Schema.Types.Mixed
 })
 
-let Worker
+let Worker: mongoose.Model<IWorker>
 
 let prepare = () => {
     Worker = mongoose.model<IWorker>('Worker', WorkerSchema, 'Worker')

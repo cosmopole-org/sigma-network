@@ -1,8 +1,8 @@
 
 interface IWorker {
     id: string,
-    botId: string,
-    workspaceId: string,
+    machineId: string,
+    roomId: string,
     secret: any
 }
 

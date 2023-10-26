@@ -30,8 +30,12 @@ class TowerFactory {
     async find(query: any, session: ClientSession): Promise<ITower> {
         return await Tower.findOne(query).session(session).lean().exec();
     }
-    async findGroup(query: any, session: ClientSession): Promise<Array<ITower>> {
-        return await Tower.find(query).session(session).lean().exec();
+    async findGroup(query: any, session?: ClientSession): Promise<Array<ITower>> {
+        if (session) {
+            return await Tower.find(query).session(session).lean().exec();
+        } else {
+            return await Tower.find(query).lean().exec();
+        }
     }
     async update(query: any, update: any, session: ClientSession): Promise<ITower> {
         return await Tower.findOneAndUpdate(query, update, { new: true }).session(session).lean();

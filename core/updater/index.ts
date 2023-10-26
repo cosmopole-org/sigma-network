@@ -37,7 +37,11 @@ let types = {
         onCancel: { category: 'invite', key: 'onCancel' },
         onAccept: { category: 'invite', key: 'onAccept' },
         onDecline: { category: 'invite', key: 'onDecline' }
-    }
+    },
+    worker: {
+        onRequest: { category: 'worker', key: 'onRequest' },
+        onResponse: { category: 'worker', key: 'onResponse' }
+    },
 }
 
 const registerUpdateType = <T extends Update>(type: T, path: { category: 'string', key: 'string'}) => {

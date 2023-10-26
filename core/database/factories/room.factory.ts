@@ -29,8 +29,12 @@ class RoomFactory {
     async find(query: any, session: ClientSession): Promise<IRoom> {
         return await Room.findOne(query).session(session).lean().exec();
     }
-    async findGroup(query: any, session: ClientSession) : Promise<Array<IRoom>> {
-        return await Room.find(query).session(session).lean().exec();
+    async findGroup(query: any, session?: ClientSession) : Promise<Array<IRoom>> {
+        if (session) {
+            return await Room.find(query).session(session).lean().exec();
+        } else {
+            return await Room.find(query).lean().exec();
+        }
     }
     async update(query: any, update: any, session: ClientSession): Promise<IRoom> {
         return await Room.findOneAndUpdate(query, update, { new: true }).session(session).lean();
