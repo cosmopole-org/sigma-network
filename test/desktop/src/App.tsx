@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
-import Desktop from './Desktop';
+import Desktop from 'sigma-desktop/dist/Desktop';
 import ReactGridLayout from 'react-grid-layout';
 import * as RGL from 'react-grid-layout';
 

@@ -18,14 +18,20 @@ class DesktopData {
         this.key = Math.random().toString()
         desktops[this.key] = this
     }
+    fill(layouts: RGL.Layouts, jsxContent: { [id: string]: string }) {
+        this.jsxContent = jsxContent
+        this.layouts = layouts
+    }
     destroy() {
         delete desktops[this.key]
     }
     addWidget(widget: { id: string, jsxCode: string, gridData: { w: number, h: number } }) {
         (['lg', 'md', 'sm', 'xs', 'xxs']).forEach((sizeKey: string) => {
-            let y = Math.max(...this.layouts[sizeKey].filter(item => {
-                return (item.x < widget.gridData.w)
-            }).map(item => (item.y + item.h)))
+            let y = this.layouts[sizeKey].length > 0 ?
+                Math.max(...this.layouts[sizeKey].filter(item => {
+                    return (item.x < widget.gridData.w)
+                }).map(item => (item.y + item.h))) :
+                0
             this.layouts[sizeKey].push({ ...widget.gridData, x: 0, y, i: widget.id })
         })
         this.jsxContent[widget.id] = widget.jsxCode

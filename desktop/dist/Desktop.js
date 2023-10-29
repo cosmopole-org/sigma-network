@@ -252,6 +252,13 @@ var DesktopData = /*#__PURE__*/ function() {
     }
     _create_class(DesktopData, [
         {
+            key: "fill",
+            value: function fill(layouts, jsxContent) {
+                this.jsxContent = jsxContent;
+                this.layouts = layouts;
+            }
+        },
+        {
             key: "destroy",
             value: function destroy() {
                 delete desktops[this.key];
@@ -269,11 +276,11 @@ var DesktopData = /*#__PURE__*/ function() {
                     "xxs"
                 ].forEach(function(sizeKey) {
                     var _Math;
-                    var y = (_Math = Math).max.apply(_Math, _to_consumable_array(_this.layouts[sizeKey].filter(function(item) {
+                    var y = _this.layouts[sizeKey].length > 0 ? (_Math = Math).max.apply(_Math, _to_consumable_array(_this.layouts[sizeKey].filter(function(item) {
                         return item.x < widget.gridData.w;
                     }).map(function(item) {
                         return item.y + item.h;
-                    })));
+                    }))) : 0;
                     _this.layouts[sizeKey].push(_object_spread_props(_object_spread({}, widget.gridData), {
                         x: 0,
                         y: y,

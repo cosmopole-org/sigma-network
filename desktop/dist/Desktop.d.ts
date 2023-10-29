@@ -11,6 +11,9 @@ declare class DesktopData {
     layoutCnangeFromCodeCallback?: (layouts: RGL.Layouts) => void;
     layoutCnangeFromCodeInternallCallback?: (layouts: RGL.Layouts) => void;
     constructor();
+    fill(layouts: RGL.Layouts, jsxContent: {
+        [id: string]: string;
+    }): void;
     destroy(): void;
     addWidget(widget: {
         id: string;
