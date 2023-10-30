@@ -1,12 +1,6 @@
 {
   "name": "sigma-desktop",
   "version": "0.0.1",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
-  "files": [
-    "dist"
-  ],
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -15,15 +9,13 @@
     "@types/node": "^16.18.59",
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
-    "applet-mwc": "^0.0.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.2",
     "react-scripts": "5.0.1",
-    "sigma-desktop": "^0.0.3",
+    "sigma-desktop": "^0.1.4",
     "tsup": "^7.2.0",
     "typescript": "^4.9.5",
-    "vmengine": "^0.1.13",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

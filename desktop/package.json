@@ -1,6 +1,6 @@
 {
   "name": "sigma-desktop",
-  "version": "0.0.3",
+  "version": "0.1.4",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -16,13 +16,13 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "applet-mwc": "^0.0.5",
+    "applet-vm": "^0.1.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.4.2",
     "react-scripts": "5.0.1",
     "tsup": "^7.2.0",
     "typescript": "^4.9.5",
-    "vmengine": "^0.1.13",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

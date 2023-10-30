@@ -5,7 +5,7 @@ import "react-grid-layout/css/styles.css";
 // src/AppletHost.tsx
 import MwcDriver from "applet-mwc";
 import { useEffect, useRef } from "react";
-import { Applet, Controls } from "vmengine";
+import { Applet, Controls } from "applet-vm";
 import { jsx } from "react/jsx-runtime";
 var hostLoaded = {};
 var unloadAllHosts = () => {

@@ -1,6 +1,6 @@
 import MwcDriver from "applet-mwc"
 import { useEffect, useRef } from "react"
-import { Applet, Controls } from "vmengine"
+import { Applet, Controls } from "applet-vm"
 
 let hostLoaded: { [id: string]: boolean } = {}
 

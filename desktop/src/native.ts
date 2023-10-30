@@ -1,4 +1,4 @@
-import { INative, Module } from "vmengine"
+import { INative, Module } from "applet-vm"
 
 class Native extends INative {
 

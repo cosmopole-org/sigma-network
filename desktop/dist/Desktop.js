@@ -199,7 +199,7 @@ var import_styles = require("react-grid-layout/css/styles.css");
 // src/AppletHost.tsx
 var import_applet_mwc = __toESM(require("applet-mwc"));
 var import_react = require("react");
-var import_vmengine = require("vmengine");
+var import_applet_vm = require("applet-vm");
 var import_jsx_runtime = require("react/jsx-runtime");
 var hostLoaded = {};
 var unloadAllHosts = function() {
@@ -207,7 +207,7 @@ var unloadAllHosts = function() {
 };
 var Host = function(props) {
     var hostContainerrId = "AppletHost:".concat(props.appletKey);
-    var appletRef = (0, import_react.useRef)(new import_vmengine.Applet(props.appletKey));
+    var appletRef = (0, import_react.useRef)(new import_applet_vm.Applet(props.appletKey));
     (0, import_react.useEffect)(function() {
         if (!hostLoaded[props.appletKey]) {
             hostLoaded[props.appletKey] = true;
@@ -215,7 +215,7 @@ var Host = function(props) {
             var root = document.getElementById(hostContainerrId);
             if (root !== null) {
                 var driver = new import_applet_mwc.default(appletRef.current, root);
-                driver.start("Test", import_vmengine.Controls);
+                driver.start("Test", import_applet_vm.Controls);
             }
         }
     }, []);
