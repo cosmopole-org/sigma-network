@@ -14,24 +14,45 @@ var unloadAllHosts = () => {
 var Host = (props) => {
   const hostContainerrId = `AppletHost:${props.appletKey}`;
   const appletRef = useRef(new Applet(props.appletKey));
+  const rootRef = useRef(null);
   useEffect(() => {
-    if (!hostLoaded[props.appletKey]) {
-      hostLoaded[props.appletKey] = true;
-      appletRef.current.fill(props.code);
-      let root = document.getElementById(hostContainerrId);
-      if (root !== null) {
-        let driver = new MwcDriver(appletRef.current, root);
-        driver.start("Test", Controls);
+    hostLoaded[props.appletKey] = true;
+    appletRef.current.fill(props.code);
+    let root = document.getElementById(hostContainerrId);
+    if (root !== null) {
+      let driver = new MwcDriver(appletRef.current, root);
+      driver.start("Test", Controls);
+    }
+    setTimeout(() => {
+      if (rootRef.current !== null) {
+        let root2 = rootRef.current;
+        root2.style.transform = "scale(1, 1)";
+        root2.style.opacity = "1";
+      }
+    }, props.index * 75);
+  }, []);
+  return /* @__PURE__ */ jsx(
+    "div",
+    {
+      ref: rootRef,
+      id: hostContainerrId,
+      style: {
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        transform: "scale(0.65, 0.65)",
+        opacity: 0,
+        transition: "transform .35s"
       }
     }
-  }, []);
-  return /* @__PURE__ */ jsx("div", { id: hostContainerrId, style: { width: "100%", height: "100%", overflow: "hidden" } });
+  );
 };
 var AppletHost_default = { Host, unloadAllHosts };
 
 // src/Desktop.tsx
 import { useState } from "react";
 import { jsx as jsx2 } from "react/jsx-runtime";
+var ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
 var desktops = {};
 var DesktopData = class {
   constructor() {
@@ -86,14 +107,18 @@ var Host2 = (props) => {
   desktop.onLayoutChangeByCodeInternally((_) => setTrigger(!trigger));
   console.log(desktop.layouts);
   return /* @__PURE__ */ jsx2(
-    RGL.Responsive,
+    ResponsiveReactGridLayout,
     {
       className: "layout",
+      measureBeforeMount: true,
+      useCSSTransforms: false,
       breakpoints: { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 },
       cols: { lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 },
       rowHeight: 30,
       width: props.style.width,
       layouts: structuredClone(desktop.layouts),
+      isDraggable: props.editMode,
+      isResizable: props.editMode,
       onLayoutChange: (currentLayout, layouts) => {
         let updates = [];
         const oldLayouts = desktop.layouts;
@@ -117,8 +142,8 @@ var Host2 = (props) => {
         }
         desktop.updateLayoutsInternally(clonedLayouts, updates);
       },
-      children: desktop.layouts["lg"].map((item) => item.i).map((key) => {
-        return /* @__PURE__ */ jsx2("div", { style: { overflow: "hidden", boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px", borderRadius: 16 }, children: /* @__PURE__ */ jsx2(AppletHost_default.Host, { appletKey: key, code: desktop.jsxContent[key] }) }, key);
+      children: desktop.layouts["lg"].map((item) => item.i).map((key, index) => {
+        return /* @__PURE__ */ jsx2("div", { style: { overflow: "hidden", borderRadius: 4 }, children: /* @__PURE__ */ jsx2(AppletHost_default.Host, { appletKey: key, code: desktop.jsxContent[key], index }) }, key);
       })
     }
   );

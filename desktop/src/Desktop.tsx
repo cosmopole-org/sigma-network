@@ -5,6 +5,8 @@ import 'react-resizable/css/styles.css'
 import AppletHost from "./AppletHost";
 import { useState } from "react";
 
+const ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
+
 let desktops: { [id: string]: DesktopData } = {}
 
 class DesktopData {
@@ -61,19 +63,23 @@ class DesktopData {
     }
 }
 
-const Host = (props: { desktopKey: string, style: any }) => {
+const Host = (props: { desktopKey: string, editMode: boolean, style: any }) => {
     const [trigger, setTrigger] = useState(false)
     let desktop = desktops[props.desktopKey]
     desktop.onLayoutChangeByCodeInternally((_: RGL.Layouts) => setTrigger(!trigger))
     console.log(desktop.layouts)
     return (
-        <RGL.Responsive
+        <ResponsiveReactGridLayout
             className="layout"
+            measureBeforeMount={true}
+            useCSSTransforms={false}
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
             rowHeight={30}
             width={props.style.width}
             layouts={structuredClone(desktop.layouts)}
+            isDraggable={props.editMode}
+            isResizable={props.editMode}
             onLayoutChange={(currentLayout: RGL.Layout[], layouts: RGL.Layouts) => {
                 let updates: Array<any> = []
                 const oldLayouts = desktop.layouts
@@ -99,15 +105,15 @@ const Host = (props: { desktopKey: string, style: any }) => {
             }}
         >
             {
-                desktop.layouts['lg'].map(item => item.i).map(key => {
+                desktop.layouts['lg'].map(item => item.i).map((key, index) => {
                     return (
-                        <div key={key} style={{ overflow: 'hidden', boxShadow: 'rgba(0, 0, 0, 0.24) 0px 3px 8px', borderRadius: 16 }}>
-                            <AppletHost.Host appletKey={key} code={desktop.jsxContent[key]} />
+                        <div key={key} style={{ overflow: 'hidden', borderRadius: 4 }}>
+                            <AppletHost.Host appletKey={key} code={desktop.jsxContent[key]} index={index} />
                         </div>
                     )
                 })
             }
-        </RGL.Responsive>
+        </ResponsiveReactGridLayout>
     );
 }
 

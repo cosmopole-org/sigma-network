@@ -208,23 +208,33 @@ var unloadAllHosts = function() {
 var Host = function(props) {
     var hostContainerrId = "AppletHost:".concat(props.appletKey);
     var appletRef = (0, import_react.useRef)(new import_applet_vm.Applet(props.appletKey));
+    var rootRef = (0, import_react.useRef)(null);
     (0, import_react.useEffect)(function() {
-        if (!hostLoaded[props.appletKey]) {
-            hostLoaded[props.appletKey] = true;
-            appletRef.current.fill(props.code);
-            var root = document.getElementById(hostContainerrId);
-            if (root !== null) {
-                var driver = new import_applet_mwc.default(appletRef.current, root);
-                driver.start("Test", import_applet_vm.Controls);
-            }
+        hostLoaded[props.appletKey] = true;
+        appletRef.current.fill(props.code);
+        var root = document.getElementById(hostContainerrId);
+        if (root !== null) {
+            var driver = new import_applet_mwc.default(appletRef.current, root);
+            driver.start("Test", import_applet_vm.Controls);
         }
+        setTimeout(function() {
+            if (rootRef.current !== null) {
+                var root2 = rootRef.current;
+                root2.style.transform = "scale(1, 1)";
+                root2.style.opacity = "1";
+            }
+        }, props.index * 75);
     }, []);
     return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+        ref: rootRef,
         id: hostContainerrId,
         style: {
             width: "100%",
             height: "100%",
-            overflow: "hidden"
+            overflow: "hidden",
+            transform: "scale(0.65, 0.65)",
+            opacity: 0,
+            transition: "transform .35s"
         }
     });
 };
@@ -235,6 +245,7 @@ var AppletHost_default = {
 // src/Desktop.tsx
 var import_react2 = require("react");
 var import_jsx_runtime2 = require("react/jsx-runtime");
+var ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
 var desktops = {};
 var DesktopData = /*#__PURE__*/ function() {
     function DesktopData() {
@@ -347,8 +358,10 @@ var Host2 = function(props) {
         return setTrigger(!trigger);
     });
     console.log(desktop.layouts);
-    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(RGL.Responsive, {
+    return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ResponsiveReactGridLayout, {
         className: "layout",
+        measureBeforeMount: true,
+        useCSSTransforms: false,
         breakpoints: {
             lg: 1200,
             md: 996,
@@ -366,6 +379,8 @@ var Host2 = function(props) {
         rowHeight: 30,
         width: props.style.width,
         layouts: structuredClone(desktop.layouts),
+        isDraggable: props.editMode,
+        isResizable: props.editMode,
         onLayoutChange: function(currentLayout, layouts) {
             var _loop = function(sizeKey) {
                 var dict = {};
@@ -400,16 +415,16 @@ var Host2 = function(props) {
         },
         children: desktop.layouts["lg"].map(function(item) {
             return item.i;
-        }).map(function(key) {
+        }).map(function(key, index) {
             return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)("div", {
                 style: {
                     overflow: "hidden",
-                    boxShadow: "rgba(0, 0, 0, 0.24) 0px 3px 8px",
-                    borderRadius: 16
+                    borderRadius: 4
                 },
                 children: /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(AppletHost_default.Host, {
                     appletKey: key,
-                    code: desktop.jsxContent[key]
+                    code: desktop.jsxContent[key],
+                    index: index
                 })
             }, key);
         })

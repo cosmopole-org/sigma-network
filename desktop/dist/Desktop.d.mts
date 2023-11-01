@@ -32,6 +32,7 @@ declare class DesktopData {
 declare const _default: {
     Host: (props: {
         desktopKey: string;
+        editMode: boolean;
         style: any;
     }) => react_jsx_runtime.JSX.Element;
     DesktopData: typeof DesktopData;
