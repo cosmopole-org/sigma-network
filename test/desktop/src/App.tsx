@@ -281,6 +281,7 @@ function App() {
             <Desktop.Host
                 desktopKey={desktop.key}
                 style={{ width: desktopWidth }}
+                editMode={true}
             />
             <button style={{ position: 'fixed', right: 16, bottom: 16, fontSize: 25 }} onClick={() => {
                 let id = Math.random().toString();
