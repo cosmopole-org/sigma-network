@@ -51,38 +51,14 @@ class MemoryDriver {
     }
     constructor() {
         MemoryDriver._instance = this;
-        this.redisClient = redis.createClient();
-        const app = express();
-        app.use(cors());
+        this.redisClient = redis.createClient({ url: config['REDIS_URI'] });
         this.redisClient.connect().then(async () => {
-            await this.redisClient.flushAll()
             this.redisClient.on('error', function (err) {
                 console.log('Could not establish a connection with redis. ' + err);
             });
             this.redisClient.on('connect', function (err) {
                 console.log('Connected to redis successfully');
             });
-            app.use(bodyParser.urlencoded({
-                extended: true
-            }));
-            app.use(bodyParser.json());
-            let redisStore = new RedisStore({
-                client: this.redisClient,
-                prefix: "sigma:",
-            })
-            app.use(session({
-                name: config['REDIS_SESSION_NAME'],
-                resave: false,
-                saveUninitialized: false,
-                store: redisStore,
-                secret: config['REDIS_SESSION_SECRET'],
-                cookie: {
-                    maxAge: 1000 * 60 * 60 * 2,
-                    sameSite: true,
-                    secure: true
-                }
-            }));
-            app.listen(config['REDIS_EXPRESS_PORT'], () => { console.log(`server is listening on ${config['REDIS_EXPRESS_PORT']}`) });
             this.loadAuthIntoMemory();
         });
     }
