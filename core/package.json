@@ -1,6 +1,6 @@
 {
   "name": "sigma-core",
-  "version": "0.0.14",
+  "version": "0.1.1",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -11,6 +11,7 @@
     "@socket.io/redis-adapter": "^8.2.1",
     "@socket.io/redis-emitter": "^5.1.0",
     "connect-redis": "^7.1.0",
+    "cors": "^2.8.5",
     "express": "^4.17.19",
     "express-session": "^1.17.3",
     "mongoose": "^7.6.2",

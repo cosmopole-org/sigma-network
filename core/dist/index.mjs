@@ -5332,8 +5332,8 @@ var require_read = __commonJS({
     var onFinished = require_on_finished();
     var unpipe = require_unpipe();
     var zlib = __require("zlib");
-    module.exports = read2;
-    function read2(req, res, next, parse, debug, options) {
+    module.exports = read3;
+    function read3(req, res, next, parse, debug, options) {
       var length;
       var opts = options;
       var stream;
@@ -14308,7 +14308,7 @@ var require_json = __commonJS({
     var contentType = require_content_type();
     var createError = require_http_errors();
     var debug = require_src()("body-parser:json");
-    var read2 = require_read();
+    var read3 = require_read();
     var typeis = require_type_is();
     module.exports = json;
     var FIRST_CHAR_REGEXP = /^[\x20\x09\x0a\x0d]*([^\x20\x09\x0a\x0d])/;
@@ -14372,7 +14372,7 @@ var require_json = __commonJS({
           }));
           return;
         }
-        read2(req, res, next, parse, debug, {
+        read3(req, res, next, parse, debug, {
           encoding: charset,
           inflate,
           limit,
@@ -14430,7 +14430,7 @@ var require_raw = __commonJS({
     "use strict";
     var bytes = require_bytes();
     var debug = require_src()("body-parser:raw");
-    var read2 = require_read();
+    var read3 = require_read();
     var typeis = require_type_is();
     module.exports = raw;
     function raw(options) {
@@ -14464,7 +14464,7 @@ var require_raw = __commonJS({
           next();
           return;
         }
-        read2(req, res, next, parse, debug, {
+        read3(req, res, next, parse, debug, {
           encoding: null,
           inflate,
           limit,
@@ -14487,7 +14487,7 @@ var require_text = __commonJS({
     var bytes = require_bytes();
     var contentType = require_content_type();
     var debug = require_src()("body-parser:text");
-    var read2 = require_read();
+    var read3 = require_read();
     var typeis = require_type_is();
     module.exports = text;
     function text(options) {
@@ -14523,7 +14523,7 @@ var require_text = __commonJS({
           return;
         }
         var charset = getCharset(req) || defaultCharset;
-        read2(req, res, next, parse, debug, {
+        read3(req, res, next, parse, debug, {
           encoding: charset,
           inflate,
           limit,
@@ -16413,7 +16413,7 @@ var require_urlencoded = __commonJS({
     var createError = require_http_errors();
     var debug = require_src()("body-parser:urlencoded");
     var deprecate = require_depd()("body-parser");
-    var read2 = require_read();
+    var read3 = require_read();
     var typeis = require_type_is();
     module.exports = urlencoded;
     var parsers = /* @__PURE__ */ Object.create(null);
@@ -16462,7 +16462,7 @@ var require_urlencoded = __commonJS({
           }));
           return;
         }
-        read2(req, res, next, parse, debug, {
+        read3(req, res, next, parse, debug, {
           debug,
           encoding: charset,
           inflate,
@@ -16640,357 +16640,6 @@ var require_body_parser = __commonJS({
   }
 });
 
-// node_modules/object-assign/index.js
-var require_object_assign = __commonJS({
-  "node_modules/object-assign/index.js"(exports, module) {
-    "use strict";
-    var getOwnPropertySymbols = Object.getOwnPropertySymbols;
-    var hasOwnProperty = Object.prototype.hasOwnProperty;
-    var propIsEnumerable = Object.prototype.propertyIsEnumerable;
-    function toObject(val) {
-      if (val === null || val === void 0) {
-        throw new TypeError("Object.assign cannot be called with null or undefined");
-      }
-      return Object(val);
-    }
-    function shouldUseNative() {
-      try {
-        if (!Object.assign) {
-          return false;
-        }
-        var test1 = new String("abc");
-        test1[5] = "de";
-        if (Object.getOwnPropertyNames(test1)[0] === "5") {
-          return false;
-        }
-        var test2 = {};
-        for (var i = 0; i < 10; i++) {
-          test2["_" + String.fromCharCode(i)] = i;
-        }
-        var order2 = Object.getOwnPropertyNames(test2).map(function(n) {
-          return test2[n];
-        });
-        if (order2.join("") !== "0123456789") {
-          return false;
-        }
-        var test3 = {};
-        "abcdefghijklmnopqrst".split("").forEach(function(letter) {
-          test3[letter] = letter;
-        });
-        if (Object.keys(Object.assign({}, test3)).join("") !== "abcdefghijklmnopqrst") {
-          return false;
-        }
-        return true;
-      } catch (err) {
-        return false;
-      }
-    }
-    module.exports = shouldUseNative() ? Object.assign : function(target, source) {
-      var from;
-      var to = toObject(target);
-      var symbols;
-      for (var s = 1; s < arguments.length; s++) {
-        from = Object(arguments[s]);
-        for (var key in from) {
-          if (hasOwnProperty.call(from, key)) {
-            to[key] = from[key];
-          }
-        }
-        if (getOwnPropertySymbols) {
-          symbols = getOwnPropertySymbols(from);
-          for (var i = 0; i < symbols.length; i++) {
-            if (propIsEnumerable.call(from, symbols[i])) {
-              to[symbols[i]] = from[symbols[i]];
-            }
-          }
-        }
-      }
-      return to;
-    };
-  }
-});
-
-// node_modules/vary/index.js
-var require_vary = __commonJS({
-  "node_modules/vary/index.js"(exports, module) {
-    "use strict";
-    module.exports = vary;
-    module.exports.append = append;
-    var FIELD_NAME_REGEXP = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
-    function append(header, field) {
-      if (typeof header !== "string") {
-        throw new TypeError("header argument is required");
-      }
-      if (!field) {
-        throw new TypeError("field argument is required");
-      }
-      var fields = !Array.isArray(field) ? parse(String(field)) : field;
-      for (var j = 0; j < fields.length; j++) {
-        if (!FIELD_NAME_REGEXP.test(fields[j])) {
-          throw new TypeError("field argument contains an invalid header name");
-        }
-      }
-      if (header === "*") {
-        return header;
-      }
-      var val = header;
-      var vals = parse(header.toLowerCase());
-      if (fields.indexOf("*") !== -1 || vals.indexOf("*") !== -1) {
-        return "*";
-      }
-      for (var i = 0; i < fields.length; i++) {
-        var fld = fields[i].toLowerCase();
-        if (vals.indexOf(fld) === -1) {
-          vals.push(fld);
-          val = val ? val + ", " + fields[i] : fields[i];
-        }
-      }
-      return val;
-    }
-    function parse(header) {
-      var end = 0;
-      var list = [];
-      var start = 0;
-      for (var i = 0, len = header.length; i < len; i++) {
-        switch (header.charCodeAt(i)) {
-          case 32:
-            if (start === end) {
-              start = end = i + 1;
-            }
-            break;
-          case 44:
-            list.push(header.substring(start, end));
-            start = end = i + 1;
-            break;
-          default:
-            end = i + 1;
-            break;
-        }
-      }
-      list.push(header.substring(start, end));
-      return list;
-    }
-    function vary(res, field) {
-      if (!res || !res.getHeader || !res.setHeader) {
-        throw new TypeError("res argument is required");
-      }
-      var val = res.getHeader("Vary") || "";
-      var header = Array.isArray(val) ? val.join(", ") : String(val);
-      if (val = append(header, field)) {
-        res.setHeader("Vary", val);
-      }
-    }
-  }
-});
-
-// node_modules/cors/lib/index.js
-var require_lib3 = __commonJS({
-  "node_modules/cors/lib/index.js"(exports, module) {
-    (function() {
-      "use strict";
-      var assign = require_object_assign();
-      var vary = require_vary();
-      var defaults = {
-        origin: "*",
-        methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-        preflightContinue: false,
-        optionsSuccessStatus: 204
-      };
-      function isString(s) {
-        return typeof s === "string" || s instanceof String;
-      }
-      function isOriginAllowed(origin, allowedOrigin) {
-        if (Array.isArray(allowedOrigin)) {
-          for (var i = 0; i < allowedOrigin.length; ++i) {
-            if (isOriginAllowed(origin, allowedOrigin[i])) {
-              return true;
-            }
-          }
-          return false;
-        } else if (isString(allowedOrigin)) {
-          return origin === allowedOrigin;
-        } else if (allowedOrigin instanceof RegExp) {
-          return allowedOrigin.test(origin);
-        } else {
-          return !!allowedOrigin;
-        }
-      }
-      function configureOrigin(options, req) {
-        var requestOrigin = req.headers.origin, headers = [], isAllowed;
-        if (!options.origin || options.origin === "*") {
-          headers.push([{
-            key: "Access-Control-Allow-Origin",
-            value: "*"
-          }]);
-        } else if (isString(options.origin)) {
-          headers.push([{
-            key: "Access-Control-Allow-Origin",
-            value: options.origin
-          }]);
-          headers.push([{
-            key: "Vary",
-            value: "Origin"
-          }]);
-        } else {
-          isAllowed = isOriginAllowed(requestOrigin, options.origin);
-          headers.push([{
-            key: "Access-Control-Allow-Origin",
-            value: isAllowed ? requestOrigin : false
-          }]);
-          headers.push([{
-            key: "Vary",
-            value: "Origin"
-          }]);
-        }
-        return headers;
-      }
-      function configureMethods(options) {
-        var methods = options.methods;
-        if (methods.join) {
-          methods = options.methods.join(",");
-        }
-        return {
-          key: "Access-Control-Allow-Methods",
-          value: methods
-        };
-      }
-      function configureCredentials(options) {
-        if (options.credentials === true) {
-          return {
-            key: "Access-Control-Allow-Credentials",
-            value: "true"
-          };
-        }
-        return null;
-      }
-      function configureAllowedHeaders(options, req) {
-        var allowedHeaders = options.allowedHeaders || options.headers;
-        var headers = [];
-        if (!allowedHeaders) {
-          allowedHeaders = req.headers["access-control-request-headers"];
-          headers.push([{
-            key: "Vary",
-            value: "Access-Control-Request-Headers"
-          }]);
-        } else if (allowedHeaders.join) {
-          allowedHeaders = allowedHeaders.join(",");
-        }
-        if (allowedHeaders && allowedHeaders.length) {
-          headers.push([{
-            key: "Access-Control-Allow-Headers",
-            value: allowedHeaders
-          }]);
-        }
-        return headers;
-      }
-      function configureExposedHeaders(options) {
-        var headers = options.exposedHeaders;
-        if (!headers) {
-          return null;
-        } else if (headers.join) {
-          headers = headers.join(",");
-        }
-        if (headers && headers.length) {
-          return {
-            key: "Access-Control-Expose-Headers",
-            value: headers
-          };
-        }
-        return null;
-      }
-      function configureMaxAge(options) {
-        var maxAge = (typeof options.maxAge === "number" || options.maxAge) && options.maxAge.toString();
-        if (maxAge && maxAge.length) {
-          return {
-            key: "Access-Control-Max-Age",
-            value: maxAge
-          };
-        }
-        return null;
-      }
-      function applyHeaders(headers, res) {
-        for (var i = 0, n = headers.length; i < n; i++) {
-          var header = headers[i];
-          if (header) {
-            if (Array.isArray(header)) {
-              applyHeaders(header, res);
-            } else if (header.key === "Vary" && header.value) {
-              vary(res, header.value);
-            } else if (header.value) {
-              res.setHeader(header.key, header.value);
-            }
-          }
-        }
-      }
-      function cors2(options, req, res, next) {
-        var headers = [], method = req.method && req.method.toUpperCase && req.method.toUpperCase();
-        if (method === "OPTIONS") {
-          headers.push(configureOrigin(options, req));
-          headers.push(configureCredentials(options, req));
-          headers.push(configureMethods(options, req));
-          headers.push(configureAllowedHeaders(options, req));
-          headers.push(configureMaxAge(options, req));
-          headers.push(configureExposedHeaders(options, req));
-          applyHeaders(headers, res);
-          if (options.preflightContinue) {
-            next();
-          } else {
-            res.statusCode = options.optionsSuccessStatus;
-            res.setHeader("Content-Length", "0");
-            res.end();
-          }
-        } else {
-          headers.push(configureOrigin(options, req));
-          headers.push(configureCredentials(options, req));
-          headers.push(configureExposedHeaders(options, req));
-          applyHeaders(headers, res);
-          next();
-        }
-      }
-      function middlewareWrapper(o) {
-        var optionsCallback = null;
-        if (typeof o === "function") {
-          optionsCallback = o;
-        } else {
-          optionsCallback = function(req, cb) {
-            cb(null, o);
-          };
-        }
-        return function corsMiddleware(req, res, next) {
-          optionsCallback(req, function(err, options) {
-            if (err) {
-              next(err);
-            } else {
-              var corsOptions = assign({}, defaults, options);
-              var originCallback = null;
-              if (corsOptions.origin && typeof corsOptions.origin === "function") {
-                originCallback = corsOptions.origin;
-              } else if (corsOptions.origin) {
-                originCallback = function(origin, cb) {
-                  cb(null, corsOptions.origin);
-                };
-              }
-              if (originCallback) {
-                originCallback(req.headers.origin, function(err2, origin) {
-                  if (err2 || !origin) {
-                    next(err2);
-                  } else {
-                    corsOptions.origin = origin;
-                    cors2(corsOptions, req, res, next);
-                  }
-                });
-              } else {
-                next();
-              }
-            }
-          });
-        };
-      }
-      module.exports = middlewareWrapper;
-    })();
-  }
-});
-
 // database/factories/human.factory.ts
 import mongoose2 from "mongoose";
 
@@ -17057,12 +16706,12 @@ var HumanFactory = class _HumanFactory {
       }
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
       if (session2) {
-        return yield Human.findOneAndUpdate(query, update4, { new: true }).session(session2).lean().exec();
+        return yield Human.findOneAndUpdate(query, update5, { new: true }).session(session2).lean().exec();
       } else {
-        return yield Human.findOneAndUpdate(query, update4, { new: true }).lean();
+        return yield Human.findOneAndUpdate(query, update5, { new: true }).lean();
       }
     });
   }
@@ -17126,12 +16775,16 @@ var TowerFactory = class _TowerFactory {
   }
   findGroup(query, session2) {
     return __async(this, null, function* () {
-      return yield Tower.find(query).session(session2).lean().exec();
+      if (session2) {
+        return yield Tower.find(query).session(session2).lean().exec();
+      } else {
+        return yield Tower.find(query).lean().exec();
+      }
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      return yield Tower.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      return yield Tower.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17196,12 +16849,16 @@ var RoomFactory = class _RoomFactory {
   }
   findGroup(query, session2) {
     return __async(this, null, function* () {
-      return yield Room.find(query).session(session2).lean().exec();
+      if (session2) {
+        return yield Room.find(query).session(session2).lean().exec();
+      } else {
+        return yield Room.find(query).lean().exec();
+      }
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      return yield Room.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      return yield Room.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17277,9 +16934,9 @@ var SessionFactory = class _SessionFactory {
       return yield Session.find(query).session(session2).lean().exec();
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      yield Session.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      yield Session.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17353,9 +17010,9 @@ var MemberFactory = class _MemberFactory {
       }
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      return yield Member.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      return yield Member.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17421,9 +17078,9 @@ var PendingFactory = class _PendingFactory {
       return yield Pending.find(query).session(session2).lean().exec();
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      return yield Pending.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      return yield Pending.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17491,9 +17148,9 @@ var InviteFactory = class _InviteFactory {
       return yield Invite.find(query).session(session2).lean().exec();
     });
   }
-  update(query, update4, session2) {
+  update(query, update5, session2) {
     return __async(this, null, function* () {
-      return yield Invite.findOneAndUpdate(query, update4, { new: true }).session(session2).lean();
+      return yield Invite.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
     });
   }
   remove(query, session2) {
@@ -17539,8 +17196,8 @@ var prepare8 = () => {
 import mongoose17, { Schema as Schema9 } from "mongoose";
 var WorkerSchema = new Schema9({
   id: String,
-  botId: String,
-  workspaceId: String,
+  machineId: String,
+  roomId: String,
   secret: Schema9.Types.Mixed
 });
 var Worker;
@@ -17617,8 +17274,8 @@ var Client = class {
     this.towerId = towerId;
     this.rights = rights;
   }
-  emit(update4) {
-    this.socket.emit("update", JSON.parse(safeStringify(update4)));
+  emit(update5) {
+    this.socket.emit("update", JSON.parse(safeStringify(update5)));
   }
   joinTower(towerId) {
     this.socket.join(towerId);
@@ -17647,7 +17304,7 @@ import express from "express";
 import * as redis from "redis";
 var import_body_parser = __toESM(require_body_parser());
 import session from "express-session";
-var import_cors = __toESM(require_lib3());
+import cors from "cors";
 import RedisStore from "connect-redis";
 var MemoryDriver = class _MemoryDriver {
   static initialize() {
@@ -17694,7 +17351,7 @@ var MemoryDriver = class _MemoryDriver {
     _MemoryDriver._instance = this;
     this.redisClient = redis.createClient();
     const app = express();
-    app.use((0, import_cors.default)());
+    app.use(cors());
     this.redisClient.connect().then(() => __async(this, null, function* () {
       yield this.redisClient.flushAll();
       this.redisClient.on("error", function(err) {
@@ -17760,14 +17417,20 @@ var CustomController = class extends base_controller_default {
 var custom_controller_default = CustomController;
 
 // drivers/network/network.ts
+import cors2 from "cors";
 var NetworkDriver = class _NetworkDriver {
   constructor() {
     this.controllers = {};
     this.clients = {};
     _NetworkDriver._instance = this;
     this.app = express2();
+    this.app.use(cors2());
     this.server = createServer(this.app);
-    this.io = new Server(this.server);
+    this.io = new Server(this.server, {
+      cors: {
+        origin: "*"
+      }
+    });
     let subClient = memory_default.instance.redisClient.duplicate();
     this.io.adapter(createAdapter(memory_default.instance.redisClient, subClient));
     this.emitter = new Emitter(memory_default.instance.redisClient);
@@ -17853,6 +17516,107 @@ __export(human_exports, {
   verify: () => verify_default
 });
 
+// database/factories/machine.factory.ts
+import mongoose19 from "mongoose";
+
+// database/schema/machine.schema.ts
+import mongoose18, { Schema as Schema10 } from "mongoose";
+var MachineSchema = new Schema10({
+  id: String,
+  name: String,
+  secret: Schema10.Types.Mixed
+});
+var Machine;
+
+// database/factories/machine.factory.ts
+var MachineFactory = class _MachineFactory {
+  static initialize() {
+    return new _MachineFactory();
+  }
+  static get instance() {
+    return _MachineFactory._instance;
+  }
+  constructor() {
+    _MachineFactory._instance = this;
+  }
+  create(initData, session2) {
+    return __async(this, null, function* () {
+      return (yield Machine.create([initData], { session: session2 }))[0];
+    });
+  }
+  read(offset, count, query) {
+    return __async(this, null, function* () {
+      let cursor;
+      let collection = mongoose19.connection.db.collection("Machine");
+      if ((yield collection.count()) - offset >= 0) {
+        cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+      } else {
+        cursor = collection.find(query ? query : {}).skip(0).limit(count);
+      }
+      return yield cursor.toArray();
+    });
+  }
+  find(query, session2) {
+    return __async(this, null, function* () {
+      return yield Machine.findOne(query).session(session2).lean().exec();
+    });
+  }
+  findGroup(query, session2) {
+    return __async(this, null, function* () {
+      return yield Machine.find(query).session(session2).lean().exec();
+    });
+  }
+  update(query, update5, session2) {
+    return __async(this, null, function* () {
+      return yield Machine.findOneAndUpdate(query, update5, { new: true }).session(session2).lean();
+    });
+  }
+  remove(query, session2) {
+    return __async(this, null, function* () {
+      yield Machine.deleteOne(query).session(session2);
+    });
+  }
+};
+var machine_factory_default = MachineFactory;
+
+// database/factories/worker.factory.ts
+import mongoose20 from "mongoose";
+var WorkerFactory = class _WorkerFactory {
+  static initialize() {
+    return new _WorkerFactory();
+  }
+  static get instance() {
+    return _WorkerFactory._instance;
+  }
+  constructor() {
+    _WorkerFactory._instance = this;
+  }
+  create(initData, session2) {
+    return __async(this, null, function* () {
+      return (yield Worker.create([initData], { session: session2 }))[0];
+    });
+  }
+  read(query) {
+    return __async(this, null, function* () {
+      let cursor;
+      let collection = mongoose20.connection.db.collection("Worker");
+      cursor = collection.find(query);
+      return yield cursor.toArray();
+    });
+  }
+  find(query, session2) {
+    return __async(this, null, function* () {
+      return Worker.findOne(query).session(session2).lean().exec();
+    });
+  }
+  remove(workerId, session2) {
+    return __async(this, null, function* () {
+      yield Worker.deleteOne({ id: workerId }).session(session2);
+    });
+  }
+};
+var worker_factory_default = WorkerFactory;
+
 // database/transactions/human/signIn.ts
 var signIn = (args, _session) => __async(void 0, null, function* () {
   yield human_factory_default.instance.update({ id: args.humanId }, { $set: { "secret.lastSeen": -1 } });
@@ -17862,7 +17626,7 @@ var signIn = (args, _session) => __async(void 0, null, function* () {
 var signIn_default = signIn;
 
 // database/transactions/human/signUp.ts
-import mongoose18 from "mongoose";
+import mongoose21 from "mongoose";
 
 // utils/strings.ts
 var isEmpty = (str) => {
@@ -17886,7 +17650,7 @@ var signUp = (args, _session) => __async(void 0, null, function* () {
     console.error("email can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose18.startSession();
+  const session2 = _session ? _session : yield mongoose21.startSession();
   if (!_session)
     session2.startTransaction();
   let pending;
@@ -17930,9 +17694,9 @@ var signUp = (args, _session) => __async(void 0, null, function* () {
 var signUp_default = signUp;
 
 // database/transactions/human/verify.ts
-import mongoose19 from "mongoose";
+import mongoose22 from "mongoose";
 var verify = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose19.startSession();
+  const session2 = _session ? _session : yield mongoose22.startSession();
   if (!_session)
     session2.startTransaction();
   let pending, userSession, human;
@@ -17992,7 +17756,7 @@ var verify = (args, _session) => __async(void 0, null, function* () {
 var verify_default = verify;
 
 // database/transactions/human/complete.ts
-import mongoose20 from "mongoose";
+import mongoose23 from "mongoose";
 
 // permissions.json
 var permissions_default = {
@@ -18032,7 +17796,7 @@ var complete = (args, _session) => __async(void 0, null, function* () {
     console.error("name can not be longer than limit.");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose20.startSession();
+  const session2 = _session ? _session : yield mongoose23.startSession();
   if (!_session)
     session2.startTransaction();
   let pending, human, sess, tower, room, member;
@@ -18185,7 +17949,7 @@ __export(tower_exports, {
 });
 
 // database/transactions/tower/create.ts
-import mongoose21 from "mongoose";
+import mongoose24 from "mongoose";
 var create = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -18195,7 +17959,7 @@ var create = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose21.startSession();
+  const session2 = _session ? _session : yield mongoose24.startSession();
   if (!_session)
     session2.startTransaction();
   let tower, room, member;
@@ -18251,7 +18015,7 @@ var create = (args, _session) => __async(void 0, null, function* () {
 var create_default = create;
 
 // database/transactions/tower/update.ts
-import mongoose22 from "mongoose";
+import mongoose25 from "mongoose";
 var update = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -18261,7 +18025,7 @@ var update = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose22.startSession();
+  const session2 = _session ? _session : yield mongoose25.startSession();
   if (!_session)
     session2.startTransaction();
   try {
@@ -18309,9 +18073,9 @@ var update = (args, _session) => __async(void 0, null, function* () {
 var update_default = update;
 
 // database/transactions/tower/remove.ts
-import mongoose23 from "mongoose";
+import mongoose26 from "mongoose";
 var remove = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose23.startSession();
+  const session2 = _session ? _session : yield mongoose26.startSession();
   if (!_session)
     session2.startTransaction();
   try {
@@ -18357,9 +18121,9 @@ var remove = (args, _session) => __async(void 0, null, function* () {
 var remove_default = remove;
 
 // database/transactions/tower/search.ts
-import mongoose24 from "mongoose";
+import mongoose27 from "mongoose";
 var search2 = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose24.startSession();
+  const session2 = _session ? _session : yield mongoose27.startSession();
   if (!_session)
     session2.startTransaction();
   let data;
@@ -18418,7 +18182,7 @@ var search2 = (args, _session) => __async(void 0, null, function* () {
 var search_default2 = search2;
 
 // database/transactions/tower/join.ts
-import mongoose25 from "mongoose";
+import mongoose28 from "mongoose";
 
 // utils/numbers.ts
 var isIdEmpty = (id) => {
@@ -18431,7 +18195,7 @@ var join = (args, _session) => __async(void 0, null, function* () {
     console.error("tower id can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose25.startSession();
+  const session2 = _session ? _session : yield mongoose28.startSession();
   if (!_session)
     session2.startTransaction();
   let member, tower;
@@ -18496,7 +18260,7 @@ __export(room_exports, {
 });
 
 // database/transactions/room/create.ts
-import mongoose26 from "mongoose";
+import mongoose29 from "mongoose";
 var create2 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -18506,7 +18270,7 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose26.startSession();
+  const session2 = _session ? _session : yield mongoose29.startSession();
   if (!_session)
     session2.startTransaction();
   let room;
@@ -18566,9 +18330,9 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
 var create_default2 = create2;
 
 // database/transactions/room/remove.ts
-import mongoose27 from "mongoose";
+import mongoose30 from "mongoose";
 var remove2 = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose27.startSession();
+  const session2 = _session ? _session : yield mongoose30.startSession();
   if (!_session)
     session2.startTransaction();
   let room;
@@ -18614,9 +18378,9 @@ var remove2 = (args, _session) => __async(void 0, null, function* () {
 var remove_default2 = remove2;
 
 // database/transactions/room/search.ts
-import mongoose28 from "mongoose";
+import mongoose31 from "mongoose";
 var search3 = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose28.startSession();
+  const session2 = _session ? _session : yield mongoose31.startSession();
   if (!_session)
     session2.startTransaction();
   let data;
@@ -18717,9 +18481,9 @@ var search3 = (args, _session) => __async(void 0, null, function* () {
 var search_default3 = search3;
 
 // database/transactions/room/readById.ts
-import mongoose29 from "mongoose";
+import mongoose32 from "mongoose";
 var readById2 = (args, _session) => __async(void 0, null, function* () {
-  const session2 = _session ? _session : yield mongoose29.startSession();
+  const session2 = _session ? _session : yield mongoose32.startSession();
   if (!_session)
     session2.startTransaction();
   let success = false;
@@ -18766,7 +18530,7 @@ var readById2 = (args, _session) => __async(void 0, null, function* () {
 var readById_default2 = readById2;
 
 // database/transactions/room/update.ts
-import mongoose30 from "mongoose";
+import mongoose33 from "mongoose";
 var update2 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -18776,7 +18540,7 @@ var update2 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose30.startSession();
+  const session2 = _session ? _session : yield mongoose33.startSession();
   if (!_session)
     session2.startTransaction();
   let room;
@@ -18838,7 +18602,7 @@ __export(invite_exports, {
 });
 
 // database/transactions/invite/create.ts
-import mongoose31 from "mongoose";
+import mongoose34 from "mongoose";
 var create3 = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.towerId)) {
     console.error("tower id can not be empty");
@@ -18848,7 +18612,7 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
     console.error("user id can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose31.startSession();
+  const session2 = _session ? _session : yield mongoose34.startSession();
   if (!_session)
     session2.startTransaction();
   let invite;
@@ -18909,13 +18673,13 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
 var create_default3 = create3;
 
 // database/transactions/invite/accept.ts
-import mongoose32 from "mongoose";
+import mongoose35 from "mongoose";
 var accept = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose32.startSession();
+  const session2 = _session ? _session : yield mongoose35.startSession();
   if (!_session)
     session2.startTransaction();
   let member, room, tower, rooms;
@@ -18976,13 +18740,13 @@ var accept = (args, _session) => __async(void 0, null, function* () {
 var accept_default = accept;
 
 // database/transactions/invite/decline.ts
-import mongoose33 from "mongoose";
+import mongoose36 from "mongoose";
 var decline = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose33.startSession();
+  const session2 = _session ? _session : yield mongoose36.startSession();
   if (!_session)
     session2.startTransaction();
   let tower;
@@ -19022,13 +18786,13 @@ var decline = (args, _session) => __async(void 0, null, function* () {
 var decline_default = decline;
 
 // database/transactions/invite/cancel.ts
-import mongoose34 from "mongoose";
+import mongoose37 from "mongoose";
 var cancel = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose34.startSession();
+  const session2 = _session ? _session : yield mongoose37.startSession();
   if (!_session)
     session2.startTransaction();
   let targetHumanId;
@@ -19088,7 +18852,7 @@ __export(permission_exports, {
 });
 
 // database/transactions/permission/update.ts
-import mongoose35 from "mongoose";
+import mongoose38 from "mongoose";
 var update3 = (args, _session) => __async(void 0, null, function* () {
   if (args.permissions === void 0) {
     console.error("permissions can not be empty");
@@ -19098,7 +18862,7 @@ var update3 = (args, _session) => __async(void 0, null, function* () {
     console.error("access denied");
     return { success: false };
   }
-  const session2 = _session ? _session : yield mongoose35.startSession();
+  const session2 = _session ? _session : yield mongoose38.startSession();
   if (!_session)
     session2.startTransaction();
   let member;
@@ -19153,10 +18917,10 @@ var update3 = (args, _session) => __async(void 0, null, function* () {
 var update_default3 = update3;
 
 // database/transactions/permission/read.ts
-import mongoose36 from "mongoose";
+import mongoose39 from "mongoose";
 var read = (args, _session) => __async(void 0, null, function* () {
   var _a;
-  const session2 = _session ? _session : yield mongoose36.startSession();
+  const session2 = _session ? _session : yield mongoose39.startSession();
   if (!_session)
     session2.startTransaction();
   try {
@@ -19206,6 +18970,243 @@ var read = (args, _session) => __async(void 0, null, function* () {
   }
 });
 var read_default = read;
+
+// database/transactions/machine/index.ts
+var machine_exports = {};
+__export(machine_exports, {
+  create: () => create_default4,
+  read: () => read_default2,
+  remove: () => remove_default3,
+  search: () => search_default4,
+  signIn: () => signIn_default2,
+  update: () => update_default4
+});
+
+// database/transactions/machine/create.ts
+import mongoose40 from "mongoose";
+var create4 = (args, _session) => __async(void 0, null, function* () {
+  if (isEmpty(args.name)) {
+    console.error("title can not be empty");
+    return { success: false };
+  }
+  if (isNameFieldInvalid(args.name)) {
+    console.error("title can not be longer than limit");
+    return { success: false };
+  }
+  const session2 = _session ? _session : yield mongoose40.startSession();
+  if (!_session)
+    session2.startTransaction();
+  let machine;
+  try {
+    machine = yield machine_factory_default.instance.create({
+      id: makeUniqueId(),
+      name: args.name,
+      secret: {
+        token: makeUniqueId(),
+        creatorId: args.creatorId
+      }
+    }, session2);
+    if (!_session) {
+      yield session2.commitTransaction();
+      session2.endSession();
+    }
+    return { success: true, machine };
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session2.abortTransaction();
+      session2.endSession();
+    }
+    return { success: false };
+  }
+});
+var create_default4 = create4;
+
+// database/transactions/machine/update.ts
+import mongoose41 from "mongoose";
+var update4 = (args, _session) => __async(void 0, null, function* () {
+  if (isEmpty(args.name)) {
+    console.error("title can not be empty");
+    return { success: false };
+  }
+  if (isNameFieldInvalid(args.name)) {
+    console.error("title can not be longer than limit");
+    return { success: false };
+  }
+  const session2 = _session ? _session : yield mongoose41.startSession();
+  if (!_session)
+    session2.startTransaction();
+  try {
+    let success = false;
+    let machine = yield machine_factory_default.instance.find({ id: args.machineId }, session2);
+    if (machine !== null) {
+      if (machine.secret.creatorId === args.humanId) {
+        machine = yield machine_factory_default.instance.update({ id: machine.id }, {
+          name: args.name
+        }, session2);
+        success = true;
+        if (!_session)
+          yield session2.commitTransaction();
+      } else {
+        console.error("user is not admin of the tower");
+        console.error("abort transaction");
+        if (!_session)
+          yield session2.abortTransaction();
+      }
+    } else {
+      console.error("tower does not exist");
+      console.error("abort transaction");
+      if (!_session)
+        yield session2.abortTransaction();
+    }
+    if (!_session)
+      session2.endSession();
+    if (success) {
+      return { success: true, machine };
+    } else {
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session2.abortTransaction();
+      session2.endSession();
+    }
+    return { success: false };
+  }
+});
+var update_default4 = update4;
+
+// database/transactions/machine/remove.ts
+import mongoose42 from "mongoose";
+var remove3 = (args, _session) => __async(void 0, null, function* () {
+  const session2 = _session ? _session : yield mongoose42.startSession();
+  if (!_session)
+    session2.startTransaction();
+  try {
+    let memberIds;
+    let success = false;
+    let machine = yield machine_factory_default.instance.find({ id: args.machineId }, session2);
+    if (machine !== null) {
+      if (machine.secret.creatorId === args.humanId) {
+        yield machine_factory_default.instance.remove({ id: machine.id }, session2);
+        success = true;
+        if (!_session)
+          yield session2.commitTransaction();
+      } else {
+        console.error("user is not admin of the tower");
+        console.error("abort transaction");
+        if (!_session)
+          yield session2.abortTransaction();
+      }
+    } else {
+      console.error("tower does not exist");
+      console.error("abort transaction");
+      if (!_session)
+        yield session2.abortTransaction();
+    }
+    if (!_session)
+      session2.endSession();
+    if (success) {
+      return { success: true, machine };
+    } else {
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session2.abortTransaction();
+      session2.endSession();
+    }
+    return { success: false };
+  }
+});
+var remove_default3 = remove3;
+
+// database/transactions/machine/search.ts
+import mongoose43 from "mongoose";
+var search4 = (args, _session) => __async(void 0, null, function* () {
+  const session2 = _session ? _session : yield mongoose43.startSession();
+  if (!_session)
+    session2.startTransaction();
+  let data;
+  try {
+    if (args.offset === void 0 && args.count === void 0) {
+      data = yield machine_factory_default.instance.read(0, 100, {
+        name: { "$regex": args.query, "$options": "i" }
+      });
+    } else {
+      data = yield machine_factory_default.instance.read(args.offset, args.count, {
+        name: { "$regex": args.query, "$options": "i" }
+      });
+    }
+    if (!_session) {
+      yield session2.commitTransaction();
+      session2.endSession();
+    }
+    return { success: true, machines: data };
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session2.abortTransaction();
+      session2.endSession();
+    }
+    return { success: false };
+  }
+});
+var search_default4 = search4;
+
+// database/transactions/machine/read.ts
+import mongoose44 from "mongoose";
+var read2 = (args, _session) => __async(void 0, null, function* () {
+  const session2 = _session ? _session : yield mongoose44.startSession();
+  if (!_session)
+    session2.startTransaction();
+  let data;
+  try {
+    if (args.offset === void 0 && args.count === void 0) {
+      data = yield machine_factory_default.instance.read(0, 100);
+    } else {
+      data = yield machine_factory_default.instance.read(args.offset, args.count);
+    }
+    if (!_session) {
+      yield session2.commitTransaction();
+      session2.endSession();
+    }
+    return { success: true, machines: data };
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session2.abortTransaction();
+      session2.endSession();
+    }
+    return { success: false };
+  }
+});
+var read_default2 = read2;
+
+// database/transactions/machine/signIn.ts
+var signIn2 = (args, _session) => __async(void 0, null, function* () {
+  let workerships = yield worker_factory_default.instance.read({ machineId: args.machineId });
+  let rooms = yield room_factory_default.instance.findGroup({ id: { $in: workerships.map((w) => w.roomId) } });
+  let towerIds = (yield tower_factory_default.instance.findGroup({ id: { $in: rooms.map((r) => r.towerId) } })).map((t) => t.id);
+  return { success: true, towerIds };
+});
+var signIn_default2 = signIn2;
+
+// database/transactions/worker/create.ts
+import mongoose45 from "mongoose";
+
+// database/transactions/worker/remove.ts
+import mongoose46 from "mongoose";
+
+// database/transactions/worker/read.ts
+import mongoose47 from "mongoose";
 
 // utils/filter.ts
 function secureObject(obj, forbiddenKey) {
@@ -19269,6 +19270,14 @@ var addRule = (towerId, humanId, permissions) => {
 };
 var addRule_default = addRule;
 
+// guardian/rules/isRule.ts
+var isRule = (towerId, humanId) => __async(void 0, null, function* () {
+  return (yield memory_default.instance.fetch(
+    `rights:${towerId}:${humanId}`
+  )) !== void 0;
+});
+var isRule_default = isRule;
+
 // guardian/rules/removeRule.ts
 var removeRule = (towerId, humanId) => {
   memory_default.instance.remove(
@@ -19287,6 +19296,7 @@ var removeRules_default = removeRules;
 // guardian/rules/index.ts
 var rules_default = {
   addRule: addRule_default,
+  isRule: isRule_default,
   removeRule: removeRule_default,
   removeRules: removeRules_default
 };
@@ -19648,6 +19658,10 @@ var types = {
     onCancel: { category: "invite", key: "onCancel" },
     onAccept: { category: "invite", key: "onAccept" },
     onDecline: { category: "invite", key: "onDecline" }
+  },
+  worker: {
+    onRequest: { category: "worker", key: "onRequest" },
+    onResponse: { category: "worker", key: "onResponse" }
   }
 };
 var registerUpdateType = (type, path) => {
@@ -20033,6 +20047,113 @@ var PermissionService = class {
 };
 var permission_service_default = PermissionService;
 
+// services/machine.service.ts
+var MachineService = class {
+  create(client, body, requestId) {
+    return __async(this, null, function* () {
+      if (client.humanId) {
+        let result = yield machine_exports.create(__spreadProps(__spreadValues({}, body), { creatorId: client.humanId }));
+        if (result.success) {
+          yield memory_default.instance.save(`auth:${result.machine.secret.token}`, result.machine.id);
+        }
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  update(client, body, requestId) {
+    return __async(this, null, function* () {
+      if (client.humanId) {
+        let result = yield machine_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  remove(client, body, requestId) {
+    return __async(this, null, function* () {
+      if (client.humanId) {
+        let result = yield machine_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        if (result.success) {
+          yield memory_default.instance.remove(`auth:${result.machine.secret.token}`);
+        }
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  search(client, body, requestId) {
+    return __async(this, null, function* () {
+      let result = yield machine_exports.search(__spreadValues({}, body));
+      return result;
+    });
+  }
+  read(client, body, requestId) {
+    return __async(this, null, function* () {
+      let result = yield machine_exports.read(__spreadValues({}, body));
+      return result;
+    });
+  }
+  signIn(client, body, requestId) {
+    return __async(this, null, function* () {
+      let { granted, humanId } = yield guardian_default.authenticate(body.token);
+      if (granted) {
+        let result = yield machine_exports.signIn(humanId);
+        client.joinTowers(result.towerIds);
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+};
+var machine_service_default = MachineService;
+
+// controllers/machine.controller.ts
+var MachineController = class extends base_controller_default {
+  constructor(service) {
+    super();
+    this.service = service;
+  }
+  getName() {
+    return "machine";
+  }
+  create(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.create(client, body, requestId);
+      response(result);
+    });
+  }
+  update(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.update(client, body, requestId);
+      response(result);
+    });
+  }
+  remove(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.remove(client, body, requestId);
+      response(result);
+    });
+  }
+  search(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.search(client, body, requestId);
+      response(result);
+    });
+  }
+  read(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.read(client, body, requestId);
+      response(result);
+    });
+  }
+};
+var machine_controller_default = MachineController;
+
 // controllers/index.ts
 var build2 = () => {
   network_default.instance.registerController(human_controller_default, human_service_default);
@@ -20040,6 +20161,7 @@ var build2 = () => {
   network_default.instance.registerController(room_controller_default, room_service_default);
   network_default.instance.registerController(invite_controller_default, invite_service_default);
   network_default.instance.registerController(permission_controller_default, permission_service_default);
+  network_default.instance.registerController(machine_controller_default, machine_service_default);
 };
 
 // sigma.ts
@@ -20284,20 +20406,6 @@ body-parser/index.js:
   (*!
    * body-parser
    * Copyright(c) 2014-2015 Douglas Christopher Wilson
-   * MIT Licensed
-   *)
-
-object-assign/index.js:
-  (*
-  object-assign
-  (c) Sindre Sorhus
-  @license MIT
-  *)
-
-vary/index.js:
-  (*!
-   * vary
-   * Copyright(c) 2014-2017 Douglas Christopher Wilson
    * MIT Licensed
    *)
 */

@@ -126,6 +126,16 @@ declare const _default: {
                 key: string;
             };
         };
+        worker: {
+            onRequest: {
+                category: string;
+                key: string;
+            };
+            onResponse: {
+                category: string;
+                key: string;
+            };
+        };
     };
     buildUpdate: (requestId: string, path: {
         category: string;

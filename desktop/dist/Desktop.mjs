@@ -29,7 +29,7 @@ var Host = (props) => {
         root2.style.transform = "scale(1, 1)";
         root2.style.opacity = "1";
       }
-    }, props.index * 75);
+    }, (props.index + 1) * 75);
   }, []);
   return /* @__PURE__ */ jsx(
     "div",

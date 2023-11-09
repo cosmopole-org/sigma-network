@@ -28,7 +28,7 @@ const Host = (props: { appletKey: string, code: string, index: number }) => {
                 root.style.transform = 'scale(1, 1)'
                 root.style.opacity = '1'
             }
-        }, props.index * 75);
+        }, (props.index + 1) * 75);
     }, [])
     return (
         <div

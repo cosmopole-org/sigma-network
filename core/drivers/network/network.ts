@@ -14,6 +14,7 @@ import * as json from '../../utils/json'
 import HumanController from "../../controllers/human.controller";
 import CustomController from "../../controllers/custom.controller";
 import config from '../../config'
+import cors from 'cors'
 
 class NetworkDriver {
     static _instance: NetworkDriver
@@ -74,8 +75,13 @@ class NetworkDriver {
     constructor() {
         NetworkDriver._instance = this
         this.app = express()
+        this.app.use(cors())
         this.server = createServer(this.app)
-        this.io = new Server(this.server)
+        this.io = new Server(this.server, {
+            cors: {
+                origin: "*",
+            }
+        })
         let subClient = MemoryDriver.instance.redisClient.duplicate()
         this.io.adapter(createAdapter(MemoryDriver.instance.redisClient, subClient));
         this.emitter = new Emitter(MemoryDriver.instance.redisClient);
