@@ -40,6 +40,13 @@ class HumanService {
         }
         return result
     }
+    async update(client: Client, body: { firstName?: string, lastName?: string }, requestId: string) {
+        if (client.humanId) {
+            return transactions.human.update({ ...body, humanId: client.humanId })
+        } else {
+            return { success: false }            
+        }
+    }
     async readById(client: Client, body: { targetHumanId: string }, requestId: string) {
         let result = await transactions.human.readById(body)
         if (result.success && result.human) {

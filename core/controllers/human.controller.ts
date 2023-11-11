@@ -26,6 +26,10 @@ class HumanController extends BaseController {
         let result = await this.service.complete(client, body, requestId)
         response(result)
     }
+    async update(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.update(client, body, requestId)
+        response(result)
+    }
     async readById(client: Client, body: any, requestId: string, response: any) {
         let result = await this.service.readById(client, body, requestId)
         response(result)

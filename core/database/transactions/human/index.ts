@@ -7,6 +7,7 @@ import readById from "./readById";
 import search from './search'
 import signOut from "./signOut";
 import readGroupById from "./readGroupById";
+import update from "./update";
 
 export {
     signIn,
@@ -16,5 +17,6 @@ export {
     readById,
     search,
     signOut,
-    readGroupById
+    readGroupById,
+    update
 }
