@@ -1319,11 +1319,16 @@ var update = (args, _session) => __async(void 0, null, function* () {
   try {
     let human = yield human_factory_default.instance.find({ id: args.humanId }, session);
     if (human !== null) {
-      human = yield human_factory_default.instance.update({
-        id: args.humanId,
-        firstName: args.firstName,
-        lastName: args.lastName
-      }, session);
+      human = yield human_factory_default.instance.update(
+        {
+          id: args.humanId
+        },
+        {
+          firstName: args.firstName,
+          lastName: args.lastName
+        },
+        session
+      );
       if (!_session) {
         yield session.commitTransaction();
         session.endSession();

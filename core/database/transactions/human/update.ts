@@ -8,11 +8,16 @@ const update = async (args: { firstName?: string, lastName?: string, humanId: st
     try {
         let human = await Factories.HumanFactory.instance.find({ id: args.humanId }, session)
         if (human !== null) {
-            human = await Factories.HumanFactory.instance.update({
-                id: args.humanId,
-                firstName: args.firstName,
-                lastName: args.lastName,
-            }, session);
+            human = await Factories.HumanFactory.instance.update(
+                {
+                    id: args.humanId,
+                },
+                {
+                    firstName: args.firstName,
+                    lastName: args.lastName,
+                },
+                session
+            );
             if (!_session) {
                 await session.commitTransaction();
                 session.endSession();
