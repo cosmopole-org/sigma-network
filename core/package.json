@@ -1,6 +1,9 @@
 {
   "name": "sigma-core",
-  "version": "0.1.4",
+  "version": "0.1.9",
+  "repository": {
+    "url": "https://github.com/cosmopole-org/sigma-network"
+  },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",

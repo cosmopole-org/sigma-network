@@ -69,6 +69,9 @@ class TowerService {
             return { success: false }
         }
     }
+    async readById(client: Client, body: { towerId: string }, requestId: string) {
+        return transactions.tower.readById({ ...body, humanId: client.humanId })
+    }
 }
 
 export default TowerService

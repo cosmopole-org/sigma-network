@@ -596,7 +596,7 @@ var InviteFactory = class _InviteFactory {
 var invite_factory_default = InviteFactory;
 
 // database/drivers/main-driver.ts
-var import_mongoose15 = __toESM(require("mongoose"));
+var import_mongoose15 = require("mongoose");
 
 // config.ts
 var config = {};
@@ -610,7 +610,6 @@ var config_default = config;
 // database/drivers/main-driver.ts
 var connectMongoClient = () => __async(void 0, null, function* () {
   yield (0, import_mongoose15.connect)(config_default["MONGODB_URI"]);
-  yield import_mongoose15.default.connection.db.dropDatabase();
 });
 
 // database/schema/bot.schema.ts
@@ -639,6 +638,18 @@ var prepare9 = () => {
   Worker = import_mongoose17.default.model("Worker", WorkerSchema, "Worker");
 };
 
+// database/schema/machine.schema.ts
+var import_mongoose18 = __toESM(require("mongoose"));
+var MachineSchema = new import_mongoose18.Schema({
+  id: String,
+  name: String,
+  secret: import_mongoose18.Schema.Types.Mixed
+});
+var Machine;
+var prepare10 = () => {
+  Machine = import_mongoose18.default.model("Machine", MachineSchema, "Machine");
+};
+
 // database/schema/index.ts
 var build = () => {
   prepare6();
@@ -649,8 +660,99 @@ var build = () => {
   prepare5();
   prepare3();
   prepare2();
+  prepare10();
   prepare9();
 };
+
+// database/factories/machine.factory.ts
+var import_mongoose19 = __toESM(require("mongoose"));
+var MachineFactory = class _MachineFactory {
+  static initialize() {
+    return new _MachineFactory();
+  }
+  static get instance() {
+    return _MachineFactory._instance;
+  }
+  constructor() {
+    _MachineFactory._instance = this;
+  }
+  create(initData, session) {
+    return __async(this, null, function* () {
+      return (yield Machine.create([initData], { session }))[0];
+    });
+  }
+  read(offset, count, query) {
+    return __async(this, null, function* () {
+      let cursor;
+      let collection = import_mongoose19.default.connection.db.collection("Machine");
+      if ((yield collection.count()) - offset >= 0) {
+        cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+      } else {
+        cursor = collection.find(query ? query : {}).skip(0).limit(count);
+      }
+      return yield cursor.toArray();
+    });
+  }
+  find(query, session) {
+    return __async(this, null, function* () {
+      return yield Machine.findOne(query).session(session).lean().exec();
+    });
+  }
+  findGroup(query, session) {
+    return __async(this, null, function* () {
+      return yield Machine.find(query).session(session).lean().exec();
+    });
+  }
+  update(query, update6, session) {
+    return __async(this, null, function* () {
+      return yield Machine.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+    });
+  }
+  remove(query, session) {
+    return __async(this, null, function* () {
+      yield Machine.deleteOne(query).session(session);
+    });
+  }
+};
+var machine_factory_default = MachineFactory;
+
+// database/factories/worker.factory.ts
+var import_mongoose20 = __toESM(require("mongoose"));
+var WorkerFactory = class _WorkerFactory {
+  static initialize() {
+    return new _WorkerFactory();
+  }
+  static get instance() {
+    return _WorkerFactory._instance;
+  }
+  constructor() {
+    _WorkerFactory._instance = this;
+  }
+  create(initData, session) {
+    return __async(this, null, function* () {
+      return (yield Worker.create([initData], { session }))[0];
+    });
+  }
+  read(query) {
+    return __async(this, null, function* () {
+      let cursor;
+      let collection = import_mongoose20.default.connection.db.collection("Worker");
+      cursor = collection.find(query);
+      return yield cursor.toArray();
+    });
+  }
+  find(query, session) {
+    return __async(this, null, function* () {
+      return Worker.findOne(query).session(session).lean().exec();
+    });
+  }
+  remove(workerId, session) {
+    return __async(this, null, function* () {
+      yield Worker.deleteOne({ id: workerId }).session(session);
+    });
+  }
+};
+var worker_factory_default = WorkerFactory;
 
 // database/index.ts
 var StorageDriver = class _StorageDriver {
@@ -671,6 +773,7 @@ var StorageDriver = class _StorageDriver {
       member_factory_default.initialize();
       pending_factory_default.initialize();
       session_factory_default.initialize();
+      machine_factory_default.initialize();
       callback();
     });
   }
@@ -919,107 +1022,6 @@ __export(human_exports, {
   update: () => update_default,
   verify: () => verify_default
 });
-
-// database/factories/machine.factory.ts
-var import_mongoose19 = __toESM(require("mongoose"));
-
-// database/schema/machine.schema.ts
-var import_mongoose18 = __toESM(require("mongoose"));
-var MachineSchema = new import_mongoose18.Schema({
-  id: String,
-  name: String,
-  secret: import_mongoose18.Schema.Types.Mixed
-});
-var Machine;
-
-// database/factories/machine.factory.ts
-var MachineFactory = class _MachineFactory {
-  static initialize() {
-    return new _MachineFactory();
-  }
-  static get instance() {
-    return _MachineFactory._instance;
-  }
-  constructor() {
-    _MachineFactory._instance = this;
-  }
-  create(initData, session) {
-    return __async(this, null, function* () {
-      return (yield Machine.create([initData], { session }))[0];
-    });
-  }
-  read(offset, count, query) {
-    return __async(this, null, function* () {
-      let cursor;
-      let collection = import_mongoose19.default.connection.db.collection("Machine");
-      if ((yield collection.count()) - offset >= 0) {
-        cursor = collection.find(query ? query : {}).skip(offset).limit(count);
-      } else {
-        cursor = collection.find(query ? query : {}).skip(0).limit(count);
-      }
-      return yield cursor.toArray();
-    });
-  }
-  find(query, session) {
-    return __async(this, null, function* () {
-      return yield Machine.findOne(query).session(session).lean().exec();
-    });
-  }
-  findGroup(query, session) {
-    return __async(this, null, function* () {
-      return yield Machine.find(query).session(session).lean().exec();
-    });
-  }
-  update(query, update6, session) {
-    return __async(this, null, function* () {
-      return yield Machine.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
-    });
-  }
-  remove(query, session) {
-    return __async(this, null, function* () {
-      yield Machine.deleteOne(query).session(session);
-    });
-  }
-};
-var machine_factory_default = MachineFactory;
-
-// database/factories/worker.factory.ts
-var import_mongoose20 = __toESM(require("mongoose"));
-var WorkerFactory = class _WorkerFactory {
-  static initialize() {
-    return new _WorkerFactory();
-  }
-  static get instance() {
-    return _WorkerFactory._instance;
-  }
-  constructor() {
-    _WorkerFactory._instance = this;
-  }
-  create(initData, session) {
-    return __async(this, null, function* () {
-      return (yield Worker.create([initData], { session }))[0];
-    });
-  }
-  read(query) {
-    return __async(this, null, function* () {
-      let cursor;
-      let collection = import_mongoose20.default.connection.db.collection("Worker");
-      cursor = collection.find(query);
-      return yield cursor.toArray();
-    });
-  }
-  find(query, session) {
-    return __async(this, null, function* () {
-      return Worker.findOne(query).session(session).lean().exec();
-    });
-  }
-  remove(workerId, session) {
-    return __async(this, null, function* () {
-      yield Worker.deleteOne({ id: workerId }).session(session);
-    });
-  }
-};
-var worker_factory_default = WorkerFactory;
 
 // database/transactions/human/signIn.ts
 var signIn = (args, _session) => __async(void 0, null, function* () {
@@ -1393,6 +1395,7 @@ var tower_exports = {};
 __export(tower_exports, {
   create: () => create_default,
   join: () => join_default,
+  readById: () => readById_default2,
   remove: () => remove_default,
   search: () => search_default2,
   update: () => update_default2
@@ -1699,18 +1702,62 @@ var join = (args, _session) => __async(void 0, null, function* () {
 });
 var join_default = join;
 
+// database/transactions/tower/readById.ts
+var import_mongoose30 = __toESM(require("mongoose"));
+var readById2 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose30.default.startSession();
+  if (!_session)
+    session.startTransaction();
+  let tower, rooms;
+  try {
+    let success = false;
+    tower = yield tower_factory_default.instance.find({ id: args.towerId }, session);
+    if (tower !== null) {
+      if (tower.isPublic) {
+        success = true;
+      } else {
+        if (args.humanId) {
+          let member = yield member_factory_default.instance.find({ humanId: args.humanId, towerId: args.towerId }, session);
+          success = member !== null;
+        }
+      }
+    }
+    if (success) {
+      rooms = yield room_factory_default.instance.findGroup({ towerId: tower.id }, session);
+    }
+    if (!_session) {
+      yield session.commitTransaction();
+      session.endSession();
+    }
+    if (success) {
+      return { success: true, tower, rooms };
+    } else {
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var readById_default2 = readById2;
+
 // database/transactions/room/index.ts
 var room_exports = {};
 __export(room_exports, {
   create: () => create_default2,
-  readById: () => readById_default2,
+  readById: () => readById_default3,
   remove: () => remove_default2,
   search: () => search_default3,
   update: () => update_default3
 });
 
 // database/transactions/room/create.ts
-var import_mongoose30 = __toESM(require("mongoose"));
+var import_mongoose31 = __toESM(require("mongoose"));
 var create2 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -1720,7 +1767,7 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose30.default.startSession();
+  const session = _session ? _session : yield import_mongoose31.default.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1780,9 +1827,9 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
 var create_default2 = create2;
 
 // database/transactions/room/remove.ts
-var import_mongoose31 = __toESM(require("mongoose"));
+var import_mongoose32 = __toESM(require("mongoose"));
 var remove2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose31.default.startSession();
+  const session = _session ? _session : yield import_mongoose32.default.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1828,9 +1875,9 @@ var remove2 = (args, _session) => __async(void 0, null, function* () {
 var remove_default2 = remove2;
 
 // database/transactions/room/search.ts
-var import_mongoose32 = __toESM(require("mongoose"));
+var import_mongoose33 = __toESM(require("mongoose"));
 var search3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose32.default.startSession();
+  const session = _session ? _session : yield import_mongoose33.default.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -1931,9 +1978,9 @@ var search3 = (args, _session) => __async(void 0, null, function* () {
 var search_default3 = search3;
 
 // database/transactions/room/readById.ts
-var import_mongoose33 = __toESM(require("mongoose"));
-var readById2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose33.default.startSession();
+var import_mongoose34 = __toESM(require("mongoose"));
+var readById3 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose34.default.startSession();
   if (!_session)
     session.startTransaction();
   let success = false;
@@ -1977,10 +2024,10 @@ var readById2 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var readById_default2 = readById2;
+var readById_default3 = readById3;
 
 // database/transactions/room/update.ts
-var import_mongoose34 = __toESM(require("mongoose"));
+var import_mongoose35 = __toESM(require("mongoose"));
 var update3 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -1990,7 +2037,7 @@ var update3 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose34.default.startSession();
+  const session = _session ? _session : yield import_mongoose35.default.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -2052,7 +2099,7 @@ __export(invite_exports, {
 });
 
 // database/transactions/invite/create.ts
-var import_mongoose35 = __toESM(require("mongoose"));
+var import_mongoose36 = __toESM(require("mongoose"));
 var create3 = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.towerId)) {
     console.error("tower id can not be empty");
@@ -2062,7 +2109,7 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
     console.error("user id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose35.default.startSession();
+  const session = _session ? _session : yield import_mongoose36.default.startSession();
   if (!_session)
     session.startTransaction();
   let invite;
@@ -2123,13 +2170,13 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
 var create_default3 = create3;
 
 // database/transactions/invite/accept.ts
-var import_mongoose36 = __toESM(require("mongoose"));
+var import_mongoose37 = __toESM(require("mongoose"));
 var accept = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose36.default.startSession();
+  const session = _session ? _session : yield import_mongoose37.default.startSession();
   if (!_session)
     session.startTransaction();
   let member, room, tower, rooms;
@@ -2190,13 +2237,13 @@ var accept = (args, _session) => __async(void 0, null, function* () {
 var accept_default = accept;
 
 // database/transactions/invite/decline.ts
-var import_mongoose37 = __toESM(require("mongoose"));
+var import_mongoose38 = __toESM(require("mongoose"));
 var decline = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose37.default.startSession();
+  const session = _session ? _session : yield import_mongoose38.default.startSession();
   if (!_session)
     session.startTransaction();
   let tower;
@@ -2236,13 +2283,13 @@ var decline = (args, _session) => __async(void 0, null, function* () {
 var decline_default = decline;
 
 // database/transactions/invite/cancel.ts
-var import_mongoose38 = __toESM(require("mongoose"));
+var import_mongoose39 = __toESM(require("mongoose"));
 var cancel = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose38.default.startSession();
+  const session = _session ? _session : yield import_mongoose39.default.startSession();
   if (!_session)
     session.startTransaction();
   let targetHumanId;
@@ -2302,7 +2349,7 @@ __export(permission_exports, {
 });
 
 // database/transactions/permission/update.ts
-var import_mongoose39 = __toESM(require("mongoose"));
+var import_mongoose40 = __toESM(require("mongoose"));
 var update4 = (args, _session) => __async(void 0, null, function* () {
   if (args.permissions === void 0) {
     console.error("permissions can not be empty");
@@ -2312,7 +2359,7 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
     console.error("access denied");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose39.default.startSession();
+  const session = _session ? _session : yield import_mongoose40.default.startSession();
   if (!_session)
     session.startTransaction();
   let member;
@@ -2367,10 +2414,10 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
 var update_default4 = update4;
 
 // database/transactions/permission/read.ts
-var import_mongoose40 = __toESM(require("mongoose"));
+var import_mongoose41 = __toESM(require("mongoose"));
 var read = (args, _session) => __async(void 0, null, function* () {
   var _a;
-  const session = _session ? _session : yield import_mongoose40.default.startSession();
+  const session = _session ? _session : yield import_mongoose41.default.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2433,7 +2480,7 @@ __export(machine_exports, {
 });
 
 // database/transactions/machine/create.ts
-var import_mongoose41 = __toESM(require("mongoose"));
+var import_mongoose42 = __toESM(require("mongoose"));
 var create4 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2443,7 +2490,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose41.default.startSession();
+  const session = _session ? _session : yield import_mongoose42.default.startSession();
   if (!_session)
     session.startTransaction();
   let machine;
@@ -2474,7 +2521,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
 var create_default4 = create4;
 
 // database/transactions/machine/update.ts
-var import_mongoose42 = __toESM(require("mongoose"));
+var import_mongoose43 = __toESM(require("mongoose"));
 var update5 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2484,7 +2531,7 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield import_mongoose42.default.startSession();
+  const session = _session ? _session : yield import_mongoose43.default.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2530,9 +2577,9 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
 var update_default5 = update5;
 
 // database/transactions/machine/remove.ts
-var import_mongoose43 = __toESM(require("mongoose"));
+var import_mongoose44 = __toESM(require("mongoose"));
 var remove3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose43.default.startSession();
+  const session = _session ? _session : yield import_mongoose44.default.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2577,9 +2624,9 @@ var remove3 = (args, _session) => __async(void 0, null, function* () {
 var remove_default3 = remove3;
 
 // database/transactions/machine/search.ts
-var import_mongoose44 = __toESM(require("mongoose"));
+var import_mongoose45 = __toESM(require("mongoose"));
 var search4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose44.default.startSession();
+  const session = _session ? _session : yield import_mongoose45.default.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2611,9 +2658,9 @@ var search4 = (args, _session) => __async(void 0, null, function* () {
 var search_default4 = search4;
 
 // database/transactions/machine/read.ts
-var import_mongoose45 = __toESM(require("mongoose"));
+var import_mongoose46 = __toESM(require("mongoose"));
 var read2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield import_mongoose45.default.startSession();
+  const session = _session ? _session : yield import_mongoose46.default.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2650,13 +2697,13 @@ var signIn2 = (args, _session) => __async(void 0, null, function* () {
 var signIn_default2 = signIn2;
 
 // database/transactions/worker/create.ts
-var import_mongoose46 = __toESM(require("mongoose"));
-
-// database/transactions/worker/remove.ts
 var import_mongoose47 = __toESM(require("mongoose"));
 
-// database/transactions/worker/read.ts
+// database/transactions/worker/remove.ts
 var import_mongoose48 = __toESM(require("mongoose"));
+
+// database/transactions/worker/read.ts
+var import_mongoose49 = __toESM(require("mongoose"));
 
 // utils/filter.ts
 function secureObject(obj, forbiddenKey) {
@@ -2952,6 +2999,12 @@ var TowerController = class extends base_controller_default {
       response(result);
     });
   }
+  readById(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.readById(client, body, requestId);
+      response(result);
+    });
+  }
 };
 var tower_controller_default = TowerController;
 
@@ -3219,6 +3272,11 @@ var TowerService = class {
       } else {
         return { success: false };
       }
+    });
+  }
+  readById(client, body, requestId) {
+    return __async(this, null, function* () {
+      return tower_exports.readById(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
     });
   }
 };

@@ -7,6 +7,7 @@ import * as TowerSchema from "./tower.schema"
 import * as WorkerSchema from "./worker.schema"
 import * as PendingSchema from "./pending.schema"
 import * as SessionSchema from "./session.schema"
+import * as MachineSchema from './machine.schema'
 
 let build = () => {
     PendingSchema.prepare()
@@ -17,6 +18,7 @@ let build = () => {
     MemberSchema.prepare()
     RoomSchema.prepare()
     TowerSchema.prepare()
+    MachineSchema.prepare()
     WorkerSchema.prepare()
 }
 
@@ -30,5 +32,6 @@ export {
     RoomSchema,
     SessionSchema,
     TowerSchema,
-    WorkerSchema
+    WorkerSchema,
+    MachineSchema
 }
