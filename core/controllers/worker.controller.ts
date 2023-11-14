@@ -3,7 +3,7 @@ import Client from "../drivers/network/client";
 import BaseController from "./base.controller";
 import WorkerService from "../services/worker.service";
 
-class MachineController extends BaseController {
+class WorkerController extends BaseController {
     service: WorkerService
     constructor(service: WorkerService) {
         super()
@@ -36,4 +36,4 @@ class MachineController extends BaseController {
     }
 }
 
-export default MachineController
+export default WorkerController

@@ -13,7 +13,7 @@ const read = async (args: { towerId: string, roomId: string, humanId?: string },
       let room = await Factories.RoomFactory.instance.find({ id: args.roomId, towerId: tower.id }, session)
       if (room !== null) {
         if (tower.isPublic) {
-          data = await Factories.WorkerFactory.instance.read(room.id)
+          data = await Factories.WorkerFactory.instance.read({ roomId: room.id })
           success = true
         } else {
           let member = await Factories.MemberFactory.instance.find({ towerId: tower.id, humanId: args.humanId }, session)

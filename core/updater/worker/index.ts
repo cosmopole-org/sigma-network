@@ -1,6 +1,8 @@
 
-import onUpdate from './onRequest'
+import onRequest from './onRequest'
+import onResponse from './onResponse'
 
 export {
-    onUpdate
+    onRequest,
+    onResponse
 }

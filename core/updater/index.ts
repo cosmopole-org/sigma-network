@@ -3,6 +3,7 @@ import * as tower from './tower'
 import * as room from './room'
 import * as permission from './permission'
 import * as invite from './invite'
+import * as worker from './worker'
 import Update from './base'
 import NetworkDriver from '../drivers/network/network'
 
@@ -10,12 +11,15 @@ let updatesDict = {
     tower,
     room,
     permission,
-    invite
+    invite,
+    worker
 }
 
 let buildUpdate = (requestId: string, path: { category: string, key: string }, ...args: Array<any>) => {
     let T = updatesDict[path.category][path.key]
-    return new T(requestId, ...args)
+    let updateObject = new T(requestId, ...args)
+    updateObject.type = `${path.category}/${path.key}`
+    return updateObject
 }
 
 let types = {

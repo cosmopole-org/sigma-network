@@ -140,12 +140,12 @@ var HumanFactory = class _HumanFactory {
       }
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
       if (session) {
-        return yield Human.findOneAndUpdate(query, update6, { new: true }).session(session).lean().exec();
+        return yield Human.findOneAndUpdate(query, update7, { new: true }).session(session).lean().exec();
       } else {
-        return yield Human.findOneAndUpdate(query, update6, { new: true }).lean();
+        return yield Human.findOneAndUpdate(query, update7, { new: true }).lean();
       }
     });
   }
@@ -216,9 +216,9 @@ var TowerFactory = class _TowerFactory {
       }
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Tower.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Tower.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -290,9 +290,9 @@ var RoomFactory = class _RoomFactory {
       }
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Room.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Room.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -368,9 +368,9 @@ var SessionFactory = class _SessionFactory {
       return yield Session.find(query).session(session).lean().exec();
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      yield Session.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      yield Session.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -444,9 +444,9 @@ var MemberFactory = class _MemberFactory {
       }
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Member.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Member.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -512,9 +512,9 @@ var PendingFactory = class _PendingFactory {
       return yield Pending.find(query).session(session).lean().exec();
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Pending.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Pending.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -582,9 +582,9 @@ var InviteFactory = class _InviteFactory {
       return yield Invite.find(query).session(session).lean().exec();
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Invite.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Invite.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -703,9 +703,9 @@ var MachineFactory = class _MachineFactory {
       return yield Machine.find(query).session(session).lean().exec();
     });
   }
-  update(query, update6, session) {
+  update(query, update7, session) {
     return __async(this, null, function* () {
-      return yield Machine.findOneAndUpdate(query, update6, { new: true }).session(session).lean();
+      return yield Machine.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   remove(query, session) {
@@ -731,6 +731,11 @@ var WorkerFactory = class _WorkerFactory {
   create(initData, session) {
     return __async(this, null, function* () {
       return (yield Worker.create([initData], { session }))[0];
+    });
+  }
+  update(query, update7, session) {
+    return __async(this, null, function* () {
+      return Worker.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
   read(query) {
@@ -774,6 +779,7 @@ var StorageDriver = class _StorageDriver {
       pending_factory_default.initialize();
       session_factory_default.initialize();
       machine_factory_default.initialize();
+      worker_factory_default.initialize();
       callback();
     });
   }
@@ -811,8 +817,8 @@ var Client = class {
     this.towerId = towerId;
     this.rights = rights;
   }
-  emit(update6) {
-    this.socket.emit("update", JSON.parse(safeStringify(update6)));
+  emit(update7) {
+    this.socket.emit("update", JSON.parse(safeStringify(update7)));
   }
   joinTower(towerId) {
     this.socket.join(towerId);
@@ -2696,14 +2702,208 @@ var signIn2 = (args, _session) => __async(void 0, null, function* () {
 });
 var signIn_default2 = signIn2;
 
+// database/transactions/worker/index.ts
+var worker_exports = {};
+__export(worker_exports, {
+  create: () => create_default5,
+  read: () => read_default3,
+  remove: () => remove_default4,
+  update: () => update_default6
+});
+
 // database/transactions/worker/create.ts
 var import_mongoose47 = __toESM(require("mongoose"));
+var create5 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose47.default.startSession();
+  if (!_session)
+    session.startTransaction();
+  let worker;
+  try {
+    let member = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
+    if (member !== null) {
+      let room = yield room_factory_default.instance.find({ id: args.roomId, towerId: member.towerId }, session);
+      if (room !== null) {
+        worker = yield worker_factory_default.instance.create({
+          id: makeUniqueId(),
+          machineId: args.machineId,
+          roomId: args.roomId,
+          secret: {}
+        }, session);
+        if (!_session) {
+          yield session.commitTransaction();
+          session.endSession();
+        }
+        return { success: true, worker };
+      } else {
+        if (!_session) {
+          yield session.abortTransaction();
+          session.endSession();
+        }
+        return { success: false };
+      }
+    } else {
+      if (!_session) {
+        yield session.abortTransaction();
+        session.endSession();
+      }
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var create_default5 = create5;
 
 // database/transactions/worker/remove.ts
 var import_mongoose48 = __toESM(require("mongoose"));
+var remove4 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose48.default.startSession();
+  if (!_session)
+    session.startTransaction();
+  try {
+    let member = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
+    if (member !== null) {
+      let room = yield room_factory_default.instance.find({ id: args.roomId, towerId: member.towerId }, session);
+      if (room !== null) {
+        let worker = yield worker_factory_default.instance.find({ id: args.workerId }, session);
+        if (worker !== null) {
+          yield worker_factory_default.instance.remove(args.workerId, session);
+          if (!_session) {
+            yield session.commitTransaction();
+            session.endSession();
+          }
+          return { success: true, worker };
+        } else {
+          if (!_session) {
+            yield session.abortTransaction();
+            session.endSession();
+          }
+          return { success: false };
+        }
+      } else {
+        if (!_session) {
+          yield session.abortTransaction();
+          session.endSession();
+        }
+        return { success: false };
+      }
+    } else {
+      if (!_session) {
+        yield session.abortTransaction();
+        session.endSession();
+      }
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var remove_default4 = remove4;
 
 // database/transactions/worker/read.ts
 var import_mongoose49 = __toESM(require("mongoose"));
+var read3 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose49.default.startSession();
+  if (!_session)
+    session.startTransaction();
+  let data, success = false;
+  try {
+    let tower = yield tower_factory_default.instance.find({ id: args.towerId }, session);
+    if (tower !== null) {
+      let room = yield room_factory_default.instance.find({ id: args.roomId, towerId: tower.id }, session);
+      if (room !== null) {
+        if (tower.isPublic) {
+          data = yield worker_factory_default.instance.read({ roomId: room.id });
+          success = true;
+        } else {
+          let member = yield member_factory_default.instance.find({ towerId: tower.id, humanId: args.humanId }, session);
+          if (member !== null) {
+            data = yield worker_factory_default.instance.read({ roomId: room.id });
+            success = true;
+          }
+        }
+      }
+    }
+    if (!_session) {
+      yield session.commitTransaction();
+      session.endSession();
+    }
+    return { success: true, workers: data };
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var read_default3 = read3;
+
+// database/transactions/worker/update.ts
+var import_mongoose50 = __toESM(require("mongoose"));
+var update6 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield import_mongoose50.default.startSession();
+  if (!_session)
+    session.startTransaction();
+  try {
+    let member = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
+    if (member !== null) {
+      let room = yield room_factory_default.instance.find({ id: args.roomId, towerId: member.towerId }, session);
+      if (room !== null) {
+        let worker = yield worker_factory_default.instance.find({ id: args.worker.id }, session);
+        if (worker !== null) {
+          worker = yield worker_factory_default.instance.update(args.worker.id, worker, session);
+          if (!_session) {
+            yield session.commitTransaction();
+            session.endSession();
+          }
+          return { success: true, worker };
+        } else {
+          if (!_session) {
+            yield session.abortTransaction();
+            session.endSession();
+          }
+          return { success: false };
+        }
+      } else {
+        if (!_session) {
+          yield session.abortTransaction();
+          session.endSession();
+        }
+        return { success: false };
+      }
+    } else {
+      if (!_session) {
+        yield session.abortTransaction();
+        session.endSession();
+      }
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var update_default6 = update6;
 
 // utils/filter.ts
 function secureObject(obj, forbiddenKey) {
@@ -3677,6 +3877,140 @@ var MachineController = class extends base_controller_default {
 };
 var machine_controller_default = MachineController;
 
+// services/worker.service.ts
+var WorkerService = class {
+  create(client, body, requestId) {
+    return __async(this, null, function* () {
+      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      if (granted) {
+        let result = yield worker_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        if (result.success) {
+          yield Promise.all([
+            memory_default.instance.save(`worker:${body.roomId}:${body.machineId}`, true),
+            memory_default.instance.fetch(`workerExtra:${body.roomId}:${result.worker.id}`),
+            memory_default.instance.fetch(`machineWorker:${result.worker.id}`)
+          ]);
+        }
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  update(client, body, requestId) {
+    return __async(this, null, function* () {
+      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      if (granted) {
+        let result = yield worker_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  remove(client, body, requestId) {
+    return __async(this, null, function* () {
+      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      if (granted) {
+        let result = yield worker_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        if (result.success) {
+          yield Promise.all([
+            memory_default.instance.remove(`worker:${body.roomId}:${result.worker.machineId}`),
+            memory_default.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
+            memory_default.instance.remove(`machineWorker:${result.worker.id}`)
+          ]);
+        }
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  read(client, body, requestId) {
+    return __async(this, null, function* () {
+      let result = yield worker_exports.read(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+      return result;
+    });
+  }
+  use(client, body, requestId) {
+    return __async(this, null, function* () {
+      let [res1, res2, res3] = yield Promise.all([
+        memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+        memory_default.instance.fetch(`workerExtra:${body.roomId}:${body.workerId}`),
+        memory_default.instance.fetch(`machineWorker:${body.workerId}`)
+      ]);
+      if (res1 && res2) {
+        network_default.instance.clients[res3].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  deliver(client, body, requestId) {
+    return __async(this, null, function* () {
+      let [res1, res2, res3] = yield Promise.all([
+        memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+        memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
+        guardian_default.rules.isRule(body.towerId, body.humanId)
+      ]);
+      if (res1 && res2 && res3) {
+        network_default.instance.clients[body.humanId].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+      } else {
+        return { success: false };
+      }
+    });
+  }
+};
+var worker_service_default = WorkerService;
+
+// controllers/worker.controller.ts
+var WorkerController = class extends base_controller_default {
+  constructor(service) {
+    super();
+    this.service = service;
+  }
+  getName() {
+    return "worker";
+  }
+  create(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.create(client, body, requestId);
+      response(result);
+    });
+  }
+  update(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.update(client, body, requestId);
+      response(result);
+    });
+  }
+  remove(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.remove(client, body, requestId);
+      response(result);
+    });
+  }
+  use(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.use(client, body, requestId);
+      response(result);
+    });
+  }
+  deliver(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.deliver(client, body, requestId);
+      response(result);
+    });
+  }
+  read(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.read(client, body, requestId);
+      response(result);
+    });
+  }
+};
+var worker_controller_default = WorkerController;
+
 // controllers/index.ts
 var build2 = () => {
   network_default.instance.registerController(human_controller_default, human_service_default);
@@ -3685,6 +4019,7 @@ var build2 = () => {
   network_default.instance.registerController(invite_controller_default, invite_service_default);
   network_default.instance.registerController(permission_controller_default, permission_service_default);
   network_default.instance.registerController(machine_controller_default, machine_service_default);
+  network_default.instance.registerController(worker_controller_default, worker_service_default);
 };
 
 // sigma.ts

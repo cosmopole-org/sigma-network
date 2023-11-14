@@ -11,6 +11,8 @@ import PermissionController from "./permission.controller";
 import PermissionService from "../services/permission.service";
 import MachineService from "../services/machine.service";
 import MachineController from "./machine.controller";
+import WorkerService from "services/worker.service";
+import WorkerController from "./worker.controller";
 
 const build = () => {
     NetworkDriver.instance.registerController(HumanController, HumanService)
@@ -19,6 +21,7 @@ const build = () => {
     NetworkDriver.instance.registerController(InviteController, InviteService)
     NetworkDriver.instance.registerController(PermissionController, PermissionService)
     NetworkDriver.instance.registerController(MachineController, MachineService)
+    NetworkDriver.instance.registerController(WorkerController, WorkerService)
 }
 
 export {

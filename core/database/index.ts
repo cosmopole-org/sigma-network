@@ -8,7 +8,7 @@ import PendingFactory from './factories/pending.factory';
 import InviteFactory from './factories/invite.factory';
 import { connectMongoClient } from './drivers/main-driver';
 import * as Schemas from './schema';
-import { MachineFactory } from './factories';
+import { MachineFactory, WorkerFactory } from './factories';
 
 class StorageDriver {
     static _instancce: StorageDriver;
@@ -28,6 +28,7 @@ class StorageDriver {
             PendingFactory.initialize();
             SessionFactory.initialize();
             MachineFactory.initialize();
+            WorkerFactory.initialize();
             callback()
         });
     }
