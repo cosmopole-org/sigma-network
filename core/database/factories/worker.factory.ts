@@ -17,6 +17,9 @@ class WorkerFactory {
     async create(initData: IWorker, session: ClientSession): Promise<IWorker> {
         return (await Worker.create([initData], { session }))[0];
     }
+    async update(query: any, update: any, session: ClientSession): Promise<IWorker> {
+        return Worker.findOneAndUpdate(query, update, { new: true }).session(session).lean();
+    }
     async read(query: any): Promise<Array<IWorker>> {
         let cursor: mongoose.mongo.FindCursor;
         let collection = mongoose.connection.db.collection('Worker');

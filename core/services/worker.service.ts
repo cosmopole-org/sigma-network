@@ -4,6 +4,7 @@ import guardian from "../guardian";
 import MemoryDriver from "../drivers/memory/memory";
 import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
+import { IWorker } from "models/worker.model";
 
 class WorkerService {
     async create(client: Client, body: { towerId: string, roomId: string, machineId: string }, requestId: string) {
@@ -17,6 +18,15 @@ class WorkerService {
                     MemoryDriver.instance.fetch(`machineWorker:${result.worker.id}`)
                 ])
             }
+            return result
+        } else {
+            return { success: false }
+        }
+    }
+    async update(client: Client, body: { towerId: string, roomId: string, worker: IWorker }, requestId: string) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
+            let result = await transactions.worker.update({ ...body, humanId: client.humanId })
             return result
         } else {
             return { success: false }
