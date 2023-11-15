@@ -2,6 +2,7 @@ import Client from "../drivers/network/client";
 import * as transactions from '../database/transactions/transactions'
 import guardian from "guardian";
 import MemoryDriver from "drivers/memory/memory";
+import NetworkDriver from "drivers/network/network";
 
 class MachineService {
     async create(client: Client, body: { name: string }, requestId: string) {
@@ -46,6 +47,8 @@ class MachineService {
         let { granted, humanId } = await guardian.authenticate(body.token)
         if (granted) {
             let result = await transactions.machine.signIn(humanId)
+            client.updateHumanId(humanId) 
+            NetworkDriver.instance.keepClient(client)
             client.joinTowers(result.towerIds)
             return result
         } else {

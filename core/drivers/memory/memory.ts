@@ -29,7 +29,7 @@ class MemoryDriver {
         return new Promise(resolve => {
             this.redisClient.get(key).then(function (obj) {
                 if (!obj) {
-                    console.log('key not found');
+                    console.log('key not found:', key);
                     resolve(undefined);
                     return;
                 }

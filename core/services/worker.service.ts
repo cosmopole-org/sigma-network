@@ -14,8 +14,8 @@ class WorkerService {
             if (result.success) {
                 await Promise.all([
                     MemoryDriver.instance.save(`worker:${body.roomId}:${body.machineId}`, true),
-                    MemoryDriver.instance.fetch(`workerExtra:${body.roomId}:${result.worker.id}`),
-                    MemoryDriver.instance.fetch(`machineWorker:${result.worker.id}`)
+                    MemoryDriver.instance.save(`workerExtra:${body.roomId}:${result.worker.id}`, true),
+                    MemoryDriver.instance.save(`machineWorker:${result.worker.id}`, body.machineId)
                 ])
             }
             return result
@@ -60,6 +60,7 @@ class WorkerService {
         ])
         if (res1 && res2) {
             NetworkDriver.instance.clients[res3].emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onRequest'}, body.packet))
+            return { success: true }
         } else {
             return { success: false }
         }
@@ -72,6 +73,7 @@ class WorkerService {
         ])
         if (res1 && res2 && res3) {
             NetworkDriver.instance.clients[body.humanId].emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse'}, body.packet))
+            return  { success: true }
         } else {
             return { success: false }
         }

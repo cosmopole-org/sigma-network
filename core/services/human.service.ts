@@ -35,6 +35,7 @@ class HumanService {
         if (result.success) {
             await Promise.all([
                 MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id),
+                MemoryDriver.instance.save(`struct:${result.tower.id}:${result.room.id}`, true),
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
             ])
         }

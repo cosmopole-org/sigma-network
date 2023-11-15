@@ -5,6 +5,7 @@ import { ITower } from "../models/tower.model";
 import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
 import guardian from "../guardian";
+import MemoryDriver from "drivers/memory/memory";
 
 class TowerService {
     async create(client: Client, body: { title: string, avatarId: string, isPublic: boolean }, requestId: string) {
@@ -14,6 +15,7 @@ class TowerService {
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.tower.id, result.member.secret.permissions)
                 client.joinTower(result.tower.id)
+                await MemoryDriver.instance.save(`struct:${result.tower.id}:${result.room.id}`, true)
             }
             return result
         } else {

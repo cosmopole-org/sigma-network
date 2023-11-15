@@ -870,7 +870,7 @@ var MemoryDriver = class _MemoryDriver {
     return new Promise((resolve) => {
       this.redisClient.get(key).then(function(obj) {
         if (!obj) {
-          console.log("key not found");
+          console.log("key not found:", key);
           resolve(void 0);
           return;
         }
@@ -3048,6 +3048,7 @@ var HumanService = class {
       if (result.success) {
         yield Promise.all([
           memory_default.instance.save(`auth:${result.session.token}`, result.human.id),
+          memory_default.instance.save(`struct:${result.tower.id}:${result.room.id}`, true),
           guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
         ]);
       }
@@ -3444,6 +3445,7 @@ var TowerService = class {
           guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.tower.id, result.member.secret.permissions);
           client.joinTower(result.tower.id);
+          yield memory_default.instance.save(`struct:${result.tower.id}:${result.room.id}`, true);
         }
         return result;
       } else {
@@ -3859,6 +3861,8 @@ var MachineService = class {
       let { granted, humanId } = yield guardian_default.authenticate(body.token);
       if (granted) {
         let result = yield machine_exports.signIn(humanId);
+        client.updateHumanId(humanId);
+        network_default.instance.keepClient(client);
         client.joinTowers(result.towerIds);
         return result;
       } else {
@@ -3927,8 +3931,8 @@ var WorkerService = class {
         if (result.success) {
           yield Promise.all([
             memory_default.instance.save(`worker:${body.roomId}:${body.machineId}`, true),
-            memory_default.instance.fetch(`workerExtra:${body.roomId}:${result.worker.id}`),
-            memory_default.instance.fetch(`machineWorker:${result.worker.id}`)
+            memory_default.instance.save(`workerExtra:${body.roomId}:${result.worker.id}`, true),
+            memory_default.instance.save(`machineWorker:${result.worker.id}`, body.machineId)
           ]);
         }
         return result;
@@ -3981,6 +3985,7 @@ var WorkerService = class {
       ]);
       if (res1 && res2) {
         network_default.instance.clients[res3].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+        return { success: true };
       } else {
         return { success: false };
       }
@@ -3995,6 +4000,7 @@ var WorkerService = class {
       ]);
       if (res1 && res2 && res3) {
         network_default.instance.clients[body.humanId].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+        return { success: true };
       } else {
         return { success: false };
       }
