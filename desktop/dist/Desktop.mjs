@@ -110,6 +110,7 @@ var Host2 = (props) => {
     ResponsiveReactGridLayout,
     {
       className: "layout",
+      style: { minWidth: "100%" },
       measureBeforeMount: true,
       useCSSTransforms: false,
       breakpoints: { lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 },

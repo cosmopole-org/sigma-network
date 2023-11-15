@@ -738,6 +738,11 @@ var WorkerFactory = class _WorkerFactory {
       return Worker.findOneAndUpdate(query, update7, { new: true }).session(session).lean();
     });
   }
+  replace(query, newOne, session) {
+    return __async(this, null, function* () {
+      return Worker.findOneAndReplace(query, newOne, { new: true }).session(session).lean();
+    });
+  }
   read(query) {
     return __async(this, null, function* () {
       let cursor;
@@ -751,9 +756,9 @@ var WorkerFactory = class _WorkerFactory {
       return Worker.findOne(query).session(session).lean().exec();
     });
   }
-  remove(workerId, session) {
+  remove(query, session) {
     return __async(this, null, function* () {
-      yield Worker.deleteOne({ id: workerId }).session(session);
+      yield Worker.deleteOne(query).session(session);
     });
   }
 };
@@ -2727,7 +2732,7 @@ var create5 = (args, _session) => __async(void 0, null, function* () {
           id: makeUniqueId(),
           machineId: args.machineId,
           roomId: args.roomId,
-          secret: {}
+          secret: args.secret
         }, session);
         if (!_session) {
           yield session.commitTransaction();
@@ -2773,7 +2778,7 @@ var remove4 = (args, _session) => __async(void 0, null, function* () {
       if (room !== null) {
         let worker = yield worker_factory_default.instance.find({ id: args.workerId }, session);
         if (worker !== null) {
-          yield worker_factory_default.instance.remove(args.workerId, session);
+          yield worker_factory_default.instance.remove({ id: args.workerId }, session);
           if (!_session) {
             yield session.commitTransaction();
             session.endSession();
@@ -2866,7 +2871,7 @@ var update6 = (args, _session) => __async(void 0, null, function* () {
       if (room !== null) {
         let worker = yield worker_factory_default.instance.find({ id: args.worker.id }, session);
         if (worker !== null) {
-          worker = yield worker_factory_default.instance.update(args.worker.id, worker, session);
+          worker = yield worker_factory_default.instance.update({ id: args.worker.id }, args.worker, session);
           if (!_session) {
             yield session.commitTransaction();
             session.endSession();
@@ -3220,6 +3225,7 @@ __export(tower_exports2, {
 var Update = class {
   constructor(requestId) {
     this.requestId = requestId;
+    this.type = "";
   }
 };
 var base_default = Update;
@@ -3346,16 +3352,44 @@ var OnInviteDecline = class extends base_default {
 };
 var onDecline_default = OnInviteDecline;
 
+// updater/worker/index.ts
+var worker_exports2 = {};
+__export(worker_exports2, {
+  onRequest: () => onRequest_default,
+  onResponse: () => onResponse_default
+});
+
+// updater/worker/onRequest.ts
+var onWorkerRequest = class extends base_default {
+  constructor(requestId, packet) {
+    super(requestId);
+    this.packet = packet;
+  }
+};
+var onRequest_default = onWorkerRequest;
+
+// updater/worker/onResponse.ts
+var onWorkerResponse = class extends base_default {
+  constructor(requestId, packet) {
+    super(requestId);
+    this.packet = packet;
+  }
+};
+var onResponse_default = onWorkerResponse;
+
 // updater/index.ts
 var updatesDict = {
   tower: tower_exports2,
   room: room_exports2,
   permission: permission_exports2,
-  invite: invite_exports2
+  invite: invite_exports2,
+  worker: worker_exports2
 };
 var buildUpdate = (requestId, path, ...args) => {
   let T = updatesDict[path.category][path.key];
-  return new T(requestId, ...args);
+  let updateObject = new T(requestId, ...args);
+  updateObject.type = `${path.category}/${path.key}`;
+  return updateObject;
 };
 var types = {
   tower: {
@@ -3871,6 +3905,12 @@ var MachineController = class extends base_controller_default {
   read(client, body, requestId, response) {
     return __async(this, null, function* () {
       let result = yield this.service.read(client, body, requestId);
+      response(result);
+    });
+  }
+  signIn(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.signIn(client, body, requestId);
       response(result);
     });
   }

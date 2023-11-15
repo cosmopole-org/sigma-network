@@ -360,6 +360,9 @@ var Host2 = function(props) {
     console.log(desktop.layouts);
     return /* @__PURE__ */ (0, import_jsx_runtime2.jsx)(ResponsiveReactGridLayout, {
         className: "layout",
+        style: {
+            minWidth: "100%"
+        },
         measureBeforeMount: true,
         useCSSTransforms: false,
         breakpoints: {

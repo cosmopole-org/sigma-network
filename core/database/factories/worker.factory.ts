@@ -20,6 +20,9 @@ class WorkerFactory {
     async update(query: any, update: any, session: ClientSession): Promise<IWorker> {
         return Worker.findOneAndUpdate(query, update, { new: true }).session(session).lean();
     }
+    async replace(query: any, newOne: any, session: ClientSession): Promise<IWorker> {
+        return Worker.findOneAndReplace(query, newOne, { new: true }).session(session).lean();
+    }
     async read(query: any): Promise<Array<IWorker>> {
         let cursor: mongoose.mongo.FindCursor;
         let collection = mongoose.connection.db.collection('Worker');
@@ -29,8 +32,8 @@ class WorkerFactory {
     async find(query: any, session?: ClientSession): Promise<IWorker> {
         return Worker.findOne(query).session(session).lean().exec();
     }
-    async remove(workerId: string, session: ClientSession): Promise<void> {
-        await Worker.deleteOne({ id: workerId }).session(session);
+    async remove(query: any, session: ClientSession): Promise<void> {
+        await Worker.deleteOne(query).session(session);
     }
 }
 

@@ -7,7 +7,7 @@ import updater from "../updater";
 import { IWorker } from "models/worker.model";
 
 class WorkerService {
-    async create(client: Client, body: { towerId: string, roomId: string, machineId: string }, requestId: string) {
+    async create(client: Client, body: { towerId: string, roomId: string, machineId: string, secret: any }, requestId: string) {
         let { granted, rights } = await guardian.authorize(client, body.towerId)
         if (granted) {
             let result = await transactions.worker.create({ ...body, humanId: client.humanId })

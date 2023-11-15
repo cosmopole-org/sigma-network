@@ -1,6 +1,7 @@
 
 import mongoose, { Schema } from "mongoose";
 import { IWorker } from "models/worker.model";
+import flat from 'flat'
 
 const WorkerSchema = new Schema<IWorker>({
     id: String,

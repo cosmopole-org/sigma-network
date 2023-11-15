@@ -7,7 +7,7 @@ import { makeUniqueId } from '../../../utils/generator';
 import { IMachine } from 'models/machine.model';
 import { IWorker } from 'models/worker.model';
 
-const create = async (args: { humanId: string, machineId: string, roomId: string, towerId: string }, _session?: ClientSession) => {
+const create = async (args: { humanId: string, machineId: string, roomId: string, towerId: string, secret: any }, _session?: ClientSession) => {
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
   let worker: IWorker;
@@ -20,7 +20,7 @@ const create = async (args: { humanId: string, machineId: string, roomId: string
           id: makeUniqueId(),
           machineId: args.machineId,
           roomId: args.roomId,
-          secret: {}
+          secret: args.secret
         }, session);
         if (!_session) {
           await session.commitTransaction();

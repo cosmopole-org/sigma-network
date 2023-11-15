@@ -13,7 +13,7 @@ const remove = async (args: { humanId: string, workerId: string, roomId: string,
       if (room !== null) {
         let worker = await Factories.WorkerFactory.instance.find({ id: args.workerId }, session);
         if (worker !== null) {
-          await Factories.WorkerFactory.instance.remove(args.workerId, session);
+          await Factories.WorkerFactory.instance.remove({ id: args.workerId }, session);
           if (!_session) {
             await session.commitTransaction();
             session.endSession();

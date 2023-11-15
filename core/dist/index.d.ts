@@ -69,6 +69,7 @@ declare class Action {
 
 declare class Update {
     requestId: string;
+    type: string;
     constructor(requestId: string);
 }
 

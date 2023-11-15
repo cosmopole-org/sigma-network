@@ -2,6 +2,8 @@
 import mongoose, { ClientSession } from 'mongoose';
 import * as Factories from '../../factories'
 import { IWorker } from 'models/worker.model';
+import flat from 'flat'
+import { Worker } from 'database/schema/worker.schema';
 
 const update = async (args: { humanId: string, roomId: string, towerId: string, worker: IWorker }, _session?: ClientSession) => {
   const session = _session ? _session : await mongoose.startSession();
@@ -11,9 +13,9 @@ const update = async (args: { humanId: string, roomId: string, towerId: string, 
     if (member !== null) {
       let room = await Factories.RoomFactory.instance.find({ id: args.roomId, towerId: member.towerId }, session)
       if (room !== null) {
-        let worker = await Factories.WorkerFactory.instance.find({ id: args.worker.id }, session);
+        let worker = await Factories.WorkerFactory.instance.find({ id: args.worker.id }, session)
         if (worker !== null) {
-          worker = await Factories.WorkerFactory.instance.update(args.worker.id, worker, session);
+          worker = await Factories.WorkerFactory.instance.update({ id: args.worker.id }, args.worker, session);
           if (!_session) {
             await session.commitTransaction();
             session.endSession();

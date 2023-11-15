@@ -30,6 +30,10 @@ class MachineController extends BaseController {
         let result = await this.service.read(client, body, requestId)
         response(result)
     }
+    async signIn(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.signIn(client, body, requestId)
+        response(result)
+    }
 }
 
 export default MachineController
