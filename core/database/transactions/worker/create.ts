@@ -12,9 +12,12 @@ const create = async (args: { humanId: string, machineId: string, roomId: string
   if (!_session) session.startTransaction();
   let worker: IWorker;
   try {
+    console.log('hello')
     let member = await Factories.MemberFactory.instance.find({ towerId: args.towerId, humanId: args.humanId }, session)
+    console.log('member', member)
     if (member !== null) {
       let room = await Factories.RoomFactory.instance.find({ id: args.roomId, towerId: member.towerId }, session)
+      console.log('room', room)
       if (room !== null) {
         worker = await Factories.WorkerFactory.instance.create({
           id: makeUniqueId(),

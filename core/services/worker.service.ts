@@ -59,7 +59,11 @@ class WorkerService {
             MemoryDriver.instance.fetch(`machineWorker:${body.workerId}`)
         ])
         if (res1 && res2) {
-            NetworkDriver.instance.clients[res3].emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onRequest'}, body.packet))
+            body.packet.towerId = body.towerId
+            body.packet.roomId = body.roomId
+            body.packet.workerId = body.workerId
+            body.packet.humanId = client.humanId
+            NetworkDriver.instance.clients[res3]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onRequest'}, body.packet))
             return { success: true }
         } else {
             return { success: false }
@@ -72,7 +76,11 @@ class WorkerService {
             guardian.rules.isRule(body.towerId, body.humanId)
         ])
         if (res1 && res2 && res3) {
-            NetworkDriver.instance.clients[body.humanId].emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse'}, body.packet))
+            body.packet.towerId = body.towerId
+            body.packet.roomId = body.roomId
+            body.packet.workerId = body.workerId
+            body.packet.humanId = body.humanId
+            NetworkDriver.instance.clients[body.humanId]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse'}, body.packet))
             return  { success: true }
         } else {
             return { success: false }

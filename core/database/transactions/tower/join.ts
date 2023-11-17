@@ -25,7 +25,7 @@ const join = async (args: { towerId: string, requesterId: string }, _session?: C
       if (member === null) {
         member = await Factories.MemberFactory.instance.create({
           id: makeUniqueId(),
-          userId: args.requesterId,
+          humanId: args.requesterId,
           towerId: args.towerId,
           secret: {
             permissions: permissions.DEFAULT_ROOM_ADMIN_PERMISSIONS

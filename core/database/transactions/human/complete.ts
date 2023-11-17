@@ -50,7 +50,9 @@ const complete = async (args: { cCode: string, firstName: string, lastName?: str
                 title: `${args.firstName}'s home`,
                 avatarId: 'EMPTY',
                 isPublic: false,
-                secret: {
+                secret:
+                {
+                    ownerId: human.id,
                     adminIds: [
                         userGenedId
                     ]

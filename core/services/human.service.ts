@@ -25,7 +25,6 @@ class HumanService {
         let result = await transactions.human.verify(body)
         if (result.success && result.human) {
             result.towers = result.towers.map(tower => tower.secret.ownerId === result.human.id ? tower : secureObject(tower, 'secret'))
-            result.allMemberships = result.allMemberships.map(m => m.humanId === result.human.id ? m : secureObject(m, 'secret'))
             await MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id);
         }
         return result

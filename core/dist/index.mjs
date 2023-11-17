@@ -1110,8 +1110,7 @@ var verify = (args, _session) => __async(void 0, null, function* () {
           human,
           towers,
           rooms,
-          myMemberships: memberships,
-          allMemberships
+          memberships
         };
       } else {
         yield pending_factory_default.instance.update({ cCode: args.cCode, vCode: args.vCode }, { progress: "verified" }, session);
@@ -1213,6 +1212,7 @@ var complete = (args, _session) => __async(void 0, null, function* () {
         avatarId: "EMPTY",
         isPublic: false,
         secret: {
+          ownerId: human.id,
           adminIds: [
             userGenedId
           ]
@@ -1638,7 +1638,7 @@ var join = (args, _session) => __async(void 0, null, function* () {
       if (member === null) {
         member = yield member_factory_default.instance.create({
           id: makeUniqueId(),
-          userId: args.requesterId,
+          humanId: args.requesterId,
           towerId: args.towerId,
           secret: {
             permissions: permissions_default.DEFAULT_ROOM_ADMIN_PERMISSIONS
@@ -2692,9 +2692,12 @@ var create5 = (args, _session) => __async(void 0, null, function* () {
     session.startTransaction();
   let worker;
   try {
+    console.log("hello");
     let member = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
+    console.log("member", member);
     if (member !== null) {
       let room = yield room_factory_default.instance.find({ id: args.roomId, towerId: member.towerId }, session);
+      console.log("room", room);
       if (room !== null) {
         worker = yield worker_factory_default.instance.create({
           id: makeUniqueId(),
@@ -3004,7 +3007,6 @@ var HumanService = class {
       let result = yield human_exports.verify(body);
       if (result.success && result.human) {
         result.towers = result.towers.map((tower) => tower.secret.ownerId === result.human.id ? tower : secureObject(tower, "secret"));
-        result.allMemberships = result.allMemberships.map((m) => m.humanId === result.human.id ? m : secureObject(m, "secret"));
         yield memory_default.instance.save(`auth:${result.session.token}`, result.human.id);
       }
       return result;
@@ -3946,13 +3948,18 @@ var WorkerService = class {
   }
   use(client, body, requestId) {
     return __async(this, null, function* () {
+      var _a;
       let [res1, res2, res3] = yield Promise.all([
         memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
         memory_default.instance.fetch(`workerExtra:${body.roomId}:${body.workerId}`),
         memory_default.instance.fetch(`machineWorker:${body.workerId}`)
       ]);
       if (res1 && res2) {
-        network_default.instance.clients[res3].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+        body.packet.towerId = body.towerId;
+        body.packet.roomId = body.roomId;
+        body.packet.workerId = body.workerId;
+        body.packet.humanId = client.humanId;
+        (_a = network_default.instance.clients[res3]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
         return { success: true };
       } else {
         return { success: false };
@@ -3961,13 +3968,18 @@ var WorkerService = class {
   }
   deliver(client, body, requestId) {
     return __async(this, null, function* () {
+      var _a;
       let [res1, res2, res3] = yield Promise.all([
         memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
         memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
         guardian_default.rules.isRule(body.towerId, body.humanId)
       ]);
       if (res1 && res2 && res3) {
-        network_default.instance.clients[body.humanId].emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+        body.packet.towerId = body.towerId;
+        body.packet.roomId = body.roomId;
+        body.packet.workerId = body.workerId;
+        body.packet.humanId = body.humanId;
+        (_a = network_default.instance.clients[body.humanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
         return { success: true };
       } else {
         return { success: false };

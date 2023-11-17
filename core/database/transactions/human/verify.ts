@@ -36,8 +36,7 @@ const verify = async (args: { cCode: string, vCode: string }, _session?: ClientS
                     human: human,
                     towers: towers,
                     rooms: rooms,
-                    myMemberships: memberships,
-                    allMemberships: allMemberships,
+                    memberships: memberships
                 };
             } else {
                 await Factories.PendingFactory.instance.update({ cCode: args.cCode, vCode: args.vCode }, { progress: 'verified' }, session);
