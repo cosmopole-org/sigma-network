@@ -74,6 +74,14 @@ class TowerService {
     async readById(client: Client, body: { towerId: string }, requestId: string) {
         return transactions.tower.readById({ ...body, humanId: client.humanId })
     }
+    async readMembers(client: Client, body: { towerId: string }, requestId: string) {
+        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        if (granted) {
+            return transactions.tower.readMembers({ ...body, humanId: client.humanId })
+        } else {
+            return { success: false }
+        }
+    }
 }
 
 export default TowerService

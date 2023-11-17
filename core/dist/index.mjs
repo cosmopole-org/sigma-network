@@ -1375,6 +1375,7 @@ __export(tower_exports, {
   create: () => create_default,
   join: () => join_default,
   readById: () => readById_default2,
+  readMembers: () => readMembers_default,
   remove: () => remove_default,
   search: () => search_default2,
   update: () => update_default2
@@ -1725,6 +1726,41 @@ var readById2 = (args, _session) => __async(void 0, null, function* () {
 });
 var readById_default2 = readById2;
 
+// database/transactions/tower/readMembers.ts
+import mongoose31 from "mongoose";
+var readMembers = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield mongoose31.startSession();
+  if (!_session)
+    session.startTransaction();
+  let data;
+  try {
+    let success = false;
+    let myMembership = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
+    if (myMembership !== null) {
+      data = yield member_factory_default.instance.findGroup({ towerId: args.towerId }, session);
+      success = true;
+    }
+    if (!_session) {
+      yield session.commitTransaction();
+      session.endSession();
+    }
+    if (success) {
+      return { success: true, members: data };
+    } else {
+      return { success: false };
+    }
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var readMembers_default = readMembers;
+
 // database/transactions/room/index.ts
 var room_exports = {};
 __export(room_exports, {
@@ -1736,7 +1772,7 @@ __export(room_exports, {
 });
 
 // database/transactions/room/create.ts
-import mongoose31 from "mongoose";
+import mongoose32 from "mongoose";
 var create2 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -1746,7 +1782,7 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose31.startSession();
+  const session = _session ? _session : yield mongoose32.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1806,9 +1842,9 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
 var create_default2 = create2;
 
 // database/transactions/room/remove.ts
-import mongoose32 from "mongoose";
+import mongoose33 from "mongoose";
 var remove2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose32.startSession();
+  const session = _session ? _session : yield mongoose33.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1854,9 +1890,9 @@ var remove2 = (args, _session) => __async(void 0, null, function* () {
 var remove_default2 = remove2;
 
 // database/transactions/room/search.ts
-import mongoose33 from "mongoose";
+import mongoose34 from "mongoose";
 var search3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose33.startSession();
+  const session = _session ? _session : yield mongoose34.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -1957,9 +1993,9 @@ var search3 = (args, _session) => __async(void 0, null, function* () {
 var search_default3 = search3;
 
 // database/transactions/room/readById.ts
-import mongoose34 from "mongoose";
+import mongoose35 from "mongoose";
 var readById3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose34.startSession();
+  const session = _session ? _session : yield mongoose35.startSession();
   if (!_session)
     session.startTransaction();
   let success = false;
@@ -2006,7 +2042,7 @@ var readById3 = (args, _session) => __async(void 0, null, function* () {
 var readById_default3 = readById3;
 
 // database/transactions/room/update.ts
-import mongoose35 from "mongoose";
+import mongoose36 from "mongoose";
 var update3 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -2016,7 +2052,7 @@ var update3 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose35.startSession();
+  const session = _session ? _session : yield mongoose36.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -2078,7 +2114,7 @@ __export(invite_exports, {
 });
 
 // database/transactions/invite/create.ts
-import mongoose36 from "mongoose";
+import mongoose37 from "mongoose";
 var create3 = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.towerId)) {
     console.error("tower id can not be empty");
@@ -2088,7 +2124,7 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
     console.error("user id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose36.startSession();
+  const session = _session ? _session : yield mongoose37.startSession();
   if (!_session)
     session.startTransaction();
   let invite;
@@ -2149,13 +2185,13 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
 var create_default3 = create3;
 
 // database/transactions/invite/accept.ts
-import mongoose37 from "mongoose";
+import mongoose38 from "mongoose";
 var accept = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose37.startSession();
+  const session = _session ? _session : yield mongoose38.startSession();
   if (!_session)
     session.startTransaction();
   let member, room, tower, rooms;
@@ -2216,13 +2252,13 @@ var accept = (args, _session) => __async(void 0, null, function* () {
 var accept_default = accept;
 
 // database/transactions/invite/decline.ts
-import mongoose38 from "mongoose";
+import mongoose39 from "mongoose";
 var decline = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose38.startSession();
+  const session = _session ? _session : yield mongoose39.startSession();
   if (!_session)
     session.startTransaction();
   let tower;
@@ -2262,13 +2298,13 @@ var decline = (args, _session) => __async(void 0, null, function* () {
 var decline_default = decline;
 
 // database/transactions/invite/cancel.ts
-import mongoose39 from "mongoose";
+import mongoose40 from "mongoose";
 var cancel = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose39.startSession();
+  const session = _session ? _session : yield mongoose40.startSession();
   if (!_session)
     session.startTransaction();
   let targetHumanId;
@@ -2328,7 +2364,7 @@ __export(permission_exports, {
 });
 
 // database/transactions/permission/update.ts
-import mongoose40 from "mongoose";
+import mongoose41 from "mongoose";
 var update4 = (args, _session) => __async(void 0, null, function* () {
   if (args.permissions === void 0) {
     console.error("permissions can not be empty");
@@ -2338,7 +2374,7 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
     console.error("access denied");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose40.startSession();
+  const session = _session ? _session : yield mongoose41.startSession();
   if (!_session)
     session.startTransaction();
   let member;
@@ -2393,10 +2429,10 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
 var update_default4 = update4;
 
 // database/transactions/permission/read.ts
-import mongoose41 from "mongoose";
+import mongoose42 from "mongoose";
 var read = (args, _session) => __async(void 0, null, function* () {
   var _a;
-  const session = _session ? _session : yield mongoose41.startSession();
+  const session = _session ? _session : yield mongoose42.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2459,7 +2495,7 @@ __export(machine_exports, {
 });
 
 // database/transactions/machine/create.ts
-import mongoose42 from "mongoose";
+import mongoose43 from "mongoose";
 var create4 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2469,7 +2505,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose42.startSession();
+  const session = _session ? _session : yield mongoose43.startSession();
   if (!_session)
     session.startTransaction();
   let machine;
@@ -2500,7 +2536,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
 var create_default4 = create4;
 
 // database/transactions/machine/update.ts
-import mongoose43 from "mongoose";
+import mongoose44 from "mongoose";
 var update5 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2510,7 +2546,7 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose43.startSession();
+  const session = _session ? _session : yield mongoose44.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2556,9 +2592,9 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
 var update_default5 = update5;
 
 // database/transactions/machine/remove.ts
-import mongoose44 from "mongoose";
+import mongoose45 from "mongoose";
 var remove3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose44.startSession();
+  const session = _session ? _session : yield mongoose45.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2603,9 +2639,9 @@ var remove3 = (args, _session) => __async(void 0, null, function* () {
 var remove_default3 = remove3;
 
 // database/transactions/machine/search.ts
-import mongoose45 from "mongoose";
+import mongoose46 from "mongoose";
 var search4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose45.startSession();
+  const session = _session ? _session : yield mongoose46.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2637,9 +2673,9 @@ var search4 = (args, _session) => __async(void 0, null, function* () {
 var search_default4 = search4;
 
 // database/transactions/machine/read.ts
-import mongoose46 from "mongoose";
+import mongoose47 from "mongoose";
 var read2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose46.startSession();
+  const session = _session ? _session : yield mongoose47.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2685,9 +2721,9 @@ __export(worker_exports, {
 });
 
 // database/transactions/worker/create.ts
-import mongoose47 from "mongoose";
+import mongoose48 from "mongoose";
 var create5 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose47.startSession();
+  const session = _session ? _session : yield mongoose48.startSession();
   if (!_session)
     session.startTransaction();
   let worker;
@@ -2737,9 +2773,9 @@ var create5 = (args, _session) => __async(void 0, null, function* () {
 var create_default5 = create5;
 
 // database/transactions/worker/remove.ts
-import mongoose48 from "mongoose";
+import mongoose49 from "mongoose";
 var remove4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose48.startSession();
+  const session = _session ? _session : yield mongoose49.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2789,9 +2825,9 @@ var remove4 = (args, _session) => __async(void 0, null, function* () {
 var remove_default4 = remove4;
 
 // database/transactions/worker/read.ts
-import mongoose49 from "mongoose";
+import mongoose50 from "mongoose";
 var read3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose49.startSession();
+  const session = _session ? _session : yield mongoose50.startSession();
   if (!_session)
     session.startTransaction();
   let data, success = false;
@@ -2830,9 +2866,9 @@ var read3 = (args, _session) => __async(void 0, null, function* () {
 var read_default3 = read3;
 
 // database/transactions/worker/update.ts
-import mongoose50 from "mongoose";
+import mongoose51 from "mongoose";
 var update6 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose50.startSession();
+  const session = _session ? _session : yield mongoose51.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -3181,6 +3217,12 @@ var TowerController = class extends base_controller_default {
       response(result);
     });
   }
+  readMembers(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.readMembers(client, body, requestId);
+      response(result);
+    });
+  }
 };
 var tower_controller_default = TowerController;
 
@@ -3483,6 +3525,16 @@ var TowerService = class {
   readById(client, body, requestId) {
     return __async(this, null, function* () {
       return tower_exports.readById(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+    });
+  }
+  readMembers(client, body, requestId) {
+    return __async(this, null, function* () {
+      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      if (granted) {
+        return tower_exports.readMembers(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+      } else {
+        return { success: false };
+      }
     });
   }
 };
