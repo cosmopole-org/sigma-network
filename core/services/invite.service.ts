@@ -33,8 +33,7 @@ class InviteService {
         }
     }
     async decline(client: Client, body: { towerId: string, inviteId: string }, requestId: string) {
-        let { granted, rights } = await guardian.authorize(client, body.towerId)
-        if (granted) {
+        if (client.humanId) {
             let result = await transactions.invite.decline({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.adminIds.forEach((adminId: string) => {
@@ -48,8 +47,7 @@ class InviteService {
         }
     }
     async accept(client: Client, body: { towerId: string, inviteId: string }, requestId: string) {
-        let { granted, rights } = await guardian.authorize(client, body.towerId)
-        if (granted) {
+        if (client.humanId) {
             let result = await transactions.invite.accept({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.tower.secret.adminIds.forEach((adminId: string) => {

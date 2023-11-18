@@ -3806,8 +3806,7 @@ var InviteService = class {
   }
   decline(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
-      if (granted) {
+      if (client.humanId) {
         let result = yield invite_exports.decline(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
           result.adminIds.forEach((adminId) => {
@@ -3824,8 +3823,7 @@ var InviteService = class {
   }
   accept(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
-      if (granted) {
+      if (client.humanId) {
         let result = yield invite_exports.accept(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
           result.tower.secret.adminIds.forEach((adminId) => {
