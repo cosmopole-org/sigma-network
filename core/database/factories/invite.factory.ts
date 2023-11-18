@@ -17,13 +17,17 @@ class InviteFactory {
     async create(initData: IInvite, session: ClientSession): Promise<IInvite> {
         return (await Invite.create([initData], { session }))[0];
     }
-    async read(offset?: number, count?: number, query?: any): Promise<Array<IInvite>> {
+    async read(query?: any, offset?: number, count?: number): Promise<Array<IInvite>> {
         let cursor: mongoose.mongo.FindCursor
         let collection = mongoose.connection.db.collection('Invite');
-        if ((await collection.count()) - offset >= 0) {
-            cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+        if (offset && count) {
+            if ((await collection.count()) - offset >= 0) {
+                cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+            } else {
+                cursor = collection.find(query ? query : {}).skip(0).limit(count);
+            }
         } else {
-            cursor = collection.find(query ? query : {}).skip(0).limit(count);
+            cursor = collection.find(query ? query : {});
         }
         return await cursor.toArray();
     }

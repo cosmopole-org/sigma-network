@@ -12,7 +12,7 @@ class InviteService {
         if (granted) {
             let result = await transactions.invite.create({ ...body, senderId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.clients[body.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.invite.onCreate, result.invite))
+                NetworkDriver.instance.clients[body.targetHumanId]?.emit(updater.buildUpdate(requestId, updater.types.invite.onCreate, result.invite))
             }
             return result
         } else {
@@ -24,7 +24,7 @@ class InviteService {
         if (granted) {
             let result = await transactions.invite.cancel({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.clients[result.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.invite.onCancel, body.inviteId))
+                NetworkDriver.instance.clients[result.targetHumanId]?.emit(updater.buildUpdate(requestId, updater.types.invite.onCancel, body.inviteId))
                 delete result.targetHumanId
             }
             return result
@@ -38,7 +38,7 @@ class InviteService {
             let result = await transactions.invite.decline({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.adminIds.forEach((adminId: string) => {
-                    NetworkDriver.instance.clients[adminId].emit(updater.buildUpdate(requestId, updater.types.invite.onDecline, body.inviteId))
+                    NetworkDriver.instance.clients[adminId]?.emit(updater.buildUpdate(requestId, updater.types.invite.onDecline, body.inviteId))
                 });
                 delete result.adminIds
             }
@@ -53,7 +53,7 @@ class InviteService {
             let result = await transactions.invite.accept({ ...body, humanId: client.humanId })
             if (result.success) {
                 result.tower.secret.adminIds.forEach((adminId: string) => {
-                    NetworkDriver.instance.clients[adminId].emit(updater.buildUpdate(requestId, updater.types.invite.onAccept, body.inviteId))
+                    NetworkDriver.instance.clients[adminId]?.emit(updater.buildUpdate(requestId, updater.types.invite.onAccept, body.inviteId))
                 });
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.member.towerId, result.member.secret.permissions)
@@ -63,6 +63,13 @@ class InviteService {
                 result.rooms = result.rooms.map((room: IRoom) => secureObject(room, 'secret'))
             }
             return result
+        } else {
+            return { success: false }
+        }
+    }
+    async read(client: Client, body: {}, requestId: string) {
+        if (client.humanId) {
+            return transactions.invite.read({ humanId: client.humanId })
         } else {
             return { success: false }
         }

@@ -9,7 +9,7 @@ class PermissionService {
         let { granted, rights } = await guardian.authorize(client, body.towerId)
         if (granted) {
            let result = await transactions.permission.update({ ...body, humanId: client.humanId })
-           NetworkDriver.instance.clients[body.targetHumanId].emit(updater.buildUpdate(requestId, updater.types.permission.onUpdate, body.permissions))
+           NetworkDriver.instance.clients[body.targetHumanId]?.emit(updater.buildUpdate(requestId, updater.types.permission.onUpdate, body.permissions))
            return result
         } else {
             return { success: false }

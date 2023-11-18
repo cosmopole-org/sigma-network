@@ -64,7 +64,7 @@ class RoomService {
         if (granted) {
             let result = await transactions.room.update({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.room.onUpdate,
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onUpdate,
                     secureObject(result.room, 'secret')
                 ))
             }

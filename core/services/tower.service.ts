@@ -39,7 +39,7 @@ class TowerService {
         if (granted) {
             let result = await transactions.tower.remove({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.tower.onRemove, secureObject(result.tower, 'secret')))
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onRemove, secureObject(result.tower, 'secret')))
                 guardian.rules.removeRules(body.towerId, result.memberIds)
             }
         } else {
@@ -61,7 +61,7 @@ class TowerService {
         if (client.humanId) {
             let result = await transactions.tower.join({ ...body, requesterId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, updater.types.tower.onHumanJoin, secureObject(result.member, 'secret')))
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onHumanJoin, secureObject(result.member, 'secret')))
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.member.towerId, result.member.secret.permissions)
                 client.joinTower(result.member.towerId)

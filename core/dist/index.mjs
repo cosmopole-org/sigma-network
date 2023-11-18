@@ -524,14 +524,18 @@ var InviteFactory = class _InviteFactory {
       return (yield Invite.create([initData], { session }))[0];
     });
   }
-  read(offset, count, query) {
+  read(query, offset, count) {
     return __async(this, null, function* () {
       let cursor;
       let collection = mongoose14.connection.db.collection("Invite");
-      if ((yield collection.count()) - offset >= 0) {
-        cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+      if (offset && count) {
+        if ((yield collection.count()) - offset >= 0) {
+          cursor = collection.find(query ? query : {}).skip(offset).limit(count);
+        } else {
+          cursor = collection.find(query ? query : {}).skip(0).limit(count);
+        }
       } else {
-        cursor = collection.find(query ? query : {}).skip(0).limit(count);
+        cursor = collection.find(query ? query : {});
       }
       return yield cursor.toArray();
     });
@@ -1732,12 +1736,18 @@ var readMembers = (args, _session) => __async(void 0, null, function* () {
   const session = _session ? _session : yield mongoose31.startSession();
   if (!_session)
     session.startTransaction();
-  let data;
+  let result;
   try {
     let success = false;
     let myMembership = yield member_factory_default.instance.find({ towerId: args.towerId, humanId: args.humanId }, session);
     if (myMembership !== null) {
-      data = yield member_factory_default.instance.findGroup({ towerId: args.towerId }, session);
+      let data = yield member_factory_default.instance.findGroup({ towerId: args.towerId }, session);
+      let humans = yield human_factory_default.instance.findGroup({ id: { $in: data.map((m) => m.humanId) } });
+      let humansDict = {};
+      humans.forEach((human) => {
+        humansDict[human.id] = human;
+      });
+      result = data.map((m) => __spreadProps(__spreadValues({}, m), { human: humansDict[m.humanId] }));
       success = true;
     }
     if (!_session) {
@@ -1745,7 +1755,7 @@ var readMembers = (args, _session) => __async(void 0, null, function* () {
       session.endSession();
     }
     if (success) {
-      return { success: true, members: data };
+      return { success: true, members: result };
     } else {
       return { success: false };
     }
@@ -2110,7 +2120,8 @@ __export(invite_exports, {
   accept: () => accept_default,
   cancel: () => cancel_default,
   create: () => create_default3,
-  decline: () => decline_default
+  decline: () => decline_default,
+  read: () => read_default
 });
 
 // database/transactions/invite/create.ts
@@ -2356,10 +2367,28 @@ var cancel = (args, _session) => __async(void 0, null, function* () {
 });
 var cancel_default = cancel;
 
+// database/transactions/invite/read.ts
+var read = (args, _session) => __async(void 0, null, function* () {
+  try {
+    let invites = yield invite_factory_default.instance.read({ humanId: args.humanId });
+    let towers = yield tower_factory_default.instance.findGroup({ id: { $in: invites.map((i) => i.towerId) } });
+    let towersDict = {};
+    towers.forEach((tower) => {
+      towersDict[tower.id] = tower;
+    });
+    let finalResult = invites.map((invite) => __spreadProps(__spreadValues({}, invite), { tower: towersDict[invite.towerId] }));
+    return { success: true, invites: finalResult };
+  } catch (error) {
+    console.error(error);
+    return { success: false };
+  }
+});
+var read_default = read;
+
 // database/transactions/permission/index.ts
 var permission_exports = {};
 __export(permission_exports, {
-  read: () => read_default,
+  read: () => read_default2,
   update: () => update_default4
 });
 
@@ -2430,7 +2459,7 @@ var update_default4 = update4;
 
 // database/transactions/permission/read.ts
 import mongoose42 from "mongoose";
-var read = (args, _session) => __async(void 0, null, function* () {
+var read2 = (args, _session) => __async(void 0, null, function* () {
   var _a;
   const session = _session ? _session : yield mongoose42.startSession();
   if (!_session)
@@ -2481,13 +2510,13 @@ var read = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default = read;
+var read_default2 = read2;
 
 // database/transactions/machine/index.ts
 var machine_exports = {};
 __export(machine_exports, {
   create: () => create_default4,
-  read: () => read_default2,
+  read: () => read_default3,
   remove: () => remove_default3,
   search: () => search_default4,
   signIn: () => signIn_default2,
@@ -2674,7 +2703,7 @@ var search_default4 = search4;
 
 // database/transactions/machine/read.ts
 import mongoose47 from "mongoose";
-var read2 = (args, _session) => __async(void 0, null, function* () {
+var read3 = (args, _session) => __async(void 0, null, function* () {
   const session = _session ? _session : yield mongoose47.startSession();
   if (!_session)
     session.startTransaction();
@@ -2700,7 +2729,7 @@ var read2 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default2 = read2;
+var read_default3 = read3;
 
 // database/transactions/machine/signIn.ts
 var signIn2 = (args, _session) => __async(void 0, null, function* () {
@@ -2715,7 +2744,7 @@ var signIn_default2 = signIn2;
 var worker_exports = {};
 __export(worker_exports, {
   create: () => create_default5,
-  read: () => read_default3,
+  read: () => read_default4,
   remove: () => remove_default4,
   update: () => update_default6
 });
@@ -2826,7 +2855,7 @@ var remove_default4 = remove4;
 
 // database/transactions/worker/read.ts
 import mongoose50 from "mongoose";
-var read3 = (args, _session) => __async(void 0, null, function* () {
+var read4 = (args, _session) => __async(void 0, null, function* () {
   const session = _session ? _session : yield mongoose50.startSession();
   if (!_session)
     session.startTransaction();
@@ -2863,7 +2892,7 @@ var read3 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default3 = read3;
+var read_default4 = read4;
 
 // database/transactions/worker/update.ts
 import mongoose51 from "mongoose";
@@ -3701,6 +3730,12 @@ var InviteController = class extends base_controller_default {
       response(result);
     });
   }
+  read(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.read(client, body, requestId);
+      response(result);
+    });
+  }
 };
 var invite_controller_default = InviteController;
 
@@ -3769,6 +3804,15 @@ var InviteService = class {
           result.rooms = result.rooms.map((room) => secureObject(room, "secret"));
         }
         return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  read(client, body, requestId) {
+    return __async(this, null, function* () {
+      if (client.humanId) {
+        return invite_exports.read({ humanId: client.humanId });
       } else {
         return { success: false };
       }
