@@ -3546,7 +3546,7 @@ var TowerService = class {
       if (granted) {
         let result = yield tower_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).emit(updater_default.buildUpdate(requestId, updater_default.types.tower.onRemove, secureObject(result.tower, "secret")));
+          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onRemove, secureObject(result.tower, "secret")));
           guardian_default.rules.removeRules(body.towerId, result.memberIds);
         }
       } else {
@@ -3572,7 +3572,7 @@ var TowerService = class {
       if (client.humanId) {
         let result = yield tower_exports.join(__spreadProps(__spreadValues({}, body), { requesterId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).emit(updater_default.buildUpdate(requestId, updater_default.types.tower.onHumanJoin, secureObject(result.member, "secret")));
+          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onHumanJoin, secureObject(result.member, "secret")));
           guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.member.towerId, result.member.secret.permissions);
           client.joinTower(result.member.towerId);
@@ -3672,7 +3672,7 @@ var RoomService = class {
       if (granted) {
         let result = yield room_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).emit(updater_default.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(
             requestId,
             updater_default.types.room.onUpdate,
             secureObject(result.room, "secret")
@@ -3775,11 +3775,12 @@ var invite_controller_default = InviteController;
 var InviteService = class {
   create(client, body, requestId) {
     return __async(this, null, function* () {
+      var _a;
       let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
       if (granted) {
         let result = yield invite_exports.create(__spreadProps(__spreadValues({}, body), { senderId: client.humanId }));
         if (result.success) {
-          network_default.instance.clients[body.targetHumanId].emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCreate, result.invite));
+          (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCreate, result.invite));
         }
         return result;
       } else {
@@ -3789,11 +3790,12 @@ var InviteService = class {
   }
   cancel(client, body, requestId) {
     return __async(this, null, function* () {
+      var _a;
       let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
       if (granted) {
         let result = yield invite_exports.cancel(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.clients[result.targetHumanId].emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCancel, body.inviteId));
+          (_a = network_default.instance.clients[result.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCancel, body.inviteId));
           delete result.targetHumanId;
         }
         return result;
@@ -3809,7 +3811,8 @@ var InviteService = class {
         let result = yield invite_exports.decline(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
           result.adminIds.forEach((adminId) => {
-            network_default.instance.clients[adminId].emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onDecline, body.inviteId));
+            var _a;
+            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onDecline, body.inviteId));
           });
           delete result.adminIds;
         }
@@ -3826,7 +3829,8 @@ var InviteService = class {
         let result = yield invite_exports.accept(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
           result.tower.secret.adminIds.forEach((adminId) => {
-            network_default.instance.clients[adminId].emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onAccept, body.inviteId));
+            var _a;
+            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onAccept, body.inviteId));
           });
           guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.member.towerId, result.member.secret.permissions);
@@ -3881,10 +3885,11 @@ var permission_controller_default = PermissionController;
 var PermissionService = class {
   update(client, body, requestId) {
     return __async(this, null, function* () {
+      var _a;
       let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
       if (granted) {
         let result = yield permission_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
-        network_default.instance.clients[body.targetHumanId].emit(updater_default.buildUpdate(requestId, updater_default.types.permission.onUpdate, body.permissions));
+        (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.permission.onUpdate, body.permissions));
         return result;
       } else {
         return { success: false };
