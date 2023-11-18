@@ -17,7 +17,7 @@ const accept = async (args: { inviteId: string, humanId: string, towerId: string
   if (!_session) session.startTransaction();
   let member: IMember, room: IRoom, tower: ITower, rooms: Array<IRoom>
   try {
-    let invite = await Factories.InviteFactory.instance.find({ id: args.inviteId, humanId: args.humanId, towerId: args.towerId });
+    let invite = await Factories.InviteFactory.instance.find({ id: args.inviteId, humanId: args.humanId, towerId: args.towerId }, session);
     if (invite !== null) {
       await Promise.all([
         (async () => { tower = await Factories.TowerFactory.instance.find({ id: invite.towerId }, session); })(),

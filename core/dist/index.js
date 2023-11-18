@@ -2239,7 +2239,7 @@ var accept = (args, _session) => __async(void 0, null, function* () {
     session.startTransaction();
   let member, room, tower, rooms;
   try {
-    let invite = yield invite_factory_default.instance.find({ id: args.inviteId, humanId: args.humanId, towerId: args.towerId });
+    let invite = yield invite_factory_default.instance.find({ id: args.inviteId, humanId: args.humanId, towerId: args.towerId }, session);
     if (invite !== null) {
       yield Promise.all([
         (() => __async(void 0, null, function* () {
