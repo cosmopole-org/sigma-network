@@ -1,11 +1,9 @@
 import mongoose from 'mongoose';
 import config from '../../config';
-import { S3Client, CreateBucketCommand } from "@aws-sdk/client-s3";
-
-const mongodbUri = "mongodb://root:qiZVTnmWpWzBgslMkKCYpyGo@robin.iran.liara.ir:32475/my-app?authSource=admin&replicaSet=rs0&directConnection=true";
+import { S3Client } from "@aws-sdk/client-s3";
 
 const connectMongoClient = () => {
-  mongoose.connect(mongodbUri,
+  mongoose.connect(config.MONGODB_URI,
     (err) => {
       if (err) {
         console.error('FAILED TO CONNECT TO MONGODB');

@@ -32,9 +32,11 @@ declare namespace download {
   };
 }
 
-declare const _default: {
-    upload: typeof upload;
-    download: typeof download;
-};
+declare class SigmaStorage {
+    constructor(config: any);
+    start(): Promise<void>;
+    uploader: typeof upload;
+    downloader: typeof download;
+}
 
-export { _default as default };
+export { SigmaStorage as default };

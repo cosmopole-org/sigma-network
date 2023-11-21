@@ -1,6 +1,16 @@
-export default {
-    LIARA_ENDPOINT: "storage.iran.liara.space",
-    LIARA_BUCKET_NAME: "monopole",
-    LIARA_ACCESS_KEY: "l2lt4s4m21mi6bf8",
-    LIARA_SECRET_KEY: "5c967b73-65b7-42e0-a66d-698bc416acda"
+
+let config = {
+    LIARA_ENDPOINT: "",
+    LIARA_BUCKET_NAME: "",
+    LIARA_ACCESS_KEY: "",
+    LIARA_SECRET_KEY: "",
+    MONGODB_URI: ""
 }
+
+export let setupConfig = (c: any) => {
+    for (let key in config) {
+        config[key] = c[key]
+    }
+}
+
+export default config

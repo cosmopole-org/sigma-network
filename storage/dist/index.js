@@ -71,6 +71,9 @@ var DocumentSchema = new import_mongoose.Schema({
   metadata: import_mongoose.Schema.Types.Mixed
 });
 var Document;
+var prepare = () => {
+  Document = import_mongoose.default.model("Document", DocumentSchema, "Document");
+};
 
 // database/schemas/preview.schema.ts
 var import_mongoose2 = __toESM(require("mongoose"));
@@ -78,14 +81,24 @@ var PreviewSchema = new import_mongoose2.Schema({
   id: String
 });
 var Preview;
+var prepare2 = () => {
+  Preview = import_mongoose2.default.model("Preview", PreviewSchema, "Preview");
+};
 
 // config.ts
-var config_default = {
+var config = {
   LIARA_ENDPOINT: "storage.iran.liara.space",
   LIARA_BUCKET_NAME: "monopole",
   LIARA_ACCESS_KEY: "l2lt4s4m21mi6bf8",
-  LIARA_SECRET_KEY: "5c967b73-65b7-42e0-a66d-698bc416acda"
+  LIARA_SECRET_KEY: "5c967b73-65b7-42e0-a66d-698bc416acda",
+  MONGODB_URI: ""
 };
+var setupConfig = (c) => {
+  for (let key in config) {
+    config[key] = c[key];
+  }
+};
+var config_default = config;
 
 // database/transactions/upload.ts
 var import_fs2 = __toESM(require("fs"));
@@ -94,7 +107,30 @@ var import_mongoose4 = __toESM(require("mongoose"));
 // database/drivers/main-driver.ts
 var import_mongoose3 = __toESM(require("mongoose"));
 var import_client_s3 = require("@aws-sdk/client-s3");
+var connectMongoClient = () => {
+  import_mongoose3.default.connect(
+    config_default.MONGODB_URI,
+    (err) => {
+      if (err) {
+        console.error("FAILED TO CONNECT TO MONGODB");
+        console.error(err);
+      } else {
+        console.log("CONNECTED TO MONGODB");
+      }
+    }
+  );
+};
 var s3Client;
+var connectToS3 = () => __async(void 0, null, function* () {
+  const client = new import_client_s3.S3Client({
+    region: "default",
+    endpoint: config_default.LIARA_ENDPOINT,
+    credentials: {
+      accessKeyId: config_default.LIARA_ACCESS_KEY,
+      secretAccessKey: config_default.LIARA_SECRET_KEY
+    }
+  });
+});
 
 // utils/generator.ts
 var generator_exports = {};
@@ -400,9 +436,66 @@ var cover = (documentId, roomId, res) => __async(void 0, null, function* () {
   }
 });
 
-// index.ts
-var storage_default = {
-  upload: upload_exports,
-  download: download_exports
+// database/schemas/index.ts
+var build = () => {
+  prepare();
+  prepare2();
 };
+
+// database/initiators/main-initiator.ts
+var import_fs3 = __toESM(require("fs"));
+var setupDatabase = () => __async(void 0, null, function* () {
+  connectMongoClient();
+  yield connectToS3();
+  build();
+  if (!import_fs3.default.existsSync(process.cwd() + "/data"))
+    import_fs3.default.mkdirSync(process.cwd() + "/data");
+  if (!import_fs3.default.existsSync(process.cwd() + "/data/files"))
+    import_fs3.default.mkdirSync(process.cwd() + "/data/files");
+  if (!import_fs3.default.existsSync(process.cwd() + "/data/previews"))
+    import_fs3.default.mkdirSync(process.cwd() + "/data/previews");
+  if (!import_fs3.default.existsSync(process.cwd() + "/data/temp"))
+    import_fs3.default.mkdirSync(process.cwd() + "/data/temp");
+  if (!import_fs3.default.existsSync(process.cwd() + "/data/pdf-pages"))
+    import_fs3.default.mkdirSync(process.cwd() + "/data/pdf-pages");
+});
+
+// database/index.ts
+var StorageDriver = class _StorageDriver {
+  static initialize() {
+    return __async(this, null, function* () {
+      return new Promise((resolve) => {
+        return new _StorageDriver(resolve);
+      });
+    });
+  }
+  static instance() {
+    return _StorageDriver.inst;
+  }
+  constructor(callback) {
+    _StorageDriver.inst = this;
+    setupDatabase().then(() => {
+      callback();
+    });
+  }
+};
+var database_default = StorageDriver;
+
+// app.ts
+var SigmaStorage = class {
+  constructor(config2) {
+    this.uploader = upload_exports;
+    this.downloader = download_exports;
+    setupConfig(config2);
+  }
+  start() {
+    return __async(this, null, function* () {
+      yield database_default.initialize();
+    });
+  }
+};
+var app_default = SigmaStorage;
+
+// index.ts
+var storage_default = app_default;
 //# sourceMappingURL=index.js.map

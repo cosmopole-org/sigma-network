@@ -1,8 +1,4 @@
 
-import * as upload from './database/transactions/upload'
-import * as download from './database/transactions/download'
+import SigmaStorage from "app";
 
-export default {
-    upload,
-    download
-}
+export default SigmaStorage
