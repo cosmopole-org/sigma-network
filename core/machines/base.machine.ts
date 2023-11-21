@@ -1,7 +1,8 @@
-import Action from "./utils/action";
+
 import Client from "../drivers/network/client";
 import guardian from "../guardian";
 import BaseService from "../services/base.service";
+import fs from 'fs';
 
 abstract class BaseMachine extends BaseService {
     abstract getName(): string
@@ -20,7 +21,7 @@ abstract class BaseMachine extends BaseService {
                         return
                     }
                 }
-                let report = undefined
+                let report: any = undefined
                 if (action.guardian.inRoom && !body['roomId']) {
                     reject()
                     return
@@ -34,7 +35,22 @@ abstract class BaseMachine extends BaseService {
                         return
                     }
                 }
-                resolve(action.func(client, body, report))
+                resolve(action.func(client, body, {
+                    storage: {
+                        write: async (relativePath: string, data: any) => {
+                            if (body.roomId) {
+                                let path = `storage/${body.roomId}/${relativePath}`
+                                let pathParts = path.split('/')
+                                pathParts.pop()
+                                if (pathParts.length > 0) {
+                                    let folderPath = pathParts.join('/')
+                                    await fs.promises.mkdir(folderPath, { recursive: true })
+                                }
+                                await fs.promises.writeFile(path, data, { flag: "a+" })
+                            }
+                        }
+                    }
+                }, report))
             } else {
                 reject()
                 return

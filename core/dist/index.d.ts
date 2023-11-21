@@ -47,7 +47,7 @@ declare class Action {
         authorize?: boolean;
         inRoom?: boolean;
     };
-    func: (client: Client, body: any, guardianReport?: {
+    func: (client: Client, body: any, control: any, guardianReport?: {
         towerId: string;
         permissions: {
             [id: string]: boolean;
@@ -58,7 +58,7 @@ declare class Action {
         authenticate?: boolean;
         authorize?: boolean;
         inRoom?: boolean;
-    }, func: (client: Client, body: any, guardianReport?: {
+    }, func: (client: Client, body: any, control: any, guardianReport?: {
         towerId: string;
         permissions: {
             [id: string]: boolean;

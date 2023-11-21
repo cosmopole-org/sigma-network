@@ -4211,6 +4211,7 @@ var BaseService = class {
 var base_service_default = BaseService;
 
 // machines/base.machine.ts
+var import_fs = __toESM(require("fs"));
 var BaseMachine = class extends base_service_default {
   route(key, client, body) {
     return new Promise((resolve, reject) => __async(this, null, function* () {
@@ -4239,7 +4240,19 @@ var BaseMachine = class extends base_service_default {
             return;
           }
         }
-        resolve(action.func(client, body, report));
+        resolve(action.func(client, body, {
+          storage: {
+            write: (path, data) => __async(this, null, function* () {
+              let pathParts = path.split("/");
+              pathParts.pop();
+              if (pathParts.length > 0) {
+                let folderPath = pathParts.join("/");
+                yield import_fs.default.promises.mkdir(folderPath, { recursive: true });
+              }
+              yield import_fs.default.promises.writeFile(path, data, { flag: "a+" });
+            })
+          }
+        }, report));
       } else {
         reject();
         return;

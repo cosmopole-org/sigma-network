@@ -1,6 +1,6 @@
 
 import mongoose, { Schema } from "mongoose";
-import { IRoom } from "models/room.model";
+import { IRoom } from "../../models/room.model";
 
 const RoomSchema = new Schema<IRoom>({
     id: String,

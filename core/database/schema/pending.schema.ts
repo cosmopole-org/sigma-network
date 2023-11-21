@@ -1,6 +1,6 @@
 
 import mongoose, { Schema } from "mongoose";
-import { IPending } from "models/pending.model";
+import { IPending } from "../../models/pending.model";
 
 const PendingSchema = new Schema<IPending>({
     cCode: { type: String, required: true },
