@@ -87,10 +87,10 @@ var prepare2 = () => {
 
 // config.ts
 var config = {
-  LIARA_ENDPOINT: "storage.iran.liara.space",
-  LIARA_BUCKET_NAME: "monopole",
-  LIARA_ACCESS_KEY: "l2lt4s4m21mi6bf8",
-  LIARA_SECRET_KEY: "5c967b73-65b7-42e0-a66d-698bc416acda",
+  LIARA_ENDPOINT: "",
+  LIARA_BUCKET_NAME: "",
+  LIARA_ACCESS_KEY: "",
+  LIARA_SECRET_KEY: "",
   MONGODB_URI: ""
 };
 var setupConfig = (c) => {
@@ -122,7 +122,7 @@ var connectMongoClient = () => {
 };
 var s3Client;
 var connectToS3 = () => __async(void 0, null, function* () {
-  const client = new import_client_s3.S3Client({
+  s3Client = new import_client_s3.S3Client({
     region: "default",
     endpoint: config_default.LIARA_ENDPOINT,
     credentials: {
@@ -174,21 +174,20 @@ var generatePreview = (documentId, previewId, type, extension) => {
         density: 100,
         saveFilename: documentId,
         savePath: process.cwd() + "/" + folders_default.PDF_PAGES,
-        format: "png",
-        width: 1080,
-        height: 1920
+        format: "jpg",
+        width: 300,
+        height: 400
       };
-      (0, import_pdf2pic.fromPath)(tempFilePath, options).bulk(-1, true).then((output) => {
+      (0, import_pdf2pic.fromPath)(tempFilePath, options).bulk(1, true).then((output) => {
         import_fs.default.rmSync(tempFilePath);
-        import_fs.default.mkdirSync(process.cwd() + "/" + folders_default.PDF_PAGES + "/" + previewId);
-        for (let i = 0; i < output.length; i++) {
+        if (output.length > 0) {
           import_fs.default.writeFileSync(
-            process.cwd() + "/" + folders_default.PDF_PAGES + "/" + previewId + "/" + i + ".png",
-            output[i].base64,
+            process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg",
+            output[0].base64,
             "base64"
           );
         }
-        resolve({});
+        resolve({ previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
       });
     } else if (type === "video") {
       (0, import_simple_thumbnail.default)(
@@ -196,15 +195,17 @@ var generatePreview = (documentId, previewId, type, extension) => {
         process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg",
         "256x196"
       ).then(() => {
-        resolve({});
+        resolve({ previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
       }).catch((err) => console.error(err));
     } else if (type === "image") {
-      const rawPreviewPath = process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg";
-      (0, import_sharp.default)(process.cwd() + "/" + folders_default.FILES + "/" + documentId).resize(200, 200).toFile(rawPreviewPath, function(err) {
-        const finalPreviewPath = process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId;
-        import_fs.default.renameSync(rawPreviewPath, finalPreviewPath);
+      const finalPreviewPath = process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg";
+      (0, import_sharp.default)(process.cwd() + "/" + folders_default.FILES + "/" + documentId).resize(200, 200).toFile(finalPreviewPath, function(err) {
         (0, import_image_size.default)(finalPreviewPath, function(err2, dimensions) {
-          resolve({ width: dimensions.width, height: dimensions.height });
+          resolve({
+            width: dimensions.width,
+            height: dimensions.height,
+            previewPath: finalPreviewPath
+          });
         });
       });
     } else if (type === "audio") {
@@ -249,7 +250,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
                     import_fs.default.rmSync(tempFilePath);
                   if (import_fs.default.existsSync(tempMp3FilePath))
                     import_fs.default.rmSync(tempMp3FilePath);
-                  resolve({ duration });
+                  resolve({ duration, previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
                 });
               });
             } else {
@@ -258,7 +259,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
                 import_fs.default.rmSync(tempFilePath);
               if (import_fs.default.existsSync(tempMp3FilePath))
                 import_fs.default.rmSync(tempMp3FilePath);
-              resolve({ duration });
+              resolve({ duration, previewPath: "" });
             }
           })
         );
@@ -276,7 +277,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
         calculatingGraph();
       }
     } else {
-      resolve({});
+      resolve({ previewPath: "" });
     }
   });
 };
@@ -291,11 +292,11 @@ function getFilesizeInBytes(filename) {
 var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void 0, null, function* () {
   const session = yield import_mongoose4.default.startSession();
   session.startTransaction();
-  let preview2 = yield Preview.create([{
+  let preview2 = (yield Preview.create([{
     id: generator_exports.makeUniqueId()
-  }], { session })[0];
+  }], { session }))[0];
   let fileSize = getFilesizeInBytes(path);
-  let document2 = yield Document.create([{
+  let document2 = (yield Document.create([{
     id: generator_exports.makeUniqueId(),
     isPublic,
     type,
@@ -312,25 +313,33 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       height: 0,
       extension
     }
-  }], { session })[0];
+  }], { session }))[0];
   yield session.commitTransaction();
   session.endSession();
-  const params = {
+  const docParams = {
     Bucket: config_default.LIARA_BUCKET_NAME,
     Key: document2.id,
     Body: import_fs2.default.createReadStream(path)
   };
   try {
-    yield s3Client.send(new import_client_s32.PutObjectCommand(params));
-    let { duration, width, height } = yield previewer_exports.generatePreview(document2.id, preview2.id, type, extension);
-    yield import_fs2.default.promises.rm(path);
+    yield s3Client.send(new import_client_s32.PutObjectCommand(docParams));
+    let { duration, width, height, previewPath } = yield previewer_exports.generatePreview(document2.id, preview2.id, type, extension);
+    if ((previewPath == null ? void 0 : previewPath.length) > 0) {
+      const prevParams = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: preview2.id,
+        Body: import_fs2.default.createReadStream(previewPath)
+      };
+      yield s3Client.send(new import_client_s32.PutObjectCommand(prevParams));
+      yield import_fs2.default.promises.rm(previewPath);
+    }
     if (duration || width && height) {
       const session2 = yield import_mongoose4.default.startSession();
       session2.startTransaction();
       if (duration) {
         document2 = yield Document.findOneAndUpdate({ id: document2.id }, { duration }, { new: true }).session(session2);
       } else if (width && height) {
-        document2 = yield Document.updateOne({ id: document2.id }, { width, height }, { new: true }).session(session2);
+        document2 = yield Document.findOneAndUpdate({ id: document2.id }, { width, height }, { new: true }).session(session2);
       }
       yield session2.commitTransaction();
       session2.endSession();

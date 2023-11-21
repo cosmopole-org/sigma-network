@@ -1,7 +1,36 @@
+import mongoose from 'mongoose';
+
+interface IPreview {
+    id: string;
+}
+
+interface IDocument {
+    id: string;
+    type: string;
+    time: number;
+    isPublic: boolean;
+    previewId: string;
+    secret: {
+        uploaderId: string;
+        roomIds: Array<string>;
+    };
+    metadata: {
+        duration: number;
+        width: number;
+        height: number;
+        extension: string;
+        size: number;
+    };
+}
+
 declare const finalup: (path: string, roomId: string, humanId: string, isPublic: boolean, extension: string, type: string) => Promise<{
     success: boolean;
-    document: any;
-    preview: any;
+    document: mongoose.Document<unknown, any, IDocument> & Omit<IDocument & {
+        _id: mongoose.Types.ObjectId;
+    }, never>;
+    preview: mongoose.Document<unknown, any, IPreview> & Omit<IPreview & {
+        _id: mongoose.Types.ObjectId;
+    }, never>;
 }>;
 
 declare const upload_finalup: typeof finalup;

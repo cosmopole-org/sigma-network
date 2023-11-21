@@ -19,11 +19,11 @@ function getFilesizeInBytes(filename) {
 const finalup = async (path: string, roomId: string, humanId: string, isPublic: boolean, extension: string, type: string) => {
   const session = await mongoose.startSession();
   session.startTransaction();
-  let preview = await Preview.create([{
+  let preview = (await Preview.create([{
     id: Utils.generator.makeUniqueId()
-  }], { session })[0];
+  }], { session }))[0];
   let fileSize = getFilesizeInBytes(path);
-  let document = await Document.create([{
+  let document = (await Document.create([{
     id: Utils.generator.makeUniqueId(),
     isPublic: isPublic,
     type: type,
@@ -40,25 +40,33 @@ const finalup = async (path: string, roomId: string, humanId: string, isPublic: 
       height: 0,
       extension: extension,
     }
-  }], { session })[0];
+  }], { session }))[0];
   await session.commitTransaction();
   session.endSession();
-  const params = {
+  const docParams = {
     Bucket: config.LIARA_BUCKET_NAME,
     Key: document.id,
     Body: fs.createReadStream(path)
   };
   try {
-    await s3Client.send(new PutObjectCommand(params));
-    let { duration, width, height } = await Utils.previewer.generatePreview(document.id, preview.id, type, extension)
-    await fs.promises.rm(path)
+    await s3Client.send(new PutObjectCommand(docParams));
+    let { duration, width, height, previewPath } = await Utils.previewer.generatePreview(document.id, preview.id, type, extension)
+    if (previewPath?.length > 0) {
+      const prevParams = {
+        Bucket: config.LIARA_BUCKET_NAME,
+        Key: preview.id,
+        Body: fs.createReadStream(previewPath)
+      };
+      await s3Client.send(new PutObjectCommand(prevParams));
+      await fs.promises.rm(previewPath)
+    }
     if (duration || (width && height)) {
       const session = await mongoose.startSession();
       session.startTransaction();
       if (duration) {
         document = await Document.findOneAndUpdate({ id: document.id }, { duration: duration }, { new: true }).session(session);
       } else if (width && height) {
-        document = await Document.updateOne({ id: document.id }, { width: width, height: height }, { new: true }).session(session);
+        document = await Document.findOneAndUpdate({ id: document.id }, { width: width, height: height }, { new: true }).session(session);
       }
       await session.commitTransaction();
       session.endSession();

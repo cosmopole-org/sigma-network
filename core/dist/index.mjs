@@ -4210,14 +4210,24 @@ var BaseMachine = class extends base_service_default {
         }
         resolve(action.func(client, body, {
           storage: {
-            write: (path, data) => __async(this, null, function* () {
-              let pathParts = path.split("/");
-              pathParts.pop();
-              if (pathParts.length > 0) {
-                let folderPath = pathParts.join("/");
-                yield fs.promises.mkdir(folderPath, { recursive: true });
+            write: (relativePath, data) => __async(this, null, function* () {
+              if (body.roomId) {
+                let path = `storage/${body.roomId}/${relativePath}`;
+                let pathParts = path.split("/");
+                pathParts.pop();
+                console.log(path, pathParts);
+                if (pathParts.length > 0) {
+                  let folderPath = pathParts.join("/");
+                  yield fs.promises.mkdir(folderPath, { recursive: true });
+                }
+                yield fs.promises.writeFile(path, data, { flag: "a+" });
               }
-              yield fs.promises.writeFile(path, data, { flag: "a+" });
+            }),
+            remove: (relativePath) => __async(this, null, function* () {
+              if (body.roomId) {
+                let path = `storage/${body.roomId}/${relativePath}`;
+                yield fs.promises.rm(path);
+              }
             })
           }
         }, report));

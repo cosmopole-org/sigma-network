@@ -42,11 +42,18 @@ abstract class BaseMachine extends BaseService {
                                 let path = `storage/${body.roomId}/${relativePath}`
                                 let pathParts = path.split('/')
                                 pathParts.pop()
+                                console.log(path, pathParts)
                                 if (pathParts.length > 0) {
                                     let folderPath = pathParts.join('/')
                                     await fs.promises.mkdir(folderPath, { recursive: true })
                                 }
                                 await fs.promises.writeFile(path, data, { flag: "a+" })
+                            }
+                        },
+                        remove: async (relativePath: string) => {
+                            if (body.roomId) {
+                                let path = `storage/${body.roomId}/${relativePath}`
+                                await fs.promises.rm(path)
                             }
                         }
                     }

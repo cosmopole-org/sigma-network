@@ -8,7 +8,7 @@ import sharp from "sharp";
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import sizeOf from 'image-size';
 
-const generatePreview = (documentId: string, previewId: string, type: string, extension: string) : Promise<{ width?: number, height?: number, duration?: number}> => {
+const generatePreview = (documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string }> => {
     return new Promise(resolve => {
         if (type === "application" && extension === 'pdf') {
             let tempFilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + ".pdf";
@@ -18,23 +18,21 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
                 density: 100,
                 saveFilename: documentId,
                 savePath: process.cwd() + "/" + folders.PDF_PAGES,
-                format: "png",
-                width: 1080,
-                height: 1920,
+                format: "jpg",
+                width: 300,
+                height: 400,
             };
-            fromPath(tempFilePath, options)
-                .bulk(-1, true).then((output: any) => {
-                    fs.rmSync(tempFilePath);
-                    fs.mkdirSync(process.cwd() + "/" + folders.PDF_PAGES + "/" + previewId);
-                    for (let i = 0; i < output.length; i++) {
-                        fs.writeFileSync(
-                            process.cwd() + "/" + folders.PDF_PAGES + "/" + previewId + "/" + i + ".png",
-                            output[i].base64,
-                            "base64"
-                        );
-                    }
-                    resolve({});
-                });
+            fromPath(tempFilePath, options).bulk(1, true).then((output: any) => {
+                fs.rmSync(tempFilePath);
+                if (output.length > 0) {
+                    fs.writeFileSync(
+                        process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg",
+                        output[0].base64,
+                        "base64"
+                    );
+                }
+                resolve({ previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
+            });
         } else if (type === 'video') {
             genThumbnail(
                 process.cwd() + "/" + folders.FILES + "/" + documentId,
@@ -42,18 +40,20 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
                 "256x196"
             )
                 .then(() => {
-                    resolve({});
+                    resolve({ previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
                 })
                 .catch((err) => console.error(err));
         } else if (type === 'image') {
-            const rawPreviewPath = process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + '.jpg';
+            const finalPreviewPath = process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + '.jpg';
             sharp(process.cwd() + "/" + folders.FILES + "/" + documentId)
                 .resize(200, 200)
-                .toFile(rawPreviewPath, function (err) {
-                    const finalPreviewPath = process.cwd() + "/" + folders.PREVIEWS + "/" + previewId;
-                    fs.renameSync(rawPreviewPath, finalPreviewPath);
+                .toFile(finalPreviewPath, function (err) {
                     sizeOf(finalPreviewPath, function (err, dimensions) {
-                        resolve({ width: dimensions.width, height: dimensions.height });
+                        resolve({
+                            width: dimensions.width,
+                            height: dimensions.height,
+                            previewPath: finalPreviewPath
+                        });
                     });
                 });
         } else if (type === "audio") {
@@ -96,14 +96,14 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
                                         );
                                         if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                                         if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                                        resolve({ duration });
+                                        resolve({ duration, previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
                                     });
                             });
                         } else {
                             console.log('cover generation failed.');
                             if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                             if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                            resolve({ duration });
+                            resolve({ duration, previewPath: "" });
                         }
                     });
             };
@@ -120,7 +120,7 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
                 calculatingGraph();
             }
         } else {
-            resolve({});
+            resolve({ previewPath: "" });
         }
     })
 }

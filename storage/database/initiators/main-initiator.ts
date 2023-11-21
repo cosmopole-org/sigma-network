@@ -10,7 +10,7 @@ const setupDatabase = async () => {
     if (!fs.existsSync(process.cwd() + '/data/files')) fs.mkdirSync(process.cwd() + '/data/files');
     if (!fs.existsSync(process.cwd() + '/data/previews')) fs.mkdirSync(process.cwd() + '/data/previews');
     if (!fs.existsSync(process.cwd() + '/data/temp')) fs.mkdirSync(process.cwd() + '/data/temp');
-    if (!fs.existsSync(process.cwd() + '/data/pdf-pages')) fs.mkdirSync(process.cwd() + '/data/pdf-pages');   
+    if (!fs.existsSync(process.cwd() + '/data/pdf-pages')) fs.mkdirSync(process.cwd() + '/data/pdf-pages');
 }
 
 export {

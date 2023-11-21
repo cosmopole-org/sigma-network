@@ -17,7 +17,7 @@ const connectMongoClient = () => {
 let s3Client: S3Client;
 
 const connectToS3 = async () => {
-  const client = new S3Client({
+  s3Client = new S3Client({
     region: "default",
     endpoint: config.LIARA_ENDPOINT,
     credentials: {
