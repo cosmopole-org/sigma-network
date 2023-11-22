@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import { s3Client } from '../drivers/main-driver';
 import * as Utils from '../../utils'
 import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { Group } from 'database/schemas/group.schema';
+import IGroup from 'models/group.model';
 
 function getFilesizeInBytes(filename) {
   var stats = fs.statSync(filename);
@@ -39,6 +41,15 @@ const finalup = async (path: string, roomId: string, humanId: string, isPublic: 
       extension: extension,
     }
   }], { session }))[0];
+  let group = await Group.findOne({ roomId: roomId }).session(session).lean().exec()
+  if (group === null) {
+    group = (await Group.create([{
+      roomId: roomId,
+      docIds: [document.id]
+    }], { session }))[0]
+  } else {
+    await Group.updateOne({ roomId: roomId }, { $push: { docIds: document.id } },).session(session)
+  }
   await session.commitTransaction();
   session.endSession();
   const docParams = {

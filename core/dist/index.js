@@ -952,7 +952,8 @@ var NetworkDriver = class _NetworkDriver {
     this.io = new import_socket.Server(this.server, {
       cors: {
         origin: "*"
-      }
+      },
+      maxHttpBufferSize: 1e8
     });
     let subClient = memory_default.instance.redisClient.duplicate();
     this.io.adapter((0, import_redis_adapter.createAdapter)(memory_default.instance.redisClient, subClient));

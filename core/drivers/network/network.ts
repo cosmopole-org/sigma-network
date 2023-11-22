@@ -80,7 +80,8 @@ class NetworkDriver {
         this.io = new Server(this.server, {
             cors: {
                 origin: "*",
-            }
+            },
+            maxHttpBufferSize: 1e8
         })
         let subClient = MemoryDriver.instance.redisClient.duplicate()
         this.io.adapter(createAdapter(MemoryDriver.instance.redisClient, subClient));

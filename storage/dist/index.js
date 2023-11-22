@@ -121,7 +121,7 @@ var config_default = config;
 
 // database/transactions/upload.ts
 var import_fs2 = __toESM(require("fs"));
-var import_mongoose4 = __toESM(require("mongoose"));
+var import_mongoose5 = __toESM(require("mongoose"));
 
 // database/drivers/main-driver.ts
 var import_mongoose3 = __toESM(require("mongoose"));
@@ -227,10 +227,13 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
         (0, import_child_process.exec)(
           `ffmpeg -i ${extension === "mp3" ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders_default.PREVIEWS + "/" + previewId + ".json"}`,
           (error, stdout, stderr) => __async(void 0, null, function* () {
+            let waveFormGenerated = true;
             if (error) {
+              waveFormGenerated = false;
               console.log(`error: ${error}`);
             }
             if (stderr) {
+              waveFormGenerated = false;
               console.log(`stderr: ${stderr}`);
             }
             console.log("generated waveform.");
@@ -249,7 +252,7 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
             } catch (ex) {
             }
             if (cover) {
-              import_fs.default.writeFile(folders_default.PREVIEWS + "/" + previewId + ".jpg", cover.data, () => {
+              import_fs.default.writeFile(folders_default.PREVIEWS + "/" + previewId + ".jpg", cover.data, { flag: "w" }, () => {
                 (0, import_sharp.default)(folders_default.PREVIEWS + "/" + previewId + ".jpg").resize(200, 200).toFile(folders_default.PREVIEWS + "/" + previewId, function(err) {
                   console.log("generated cover.");
                   import_fs.default.rmSync(folders_default.PREVIEWS + "/" + previewId + ".jpg");
@@ -261,7 +264,11 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
                     import_fs.default.rmSync(tempFilePath);
                   if (import_fs.default.existsSync(tempMp3FilePath))
                     import_fs.default.rmSync(tempMp3FilePath);
-                  resolve({ duration, previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg", waveformPath: folders_default.PREVIEWS + "/" + previewId + ".json" });
+                  resolve({
+                    duration,
+                    previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg",
+                    waveformPath: waveFormGenerated ? folders_default.PREVIEWS + "/" + previewId + ".json" : void 0
+                  });
                 });
               });
             } else {
@@ -295,13 +302,26 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
 
 // database/transactions/upload.ts
 var import_client_s32 = require("@aws-sdk/client-s3");
+
+// database/schemas/group.schema.ts
+var import_mongoose4 = __toESM(require("mongoose"));
+var GroupSchema = new import_mongoose4.Schema({
+  roomId: String,
+  docIds: [String]
+});
+var Group;
+var prepare3 = () => {
+  Group = import_mongoose4.default.model("Group", GroupSchema, "Group");
+};
+
+// database/transactions/upload.ts
 function getFilesizeInBytes(filename) {
   var stats = import_fs2.default.statSync(filename);
   var fileSizeInBytes = stats.size;
   return fileSizeInBytes;
 }
 var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void 0, null, function* () {
-  const session = yield import_mongoose4.default.startSession();
+  const session = yield import_mongoose5.default.startSession();
   session.startTransaction();
   let preview2 = (yield Preview.create([{
     id: generator_exports.makeUniqueId()
@@ -325,6 +345,15 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       extension
     }
   }], { session }))[0];
+  let group = yield Group.findOne({ roomId }).session(session).lean().exec();
+  if (group === null) {
+    group = (yield Group.create([{
+      roomId,
+      docIds: [document2.id]
+    }], { session }))[0];
+  } else {
+    yield Group.updateOne({ roomId }, { $push: { docIds: document2.id } }).session(session);
+  }
   yield session.commitTransaction();
   session.endSession();
   const docParams = {
@@ -356,7 +385,7 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       yield s3Client.send(new import_client_s32.PutObjectCommand(prevParams));
       yield import_fs2.default.promises.rm(waveformPath);
     }
-    const session2 = yield import_mongoose4.default.startSession();
+    const session2 = yield import_mongoose5.default.startSession();
     session2.startTransaction();
     preview2 = yield Preview.findOneAndUpdate({ id: preview2.id }, { photo: hasPhoto, waveform: hasWaveform }, { new: true }).session(session2);
     if (duration || width && height) {
@@ -470,10 +499,25 @@ var waveform = (documentId, roomId, res) => __async(void 0, null, function* () {
   }
 });
 
+// database/transactions/group.ts
+var group_exports = {};
+__export(group_exports, {
+  docIds: () => docIds
+});
+var docIds = (roomId) => __async(void 0, null, function* () {
+  let group = yield Group.findOne({ roomId }).lean().exec();
+  if (group !== null) {
+    return { success: true, docIds: group.docIds };
+  } else {
+    return { success: false };
+  }
+});
+
 // database/schemas/index.ts
 var build = () => {
   prepare();
   prepare2();
+  prepare3();
 };
 
 // database/initiators/main-initiator.ts
@@ -520,6 +564,7 @@ var SigmaStorage = class {
   constructor(config2) {
     this.uploader = upload_exports;
     this.downloader = download_exports;
+    this.group = group_exports;
     setupConfig(config2);
   }
   start() {

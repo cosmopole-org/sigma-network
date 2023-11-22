@@ -1,6 +1,7 @@
 
 import * as upload from './database/transactions/upload'
 import * as download from './database/transactions/download'
+import * as group from './database/transactions/group'
 import { setupConfig } from 'config'
 import StorageDriver from 'database'
 
@@ -13,6 +14,7 @@ class SigmaStorage {
     }
     public uploader = upload
     public downloader = download
+    public group = group
 
 }
 

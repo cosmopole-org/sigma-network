@@ -63,10 +63,13 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                 exec(
                     `ffmpeg -i ${extension === 'mp3' ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders.PREVIEWS + "/" + previewId + ".json"}`,
                     async (error, stdout, stderr) => {
+                        let waveFormGenerated = true
                         if (error) {
+                            waveFormGenerated = false
                             console.log(`error: ${error}`);
                         }
                         if (stderr) {
+                            waveFormGenerated = false
                             console.log(`stderr: ${stderr}`);
                         }
                         console.log('generated waveform.');
@@ -83,7 +86,7 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                             cover = selectCover(common.picture);
                         } catch (ex) { }
                         if (cover) {
-                            fs.writeFile(folders.PREVIEWS + "/" + previewId + ".jpg", cover.data, () => {
+                            fs.writeFile(folders.PREVIEWS + "/" + previewId + ".jpg", cover.data, { flag: 'w' }, () => {
                                 sharp(folders.PREVIEWS + "/" + previewId + ".jpg")
                                     .resize(200, 200)
                                     .toFile(folders.PREVIEWS + "/" + previewId, function (err) {
@@ -95,7 +98,13 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                                         );
                                         if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                                         if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                                        resolve({ duration, previewPath: folders.PREVIEWS + "/" + previewId + ".jpg", waveformPath: folders.PREVIEWS + "/" + previewId + ".json" });
+                                        resolve({
+                                            duration,
+                                            previewPath: folders.PREVIEWS + "/" + previewId + ".jpg",
+                                            waveformPath: waveFormGenerated ?
+                                                (folders.PREVIEWS + "/" + previewId + ".json") :
+                                                undefined
+                                        });
                                     });
                             });
                         } else {

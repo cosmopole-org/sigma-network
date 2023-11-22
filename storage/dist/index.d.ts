@@ -61,11 +61,27 @@ declare namespace download {
   };
 }
 
+declare const docIds: (roomId: string) => Promise<{
+    success: boolean;
+    docIds: string[];
+} | {
+    success: boolean;
+    docIds?: undefined;
+}>;
+
+declare const group_docIds: typeof docIds;
+declare namespace group {
+  export {
+    group_docIds as docIds,
+  };
+}
+
 declare class SigmaStorage {
     constructor(config: any);
     start(): Promise<void>;
     uploader: typeof upload;
     downloader: typeof download;
+    group: typeof group;
 }
 
 export { SigmaStorage as default };
