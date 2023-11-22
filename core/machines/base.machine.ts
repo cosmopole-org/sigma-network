@@ -41,16 +41,16 @@ abstract class BaseMachine extends BaseService {
                     storage: {
                         write: async (relativePath: string, data: any) => {
                             if (body.roomId) {
-                                let p = path.join(`${process.cwd()}/storage/${body.roomId}/${relativePath}`)
-                                let pathParts = p.split('/')
+                                let path = `${config.TEMP_STORAGE}/storage/${body.roomId}/${relativePath}`
+                                let pathParts = path.split('/')
                                 pathParts.pop()
-                                await config.bridge.mkdir(pathParts.join('/'), { recursive: true })
-                                await config.bridge.writeFile(p, data, { flag: "a+" })
+                                await fs.promises.mkdir(pathParts.join('/'), { recursive: true })
+                                await fs.promises.writeFile(path, data, { flag: "a+" })
                             }
                         },
                         remove: async (relativePath: string) => {
                             if (body.roomId) {
-                                await config.bridge.rm(`${process.cwd()}/storage/${body.roomId}/${relativePath}`)
+                                await fs.promises.rm(`${config.TEMP_STORAGE}/storage/${body.roomId}/${relativePath}`)
                             }
                         }
                     }

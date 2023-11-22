@@ -56,18 +56,35 @@ var prepare2 = () => {
   Preview = mongoose2.model("Preview", PreviewSchema, "Preview");
 };
 
+// folders.ts
+var folders = {
+  FILES: "",
+  PREVIEWS: "",
+  TEMP: "",
+  PDF_PAGES: ""
+};
+var setupFoldersPath = (rootPath) => {
+  folders.FILES = `${rootPath}/data/files`;
+  folders.PREVIEWS = `${rootPath}/data/previews`;
+  folders.TEMP = `${rootPath}/data/temp`;
+  folders.PDF_PAGES = `${rootPath}/data/pdf-pages`;
+};
+var folders_default = folders;
+
 // config.ts
 var config = {
   LIARA_ENDPOINT: "",
   LIARA_BUCKET_NAME: "",
   LIARA_ACCESS_KEY: "",
   LIARA_SECRET_KEY: "",
-  MONGODB_URI: ""
+  MONGODB_URI: "",
+  TEMP_STORAGE: ""
 };
 var setupConfig = (c) => {
   for (let key in config) {
     config[key] = c[key];
   }
+  setupFoldersPath(config.TEMP_STORAGE);
 };
 var config_default = config;
 
@@ -121,16 +138,6 @@ var previewer_exports = {};
 __export(previewer_exports, {
   generatePreview: () => generatePreview
 });
-
-// folders.ts
-var folders_default = {
-  "FILES": "data/files",
-  "PREVIEWS": "data/previews",
-  "TEMP": "data/temp",
-  "PDF_PAGES": "data/pdf-pages"
-};
-
-// utils/previewer.ts
 import { exec } from "child_process";
 import fs from "fs";
 import { fromPath } from "pdf2pic";
@@ -431,16 +438,16 @@ var setupDatabase = () => __async(void 0, null, function* () {
   yield connectMongoClient();
   yield connectToS3();
   build();
-  if (!fs3.existsSync("data"))
-    yield fs3.promises.mkdir("data", { recursive: true });
-  if (!fs3.existsSync("data/files"))
-    yield fs3.promises.mkdir("data/files", { recursive: true });
-  if (!fs3.existsSync("data/previews"))
-    yield fs3.promises.mkdir("data/previews", { recursive: true });
-  if (!fs3.existsSync("data/temp"))
-    yield fs3.promises.mkdir("data/temp", { recursive: true });
-  if (!fs3.existsSync("data/pdf-pages"))
-    yield fs3.promises.mkdir("data/pdf-pages", { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data`, { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/files`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/files`, { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/previews`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/previews`, { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/temp`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/temp`, { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/pdf-pages`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/pdf-pages`, { recursive: true });
 });
 
 // database/index.ts

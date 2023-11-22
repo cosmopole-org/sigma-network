@@ -1,11 +1,6 @@
 
 export let config = {
-    bridge: {
-        mkdir: undefined,
-        writeFile: undefined,
-        rm: undefined,
-        existsSync: undefined
-    }
+    TEMP_STORAGE: ""
 }
 
 const setupConfig = (conf: { [id: string]: any }) => {

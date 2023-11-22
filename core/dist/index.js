@@ -603,7 +603,9 @@ var invite_factory_default = InviteFactory;
 var import_mongoose15 = require("mongoose");
 
 // config.ts
-var config = {};
+var config = {
+  TEMP_STORAGE: ""
+};
 var setupConfig = (conf) => {
   for (let key in conf) {
     config[key] = conf[key];
@@ -1012,8 +1014,8 @@ var NetworkDriver = class _NetworkDriver {
       console.log(`server running at http://localhost:${config_default["SOCKET_PORT"]}`);
     });
   }
-  route(client, path2, body, requestId, callback) {
-    let parts = path2.split("/");
+  route(client, path, body, requestId, callback) {
+    let parts = path.split("/");
     let controller = this.controllers[parts[0]];
     if (controller instanceof custom_controller_default) {
       controller.route(parts.slice(1), client, body, requestId, callback);
@@ -3459,10 +3461,10 @@ var updatesDict = {
   invite: invite_exports2,
   worker: worker_exports2
 };
-var buildUpdate = (requestId, path2, ...args) => {
-  let T = updatesDict[path2.category][path2.key];
+var buildUpdate = (requestId, path, ...args) => {
+  let T = updatesDict[path.category][path.key];
   let updateObject = new T(requestId, ...args);
-  updateObject.type = `${path2.category}/${path2.key}`;
+  updateObject.type = `${path.category}/${path.key}`;
   return updateObject;
 };
 var types = {
@@ -3490,13 +3492,13 @@ var types = {
     onResponse: { category: "worker", key: "onResponse" }
   }
 };
-var registerUpdateType = (type, path2) => {
-  if (!types[path2.category]) {
-    types[path2.category] = {};
-    updatesDict[path2.category] = {};
+var registerUpdateType = (type, path) => {
+  if (!types[path.category]) {
+    types[path.category] = {};
+    updatesDict[path.category] = {};
   }
-  types[path2.category][path2.key] = path2;
-  updatesDict[path2.category][path2.key] = type;
+  types[path.category][path.key] = path;
+  updatesDict[path.category][path.key] = type;
 };
 var group = (towerId) => {
   return network_default.instance.group(towerId);
@@ -4212,7 +4214,6 @@ var base_service_default = BaseService;
 
 // machines/base.machine.ts
 var import_fs = __toESM(require("fs"));
-var import_path = __toESM(require("path"));
 var BaseMachine = class extends base_service_default {
   route(key, client, body) {
     return new Promise((resolve, reject) => __async(this, null, function* () {
@@ -4245,16 +4246,16 @@ var BaseMachine = class extends base_service_default {
           storage: {
             write: (relativePath, data) => __async(this, null, function* () {
               if (body.roomId) {
-                let p = import_path.default.join(`${process.cwd()}/storage/${body.roomId}/${relativePath}`);
-                let pathParts = p.split("/");
+                let path = `${config_default.TEMP_STORAGE}/storage/${body.roomId}/${relativePath}`;
+                let pathParts = path.split("/");
                 pathParts.pop();
                 yield import_fs.default.promises.mkdir(pathParts.join("/"), { recursive: true });
-                yield import_fs.default.promises.writeFile(p, data, { flag: "a+" });
+                yield import_fs.default.promises.writeFile(path, data, { flag: "a+" });
               }
             }),
             remove: (relativePath) => __async(this, null, function* () {
               if (body.roomId) {
-                yield import_fs.default.promises.rm(`${process.cwd()}/storage/${body.roomId}/${relativePath}`);
+                yield import_fs.default.promises.rm(`${config_default.TEMP_STORAGE}/storage/${body.roomId}/${relativePath}`);
               }
             })
           }

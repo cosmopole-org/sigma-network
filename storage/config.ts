@@ -1,3 +1,4 @@
+import { setupFoldersPath } from "folders"
 
 let config = {
     LIARA_ENDPOINT: "",
@@ -5,18 +6,14 @@ let config = {
     LIARA_ACCESS_KEY: "",
     LIARA_SECRET_KEY: "",
     MONGODB_URI: "",
-    bridge: {
-        mkdir: undefined,
-        writeFile: undefined,
-        rm: undefined,
-        existsSync: undefined
-    }
+    TEMP_STORAGE: ""
 }
 
 export let setupConfig = (c: any) => {
     for (let key in config) {
         config[key] = c[key]
     }
+    setupFoldersPath(config.TEMP_STORAGE)
 }
 
 export default config
