@@ -2,16 +2,19 @@ import mongoose from 'mongoose';
 import config from '../../config';
 import { S3Client } from "@aws-sdk/client-s3";
 
-const connectMongoClient = () => {
-  mongoose.connect(config.MONGODB_URI,
-    (err) => {
-      if (err) {
-        console.error('FAILED TO CONNECT TO MONGODB');
-        console.error(err);
-      } else {
-        console.log('CONNECTED TO MONGODB');
-      }
-    });
+const connectMongoClient = async () => {
+  return new Promise(resolve => {
+    mongoose.connect(config.MONGODB_URI,
+      (err) => {
+        if (err) {
+          console.error('FAILED TO CONNECT TO MONGODB');
+          console.error(err);
+        } else {
+          console.log('CONNECTED TO MONGODB');
+          resolve({})
+        }
+      });
+  })
 };
 
 let s3Client: S3Client;

@@ -78,19 +78,22 @@ import mongoose4 from "mongoose";
 // database/drivers/main-driver.ts
 import mongoose3 from "mongoose";
 import { S3Client } from "@aws-sdk/client-s3";
-var connectMongoClient = () => {
-  mongoose3.connect(
-    config_default.MONGODB_URI,
-    (err) => {
-      if (err) {
-        console.error("FAILED TO CONNECT TO MONGODB");
-        console.error(err);
-      } else {
-        console.log("CONNECTED TO MONGODB");
+var connectMongoClient = () => __async(void 0, null, function* () {
+  return new Promise((resolve) => {
+    mongoose3.connect(
+      config_default.MONGODB_URI,
+      (err) => {
+        if (err) {
+          console.error("FAILED TO CONNECT TO MONGODB");
+          console.error(err);
+        } else {
+          console.log("CONNECTED TO MONGODB");
+          resolve({});
+        }
       }
-    }
-  );
-};
+    );
+  });
+});
 var s3Client;
 var connectToS3 = () => __async(void 0, null, function* () {
   s3Client = new S3Client({
@@ -135,12 +138,11 @@ import genThumbnail from "simple-thumbnail";
 import sharp from "sharp";
 import { getAudioDurationInSeconds } from "get-audio-duration";
 import sizeOf from "image-size";
-var generatePreview = (documentId, previewId, type, extension) => {
+var generatePreview = (documentPath, documentId, previewId, type, extension) => {
   return new Promise((resolve) => {
     if (type === "application" && extension === "pdf") {
       let tempFilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + ".pdf";
-      let rawFilePath = process.cwd() + "/" + folders_default.FILES + "/" + documentId;
-      fs.copyFileSync(rawFilePath, tempFilePath);
+      fs.copyFileSync(documentPath, tempFilePath);
       const options = {
         density: 100,
         saveFilename: documentId,
@@ -162,7 +164,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
       });
     } else if (type === "video") {
       genThumbnail(
-        process.cwd() + "/" + folders_default.FILES + "/" + documentId,
+        documentPath,
         process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg",
         "256x196"
       ).then(() => {
@@ -170,7 +172,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
       }).catch((err) => console.error(err));
     } else if (type === "image") {
       const finalPreviewPath = process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg";
-      sharp(process.cwd() + "/" + folders_default.FILES + "/" + documentId).resize(200, 200).toFile(finalPreviewPath, function(err) {
+      sharp(documentPath).resize(200, 200).toFile(finalPreviewPath, function(err) {
         sizeOf(finalPreviewPath, function(err2, dimensions) {
           resolve({
             width: dimensions.width,
@@ -182,7 +184,7 @@ var generatePreview = (documentId, previewId, type, extension) => {
     } else if (type === "audio") {
       const tempFilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + "." + extension;
       const tempMp3FilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + ".mp3";
-      fs.copyFileSync(process.cwd() + "/" + folders_default.FILES + "/" + documentId, tempFilePath);
+      fs.copyFileSync(documentPath, tempFilePath);
       let calculatingGraph = () => {
         exec(
           `ffmpeg -i ${extension === "mp3" ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".json"}`,
@@ -294,7 +296,7 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
   };
   try {
     yield s3Client.send(new PutObjectCommand(docParams));
-    let { duration, width, height, previewPath } = yield previewer_exports.generatePreview(document2.id, preview2.id, type, extension);
+    let { duration, width, height, previewPath } = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
     if ((previewPath == null ? void 0 : previewPath.length) > 0) {
       const prevParams = {
         Bucket: config_default.LIARA_BUCKET_NAME,
@@ -374,6 +376,7 @@ var preview = (documentId, roomId, res) => __async(void 0, null, function* () {
         } catch (error) {
           console.log(error);
         }
+        success = true;
       }
     } else {
       console.error("document not found");
@@ -425,19 +428,19 @@ var build = () => {
 // database/initiators/main-initiator.ts
 import fs3 from "fs";
 var setupDatabase = () => __async(void 0, null, function* () {
-  connectMongoClient();
+  yield connectMongoClient();
   yield connectToS3();
   build();
-  if (!fs3.existsSync(process.cwd() + "/data"))
-    fs3.mkdirSync(process.cwd() + "/data");
-  if (!fs3.existsSync(process.cwd() + "/data/files"))
-    fs3.mkdirSync(process.cwd() + "/data/files");
-  if (!fs3.existsSync(process.cwd() + "/data/previews"))
-    fs3.mkdirSync(process.cwd() + "/data/previews");
-  if (!fs3.existsSync(process.cwd() + "/data/temp"))
-    fs3.mkdirSync(process.cwd() + "/data/temp");
-  if (!fs3.existsSync(process.cwd() + "/data/pdf-pages"))
-    fs3.mkdirSync(process.cwd() + "/data/pdf-pages");
+  if (!fs3.existsSync("data"))
+    yield fs3.promises.mkdir("data", { recursive: true });
+  if (!fs3.existsSync("data/files"))
+    yield fs3.promises.mkdir("data/files", { recursive: true });
+  if (!fs3.existsSync("data/previews"))
+    yield fs3.promises.mkdir("data/previews", { recursive: true });
+  if (!fs3.existsSync("data/temp"))
+    yield fs3.promises.mkdir("data/temp", { recursive: true });
+  if (!fs3.existsSync("data/pdf-pages"))
+    yield fs3.promises.mkdir("data/pdf-pages", { recursive: true });
 });
 
 // database/index.ts

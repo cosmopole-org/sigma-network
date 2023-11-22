@@ -51,6 +51,7 @@ const preview = async (documentId: string, roomId: string, res: any) => {
         } catch (error) {
           console.log(error);
         }
+        success = true
       }
     } else {
       console.error('document not found');

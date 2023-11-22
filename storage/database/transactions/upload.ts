@@ -50,7 +50,7 @@ const finalup = async (path: string, roomId: string, humanId: string, isPublic: 
   };
   try {
     await s3Client.send(new PutObjectCommand(docParams));
-    let { duration, width, height, previewPath } = await Utils.previewer.generatePreview(document.id, preview.id, type, extension)
+    let { duration, width, height, previewPath } = await Utils.previewer.generatePreview(path, document.id, preview.id, type, extension)
     if (previewPath?.length > 0) {
       const prevParams = {
         Bucket: config.LIARA_BUCKET_NAME,

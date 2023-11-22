@@ -8,12 +8,11 @@ import sharp from "sharp";
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import sizeOf from 'image-size';
 
-const generatePreview = (documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string }> => {
+const generatePreview = (documentPath: string, documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string }> => {
     return new Promise(resolve => {
         if (type === "application" && extension === 'pdf') {
             let tempFilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + ".pdf";
-            let rawFilePath = process.cwd() + "/" + folders.FILES + "/" + documentId;
-            fs.copyFileSync(rawFilePath, tempFilePath);
+            fs.copyFileSync(documentPath, tempFilePath);
             const options = {
                 density: 100,
                 saveFilename: documentId,
@@ -35,7 +34,7 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
             });
         } else if (type === 'video') {
             genThumbnail(
-                process.cwd() + "/" + folders.FILES + "/" + documentId,
+                documentPath,
                 process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg",
                 "256x196"
             )
@@ -45,7 +44,7 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
                 .catch((err) => console.error(err));
         } else if (type === 'image') {
             const finalPreviewPath = process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + '.jpg';
-            sharp(process.cwd() + "/" + folders.FILES + "/" + documentId)
+            sharp(documentPath)
                 .resize(200, 200)
                 .toFile(finalPreviewPath, function (err) {
                     sizeOf(finalPreviewPath, function (err, dimensions) {
@@ -59,7 +58,7 @@ const generatePreview = (documentId: string, previewId: string, type: string, ex
         } else if (type === "audio") {
             const tempFilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + "." + extension;
             const tempMp3FilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + ".mp3";
-            fs.copyFileSync(process.cwd() + "/" + folders.FILES + "/" + documentId, tempFilePath);
+            fs.copyFileSync(documentPath, tempFilePath);
             let calculatingGraph = () => {
                 exec(
                     `ffmpeg -i ${extension === 'mp3' ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".json"}`,

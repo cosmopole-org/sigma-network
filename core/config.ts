@@ -1,5 +1,12 @@
 
-export let config = {}
+export let config = {
+    bridge: {
+        mkdir: undefined,
+        writeFile: undefined,
+        rm: undefined,
+        existsSync: undefined
+    }
+}
 
 const setupConfig = (conf: { [id: string]: any }) => {
     for (let key in conf) {

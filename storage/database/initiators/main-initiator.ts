@@ -1,16 +1,17 @@
 import * as Schemas from "database/schemas/";
 import { connectMongoClient, connectToS3 } from '../drivers/main-driver';
 import fs from 'fs';
+import config from "config";
 
 const setupDatabase = async () => {
-    connectMongoClient()
+    await connectMongoClient()
     await connectToS3()
     Schemas.build()
-    if (!fs.existsSync(process.cwd() + '/data')) fs.mkdirSync(process.cwd() + '/data');
-    if (!fs.existsSync(process.cwd() + '/data/files')) fs.mkdirSync(process.cwd() + '/data/files');
-    if (!fs.existsSync(process.cwd() + '/data/previews')) fs.mkdirSync(process.cwd() + '/data/previews');
-    if (!fs.existsSync(process.cwd() + '/data/temp')) fs.mkdirSync(process.cwd() + '/data/temp');
-    if (!fs.existsSync(process.cwd() + '/data/pdf-pages')) fs.mkdirSync(process.cwd() + '/data/pdf-pages');
+    if (!config.bridge.existsSync('data')) await config.bridge.mkdir('data', {recursive: true});
+    if (!config.bridge.existsSync('data/files')) await config.bridge.mkdir('data/files', {recursive: true});
+    if (!config.bridge.existsSync('data/previews')) await config.bridge.mkdir('data/previews', {recursive: true});
+    if (!config.bridge.existsSync('data/temp')) await config.bridge.mkdir('data/temp', {recursive: true});
+    if (!config.bridge.existsSync('data/pdf-pages')) await config.bridge.mkdir('data/pdf-pages', {recursive: true});
 }
 
 export {

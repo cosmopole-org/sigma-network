@@ -1,8 +1,10 @@
 
+import config from "config";
 import Client from "../drivers/network/client";
 import guardian from "../guardian";
 import BaseService from "../services/base.service";
 import fs from 'fs';
+import path from 'path';
 
 abstract class BaseMachine extends BaseService {
     abstract getName(): string
@@ -39,21 +41,16 @@ abstract class BaseMachine extends BaseService {
                     storage: {
                         write: async (relativePath: string, data: any) => {
                             if (body.roomId) {
-                                let path = `storage/${body.roomId}/${relativePath}`
-                                let pathParts = path.split('/')
+                                let p = path.join(`${process.cwd()}/storage/${body.roomId}/${relativePath}`)
+                                let pathParts = p.split('/')
                                 pathParts.pop()
-                                console.log(path, pathParts)
-                                if (pathParts.length > 0) {
-                                    let folderPath = pathParts.join('/')
-                                    await fs.promises.mkdir(folderPath, { recursive: true })
-                                }
-                                await fs.promises.writeFile(path, data, { flag: "a+" })
+                                await config.bridge.mkdir(pathParts.join('/'), { recursive: true })
+                                await config.bridge.writeFile(p, data, { flag: "a+" })
                             }
                         },
                         remove: async (relativePath: string) => {
                             if (body.roomId) {
-                                let path = `storage/${body.roomId}/${relativePath}`
-                                await fs.promises.rm(path)
+                                await config.bridge.rm(`${process.cwd()}/storage/${body.roomId}/${relativePath}`)
                             }
                         }
                     }
