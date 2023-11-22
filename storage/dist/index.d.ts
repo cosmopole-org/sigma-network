@@ -46,18 +46,18 @@ declare const document: (documentId: string, roomId: string, res: any) => Promis
 declare const preview: (documentId: string, roomId: string, res: any) => Promise<{
     success: boolean;
 }>;
-declare const cover: (documentId: string, roomId: string, res: any) => Promise<{
+declare const waveform: (documentId: string, roomId: string, res: any) => Promise<{
     success: boolean;
 }>;
 
-declare const download_cover: typeof cover;
 declare const download_document: typeof document;
 declare const download_preview: typeof preview;
+declare const download_waveform: typeof waveform;
 declare namespace download {
   export {
-    download_cover as cover,
     download_document as document,
     download_preview as preview,
+    download_waveform as waveform,
   };
 }
 

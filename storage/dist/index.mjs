@@ -49,7 +49,9 @@ var prepare = () => {
 // database/schemas/preview.schema.ts
 import mongoose2, { Schema as Schema2 } from "mongoose";
 var PreviewSchema = new Schema2({
-  id: String
+  id: String,
+  photo: Boolean,
+  waveform: Boolean
 });
 var Preview;
 var prepare2 = () => {
@@ -148,12 +150,12 @@ import sizeOf from "image-size";
 var generatePreview = (documentPath, documentId, previewId, type, extension) => {
   return new Promise((resolve) => {
     if (type === "application" && extension === "pdf") {
-      let tempFilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + ".pdf";
+      let tempFilePath = folders_default.TEMP + "/" + documentId + ".pdf";
       fs.copyFileSync(documentPath, tempFilePath);
       const options = {
         density: 100,
         saveFilename: documentId,
-        savePath: process.cwd() + "/" + folders_default.PDF_PAGES,
+        savePath: folders_default.PDF_PAGES,
         format: "jpg",
         width: 300,
         height: 400
@@ -162,23 +164,23 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
         fs.rmSync(tempFilePath);
         if (output.length > 0) {
           fs.writeFileSync(
-            process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg",
+            folders_default.PREVIEWS + "/" + previewId + ".jpg",
             output[0].base64,
             "base64"
           );
         }
-        resolve({ previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
+        resolve({ previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg" });
       });
     } else if (type === "video") {
       genThumbnail(
         documentPath,
-        process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg",
+        folders_default.PREVIEWS + "/" + previewId + ".jpg",
         "256x196"
       ).then(() => {
-        resolve({ previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
+        resolve({ previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg" });
       }).catch((err) => console.error(err));
     } else if (type === "image") {
-      const finalPreviewPath = process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg";
+      const finalPreviewPath = folders_default.PREVIEWS + "/" + previewId + ".jpg";
       sharp(documentPath).resize(200, 200).toFile(finalPreviewPath, function(err) {
         sizeOf(finalPreviewPath, function(err2, dimensions) {
           resolve({
@@ -189,12 +191,12 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
         });
       });
     } else if (type === "audio") {
-      const tempFilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + "." + extension;
-      const tempMp3FilePath = process.cwd() + "/" + folders_default.TEMP + "/" + documentId + ".mp3";
+      const tempFilePath = folders_default.TEMP + "/" + documentId + "." + extension;
+      const tempMp3FilePath = folders_default.TEMP + "/" + documentId + ".mp3";
       fs.copyFileSync(documentPath, tempFilePath);
       let calculatingGraph = () => {
         exec(
-          `ffmpeg -i ${extension === "mp3" ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".json"}`,
+          `ffmpeg -i ${extension === "mp3" ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders_default.PREVIEWS + "/" + previewId + ".json"}`,
           (error, stdout, stderr) => __async(void 0, null, function* () {
             if (error) {
               console.log(`error: ${error}`);
@@ -210,27 +212,27 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
             } catch (ex) {
             }
             console.log("generating cover...");
-            let cover2;
+            let cover;
             try {
               const { parseFile, selectCover } = yield import("music-metadata");
               const { common } = yield parseFile(extension === "mp3" ? tempMp3FilePath : tempFilePath);
-              cover2 = selectCover(common.picture);
+              cover = selectCover(common.picture);
             } catch (ex) {
             }
-            if (cover2) {
-              fs.writeFile(process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg", cover2.data, () => {
-                sharp(process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg").resize(200, 200).toFile(process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId, function(err) {
+            if (cover) {
+              fs.writeFile(folders_default.PREVIEWS + "/" + previewId + ".jpg", cover.data, () => {
+                sharp(folders_default.PREVIEWS + "/" + previewId + ".jpg").resize(200, 200).toFile(folders_default.PREVIEWS + "/" + previewId, function(err) {
                   console.log("generated cover.");
-                  fs.rmSync(process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg");
+                  fs.rmSync(folders_default.PREVIEWS + "/" + previewId + ".jpg");
                   fs.renameSync(
-                    process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId,
-                    process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg"
+                    folders_default.PREVIEWS + "/" + previewId,
+                    folders_default.PREVIEWS + "/" + previewId + ".jpg"
                   );
                   if (fs.existsSync(tempFilePath))
                     fs.rmSync(tempFilePath);
                   if (fs.existsSync(tempMp3FilePath))
                     fs.rmSync(tempMp3FilePath);
-                  resolve({ duration, previewPath: process.cwd() + "/" + folders_default.PREVIEWS + "/" + previewId + ".jpg" });
+                  resolve({ duration, previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg", waveformPath: folders_default.PREVIEWS + "/" + previewId + ".json" });
                 });
               });
             } else {
@@ -239,7 +241,7 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
                 fs.rmSync(tempFilePath);
               if (fs.existsSync(tempMp3FilePath))
                 fs.rmSync(tempMp3FilePath);
-              resolve({ duration, previewPath: "" });
+              resolve({ duration, previewPath: "", waveformPath: folders_default.PREVIEWS + "/" + previewId + ".json" });
             }
           })
         );
@@ -303,8 +305,10 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
   };
   try {
     yield s3Client.send(new PutObjectCommand(docParams));
-    let { duration, width, height, previewPath } = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
+    let { duration, width, height, previewPath, waveformPath } = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
+    let hasPhoto = false, hasWaveform = false;
     if ((previewPath == null ? void 0 : previewPath.length) > 0) {
+      hasPhoto = true;
       const prevParams = {
         Bucket: config_default.LIARA_BUCKET_NAME,
         Key: preview2.id,
@@ -313,17 +317,28 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       yield s3Client.send(new PutObjectCommand(prevParams));
       yield fs2.promises.rm(previewPath);
     }
+    if ((waveformPath == null ? void 0 : waveformPath.length) > 0) {
+      hasWaveform = true;
+      const prevParams = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: preview2.id + "-waveform",
+        Body: fs2.createReadStream(previewPath)
+      };
+      yield s3Client.send(new PutObjectCommand(prevParams));
+      yield fs2.promises.rm(waveformPath);
+    }
+    const session2 = yield mongoose4.startSession();
+    session2.startTransaction();
+    preview2 = yield Preview.findOneAndUpdate({ id: preview2.id }, { photo: hasPhoto, waveform: hasWaveform }, { new: true }).session(session2);
     if (duration || width && height) {
-      const session2 = yield mongoose4.startSession();
-      session2.startTransaction();
       if (duration) {
         document2 = yield Document.findOneAndUpdate({ id: document2.id }, { duration }, { new: true }).session(session2);
       } else if (width && height) {
         document2 = yield Document.findOneAndUpdate({ id: document2.id }, { width, height }, { new: true }).session(session2);
       }
-      yield session2.commitTransaction();
-      session2.endSession();
     }
+    yield session2.commitTransaction();
+    session2.endSession();
     return { success: true, document: document2, preview: preview2 };
   } catch (error) {
     console.log(error);
@@ -333,9 +348,9 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
 // database/transactions/download.ts
 var download_exports = {};
 __export(download_exports, {
-  cover: () => cover,
   document: () => document,
-  preview: () => preview
+  preview: () => preview,
+  waveform: () => waveform
 });
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 var document = (documentId, roomId, res) => __async(void 0, null, function* () {
@@ -394,7 +409,7 @@ var preview = (documentId, roomId, res) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var cover = (documentId, roomId, res) => __async(void 0, null, function* () {
+var waveform = (documentId, roomId, res) => __async(void 0, null, function* () {
   try {
     let success = false;
     let doc = yield Document.findOne({ id: documentId }).exec();
@@ -403,7 +418,7 @@ var cover = (documentId, roomId, res) => __async(void 0, null, function* () {
         if (doc.type === "audio") {
           const params = {
             Bucket: config_default.LIARA_BUCKET_NAME,
-            Key: doc.previewId + "-cover"
+            Key: doc.previewId + "-waveform"
           };
           try {
             const data = yield s3Client.send(new GetObjectCommand(params));

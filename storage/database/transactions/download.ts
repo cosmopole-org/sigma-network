@@ -63,7 +63,7 @@ const preview = async (documentId: string, roomId: string, res: any) => {
   }
 }
 
-const cover = async (documentId: string, roomId: string, res: any) => {
+const waveform = async (documentId: string, roomId: string, res: any) => {
   try {
     let success = false;
     let doc = await Document.findOne({ id: documentId }).exec() as IDocument;
@@ -72,7 +72,7 @@ const cover = async (documentId: string, roomId: string, res: any) => {
         if (doc.type === 'audio') {
           const params = {
             Bucket: config.LIARA_BUCKET_NAME,
-            Key: doc.previewId + '-cover'
+            Key: doc.previewId + '-waveform'
           }
           try {
             const data = await s3Client.send(new GetObjectCommand(params));
@@ -98,5 +98,5 @@ const cover = async (documentId: string, roomId: string, res: any) => {
 export {
   document,
   preview,
-  cover
+  waveform
 }

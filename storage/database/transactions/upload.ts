@@ -1,8 +1,6 @@
 
-import { generatePreview } from '../../utils/previewer';
 import { Document } from '../schemas/document.schema';
 import { Preview } from 'database/schemas/preview.schema';
-import folders from '../../folders';
 import config from '../../config';
 import fs from "fs";
 import mongoose from 'mongoose';
@@ -50,8 +48,10 @@ const finalup = async (path: string, roomId: string, humanId: string, isPublic: 
   };
   try {
     await s3Client.send(new PutObjectCommand(docParams));
-    let { duration, width, height, previewPath } = await Utils.previewer.generatePreview(path, document.id, preview.id, type, extension)
+    let { duration, width, height, previewPath, waveformPath } = await Utils.previewer.generatePreview(path, document.id, preview.id, type, extension)
+    let hasPhoto = false, hasWaveform = false
     if (previewPath?.length > 0) {
+      hasPhoto = true
       const prevParams = {
         Bucket: config.LIARA_BUCKET_NAME,
         Key: preview.id,
@@ -60,17 +60,28 @@ const finalup = async (path: string, roomId: string, humanId: string, isPublic: 
       await s3Client.send(new PutObjectCommand(prevParams));
       await fs.promises.rm(previewPath)
     }
+    if (waveformPath?.length > 0) {
+      hasWaveform = true
+      const prevParams = {
+        Bucket: config.LIARA_BUCKET_NAME,
+        Key: preview.id + '-waveform',
+        Body: fs.createReadStream(previewPath)
+      };
+      await s3Client.send(new PutObjectCommand(prevParams));
+      await fs.promises.rm(waveformPath)
+    }
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    preview = await Preview.findOneAndUpdate({ id: preview.id }, { photo: hasPhoto, waveform: hasWaveform }, { new: true }).session(session);
     if (duration || (width && height)) {
-      const session = await mongoose.startSession();
-      session.startTransaction();
       if (duration) {
         document = await Document.findOneAndUpdate({ id: document.id }, { duration: duration }, { new: true }).session(session);
       } else if (width && height) {
         document = await Document.findOneAndUpdate({ id: document.id }, { width: width, height: height }, { new: true }).session(session);
       }
-      await session.commitTransaction();
-      session.endSession();
     }
+    await session.commitTransaction();
+    session.endSession();
     return { success: true, document, preview };
   } catch (error) {
     console.log(error);

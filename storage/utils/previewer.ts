@@ -8,15 +8,15 @@ import sharp from "sharp";
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import sizeOf from 'image-size';
 
-const generatePreview = (documentPath: string, documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string }> => {
+const generatePreview = (documentPath: string, documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string, waveformPath?: string }> => {
     return new Promise(resolve => {
         if (type === "application" && extension === 'pdf') {
-            let tempFilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + ".pdf";
+            let tempFilePath = folders.TEMP + "/" + documentId + ".pdf";
             fs.copyFileSync(documentPath, tempFilePath);
             const options = {
                 density: 100,
                 saveFilename: documentId,
-                savePath: process.cwd() + "/" + folders.PDF_PAGES,
+                savePath: folders.PDF_PAGES,
                 format: "jpg",
                 width: 300,
                 height: 400,
@@ -25,25 +25,25 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                 fs.rmSync(tempFilePath);
                 if (output.length > 0) {
                     fs.writeFileSync(
-                        process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg",
+                        folders.PREVIEWS + "/" + previewId + ".jpg",
                         output[0].base64,
                         "base64"
                     );
                 }
-                resolve({ previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
+                resolve({ previewPath: folders.PREVIEWS + "/" + previewId + ".jpg" });
             });
         } else if (type === 'video') {
             genThumbnail(
                 documentPath,
-                process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg",
+                folders.PREVIEWS + "/" + previewId + ".jpg",
                 "256x196"
             )
                 .then(() => {
-                    resolve({ previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
+                    resolve({ previewPath: folders.PREVIEWS + "/" + previewId + ".jpg" });
                 })
                 .catch((err) => console.error(err));
         } else if (type === 'image') {
-            const finalPreviewPath = process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + '.jpg';
+            const finalPreviewPath = folders.PREVIEWS + "/" + previewId + '.jpg';
             sharp(documentPath)
                 .resize(200, 200)
                 .toFile(finalPreviewPath, function (err) {
@@ -56,12 +56,12 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                     });
                 });
         } else if (type === "audio") {
-            const tempFilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + "." + extension;
-            const tempMp3FilePath = process.cwd() + "/" + folders.TEMP + "/" + documentId + ".mp3";
+            const tempFilePath = folders.TEMP + "/" + documentId + "." + extension;
+            const tempMp3FilePath = folders.TEMP + "/" + documentId + ".mp3";
             fs.copyFileSync(documentPath, tempFilePath);
             let calculatingGraph = () => {
                 exec(
-                    `ffmpeg -i ${extension === 'mp3' ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".json"}`,
+                    `ffmpeg -i ${extension === 'mp3' ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders.PREVIEWS + "/" + previewId + ".json"}`,
                     async (error, stdout, stderr) => {
                         if (error) {
                             console.log(`error: ${error}`);
@@ -83,26 +83,26 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                             cover = selectCover(common.picture);
                         } catch (ex) { }
                         if (cover) {
-                            fs.writeFile(process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg", cover.data, () => {
-                                sharp(process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg")
+                            fs.writeFile(folders.PREVIEWS + "/" + previewId + ".jpg", cover.data, () => {
+                                sharp(folders.PREVIEWS + "/" + previewId + ".jpg")
                                     .resize(200, 200)
-                                    .toFile(process.cwd() + "/" + folders.PREVIEWS + "/" + previewId, function (err) {
+                                    .toFile(folders.PREVIEWS + "/" + previewId, function (err) {
                                         console.log('generated cover.');
-                                        fs.rmSync(process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg");
+                                        fs.rmSync(folders.PREVIEWS + "/" + previewId + ".jpg");
                                         fs.renameSync(
-                                            process.cwd() + "/" + folders.PREVIEWS + "/" + previewId,
-                                            process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg"
+                                            folders.PREVIEWS + "/" + previewId,
+                                            folders.PREVIEWS + "/" + previewId + ".jpg"
                                         );
                                         if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                                         if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                                        resolve({ duration, previewPath: process.cwd() + "/" + folders.PREVIEWS + "/" + previewId + ".jpg" });
+                                        resolve({ duration, previewPath: folders.PREVIEWS + "/" + previewId + ".jpg", waveformPath: folders.PREVIEWS + "/" + previewId + ".json" });
                                     });
                             });
                         } else {
                             console.log('cover generation failed.');
                             if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                             if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                            resolve({ duration, previewPath: "" });
+                            resolve({ duration, previewPath: "", waveformPath: folders.PREVIEWS + "/" + previewId + ".json" });
                         }
                     });
             };

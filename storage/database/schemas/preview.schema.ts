@@ -2,7 +2,9 @@ import mongoose, { Schema } from 'mongoose';
 import IPreview from 'models/preview.model';
 
 const PreviewSchema = new Schema({
-    id: String
+    id: String,
+    photo: Boolean,
+    waveform: Boolean
 })
 
 let Preview: mongoose.Model<IPreview>
