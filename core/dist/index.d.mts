@@ -1,5 +1,6 @@
 import { Emitter } from '@socket.io/redis-emitter';
 import { Socket } from 'socket.io';
+import { ClientSession } from 'mongoose';
 
 declare class Client {
     socket: Socket;
@@ -23,6 +24,12 @@ declare class Client {
     constructor(socket: Socket, emitter: Emitter);
 }
 
+declare class Update {
+    requestId: string;
+    type: string;
+    constructor(requestId: string);
+}
+
 declare class BaseService {
 }
 
@@ -35,9 +42,101 @@ declare abstract class BaseMachine extends BaseService {
     route(key: Array<string>, client: Client, body: any): Promise<unknown>;
 }
 
+interface IRoom {
+    id: string;
+    title: string;
+    avatarId: string;
+    towerId: string;
+    floor: string;
+    isPublic: boolean;
+    secret: any;
+}
+
 declare class Sigma {
+    roomCreationCallback: (room: IRoom, mongoSession: ClientSession) => void;
+    onRoomCreation(callback: (room: IRoom, mongoSession: ClientSession) => void): void;
     start(): Promise<void>;
     shell(machines: Array<BaseMachine>): void;
+    updater: {
+        types: {
+            tower: {
+                onUpdate: {
+                    category: string;
+                    key: string;
+                };
+                onRemove: {
+                    category: string;
+                    key: string;
+                };
+                onHumanJoin: {
+                    category: string;
+                    key: string;
+                };
+            };
+            room: {
+                onCreate: {
+                    category: string;
+                    key: string;
+                };
+                onUpdate: {
+                    category: string;
+                    key: string;
+                };
+                onRemove: {
+                    category: string;
+                    key: string;
+                };
+            };
+            permission: {
+                onUpdate: {
+                    category: string;
+                    key: string;
+                };
+            };
+            invite: {
+                onCreate: {
+                    category: string;
+                    key: string;
+                };
+                onCancel: {
+                    category: string;
+                    key: string;
+                };
+                onAccept: {
+                    category: string;
+                    key: string;
+                };
+                onDecline: {
+                    category: string;
+                    key: string;
+                };
+            };
+            worker: {
+                onRequest: {
+                    category: string;
+                    key: string;
+                };
+                onResponse: {
+                    category: string;
+                    key: string;
+                };
+            };
+        };
+        buildUpdate: (requestId: string, path: {
+            category: string;
+            key: string;
+        }, ...args: any[]) => any;
+        registerUpdateType: <T extends Update>(type: T, path: {
+            category: string;
+            key: string;
+        }) => void;
+        group: (towerId: string) => {
+            emit: (packet: any) => void;
+            boradcast: {
+                emit: (client: Client, packet: any) => void;
+            };
+        };
+    };
     constructor(conf: any);
 }
 
@@ -65,12 +164,6 @@ declare class Action {
         };
         roomId?: string;
     }) => any);
-}
-
-declare class Update {
-    requestId: string;
-    type: string;
-    constructor(requestId: string);
 }
 
 declare const _default: {
@@ -143,8 +236,8 @@ declare const _default: {
         key: string;
     }, ...args: any[]) => any;
     registerUpdateType: <T extends Update>(type: T, path: {
-        category: "string";
-        key: "string";
+        category: string;
+        key: string;
     }) => void;
     group: (towerId: string) => {
         emit: (packet: any) => void;
@@ -154,4 +247,4 @@ declare const _default: {
     };
 };
 
-export { Action, BaseMachine, Client, Sigma, _default as Updater };
+export { Action, BaseMachine, Client, Sigma, Update, _default as Updater };

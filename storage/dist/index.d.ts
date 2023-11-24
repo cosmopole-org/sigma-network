@@ -1,4 +1,5 @@
-import mongoose from 'mongoose';
+import * as mongoose from 'mongoose';
+import mongoose__default from 'mongoose';
 
 interface IPreview {
     id: string;
@@ -25,11 +26,11 @@ interface IDocument {
 
 declare const finalup: (path: string, roomId: string, humanId: string, isPublic: boolean, extension: string, type: string) => Promise<{
     success: boolean;
-    document: mongoose.Document<unknown, any, IDocument> & Omit<IDocument & {
-        _id: mongoose.Types.ObjectId;
+    document: mongoose__default.Document<unknown, any, IDocument> & Omit<IDocument & {
+        _id: mongoose__default.Types.ObjectId;
     }, never>;
-    preview: mongoose.Document<unknown, any, IPreview> & Omit<IPreview & {
-        _id: mongoose.Types.ObjectId;
+    preview: mongoose__default.Document<unknown, any, IPreview> & Omit<IPreview & {
+        _id: mongoose__default.Types.ObjectId;
     }, never>;
 }>;
 
@@ -68,11 +69,19 @@ declare const docIds: (roomId: string) => Promise<{
     success: boolean;
     docIds?: undefined;
 }>;
+declare const docsByIds: (docIds: Array<string>) => Promise<{
+    success: boolean;
+    docs: mongoose.LeanDocument<IDocument & {
+        _id: mongoose.Types.ObjectId;
+    }>[];
+}>;
 
 declare const group_docIds: typeof docIds;
+declare const group_docsByIds: typeof docsByIds;
 declare namespace group {
   export {
     group_docIds as docIds,
+    group_docsByIds as docsByIds,
   };
 }
 

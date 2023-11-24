@@ -48,7 +48,7 @@ let types = {
     },
 }
 
-const registerUpdateType = <T extends Update>(type: T, path: { category: 'string', key: 'string'}) => {
+const registerUpdateType = <T extends Update>(type: T, path: { category: string, key: string}) => {
     if (!types[path.category]) {
         types[path.category] = {}
         updatesDict[path.category] = {}

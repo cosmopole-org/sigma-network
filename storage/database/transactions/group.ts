@@ -1,4 +1,5 @@
 
+import { Document } from 'database/schemas/document.schema';
 import { Group } from 'database/schemas/group.schema';
 
 const docIds = async (roomId: string) => {
@@ -10,6 +11,12 @@ const docIds = async (roomId: string) => {
   }
 }
 
+const docsByIds = async (docIds: Array<string>) => {
+  let docs = await Document.find({ id: { $in: docIds } }).lean().exec();
+  return { success: true, docs: docs };
+}
+
 export {
-  docIds
+  docIds,
+  docsByIds
 }

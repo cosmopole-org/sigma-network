@@ -14,10 +14,10 @@ import MachineController from "./machine.controller";
 import WorkerService from "services/worker.service";
 import WorkerController from "./worker.controller";
 
-const build = () => {
+const build = (rcc: any) => {
     NetworkDriver.instance.registerController(HumanController, HumanService)
-    NetworkDriver.instance.registerController(TowerController, TowerService)
-    NetworkDriver.instance.registerController(RoomController, RoomService)
+    NetworkDriver.instance.registerController(TowerController, TowerService, rcc)
+    NetworkDriver.instance.registerController(RoomController, RoomService, rcc)
     NetworkDriver.instance.registerController(InviteController, InviteService)
     NetworkDriver.instance.registerController(PermissionController, PermissionService)
     NetworkDriver.instance.registerController(MachineController, MachineService)

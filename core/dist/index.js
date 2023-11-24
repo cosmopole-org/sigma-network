@@ -70,6 +70,7 @@ __export(core_exports, {
   BaseMachine: () => base_machine_default,
   Client: () => client_default,
   Sigma: () => sigma_default,
+  Update: () => base_default,
   Updater: () => updater_default
 });
 module.exports = __toCommonJS(core_exports);
@@ -998,8 +999,8 @@ var NetworkDriver = class _NetworkDriver {
   looseClient(client) {
     client.humanId && delete this.clients[client.humanId];
   }
-  registerController(type, type2) {
-    let controller = new type(new type2());
+  registerController(type, type2, meta) {
+    let controller = new type(meta ? new type2(meta) : new type2());
     this.controllers[controller.getName()] = controller;
   }
   registerCustomController(controller) {
@@ -1461,6 +1462,7 @@ var create = (args, _session) => __async(void 0, null, function* () {
         ]
       }
     }, session);
+    args.creationCallback && (yield args.creationCallback(room, session));
     member = yield member_factory_default.instance.create({
       id: makeUniqueId(),
       humanId: args.ownerId,
@@ -1849,6 +1851,7 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
             ]
           }
         }, session);
+        args.creationCallback && (yield args.creationCallback(room, session));
         success = true;
         if (!_session)
           yield session.commitTransaction();
@@ -3513,10 +3516,13 @@ var updater_default = {
 
 // services/tower.service.ts
 var TowerService = class {
+  constructor(rcc) {
+    this.rcc = rcc;
+  }
   create(client, body, requestId) {
     return __async(this, null, function* () {
       if (client.humanId) {
-        let result = yield tower_exports.create(__spreadProps(__spreadValues({}, body), { ownerId: client.humanId }));
+        let result = yield tower_exports.create(__spreadProps(__spreadValues({}, body), { ownerId: client.humanId, creationCallback: this.rcc }));
         if (result.success) {
           guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.tower.id, result.member.secret.permissions);
@@ -3606,11 +3612,14 @@ var tower_service_default = TowerService;
 
 // services/room.service.ts
 var RoomService = class {
+  constructor(rcc) {
+    this.rcc = rcc;
+  }
   create(client, body, requestId) {
     return __async(this, null, function* () {
       let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
       if (granted) {
-        let result = yield room_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
+        let result = yield room_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId, creationCallback: this.rcc }));
         if (result.success) {
           network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(
             requestId,
@@ -4172,10 +4181,10 @@ var WorkerController = class extends base_controller_default {
 var worker_controller_default = WorkerController;
 
 // controllers/index.ts
-var build2 = () => {
+var build2 = (rcc) => {
   network_default.instance.registerController(human_controller_default, human_service_default);
-  network_default.instance.registerController(tower_controller_default, tower_service_default);
-  network_default.instance.registerController(room_controller_default, room_service_default);
+  network_default.instance.registerController(tower_controller_default, tower_service_default, rcc);
+  network_default.instance.registerController(room_controller_default, room_service_default, rcc);
   network_default.instance.registerController(invite_controller_default, invite_service_default);
   network_default.instance.registerController(permission_controller_default, permission_service_default);
   network_default.instance.registerController(machine_controller_default, machine_service_default);
@@ -4184,13 +4193,20 @@ var build2 = () => {
 
 // sigma.ts
 var Sigma = class {
+  constructor(conf) {
+    this.updater = updater_default;
+    setupConfig(conf);
+  }
+  onRoomCreation(callback) {
+    this.roomCreationCallback = callback;
+  }
   start() {
     return __async(this, null, function* () {
       return new Promise((resolve) => {
         database_default.initialize(() => {
           memory_default.initialize();
           network_default.initialize();
-          build2();
+          build2(this.roomCreationCallback);
           resolve();
         });
       });
@@ -4201,9 +4217,6 @@ var Sigma = class {
       let controller = new custom_controller_default(machine.getName(), machine);
       network_default.instance.registerCustomController(controller);
     });
-  }
-  constructor(conf) {
-    setupConfig(conf);
   }
 };
 var sigma_default = Sigma;
@@ -4284,6 +4297,7 @@ var action_default = Action;
   BaseMachine,
   Client,
   Sigma,
+  Update,
   Updater
 });
 //# sourceMappingURL=index.js.map

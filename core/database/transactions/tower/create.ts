@@ -8,7 +8,7 @@ import { ITower } from 'models/tower.model';
 import { IRoom } from 'models/room.model';
 import { IMember } from 'models/member.model';
 
-const create = async (args: { title: string, avatarId: string, isPublic: boolean, ownerId: string }, _session?: ClientSession) => {
+const create = async (args: { title: string, avatarId: string, isPublic: boolean, ownerId: string, creationCallback?: any }, _session?: ClientSession) => {
   if (isEmpty(args.title)) {
     console.error('title can not be empty');
     return { success: false };
@@ -46,6 +46,7 @@ const create = async (args: { title: string, avatarId: string, isPublic: boolean
         ]
       }
     }, session)
+    args.creationCallback && await args.creationCallback(room, session)
     member = await Factories.MemberFactory.instance.create({
       id: makeUniqueId(),
       humanId: args.ownerId,

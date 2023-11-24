@@ -46,8 +46,8 @@ class NetworkDriver {
     public looseClient(client: Client) {
         client.humanId && (delete this.clients[client.humanId])
     }
-    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args: any[]): T; }, type2: { new(...args: any[]): V; }) {
-        let controller = new type(new type2())
+    public registerController<T extends BaseController, V extends BaseService>(type: { new(...args: any[]): T; }, type2: { new(...args: any[]): V; }, meta?: any) {
+        let controller = new type(meta ? new type2(meta) : new type2())
         this.controllers[controller.getName()] = controller
     }
     public registerCustomController(controller: CustomController) {

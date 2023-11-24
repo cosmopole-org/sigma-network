@@ -7,7 +7,7 @@ import { makeUniqueId } from '../../../utils/generator';
 import { IRoom } from 'models/room.model';
 import { IMember } from 'models/member.model';
 
-const create = async (args: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string, humanId: string }, _session?: ClientSession) => {
+const create = async (args: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string, humanId: string, creationCallback?: any }, _session?: ClientSession) => {
   if (isEmpty(args.title)) {
     console.error('title can not be empty');
     return { success: false };
@@ -37,6 +37,7 @@ const create = async (args: { towerId: string, title: string, avatarId: string, 
             ]
           }
         }, session);
+        args.creationCallback && await args.creationCallback(room, session)
         success = true;
         if (!_session) await session.commitTransaction();
       } else {

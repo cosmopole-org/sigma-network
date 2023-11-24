@@ -502,7 +502,8 @@ var waveform = (documentId, roomId, res) => __async(void 0, null, function* () {
 // database/transactions/group.ts
 var group_exports = {};
 __export(group_exports, {
-  docIds: () => docIds
+  docIds: () => docIds,
+  docsByIds: () => docsByIds
 });
 var docIds = (roomId) => __async(void 0, null, function* () {
   let group = yield Group.findOne({ roomId }).lean().exec();
@@ -511,6 +512,10 @@ var docIds = (roomId) => __async(void 0, null, function* () {
   } else {
     return { success: false };
   }
+});
+var docsByIds = (docIds2) => __async(void 0, null, function* () {
+  let docs = yield Document.find({ id: { $in: docIds2 } }).lean().exec();
+  return { success: true, docs };
 });
 
 // database/schemas/index.ts

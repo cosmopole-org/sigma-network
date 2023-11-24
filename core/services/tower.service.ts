@@ -8,9 +8,13 @@ import guardian from "../guardian";
 import MemoryDriver from "drivers/memory/memory";
 
 class TowerService {
+    rcc: any
+    constructor(rcc: any) {
+        this.rcc = rcc
+    }
     async create(client: Client, body: { title: string, avatarId: string, isPublic: boolean }, requestId: string) {
         if (client.humanId) {
-            let result = await transactions.tower.create({ ...body, ownerId: client.humanId })
+            let result = await transactions.tower.create({ ...body, ownerId: client.humanId, creationCallback: this.rcc })
             if (result.success) {
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.tower.id, result.member.secret.permissions)

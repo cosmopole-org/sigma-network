@@ -6,15 +6,21 @@ import * as Controllers from './controllers'
 import CustomController from "./controllers/custom.controller"
 import BaseMachine from "./machines/base.machine"
 import { setupConfig } from "./config"
-import mongoose from "mongoose"
+import updaterEngine from "updater"
+import { IRoom } from "models/room.model"
+import { ClientSession } from "mongoose"
 
 class Sigma {
+    roomCreationCallback: (room: IRoom, mongoSession: ClientSession) => void
+    onRoomCreation(callback: (room: IRoom, mongoSession: ClientSession) => void) {
+        this.roomCreationCallback = callback
+    }
     async start(): Promise<void> {
         return new Promise(resolve => {
             StorageDriver.initialize(() => {
                 MemoryDriver.initialize()
                 NetworkDriver.initialize()
-                Controllers.build()
+                Controllers.build(this.roomCreationCallback)
                 resolve()
             })
         })
@@ -25,6 +31,7 @@ class Sigma {
             NetworkDriver.instance.registerCustomController(controller)
         })
     }
+    updater = updaterEngine
     constructor(conf: any) {
         setupConfig(conf)
     }
