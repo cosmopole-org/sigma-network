@@ -11,7 +11,7 @@ import { IRoom } from '../../../models/room.model';
 import { IMember } from '../../../models/member.model';
 import * as Factories from '../../factories'
 
-const complete = async (args: { cCode: string, firstName: string, lastName?: string }, _session?: ClientSession) => {
+const complete = async (args: { cCode: string, firstName: string, lastName?: string, creationCallback: any }, _session?: ClientSession) => {
     if (isEmpty(args.firstName)) {
         console.error('first name can not be empty');
         return { success: false };
@@ -71,6 +71,7 @@ const complete = async (args: { cCode: string, firstName: string, lastName?: str
                     ]
                 }
             }, session);
+            args.creationCallback && await args.creationCallback(room, session)
             member = await Factories.MemberFactory.instance.create({
                 id: makeUniqueId(),
                 humanId: human.id,

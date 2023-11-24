@@ -6,6 +6,10 @@ import NetworkDriver from "../drivers/network/network";
 import guardian from "../guardian";
 
 class HumanService {
+    rcc: any
+    constructor(rcc: any) {
+        this.rcc = rcc
+    }
     async signUp(client: Client, body: { email: string }, requestId: string) {
         return transactions.human.signUp(body)
     }
@@ -30,7 +34,7 @@ class HumanService {
         return result
     }
     async complete(client: Client, body: { cCode: string, firstName: string, lastName?: string }, requestId: string) {
-        let result = await transactions.human.complete(body)
+        let result = await transactions.human.complete({ ...body, creationCallback: this.rcc })
         if (result.success) {
             await Promise.all([
                 MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id),
@@ -44,7 +48,7 @@ class HumanService {
         if (client.humanId) {
             return transactions.human.update({ ...body, humanId: client.humanId })
         } else {
-            return { success: false }            
+            return { success: false }
         }
     }
     async readById(client: Client, body: { targetHumanId: string }, requestId: string) {

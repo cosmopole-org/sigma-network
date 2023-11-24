@@ -15,7 +15,7 @@ import WorkerService from "services/worker.service";
 import WorkerController from "./worker.controller";
 
 const build = (rcc: any) => {
-    NetworkDriver.instance.registerController(HumanController, HumanService)
+    NetworkDriver.instance.registerController(HumanController, HumanService, rcc)
     NetworkDriver.instance.registerController(TowerController, TowerService, rcc)
     NetworkDriver.instance.registerController(RoomController, RoomService, rcc)
     NetworkDriver.instance.registerController(InviteController, InviteService)

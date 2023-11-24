@@ -1271,6 +1271,7 @@ var complete = (args, _session) => __async(void 0, null, function* () {
           ]
         }
       }, session);
+      args.creationCallback && (yield args.creationCallback(room, session));
       member = yield member_factory_default.instance.create({
         id: makeUniqueId(),
         humanId: human.id,
@@ -3086,6 +3087,9 @@ var guardian_default = {
 
 // services/human.service.ts
 var HumanService = class {
+  constructor(rcc) {
+    this.rcc = rcc;
+  }
   signUp(client, body, requestId) {
     return __async(this, null, function* () {
       return human_exports.signUp(body);
@@ -3117,7 +3121,7 @@ var HumanService = class {
   }
   complete(client, body, requestId) {
     return __async(this, null, function* () {
-      let result = yield human_exports.complete(body);
+      let result = yield human_exports.complete(__spreadProps(__spreadValues({}, body), { creationCallback: this.rcc }));
       if (result.success) {
         yield Promise.all([
           memory_default.instance.save(`auth:${result.session.token}`, result.human.id),
@@ -4182,7 +4186,7 @@ var worker_controller_default = WorkerController;
 
 // controllers/index.ts
 var build2 = (rcc) => {
-  network_default.instance.registerController(human_controller_default, human_service_default);
+  network_default.instance.registerController(human_controller_default, human_service_default, rcc);
   network_default.instance.registerController(tower_controller_default, tower_service_default, rcc);
   network_default.instance.registerController(room_controller_default, room_service_default, rcc);
   network_default.instance.registerController(invite_controller_default, invite_service_default);
