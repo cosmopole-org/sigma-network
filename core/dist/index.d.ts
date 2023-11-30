@@ -1,5 +1,6 @@
 import { Emitter } from '@socket.io/redis-emitter';
 import { Socket } from 'socket.io';
+import express from 'express';
 import { ClientSession } from 'mongoose';
 
 declare class Client {
@@ -11,7 +12,9 @@ declare class Client {
         [id: string]: boolean;
     };
     emitter: Emitter;
+    token: string;
     reset(): void;
+    updateToken(token: string): void;
     updateHumanId(humanId: string): void;
     updateTowerId(towerId: string, rights: {
         [id: string]: boolean;
@@ -40,6 +43,7 @@ declare abstract class BaseMachine extends BaseService {
     };
     abstract getClient(): string;
     route(key: Array<string>, client: Client, body: any): Promise<unknown>;
+    routeRest(key: Array<string>, client: Client, req: express.Request, res: express.Response): Promise<unknown>;
 }
 
 interface IRoom {
@@ -146,24 +150,12 @@ declare class Action {
         authorize?: boolean;
         inRoom?: boolean;
     };
-    func: (client: Client, body: any, control: any, guardianReport?: {
-        towerId: string;
-        permissions: {
-            [id: string]: boolean;
-        };
-        roomId?: string;
-    }) => any;
+    func: any;
     constructor(guardian: {
         authenticate?: boolean;
         authorize?: boolean;
         inRoom?: boolean;
-    }, func: (client: Client, body: any, control: any, guardianReport?: {
-        towerId: string;
-        permissions: {
-            [id: string]: boolean;
-        };
-        roomId?: string;
-    }) => any);
+    }, func: any);
 }
 
 declare const _default: {

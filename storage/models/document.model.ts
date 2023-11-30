@@ -14,6 +14,7 @@ interface IDocument {
         width: number,
         height: number,
         extension: string,
+        title: string,
         size: number
     }
 }

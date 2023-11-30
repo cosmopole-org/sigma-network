@@ -1,12 +1,15 @@
 {
   "name": "sigma-storage",
-  "version": "0.1.5",
+  "version": "0.1.23",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "files": [
     "dist"
   ],
+  "repository": {
+    "url": "https://github.com/cosmopole-org/sigma-network"
+  },
   "scripts": {
     "start": "ts-node-esm src/index.ts",
     "build": "tsup"

@@ -5,21 +5,36 @@ import config from '../../config';
 import { GetObjectCommand } from '@aws-sdk/client-s3';
 import IDocument from 'models/document.model';
 
-const document = async (documentId: string, roomId: string, res: any) => {
+const document = async (documentId: string, roomId: string, range: any, res: any, options: { videoModuleType?: string }) => {
   try {
     let success = false;
     let doc = await Document.findOne({ id: documentId }).exec() as IDocument;
     if (doc !== null) {
       if (doc.isPublic || (doc.secret.roomIds.includes(roomId))) {
-        const params = {
-          Bucket: config.LIARA_BUCKET_NAME,
-          Key: documentId
-        }
-        try {
-          const data = await s3Client.send(new GetObjectCommand(params));
-          data.Body.transformToWebStream().pipeTo(res)
-        } catch (error) {
-          console.log(error);
+        if (doc.type === 'video' && options.videoModuleType) {
+          const params = {
+            Bucket: config.LIARA_BUCKET_NAME,
+            Key: documentId + '-' + options.videoModuleType,
+            Range: range
+          }
+          try {
+            const data = await s3Client.send(new GetObjectCommand(params));
+            data.Body.transformToWebStream().pipeTo(res)
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          const params = {
+            Bucket: config.LIARA_BUCKET_NAME,
+            Key: documentId,
+            Range: range
+          }
+          try {
+            const data = await s3Client.send(new GetObjectCommand(params));
+            data.Body.transformToWebStream().pipeTo(res)
+          } catch (error) {
+            console.log(error);
+          }
         }
         success = true;
       } else {

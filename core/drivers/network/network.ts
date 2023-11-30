@@ -27,6 +27,7 @@ class NetworkDriver {
     io: Server
     controllers: { [id: string]: BaseController } = {}
     clients: { [id: string]: Client } = {}
+    restSessions: { [id: string]: Client } = {}
     private emitter: Emitter
     public group(towerId: string) {
         return {
@@ -40,10 +41,12 @@ class NetworkDriver {
             }
         }
     }
-    public keepClient(client: Client) {
+    public keepClient(token: string, client: Client) {
         this.clients[client.humanId] = client
+        this.restSessions[token] = client
     }
     public looseClient(client: Client) {
+        client.token && (delete this.restSessions[client.token])
         client.humanId && (delete this.clients[client.humanId])
     }
     public registerController<T extends BaseController, V extends BaseService>(type: { new(...args: any[]): T; }, type2: { new(...args: any[]): V; }, meta?: any) {
@@ -72,10 +75,20 @@ class NetworkDriver {
             controller[parts[1]](client, body, requestId, callback)
         }
     }
+    private routeRest(client: Client, path: string, req: express.Request, res: express.Response) {
+        console.log(path)
+        let parts = path.split('/')
+        let controller = this.controllers[parts[0]]
+        if (controller instanceof CustomController) {
+            controller.routeRest(parts.slice(1), client, req, res)
+        }
+    }
     constructor() {
         NetworkDriver._instance = this
         this.app = express()
         this.app.use(cors())
+        this.app.use(express.urlencoded({ extended: true }))
+        this.app.use(express.json())
         this.server = createServer(this.app)
         this.io = new Server(this.server, {
             cors: {
@@ -91,6 +104,7 @@ class NetworkDriver {
         this.io.on('connection', (socket: Socket) => {
             console.log('a client connected');
             let client = new Client(socket, this.emitter)
+
             socket.on('disconnect', () => {
                 console.log('client disconnected');
                 delete this.clients[client.humanId]
@@ -101,6 +115,9 @@ class NetworkDriver {
                 this.route(client, args[0], args[1], args[2], args[3]);
             })
         });
+        this.app.all('*', (req: express.Request, res: express.Response) => {
+            this.routeRest(this.restSessions[req.headers['token'].toString()], req.path.substring(1), req, res);
+        })
     }
 }
 

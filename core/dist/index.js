@@ -819,8 +819,12 @@ var safeStringify = (obj, indent = 2) => {
 // drivers/network/client.ts
 var Client = class {
   reset() {
+    this.updateToken(void 0);
     this.updateHumanId(void 0);
     this.updateTowerId(void 0, void 0);
+  }
+  updateToken(token) {
+    this.token = token;
   }
   updateHumanId(humanId) {
     this.humanId = humanId;
@@ -937,6 +941,11 @@ var CustomController = class extends base_controller_default {
       response(result);
     });
   }
+  routeRest(key, client, req, res) {
+    return __async(this, null, function* () {
+      yield this.service.routeRest(key, client, req, res);
+    });
+  }
 };
 var custom_controller_default = CustomController;
 
@@ -946,9 +955,12 @@ var NetworkDriver = class _NetworkDriver {
   constructor() {
     this.controllers = {};
     this.clients = {};
+    this.restSessions = {};
     _NetworkDriver._instance = this;
     this.app = (0, import_express.default)();
     this.app.use((0, import_cors.default)());
+    this.app.use(import_express.default.urlencoded({ extended: true }));
+    this.app.use(import_express.default.json());
     this.server = (0, import_node_http.createServer)(this.app);
     this.io = new import_socket.Server(this.server, {
       cors: {
@@ -974,6 +986,9 @@ var NetworkDriver = class _NetworkDriver {
         this.route(client, args[0], args[1], args[2], args[3]);
       });
     });
+    this.app.all("*", (req, res) => {
+      this.routeRest(this.restSessions[req.headers["token"].toString()], req.path.substring(1), req, res);
+    });
   }
   static get instance() {
     return _NetworkDriver._instance;
@@ -993,10 +1008,12 @@ var NetworkDriver = class _NetworkDriver {
       }
     };
   }
-  keepClient(client) {
+  keepClient(token, client) {
     this.clients[client.humanId] = client;
+    this.restSessions[token] = client;
   }
   looseClient(client) {
+    client.token && delete this.restSessions[client.token];
     client.humanId && delete this.clients[client.humanId];
   }
   registerController(type, type2, meta) {
@@ -1023,6 +1040,14 @@ var NetworkDriver = class _NetworkDriver {
       controller.route(parts.slice(1), client, body, requestId, callback);
     } else {
       controller[parts[1]](client, body, requestId, callback);
+    }
+  }
+  routeRest(client, path, req, res) {
+    console.log(path);
+    let parts = path.split("/");
+    let controller = this.controllers[parts[0]];
+    if (controller instanceof custom_controller_default) {
+      controller.routeRest(parts.slice(1), client, req, res);
     }
   }
 };
@@ -3101,7 +3126,8 @@ var HumanService = class {
       if (granted) {
         let result = yield human_exports.signIn({ humanId });
         client.updateHumanId(humanId);
-        network_default.instance.keepClient(client);
+        client.updateToken(body.token);
+        network_default.instance.keepClient(body.token, client);
         client.joinTowers(result.memberships.map((m) => m.towerId));
         return { success: true };
       } else {
@@ -4280,6 +4306,62 @@ var BaseMachine = class extends base_service_default {
         }, report));
       } else {
         reject();
+        return;
+      }
+    }));
+  }
+  routeRest(key, client, req, res) {
+    return new Promise((resolve, reject) => __async(this, null, function* () {
+      var _a;
+      let action = this.getService();
+      for (let i = 0; i < key.length; i++) {
+        action = action[key[i]];
+      }
+      if (action) {
+        if (!client) {
+          reject(1);
+          return;
+        }
+        if (action.guardian.authenticate) {
+          if (!client.humanId) {
+            reject(2);
+            return;
+          }
+        }
+        let report = void 0;
+        if (action.guardian.inRoom && !req.headers["roomid"]) {
+          reject(3);
+          return;
+        }
+        if (action.guardian.authorize) {
+          let result = yield guardian_default.authorize(client, (_a = req.headers["towerid"]) == null ? void 0 : _a.toString(), req.headers["roomid"].toString());
+          if (result == null ? void 0 : result.granted) {
+            report = { towerId: req.headers["towerid"].toString(), rights: result.rights, roomId: req.headers["roomid"].toString() };
+          } else {
+            reject(4);
+            return;
+          }
+        }
+        resolve(action.func(client, req, res, {
+          storage: {
+            write: (relativePath, data) => __async(this, null, function* () {
+              if (req.headers["roomid"]) {
+                let path = `${config_default.TEMP_STORAGE}/storage/${req.headers["roomid"].toString()}/${relativePath}`;
+                let pathParts = path.split("/");
+                pathParts.pop();
+                yield import_fs.default.promises.mkdir(pathParts.join("/"), { recursive: true });
+                yield import_fs.default.promises.writeFile(path, data, { flag: "a+" });
+              }
+            }),
+            remove: (relativePath) => __async(this, null, function* () {
+              if (req.headers["roomid"]) {
+                yield import_fs.default.promises.rm(`${config_default.TEMP_STORAGE}/storage/${req.headers["roomid"].toString()}/${relativePath}`);
+              }
+            })
+          }
+        }, report));
+      } else {
+        reject(5);
         return;
       }
     }));

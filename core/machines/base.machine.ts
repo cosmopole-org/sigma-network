@@ -4,7 +4,7 @@ import Client from "../drivers/network/client";
 import guardian from "../guardian";
 import BaseService from "../services/base.service";
 import fs from 'fs';
-import path from 'path';
+import express from 'express'
 
 abstract class BaseMachine extends BaseService {
     abstract getName(): string
@@ -57,6 +57,61 @@ abstract class BaseMachine extends BaseService {
                 }, report))
             } else {
                 reject()
+                return
+            }
+        })
+    }
+    routeRest(key: Array<string>, client: Client, req: express.Request, res: express.Response) {
+        return new Promise(async (resolve, reject) => {
+            let action = this.getService()
+            for (let i = 0; i < key.length; i++) {
+                action = action[key[i]]
+            }
+            if (action) {
+                if (!client) {
+                    reject(1)
+                    return
+                }
+                if (action.guardian.authenticate) {
+                    if (!client.humanId) {
+                        reject(2)
+                        return
+                    }
+                }
+                let report: any = undefined
+                if (action.guardian.inRoom && !req.headers['roomid']) {
+                    reject(3)
+                    return
+                }
+                if (action.guardian.authorize) {
+                    let result = await guardian.authorize(client, req.headers['towerid']?.toString(), req.headers['roomid'].toString())
+                    if (result?.granted) {
+                        report = { towerId: req.headers['towerid'].toString(), rights: result.rights, roomId: req.headers['roomid'].toString() }
+                    } else {
+                        reject(4)
+                        return
+                    }
+                }
+                resolve(action.func(client, req, res, {
+                    storage: {
+                        write: async (relativePath: string, data: any) => {
+                            if (req.headers['roomid']) {
+                                let path = `${config.TEMP_STORAGE}/storage/${req.headers['roomid'].toString()}/${relativePath}`
+                                let pathParts = path.split('/')
+                                pathParts.pop()
+                                await fs.promises.mkdir(pathParts.join('/'), { recursive: true })
+                                await fs.promises.writeFile(path, data, { flag: "a+" })
+                            }
+                        },
+                        remove: async (relativePath: string) => {
+                            if (req.headers['roomid']) {
+                                await fs.promises.rm(`${config.TEMP_STORAGE}/storage/${req.headers['roomid'].toString()}/${relativePath}`)
+                            }
+                        }
+                    }
+                }, report))
+            } else {
+                reject(5)
                 return
             }
         })

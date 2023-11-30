@@ -8,7 +8,7 @@ import sharp from "sharp";
 import { getAudioDurationInSeconds } from 'get-audio-duration';
 import sizeOf from 'image-size';
 
-const generatePreview = (documentPath: string, documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string, waveformPath?: string }> => {
+const generatePreview = (documentPath: string, documentId: string, previewId: string, type: string, extension: string): Promise<{ width?: number, height?: number, duration?: number, previewPath: string, waveformPath?: string, videoParts?: string }> => {
     return new Promise(resolve => {
         if (type === "application" && extension === 'pdf') {
             let tempFilePath = folders.TEMP + "/" + documentId + ".pdf";
@@ -39,7 +39,9 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                 "256x196"
             )
                 .then(() => {
-                    resolve({ previewPath: folders.PREVIEWS + "/" + previewId + ".jpg" });
+                    resolve({
+                        previewPath: folders.PREVIEWS + "/" + previewId + ".jpg"
+                    });
                 })
                 .catch((err) => console.error(err));
         } else if (type === 'image') {
@@ -63,13 +65,11 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                 exec(
                     `ffmpeg -i ${extension === 'mp3' ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders.PREVIEWS + "/" + previewId + ".json"}`,
                     async (error, stdout, stderr) => {
-                        let waveFormGenerated = true
+                        console.log(stdout)
                         if (error) {
-                            waveFormGenerated = false
                             console.log(`error: ${error}`);
                         }
                         if (stderr) {
-                            waveFormGenerated = false
                             console.log(`stderr: ${stderr}`);
                         }
                         console.log('generated waveform.');
@@ -77,14 +77,14 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                         let duration = undefined;
                         try {
                             duration = await getAudioDurationInSeconds(extension === 'mp3' ? tempMp3FilePath : tempFilePath);
-                        } catch (ex) { }
+                        } catch (ex) { console.log(ex) }
                         console.log('generating cover...');
                         let cover;
                         try {
-                            const { parseFile, selectCover } = await import("music-metadata");
+                            let { parseFile, selectCover } = await import("music-metadata")
                             const { common } = await parseFile(extension === 'mp3' ? tempMp3FilePath : tempFilePath);
                             cover = selectCover(common.picture);
-                        } catch (ex) { }
+                        } catch (ex) { console.log(ex) }
                         if (cover) {
                             fs.writeFile(folders.PREVIEWS + "/" + previewId + ".jpg", cover.data, { flag: 'w' }, () => {
                                 sharp(folders.PREVIEWS + "/" + previewId + ".jpg")
@@ -101,7 +101,7 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                                         resolve({
                                             duration,
                                             previewPath: folders.PREVIEWS + "/" + previewId + ".jpg",
-                                            waveformPath: waveFormGenerated ?
+                                            waveformPath: fs.existsSync(folders.PREVIEWS + "/" + previewId + ".json") ?
                                                 (folders.PREVIEWS + "/" + previewId + ".json") :
                                                 undefined
                                         });
@@ -111,7 +111,13 @@ const generatePreview = (documentPath: string, documentId: string, previewId: st
                             console.log('cover generation failed.');
                             if (fs.existsSync(tempFilePath)) fs.rmSync(tempFilePath);
                             if (fs.existsSync(tempMp3FilePath)) fs.rmSync(tempMp3FilePath);
-                            resolve({ duration, previewPath: "", waveformPath: folders.PREVIEWS + "/" + previewId + ".json" });
+                            resolve({
+                                duration,
+                                previewPath: "",
+                                waveformPath: fs.existsSync(folders.PREVIEWS + "/" + previewId + ".json") ?
+                                    (folders.PREVIEWS + "/" + previewId + ".json") :
+                                    undefined
+                            });
                         }
                     });
             };

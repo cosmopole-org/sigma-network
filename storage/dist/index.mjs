@@ -1,4 +1,22 @@
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -63,13 +81,15 @@ var folders = {
   FILES: "",
   PREVIEWS: "",
   TEMP: "",
-  PDF_PAGES: ""
+  PDF_PAGES: "",
+  PARTITIONS: ""
 };
 var setupFoldersPath = (rootPath) => {
   folders.FILES = `${rootPath}/data/files`;
   folders.PREVIEWS = `${rootPath}/data/previews`;
   folders.TEMP = `${rootPath}/data/temp`;
   folders.PDF_PAGES = `${rootPath}/data/pdf-pages`;
+  folders.PARTITIONS = `${rootPath}/data/partitions`;
 };
 var folders_default = folders;
 
@@ -177,7 +197,9 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
         folders_default.PREVIEWS + "/" + previewId + ".jpg",
         "256x196"
       ).then(() => {
-        resolve({ previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg" });
+        resolve({
+          previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg"
+        });
       }).catch((err) => console.error(err));
     } else if (type === "image") {
       const finalPreviewPath = folders_default.PREVIEWS + "/" + previewId + ".jpg";
@@ -198,13 +220,11 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
         exec(
           `ffmpeg -i ${extension === "mp3" ? tempMp3FilePath : tempFilePath} -f wav - | audiowaveform --input-format wav --output-format json --pixels-per-second 2 -b 8 > ${folders_default.PREVIEWS + "/" + previewId + ".json"}`,
           (error, stdout, stderr) => __async(void 0, null, function* () {
-            let waveFormGenerated = true;
+            console.log(stdout);
             if (error) {
-              waveFormGenerated = false;
               console.log(`error: ${error}`);
             }
             if (stderr) {
-              waveFormGenerated = false;
               console.log(`stderr: ${stderr}`);
             }
             console.log("generated waveform.");
@@ -213,14 +233,16 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
             try {
               duration = yield getAudioDurationInSeconds(extension === "mp3" ? tempMp3FilePath : tempFilePath);
             } catch (ex) {
+              console.log(ex);
             }
             console.log("generating cover...");
             let cover;
             try {
-              const { parseFile, selectCover } = yield import("music-metadata");
+              let { parseFile, selectCover } = yield import("music-metadata");
               const { common } = yield parseFile(extension === "mp3" ? tempMp3FilePath : tempFilePath);
               cover = selectCover(common.picture);
             } catch (ex) {
+              console.log(ex);
             }
             if (cover) {
               fs.writeFile(folders_default.PREVIEWS + "/" + previewId + ".jpg", cover.data, { flag: "w" }, () => {
@@ -238,7 +260,7 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
                   resolve({
                     duration,
                     previewPath: folders_default.PREVIEWS + "/" + previewId + ".jpg",
-                    waveformPath: waveFormGenerated ? folders_default.PREVIEWS + "/" + previewId + ".json" : void 0
+                    waveformPath: fs.existsSync(folders_default.PREVIEWS + "/" + previewId + ".json") ? folders_default.PREVIEWS + "/" + previewId + ".json" : void 0
                   });
                 });
               });
@@ -248,7 +270,11 @@ var generatePreview = (documentPath, documentId, previewId, type, extension) => 
                 fs.rmSync(tempFilePath);
               if (fs.existsSync(tempMp3FilePath))
                 fs.rmSync(tempMp3FilePath);
-              resolve({ duration, previewPath: "", waveformPath: folders_default.PREVIEWS + "/" + previewId + ".json" });
+              resolve({
+                duration,
+                previewPath: "",
+                waveformPath: fs.existsSync(folders_default.PREVIEWS + "/" + previewId + ".json") ? folders_default.PREVIEWS + "/" + previewId + ".json" : void 0
+              });
             }
           })
         );
@@ -286,12 +312,13 @@ var prepare3 = () => {
 };
 
 // database/transactions/upload.ts
+import { execSync } from "child_process";
 function getFilesizeInBytes(filename) {
   var stats = fs2.statSync(filename);
   var fileSizeInBytes = stats.size;
   return fileSizeInBytes;
 }
-var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void 0, null, function* () {
+var finalup = (path, roomId, humanId, isPublic, extension, type, title) => __async(void 0, null, function* () {
   const session = yield mongoose5.startSession();
   session.startTransaction();
   let preview2 = (yield Preview.create([{
@@ -313,9 +340,23 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       duration: 0,
       width: 0,
       height: 0,
-      extension
+      extension,
+      title
     }
   }], { session }))[0];
+  let videoOutput = `${path}-video.webm`;
+  let audioOutput = `${path}-audio.webm`;
+  let manifestOutput = `${path}-manifest.mpd`;
+  if (type === "video") {
+    let stdout = execSync(`ffmpeg -i ${path} -vn -acodec libvorbis -ab 128k -dash 1 ${audioOutput}`);
+    console.log(stdout);
+    stdout = execSync(`ffmpeg -i ${path} -c:v libvpx-vp9 -keyint_min 150 -g 150 -tile-columns 4 -frame-parallel 1  -f webm -dash 1       -an -vf scale=1280:720 -b:v 1500k -dash 1 ${videoOutput}`);
+    console.log(stdout);
+    stdout = execSync(
+      `ffmpeg       -f webm_dash_manifest -i ${videoOutput}       -f webm_dash_manifest -i ${audioOutput}       -c copy       -map 0 -map 1       -f webm_dash_manifest       -adaptation_sets "id=0,streams=0 id=1,streams=1"       ${manifestOutput}`
+    );
+    console.log(stdout);
+  }
   let group = yield Group.findOne({ roomId }).session(session).lean().exec();
   if (group === null) {
     group = (yield Group.create([{
@@ -327,14 +368,38 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
   }
   yield session.commitTransaction();
   session.endSession();
-  const docParams = {
-    Bucket: config_default.LIARA_BUCKET_NAME,
-    Key: document2.id,
-    Body: fs2.createReadStream(path)
-  };
   try {
-    yield s3Client.send(new PutObjectCommand(docParams));
-    let { duration, width, height, previewPath, waveformPath } = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
+    let res = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
+    let { duration, width, height, previewPath, waveformPath } = res;
+    if (type === "video") {
+      const docParamsVideo = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: document2.id + "-video",
+        Body: fs2.createReadStream(videoOutput)
+      };
+      const docParamsAudio = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: document2.id + "-audio",
+        Body: fs2.createReadStream(audioOutput)
+      };
+      const docParamsManifest = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: document2.id + "-manifest",
+        Body: fs2.createReadStream(manifestOutput)
+      };
+      yield Promise.all([
+        s3Client.send(new PutObjectCommand(docParamsVideo)),
+        s3Client.send(new PutObjectCommand(docParamsAudio)),
+        s3Client.send(new PutObjectCommand(docParamsManifest))
+      ]);
+    } else {
+      const docParams = {
+        Bucket: config_default.LIARA_BUCKET_NAME,
+        Key: document2.id,
+        Body: fs2.createReadStream(path)
+      };
+      yield s3Client.send(new PutObjectCommand(docParams));
+    }
     let hasPhoto = false, hasWaveform = false;
     if ((previewPath == null ? void 0 : previewPath.length) > 0) {
       hasPhoto = true;
@@ -351,7 +416,7 @@ var finalup = (path, roomId, humanId, isPublic, extension, type) => __async(void
       const prevParams = {
         Bucket: config_default.LIARA_BUCKET_NAME,
         Key: preview2.id + "-waveform",
-        Body: fs2.createReadStream(previewPath)
+        Body: fs2.createReadStream(waveformPath)
       };
       yield s3Client.send(new PutObjectCommand(prevParams));
       yield fs2.promises.rm(waveformPath);
@@ -382,21 +447,36 @@ __export(download_exports, {
   waveform: () => waveform
 });
 import { GetObjectCommand } from "@aws-sdk/client-s3";
-var document = (documentId, roomId, res) => __async(void 0, null, function* () {
+var document = (documentId, roomId, range, res, options) => __async(void 0, null, function* () {
   try {
     let success = false;
     let doc = yield Document.findOne({ id: documentId }).exec();
     if (doc !== null) {
       if (doc.isPublic || doc.secret.roomIds.includes(roomId)) {
-        const params = {
-          Bucket: config_default.LIARA_BUCKET_NAME,
-          Key: documentId
-        };
-        try {
-          const data = yield s3Client.send(new GetObjectCommand(params));
-          data.Body.transformToWebStream().pipeTo(res);
-        } catch (error) {
-          console.log(error);
+        if (doc.type === "video" && options.videoModuleType) {
+          const params = {
+            Bucket: config_default.LIARA_BUCKET_NAME,
+            Key: documentId + "-" + options.videoModuleType,
+            Range: range
+          };
+          try {
+            const data = yield s3Client.send(new GetObjectCommand(params));
+            data.Body.transformToWebStream().pipeTo(res);
+          } catch (error) {
+            console.log(error);
+          }
+        } else {
+          const params = {
+            Bucket: config_default.LIARA_BUCKET_NAME,
+            Key: documentId,
+            Range: range
+          };
+          try {
+            const data = yield s3Client.send(new GetObjectCommand(params));
+            data.Body.transformToWebStream().pipeTo(res);
+          } catch (error) {
+            console.log(error);
+          }
         }
         success = true;
       } else {
@@ -473,8 +553,11 @@ var waveform = (documentId, roomId, res) => __async(void 0, null, function* () {
 // database/transactions/group.ts
 var group_exports = {};
 __export(group_exports, {
+  docById: () => docById,
   docIds: () => docIds,
-  docsByIds: () => docsByIds
+  docsByIds: () => docsByIds,
+  removeDoc: () => removeDoc,
+  updateDoc: () => updateDoc
 });
 var docIds = (roomId) => __async(void 0, null, function* () {
   let group = yield Group.findOne({ roomId }).lean().exec();
@@ -486,7 +569,29 @@ var docIds = (roomId) => __async(void 0, null, function* () {
 });
 var docsByIds = (docIds2) => __async(void 0, null, function* () {
   let docs = yield Document.find({ id: { $in: docIds2 } }).lean().exec();
-  return { success: true, docs };
+  let previewsDict = {};
+  (yield Preview.find({ id: { $in: docs.map((d) => d.previewId) } })).forEach((p) => previewsDict[p.id] = []);
+  let result = [];
+  docs.forEach((d) => {
+    result.push(__spreadProps(__spreadValues({}, d), { preview: previewsDict[d.previewId] }));
+  });
+  return { success: true, docs: result };
+});
+var docById = (docId) => __async(void 0, null, function* () {
+  let doc = yield Document.findOne({ id: docId }).lean().exec();
+  if (doc !== null) {
+    return { success: true, doc: __spreadProps(__spreadValues({}, doc), { preview: yield Preview.findOne({ id: doc.previewId }) }) };
+  } else {
+    return { success: false };
+  }
+});
+var removeDoc = (docId) => __async(void 0, null, function* () {
+  let doc = yield Document.findOneAndDelete({ id: docId });
+  return { success: doc !== null };
+});
+var updateDoc = (docId, data) => __async(void 0, null, function* () {
+  let doc = yield Document.findOneAndUpdate({ id: docId }, { $set: { "metadata.title": data.title } }, { new: true }).lean();
+  return doc ? { success: true, doc } : { success: false };
 });
 
 // database/schemas/index.ts
@@ -512,6 +617,8 @@ var setupDatabase = () => __async(void 0, null, function* () {
     yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/temp`, { recursive: true });
   if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/pdf-pages`))
     yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/pdf-pages`, { recursive: true });
+  if (!fs3.existsSync(`${config_default.TEMP_STORAGE}/data/partitions`))
+    yield fs3.promises.mkdir(`${config_default.TEMP_STORAGE}/data/partitions`, { recursive: true });
 });
 
 // database/index.ts

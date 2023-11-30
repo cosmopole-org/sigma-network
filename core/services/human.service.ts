@@ -18,7 +18,8 @@ class HumanService {
         if (granted) {
             let result = await transactions.human.signIn({ humanId })
             client.updateHumanId(humanId)
-            NetworkDriver.instance.keepClient(client)
+            client.updateToken(body.token)
+            NetworkDriver.instance.keepClient(body.token, client)
             client.joinTowers(result.memberships.map(m => m.towerId))
             return { success: true }
         } else {

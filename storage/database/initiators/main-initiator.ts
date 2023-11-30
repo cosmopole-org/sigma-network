@@ -12,6 +12,7 @@ const setupDatabase = async () => {
     if (!fs.existsSync(`${config.TEMP_STORAGE}/data/previews`)) await fs.promises.mkdir(`${config.TEMP_STORAGE}/data/previews`, {recursive: true});
     if (!fs.existsSync(`${config.TEMP_STORAGE}/data/temp`)) await fs.promises.mkdir(`${config.TEMP_STORAGE}/data/temp`, {recursive: true});
     if (!fs.existsSync(`${config.TEMP_STORAGE}/data/pdf-pages`)) await fs.promises.mkdir(`${config.TEMP_STORAGE}/data/pdf-pages`, {recursive: true});
+    if (!fs.existsSync(`${config.TEMP_STORAGE}/data/partitions`)) await fs.promises.mkdir(`${config.TEMP_STORAGE}/data/partitions`, {recursive: true});
 }
 
 export {

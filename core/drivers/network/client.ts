@@ -11,10 +11,16 @@ class Client {
     towerId: string
     rights: { [id: string]: boolean }
     emitter: Emitter
+    token: string
 
     public reset() {
+        this.updateToken(undefined)
         this.updateHumanId(undefined)
         this.updateTowerId(undefined, undefined)
+    }
+
+    public updateToken(token: string) {
+        this.token = token
     }
 
     public updateHumanId(humanId: string) {
