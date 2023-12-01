@@ -3588,6 +3588,7 @@ var TowerService = class {
           network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onRemove, secureObject(result.tower, "secret")));
           guardian_default.rules.removeRules(body.towerId, result.memberIds);
         }
+        return result;
       } else {
         return { success: false };
       }

@@ -46,6 +46,7 @@ class TowerService {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onRemove, secureObject(result.tower, 'secret')))
                 guardian.rules.removeRules(body.towerId, result.memberIds)
             }
+            return result
         } else {
             return { success: false }
         }

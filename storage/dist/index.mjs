@@ -344,19 +344,6 @@ var finalup = (path, roomId, humanId, isPublic, extension, type, title) => __asy
       title
     }
   }], { session }))[0];
-  let videoOutput = `${path}-video.webm`;
-  let audioOutput = `${path}-audio.webm`;
-  let manifestOutput = `${path}-manifest.mpd`;
-  if (type === "video") {
-    let stdout = execSync(`ffmpeg -i ${path} -vn -acodec libvorbis -ab 128k -dash 1 ${audioOutput}`);
-    console.log(stdout);
-    stdout = execSync(`ffmpeg -i ${path} -c:v libvpx-vp9 -keyint_min 150 -g 150 -tile-columns 4 -frame-parallel 1  -f webm -dash 1       -an -vf scale=1280:720 -b:v 1500k -dash 1 ${videoOutput}`);
-    console.log(stdout);
-    stdout = execSync(
-      `ffmpeg       -f webm_dash_manifest -i ${videoOutput}       -f webm_dash_manifest -i ${audioOutput}       -c copy       -map 0 -map 1       -f webm_dash_manifest       -adaptation_sets "id=0,streams=0 id=1,streams=1"       ${manifestOutput}`
-    );
-    console.log(stdout);
-  }
   let group = yield Group.findOne({ roomId }).session(session).lean().exec();
   if (group === null) {
     group = (yield Group.create([{
@@ -368,6 +355,34 @@ var finalup = (path, roomId, humanId, isPublic, extension, type, title) => __asy
   }
   yield session.commitTransaction();
   session.endSession();
+  let videoOutput = `${path}-video.webm`;
+  let audioOutput = `${path}-audio.webm`;
+  let manifestOutput = `${path}-manifest.mpd`;
+  if (type === "video") {
+    try {
+      execSync(`ffmpeg -i ${path} -vn -acodec libvorbis -ab 128k -dash 1 ${audioOutput}`);
+    } catch (ex) {
+      console.log(ex);
+    }
+    try {
+      execSync(`ffmpeg -i ${path} -c:v libvpx-vp9 -keyint_min 150 -g 150 -tile-columns 4 -frame-parallel 1  -f webm -dash 1       -an -vf scale=1280:720 -b:v 1500k -dash 1 ${videoOutput}`);
+    } catch (ex) {
+      console.log(ex);
+    }
+    try {
+      if (fs2.existsSync(audioOutput)) {
+        execSync(
+          `ffmpeg         -f webm_dash_manifest -i ${videoOutput}         -f webm_dash_manifest -i ${audioOutput}         -c copy         -map 0 -map 1         -f webm_dash_manifest         -adaptation_sets "id=0,streams=0 id=1,streams=1"         ${manifestOutput}`
+        );
+      } else {
+        execSync(
+          `ffmpeg         -f webm_dash_manifest -i ${videoOutput}         -c copy         -map 0         -f webm_dash_manifest         -adaptation_sets "id=0,streams=0"         ${manifestOutput}`
+        );
+      }
+    } catch (ex) {
+      console.log(ex);
+    }
+  }
   try {
     let res = yield previewer_exports.generatePreview(path, document2.id, preview2.id, type, extension);
     let { duration, width, height, previewPath, waveformPath } = res;
@@ -377,11 +392,6 @@ var finalup = (path, roomId, humanId, isPublic, extension, type, title) => __asy
         Key: document2.id + "-video",
         Body: fs2.createReadStream(videoOutput)
       };
-      const docParamsAudio = {
-        Bucket: config_default.LIARA_BUCKET_NAME,
-        Key: document2.id + "-audio",
-        Body: fs2.createReadStream(audioOutput)
-      };
       const docParamsManifest = {
         Bucket: config_default.LIARA_BUCKET_NAME,
         Key: document2.id + "-manifest",
@@ -389,9 +399,16 @@ var finalup = (path, roomId, humanId, isPublic, extension, type, title) => __asy
       };
       yield Promise.all([
         s3Client.send(new PutObjectCommand(docParamsVideo)),
-        s3Client.send(new PutObjectCommand(docParamsAudio)),
         s3Client.send(new PutObjectCommand(docParamsManifest))
       ]);
+      if (fs2.existsSync(audioOutput)) {
+        const docParamsAudio = {
+          Bucket: config_default.LIARA_BUCKET_NAME,
+          Key: document2.id + "-audio",
+          Body: fs2.createReadStream(audioOutput)
+        };
+        yield s3Client.send(new PutObjectCommand(docParamsAudio));
+      }
     } else {
       const docParams = {
         Bucket: config_default.LIARA_BUCKET_NAME,
