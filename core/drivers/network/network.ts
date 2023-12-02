@@ -116,7 +116,7 @@ class NetworkDriver {
             })
         });
         this.app.all('*', (req: express.Request, res: express.Response) => {
-            this.routeRest(this.restSessions[req.headers['token'].toString()], req.path.substring(1), req, res);
+            this.routeRest(this.restSessions[req.headers['token']?.toString()], req.path.substring(1), req, res);
         })
     }
 }

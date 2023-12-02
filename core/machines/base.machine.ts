@@ -68,12 +68,8 @@ abstract class BaseMachine extends BaseService {
                 action = action[key[i]]
             }
             if (action) {
-                if (!client) {
-                    reject(1)
-                    return
-                }
                 if (action.guardian.authenticate) {
-                    if (!client.humanId) {
+                    if (!client?.humanId) {
                         reject(2)
                         return
                     }

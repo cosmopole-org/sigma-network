@@ -987,7 +987,8 @@ var NetworkDriver = class _NetworkDriver {
       });
     });
     this.app.all("*", (req, res) => {
-      this.routeRest(this.restSessions[req.headers["token"].toString()], req.path.substring(1), req, res);
+      var _a;
+      this.routeRest(this.restSessions[(_a = req.headers["token"]) == null ? void 0 : _a.toString()], req.path.substring(1), req, res);
     });
   }
   static get instance() {
@@ -4319,12 +4320,8 @@ var BaseMachine = class extends base_service_default {
         action = action[key[i]];
       }
       if (action) {
-        if (!client) {
-          reject(1);
-          return;
-        }
         if (action.guardian.authenticate) {
-          if (!client.humanId) {
+          if (!(client == null ? void 0 : client.humanId)) {
             reject(2);
             return;
           }

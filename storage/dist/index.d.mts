@@ -42,9 +42,7 @@ declare namespace upload {
   };
 }
 
-declare const document: (documentId: string, roomId: string, range: any, res: any, options: {
-    videoModuleType?: string;
-}) => Promise<{
+declare const document: (documentId: string, roomId: string, range: any, res: any, onEnd?: () => void) => Promise<{
     success: boolean;
 }>;
 declare const preview: (documentId: string, roomId: string, res: any) => Promise<{
