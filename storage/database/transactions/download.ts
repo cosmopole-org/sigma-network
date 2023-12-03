@@ -18,7 +18,7 @@ const document = async (documentId: string, roomId: string, range: any, res: any
         }
         try {
           const data = await s3Client.send(new GetObjectCommand(params));
-          data.Body.transformToWebStream().pipeTo(res).then(() => onEnd())
+          data.Body.transformToWebStream().pipeTo(res).then(() => (onEnd && onEnd()))
         } catch (error) {
           console.log(error);
         }

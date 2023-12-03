@@ -47,8 +47,8 @@ class MachineService {
         let { granted, humanId } = await guardian.authenticate(body.token)
         if (granted) {
             let result = await transactions.machine.signIn(humanId)
-            client.updateHumanId(humanId) 
-            NetworkDriver.instance.keepClient(client)
+            client.updateHumanId(humanId)
+            NetworkDriver.instance.keepClient(body.token, client)
             client.joinTowers(result.towerIds)
             return result
         } else {

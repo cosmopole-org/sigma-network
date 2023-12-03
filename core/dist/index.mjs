@@ -3974,7 +3974,7 @@ var MachineService = class {
       if (granted) {
         let result = yield machine_exports.signIn(humanId);
         client.updateHumanId(humanId);
-        network_default.instance.keepClient(client);
+        network_default.instance.keepClient(body.token, client);
         client.joinTowers(result.towerIds);
         return result;
       } else {

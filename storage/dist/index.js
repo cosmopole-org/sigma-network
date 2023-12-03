@@ -451,7 +451,7 @@ var document = (documentId, roomId, range, res, onEnd) => __async(void 0, null, 
         };
         try {
           const data = yield s3Client.send(new import_client_s33.GetObjectCommand(params));
-          data.Body.transformToWebStream().pipeTo(res).then(() => onEnd());
+          data.Body.transformToWebStream().pipeTo(res).then(() => onEnd && onEnd());
         } catch (error) {
           console.log(error);
         }
