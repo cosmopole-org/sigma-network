@@ -3,6 +3,12 @@ import { Socket } from 'socket.io';
 import express from 'express';
 import { ClientSession } from 'mongoose';
 
+declare class Update {
+    requestId: string;
+    type: string;
+    constructor(requestId: string);
+}
+
 declare class Client {
     socket: Socket;
     isGuest: boolean;
@@ -25,12 +31,6 @@ declare class Client {
     joinTowers(towerIds: Array<string>): void;
     leaveTowers(towerIds: Array<string>): void;
     constructor(socket: Socket, emitter: Emitter);
-}
-
-declare class Update {
-    requestId: string;
-    type: string;
-    constructor(requestId: string);
 }
 
 declare class BaseService {
@@ -61,6 +61,43 @@ declare class Sigma {
     onRoomCreation(callback: (room: IRoom, mongoSession: ClientSession) => void): void;
     start(): Promise<void>;
     shell(machines: Array<BaseMachine>): void;
+    core(): {
+        [id: string]: BaseService;
+    };
+    clients(humanId: string): Client;
+    admin: {
+        addMember: (towerId: string, humanId: string) => any;
+    };
+    guardian: {
+        authenticate: (token: string) => Promise<{
+            granted: boolean;
+            humanId: any;
+        } | {
+            granted: boolean;
+            humanId?: undefined;
+        }>;
+        authorize: (client: Client, towerId: string, roomId?: string) => Promise<{
+            granted: boolean;
+            rights?: undefined;
+            roomId?: undefined;
+        } | {
+            granted: boolean;
+            rights: any;
+            roomId: string;
+        } | {
+            granted: boolean;
+            rights: any;
+            roomId?: undefined;
+        }>;
+        rules: {
+            addRule: (towerId: string, humanId: string, permissions: {
+                [id: string]: boolean;
+            }) => void;
+            isRule: (towerId: string, humanId: string) => Promise<boolean>;
+            removeRule: (towerId: string, humanId: string) => void;
+            removeRules: (towerId: string, humanIds: string[]) => void;
+        };
+    };
     updater: {
         types: {
             tower: {

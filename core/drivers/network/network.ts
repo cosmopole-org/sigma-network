@@ -26,6 +26,7 @@ class NetworkDriver {
     server: HttpServer
     io: Server
     controllers: { [id: string]: BaseController } = {}
+    services: { [id: string]: BaseService } = {}
     clients: { [id: string]: Client } = {}
     restSessions: { [id: string]: Client } = {}
     private emitter: Emitter
@@ -50,7 +51,9 @@ class NetworkDriver {
         client.humanId && (delete this.clients[client.humanId])
     }
     public registerController<T extends BaseController, V extends BaseService>(type: { new(...args: any[]): T; }, type2: { new(...args: any[]): V; }, meta?: any) {
-        let controller = new type(meta ? new type2(meta) : new type2())
+        let service = meta ? new type2(meta) : new type2()
+        let controller = new type(service)
+        this.services[controller.getName()] = service
         this.controllers[controller.getName()] = controller
     }
     public registerCustomController(controller: CustomController) {

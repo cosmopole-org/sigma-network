@@ -26,7 +26,7 @@ class HumanService {
             return { success: false }
         }
     }
-    async verify(client: Client, body: { cCode: string, vCode: string }, requestId: string) {
+    async verify(client: Client, body: { cCode?: string, vCode?: string, accessToken?: string }, requestId: string) {
         let result = await transactions.human.verify(body)
         if (result.success && result.human) {
             result.towers = result.towers.map(tower => tower.secret.ownerId === result.human.id ? tower : secureObject(tower, 'secret'))

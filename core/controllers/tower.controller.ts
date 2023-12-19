@@ -38,6 +38,10 @@ class TowerController extends BaseController {
         let result = await this.service.readMembers(client, body, requestId)
         response(result)
     }
+    async read(client: Client, body: any, requestId: string, response: any) {
+        let result = await this.service.read(client, body, requestId)
+        response(result)
+    }
 }
 
 export default TowerController

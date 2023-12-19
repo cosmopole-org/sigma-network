@@ -87,6 +87,21 @@ class TowerService {
             return { success: false }
         }
     }
+    async read(client: Client, body: {}, requestId: string) {
+        if (client.humanId) {
+            let result = await transactions.tower.read({ humanId: client.humanId })
+            if (result.success && result.towers) {
+                result.towers = result.towers.map((t: ITower) => t.secret.ownerId === client.humanId ? t : secureObject(t, 'secret'))
+            }
+            return result
+        } else {
+            return { success: false }
+        }
+    }
+    async addMember(towerId: string, humanId: string) {
+        let result = await transactions.tower.addMember({ humanId, towerId })
+        return result
+    }
 }
 
 export default TowerService

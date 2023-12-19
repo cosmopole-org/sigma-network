@@ -921,6 +921,7 @@ import cors from "cors";
 var NetworkDriver = class _NetworkDriver {
   constructor() {
     this.controllers = {};
+    this.services = {};
     this.clients = {};
     this.restSessions = {};
     _NetworkDriver._instance = this;
@@ -985,7 +986,9 @@ var NetworkDriver = class _NetworkDriver {
     client.humanId && delete this.clients[client.humanId];
   }
   registerController(type, type2, meta) {
-    let controller = new type(meta ? new type2(meta) : new type2());
+    let service = meta ? new type2(meta) : new type2();
+    let controller = new type(service);
+    this.services[controller.getName()] = service;
     this.controllers[controller.getName()] = controller;
   }
   registerCustomController(controller) {
@@ -1119,8 +1122,7 @@ var verify = (args, _session) => __async(void 0, null, function* () {
     session.startTransaction();
   let pending, userSession, human;
   try {
-    pending = yield pending_factory_default.instance.find({ vCode: args.vCode, cCode: args.cCode }, session);
-    if (pending !== null) {
+    let handlePostAuth = () => __async(void 0, null, function* () {
       human = yield human_factory_default.instance.find({ id: pending.humanId }, session);
       if (human !== null) {
         userSession = yield session_factory_default.instance.create({
@@ -1132,7 +1134,6 @@ var verify = (args, _session) => __async(void 0, null, function* () {
         let memberships = yield member_factory_default.instance.findGroup({ humanId: human.id }, session);
         let towers = yield tower_factory_default.instance.findGroup({ id: { $in: memberships.map((m) => m.towerId) } }, session);
         let rooms = yield room_factory_default.instance.findGroup({ towerId: { $in: memberships.map((m) => m.towerId) } }, session);
-        let allMemberships = yield member_factory_default.instance.findGroup({ towerId: { $in: towers.map((t) => t.id) } }, session);
         if (!_session) {
           yield session.commitTransaction();
           session.endSession();
@@ -1146,19 +1147,40 @@ var verify = (args, _session) => __async(void 0, null, function* () {
           memberships
         };
       } else {
-        yield pending_factory_default.instance.update({ cCode: args.cCode, vCode: args.vCode }, { progress: "verified" }, session);
+        if (args.accessToken) {
+          yield pending_factory_default.instance.update({ cCode: args.accessToken }, { progress: "verified" }, session);
+        } else {
+          yield pending_factory_default.instance.update({ cCode: args.cCode, vCode: args.vCode }, { progress: "verified" }, session);
+        }
         if (!_session) {
           yield session.commitTransaction();
           session.endSession();
         }
         return { success: true };
       }
-    } else {
-      if (!_session) {
-        yield session.abortTransaction();
-        session.endSession();
+    });
+    if (args.accessToken) {
+      let d = Buffer.from(args.accessToken.split(".")[1], "base64").toString();
+      const inputData = JSON.parse(d);
+      let email = inputData[config_default["AUTH0_TOKEN_EMAIL_DECODER_KEY"]];
+      pending = yield pending_factory_default.instance.find({ email }, session);
+      if (pending !== null) {
+        pending = yield pending_factory_default.instance.update({ email }, { progress: "verified", cCode: args.accessToken, vCode: args.accessToken }, session);
+      } else {
+        pending = yield pending_factory_default.instance.create({ progress: "verified", email, cCode: args.accessToken, vCode: args.accessToken }, session);
       }
-      return { success: false };
+      return yield handlePostAuth();
+    } else {
+      pending = yield pending_factory_default.instance.find({ vCode: args.vCode, cCode: args.cCode }, session);
+      if (pending !== null) {
+        return yield handlePostAuth();
+      } else {
+        if (!_session) {
+          yield session.abortTransaction();
+          session.endSession();
+        }
+        return { success: false };
+      }
     }
   } catch (error) {
     console.error(error);
@@ -1406,8 +1428,10 @@ var update_default = update;
 // database/transactions/tower/index.ts
 var tower_exports = {};
 __export(tower_exports, {
+  addMember: () => addMember_default,
   create: () => create_default,
   join: () => join_default,
+  read: () => read_default,
   readById: () => readById_default2,
   readMembers: () => readMembers_default,
   remove: () => remove_default,
@@ -1802,6 +1826,75 @@ var readMembers = (args, _session) => __async(void 0, null, function* () {
 });
 var readMembers_default = readMembers;
 
+// database/transactions/tower/read.ts
+import mongoose32 from "mongoose";
+var read = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield mongoose32.startSession();
+  if (!_session)
+    session.startTransaction();
+  let towers, rooms;
+  try {
+    let members = yield member_factory_default.instance.findGroup({ humanId: args.humanId }, session);
+    towers = yield tower_factory_default.instance.findGroup({ id: { $in: members.map((m) => m.towerId) } }, session);
+    rooms = yield room_factory_default.instance.findGroup({ towerId: { $in: towers.map((t) => t.id) } }, session);
+    if (!_session) {
+      yield session.commitTransaction();
+      session.endSession();
+    }
+    return { success: true, towers, rooms };
+  } catch (error) {
+    console.error(error);
+    console.error("abort transaction");
+    if (!_session) {
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var read_default = read;
+
+// database/transactions/tower/addMember.ts
+import mongoose33 from "mongoose";
+var addMember = (args, _session) => __async(void 0, null, function* () {
+  if (isIdEmpty(args.towerId)) {
+    console.error("tower id can not be empty");
+    return { success: false };
+  }
+  const session = _session ? _session : yield mongoose33.startSession();
+  if (!_session)
+    session.startTransaction();
+  let member, tower;
+  try {
+    tower = yield tower_factory_default.instance.find({ id: args.towerId }, session);
+    member = yield member_factory_default.instance.create({
+      id: makeUniqueId(),
+      humanId: args.humanId,
+      towerId: args.towerId,
+      secret: {
+        permissions: permissions_default.DEFAULT_ROOM_ADMIN_PERMISSIONS
+      }
+    }, session);
+    if (!_session) {
+      yield session.commitTransaction();
+      session.endSession();
+    }
+    return {
+      success: true,
+      member
+    };
+  } catch (error) {
+    console.error(error);
+    if (!_session) {
+      console.error("abort transaction");
+      yield session.abortTransaction();
+      session.endSession();
+    }
+    return { success: false };
+  }
+});
+var addMember_default = addMember;
+
 // database/transactions/room/index.ts
 var room_exports = {};
 __export(room_exports, {
@@ -1813,7 +1906,7 @@ __export(room_exports, {
 });
 
 // database/transactions/room/create.ts
-import mongoose32 from "mongoose";
+import mongoose34 from "mongoose";
 var create2 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -1823,7 +1916,7 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose32.startSession();
+  const session = _session ? _session : yield mongoose34.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1884,9 +1977,9 @@ var create2 = (args, _session) => __async(void 0, null, function* () {
 var create_default2 = create2;
 
 // database/transactions/room/remove.ts
-import mongoose33 from "mongoose";
+import mongoose35 from "mongoose";
 var remove2 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose33.startSession();
+  const session = _session ? _session : yield mongoose35.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -1932,9 +2025,9 @@ var remove2 = (args, _session) => __async(void 0, null, function* () {
 var remove_default2 = remove2;
 
 // database/transactions/room/search.ts
-import mongoose34 from "mongoose";
+import mongoose36 from "mongoose";
 var search3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose34.startSession();
+  const session = _session ? _session : yield mongoose36.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2035,9 +2128,9 @@ var search3 = (args, _session) => __async(void 0, null, function* () {
 var search_default3 = search3;
 
 // database/transactions/room/readById.ts
-import mongoose35 from "mongoose";
+import mongoose37 from "mongoose";
 var readById3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose35.startSession();
+  const session = _session ? _session : yield mongoose37.startSession();
   if (!_session)
     session.startTransaction();
   let success = false;
@@ -2084,7 +2177,7 @@ var readById3 = (args, _session) => __async(void 0, null, function* () {
 var readById_default3 = readById3;
 
 // database/transactions/room/update.ts
-import mongoose36 from "mongoose";
+import mongoose38 from "mongoose";
 var update3 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.title)) {
     console.error("title can not be empty");
@@ -2094,7 +2187,7 @@ var update3 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose36.startSession();
+  const session = _session ? _session : yield mongoose38.startSession();
   if (!_session)
     session.startTransaction();
   let room;
@@ -2153,11 +2246,11 @@ __export(invite_exports, {
   cancel: () => cancel_default,
   create: () => create_default3,
   decline: () => decline_default,
-  read: () => read_default
+  read: () => read_default2
 });
 
 // database/transactions/invite/create.ts
-import mongoose37 from "mongoose";
+import mongoose39 from "mongoose";
 var create3 = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.towerId)) {
     console.error("tower id can not be empty");
@@ -2167,7 +2260,7 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
     console.error("user id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose37.startSession();
+  const session = _session ? _session : yield mongoose39.startSession();
   if (!_session)
     session.startTransaction();
   let invite;
@@ -2228,13 +2321,13 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
 var create_default3 = create3;
 
 // database/transactions/invite/accept.ts
-import mongoose38 from "mongoose";
+import mongoose40 from "mongoose";
 var accept = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose38.startSession();
+  const session = _session ? _session : yield mongoose40.startSession();
   if (!_session)
     session.startTransaction();
   let member, room, tower, rooms;
@@ -2295,13 +2388,13 @@ var accept = (args, _session) => __async(void 0, null, function* () {
 var accept_default = accept;
 
 // database/transactions/invite/decline.ts
-import mongoose39 from "mongoose";
+import mongoose41 from "mongoose";
 var decline = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose39.startSession();
+  const session = _session ? _session : yield mongoose41.startSession();
   if (!_session)
     session.startTransaction();
   let tower;
@@ -2341,13 +2434,13 @@ var decline = (args, _session) => __async(void 0, null, function* () {
 var decline_default = decline;
 
 // database/transactions/invite/cancel.ts
-import mongoose40 from "mongoose";
+import mongoose42 from "mongoose";
 var cancel = (args, _session) => __async(void 0, null, function* () {
   if (isIdEmpty(args.inviteId)) {
     console.error("invite id can not be empty");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose40.startSession();
+  const session = _session ? _session : yield mongoose42.startSession();
   if (!_session)
     session.startTransaction();
   let targetHumanId;
@@ -2400,7 +2493,7 @@ var cancel = (args, _session) => __async(void 0, null, function* () {
 var cancel_default = cancel;
 
 // database/transactions/invite/read.ts
-var read = (args, _session) => __async(void 0, null, function* () {
+var read2 = (args, _session) => __async(void 0, null, function* () {
   try {
     let invites = yield invite_factory_default.instance.read({ humanId: args.humanId });
     let towers = yield tower_factory_default.instance.findGroup({ id: { $in: invites.map((i) => i.towerId) } });
@@ -2415,17 +2508,17 @@ var read = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default = read;
+var read_default2 = read2;
 
 // database/transactions/permission/index.ts
 var permission_exports = {};
 __export(permission_exports, {
-  read: () => read_default2,
+  read: () => read_default3,
   update: () => update_default4
 });
 
 // database/transactions/permission/update.ts
-import mongoose41 from "mongoose";
+import mongoose43 from "mongoose";
 var update4 = (args, _session) => __async(void 0, null, function* () {
   if (args.permissions === void 0) {
     console.error("permissions can not be empty");
@@ -2435,7 +2528,7 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
     console.error("access denied");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose41.startSession();
+  const session = _session ? _session : yield mongoose43.startSession();
   if (!_session)
     session.startTransaction();
   let member;
@@ -2490,10 +2583,10 @@ var update4 = (args, _session) => __async(void 0, null, function* () {
 var update_default4 = update4;
 
 // database/transactions/permission/read.ts
-import mongoose42 from "mongoose";
-var read2 = (args, _session) => __async(void 0, null, function* () {
+import mongoose44 from "mongoose";
+var read3 = (args, _session) => __async(void 0, null, function* () {
   var _a;
-  const session = _session ? _session : yield mongoose42.startSession();
+  const session = _session ? _session : yield mongoose44.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2542,13 +2635,13 @@ var read2 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default2 = read2;
+var read_default3 = read3;
 
 // database/transactions/machine/index.ts
 var machine_exports = {};
 __export(machine_exports, {
   create: () => create_default4,
-  read: () => read_default3,
+  read: () => read_default4,
   remove: () => remove_default3,
   search: () => search_default4,
   signIn: () => signIn_default2,
@@ -2556,7 +2649,7 @@ __export(machine_exports, {
 });
 
 // database/transactions/machine/create.ts
-import mongoose43 from "mongoose";
+import mongoose45 from "mongoose";
 var create4 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2566,7 +2659,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose43.startSession();
+  const session = _session ? _session : yield mongoose45.startSession();
   if (!_session)
     session.startTransaction();
   let machine;
@@ -2597,7 +2690,7 @@ var create4 = (args, _session) => __async(void 0, null, function* () {
 var create_default4 = create4;
 
 // database/transactions/machine/update.ts
-import mongoose44 from "mongoose";
+import mongoose46 from "mongoose";
 var update5 = (args, _session) => __async(void 0, null, function* () {
   if (isEmpty(args.name)) {
     console.error("title can not be empty");
@@ -2607,7 +2700,7 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
     console.error("title can not be longer than limit");
     return { success: false };
   }
-  const session = _session ? _session : yield mongoose44.startSession();
+  const session = _session ? _session : yield mongoose46.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2653,9 +2746,9 @@ var update5 = (args, _session) => __async(void 0, null, function* () {
 var update_default5 = update5;
 
 // database/transactions/machine/remove.ts
-import mongoose45 from "mongoose";
+import mongoose47 from "mongoose";
 var remove3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose45.startSession();
+  const session = _session ? _session : yield mongoose47.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2700,9 +2793,9 @@ var remove3 = (args, _session) => __async(void 0, null, function* () {
 var remove_default3 = remove3;
 
 // database/transactions/machine/search.ts
-import mongoose46 from "mongoose";
+import mongoose48 from "mongoose";
 var search4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose46.startSession();
+  const session = _session ? _session : yield mongoose48.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2734,9 +2827,9 @@ var search4 = (args, _session) => __async(void 0, null, function* () {
 var search_default4 = search4;
 
 // database/transactions/machine/read.ts
-import mongoose47 from "mongoose";
-var read3 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose47.startSession();
+import mongoose49 from "mongoose";
+var read4 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield mongoose49.startSession();
   if (!_session)
     session.startTransaction();
   let data;
@@ -2761,7 +2854,7 @@ var read3 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default3 = read3;
+var read_default4 = read4;
 
 // database/transactions/machine/signIn.ts
 var signIn2 = (args, _session) => __async(void 0, null, function* () {
@@ -2776,15 +2869,15 @@ var signIn_default2 = signIn2;
 var worker_exports = {};
 __export(worker_exports, {
   create: () => create_default5,
-  read: () => read_default4,
+  read: () => read_default5,
   remove: () => remove_default4,
   update: () => update_default6
 });
 
 // database/transactions/worker/create.ts
-import mongoose48 from "mongoose";
+import mongoose50 from "mongoose";
 var create5 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose48.startSession();
+  const session = _session ? _session : yield mongoose50.startSession();
   if (!_session)
     session.startTransaction();
   let worker;
@@ -2834,9 +2927,9 @@ var create5 = (args, _session) => __async(void 0, null, function* () {
 var create_default5 = create5;
 
 // database/transactions/worker/remove.ts
-import mongoose49 from "mongoose";
+import mongoose51 from "mongoose";
 var remove4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose49.startSession();
+  const session = _session ? _session : yield mongoose51.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -2886,9 +2979,9 @@ var remove4 = (args, _session) => __async(void 0, null, function* () {
 var remove_default4 = remove4;
 
 // database/transactions/worker/read.ts
-import mongoose50 from "mongoose";
-var read4 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose50.startSession();
+import mongoose52 from "mongoose";
+var read5 = (args, _session) => __async(void 0, null, function* () {
+  const session = _session ? _session : yield mongoose52.startSession();
   if (!_session)
     session.startTransaction();
   let data, success = false;
@@ -2924,12 +3017,12 @@ var read4 = (args, _session) => __async(void 0, null, function* () {
     return { success: false };
   }
 });
-var read_default4 = read4;
+var read_default5 = read5;
 
 // database/transactions/worker/update.ts
-import mongoose51 from "mongoose";
+import mongoose53 from "mongoose";
 var update6 = (args, _session) => __async(void 0, null, function* () {
-  const session = _session ? _session : yield mongoose51.startSession();
+  const session = _session ? _session : yield mongoose53.startSession();
   if (!_session)
     session.startTransaction();
   try {
@@ -3288,6 +3381,12 @@ var TowerController = class extends base_controller_default {
       response(result);
     });
   }
+  read(client, body, requestId, response) {
+    return __async(this, null, function* () {
+      let result = yield this.service.read(client, body, requestId);
+      response(result);
+    });
+  }
 };
 var tower_controller_default = TowerController;
 
@@ -3604,6 +3703,25 @@ var TowerService = class {
       } else {
         return { success: false };
       }
+    });
+  }
+  read(client, body, requestId) {
+    return __async(this, null, function* () {
+      if (client.humanId) {
+        let result = yield tower_exports.read({ humanId: client.humanId });
+        if (result.success && result.towers) {
+          result.towers = result.towers.map((t) => t.secret.ownerId === client.humanId ? t : secureObject(t, "secret"));
+        }
+        return result;
+      } else {
+        return { success: false };
+      }
+    });
+  }
+  addMember(towerId, humanId) {
+    return __async(this, null, function* () {
+      let result = yield tower_exports.addMember({ humanId, towerId });
+      return result;
     });
   }
 };
@@ -4035,6 +4153,9 @@ var machine_controller_default = MachineController;
 
 // services/worker.service.ts
 var WorkerService = class {
+  constructor() {
+    this.humanRequests = {};
+  }
   create(client, body, requestId) {
     return __async(this, null, function* () {
       let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
@@ -4090,41 +4211,58 @@ var WorkerService = class {
   }
   use(client, body, requestId) {
     return __async(this, null, function* () {
-      var _a;
-      let [res1, res2, res3] = yield Promise.all([
-        memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
-        memory_default.instance.fetch(`workerExtra:${body.roomId}:${body.workerId}`),
-        memory_default.instance.fetch(`machineWorker:${body.workerId}`)
-      ]);
-      if (res1 && res2) {
-        body.packet.towerId = body.towerId;
-        body.packet.roomId = body.roomId;
-        body.packet.workerId = body.workerId;
+      var _a, _b;
+      if (body.machineId) {
+        this.humanRequests[client.humanId] = body.machineId;
         body.packet.humanId = client.humanId;
-        (_a = network_default.instance.clients[res3]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+        (_a = network_default.instance.clients[body.machineId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
         return { success: true };
       } else {
-        return { success: false };
+        let [res1, res2, res3] = yield Promise.all([
+          memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+          memory_default.instance.fetch(`workerExtra:${body.roomId}:${body.workerId}`),
+          memory_default.instance.fetch(`machineWorker:${body.workerId}`)
+        ]);
+        if (res1 && res2) {
+          body.packet.towerId = body.towerId;
+          body.packet.roomId = body.roomId;
+          body.packet.workerId = body.workerId;
+          body.packet.humanId = client.humanId;
+          (_b = network_default.instance.clients[res3]) == null ? void 0 : _b.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+          return { success: true };
+        } else {
+          return { success: false };
+        }
       }
     });
   }
   deliver(client, body, requestId) {
     return __async(this, null, function* () {
-      var _a;
-      let [res1, res2, res3] = yield Promise.all([
-        memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
-        memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
-        guardian_default.rules.isRule(body.towerId, body.humanId)
-      ]);
-      if (res1 && res2 && res3) {
-        body.packet.towerId = body.towerId;
-        body.packet.roomId = body.roomId;
-        body.packet.workerId = body.workerId;
-        body.packet.humanId = body.humanId;
-        (_a = network_default.instance.clients[body.humanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
-        return { success: true };
+      var _a, _b;
+      if (body.towerId) {
+        let [res1, res2, res3] = yield Promise.all([
+          memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+          memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
+          guardian_default.rules.isRule(body.towerId, body.humanId)
+        ]);
+        if (res1 && res2 && res3) {
+          body.packet.towerId = body.towerId;
+          body.packet.roomId = body.roomId;
+          body.packet.workerId = body.workerId;
+          body.packet.humanId = body.humanId;
+          (_a = network_default.instance.clients[body.humanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+          return { success: true };
+        } else {
+          return { success: false };
+        }
       } else {
-        return { success: false };
+        if (this.humanRequests[body.humanId] === client.humanId) {
+          body.packet.machineId = client.humanId;
+          (_b = network_default.instance.clients[body.humanId]) == null ? void 0 : _b.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+          return { success: true };
+        } else {
+          return { success: false };
+        }
       }
     });
   }
@@ -4193,6 +4331,12 @@ var build2 = (rcc) => {
 // sigma.ts
 var Sigma = class {
   constructor(conf) {
+    this.admin = {
+      addMember: (towerId, humanId) => {
+        return this.core()["tower"]["addMember"](towerId, humanId);
+      }
+    };
+    this.guardian = guardian_default;
     this.updater = updater_default;
     setupConfig(conf);
   }
@@ -4216,6 +4360,12 @@ var Sigma = class {
       let controller = new custom_controller_default(machine.getName(), machine);
       network_default.instance.registerCustomController(controller);
     });
+  }
+  core() {
+    return network_default.instance.services;
+  }
+  clients(humanId) {
+    return network_default.instance.clients[humanId];
   }
 };
 var sigma_default = Sigma;

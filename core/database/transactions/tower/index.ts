@@ -6,6 +6,8 @@ import search from "./search";
 import join from "./join";
 import readById from "./readById";
 import readMembers from "./readMembers";
+import read from "./read";
+import addMember from "./addMember";
 
 export {
     create,
@@ -14,5 +16,7 @@ export {
     search,
     join,
     readById,
-    readMembers
+    readMembers,
+    read,
+    addMember
 }

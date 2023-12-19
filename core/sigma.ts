@@ -9,6 +9,7 @@ import { setupConfig } from "./config"
 import updaterEngine from "updater"
 import { IRoom } from "models/room.model"
 import { ClientSession } from "mongoose"
+import guardian from "./guardian"
 
 class Sigma {
     roomCreationCallback: (room: IRoom, mongoSession: ClientSession) => void
@@ -31,6 +32,18 @@ class Sigma {
             NetworkDriver.instance.registerCustomController(controller)
         })
     }
+    core() {
+        return NetworkDriver.instance.services
+    }
+    clients(humanId: string) {
+        return NetworkDriver.instance.clients[humanId]
+    }
+    admin = {
+        addMember: (towerId: string, humanId: string) => {
+            return this.core()['tower']['addMember'](towerId, humanId)
+        }
+    }
+    guardian = guardian
     updater = updaterEngine
     constructor(conf: any) {
         setupConfig(conf)
