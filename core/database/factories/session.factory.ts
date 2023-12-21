@@ -15,7 +15,7 @@ class SessionFactory {
         SessionFactory._instance = this;
     }
     async create(initData: ISession, session: ClientSession) {
-        return (await Session.create([initData], { session }))[0];
+        return (await Session.create([initData], { session }))[0].toObject();
     }
     async read(offset?: number, count?: number, query?: any) {
         let cursor;

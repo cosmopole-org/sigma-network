@@ -15,7 +15,7 @@ class HumanFactory {
         HumanFactory._instnace = this;
     }
     async create(initData: IHuman, session: ClientSession): Promise<IHuman> {
-        return (await Human.create([initData], { session }))[0];
+        return (await Human.create([initData], { session }))[0].toObject();
     }
     async read(offset?: number, count?: number, query?: any): Promise<Array<IHuman>> {
         let cursor: mongoose.mongo.FindCursor;

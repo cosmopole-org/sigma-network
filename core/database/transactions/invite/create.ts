@@ -4,6 +4,7 @@ import * as Factories from '../../factories'
 import { makeUniqueId } from '../../../utils/generator';
 import { isIdEmpty } from '../../../utils/numbers';
 import { IInvite } from 'models/invite.model';
+import { ITower } from 'models/tower.model';
 
 const create = async (args: { towerId: string, targetHumanId: string, senderId: string }, _session?: ClientSession) => {
   if (isIdEmpty(args.towerId)) {
@@ -16,12 +17,12 @@ const create = async (args: { towerId: string, targetHumanId: string, senderId: 
   }
   const session = _session ? _session : await mongoose.startSession();
   if (!_session) session.startTransaction();
-  let invite: IInvite;
+  let invite: IInvite, tower: ITower;
   try {
     let success = false;
     invite = await Factories.InviteFactory.instance.find({ humanId: args.targetHumanId, towerId: args.towerId }, session);
     if (invite === null) {
-      let tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
+      tower = await Factories.TowerFactory.instance.find({ id: args.towerId }, session);
       if (tower.secret.adminIds.includes(args.senderId)) {
         let user = await Factories.HumanFactory.instance.find({ id: args.targetHumanId }, session);
         if (user !== null) {
@@ -55,7 +56,7 @@ const create = async (args: { towerId: string, targetHumanId: string, senderId: 
     }
     if (!_session) session.endSession();
     if (success) {
-      return { success: true, invite: invite }
+      return { success: true, invite: { ...invite, tower } }
     } else {
       return { success: false };
     }

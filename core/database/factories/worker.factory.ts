@@ -15,7 +15,7 @@ class WorkerFactory {
         WorkerFactory._instance = this;
     }
     async create(initData: IWorker, session: ClientSession): Promise<IWorker> {
-        return (await Worker.create([initData], { session }))[0];
+        return (await Worker.create([initData], { session }))[0].toObject();
     }
     async update(query: any, update: any, session: ClientSession): Promise<IWorker> {
         return Worker.findOneAndUpdate(query, update, { new: true }).session(session).lean();

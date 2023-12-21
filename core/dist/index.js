@@ -104,7 +104,7 @@ var HumanFactory = class _HumanFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Human.create([initData], { session }))[0];
+      return (yield Human.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -188,7 +188,7 @@ var TowerFactory = class _TowerFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Tower.create([initData], { session }))[0];
+      return (yield Tower.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -262,7 +262,7 @@ var RoomFactory = class _RoomFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Room.create([initData], { session }))[0];
+      return (yield Room.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -332,7 +332,7 @@ var SessionFactory = class _SessionFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Session.create([initData], { session }))[0];
+      return (yield Session.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -411,7 +411,7 @@ var MemberFactory = class _MemberFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Member.create([initData], { session }))[0];
+      return (yield Member.create([initData], { session }))[0].toObject();
     });
   }
   read(query, offset, count) {
@@ -488,7 +488,7 @@ var PendingFactory = class _PendingFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Pending.create([initData], { session }))[0];
+      return (yield Pending.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -554,7 +554,7 @@ var InviteFactory = class _InviteFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Invite.create([initData], { session }))[0];
+      return (yield Invite.create([initData], { session }))[0].toObject();
     });
   }
   read(query, offset, count) {
@@ -685,7 +685,7 @@ var MachineFactory = class _MachineFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Machine.create([initData], { session }))[0];
+      return (yield Machine.create([initData], { session }))[0].toObject();
     });
   }
   read(offset, count, query) {
@@ -737,7 +737,7 @@ var WorkerFactory = class _WorkerFactory {
   }
   create(initData, session) {
     return __async(this, null, function* () {
-      return (yield Worker.create([initData], { session }))[0];
+      return (yield Worker.create([initData], { session }))[0].toObject();
     });
   }
   update(query, update7, session) {
@@ -2296,12 +2296,12 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
   const session = _session ? _session : yield import_mongoose39.default.startSession();
   if (!_session)
     session.startTransaction();
-  let invite;
+  let invite, tower;
   try {
     let success = false;
     invite = yield invite_factory_default.instance.find({ humanId: args.targetHumanId, towerId: args.towerId }, session);
     if (invite === null) {
-      let tower = yield tower_factory_default.instance.find({ id: args.towerId }, session);
+      tower = yield tower_factory_default.instance.find({ id: args.towerId }, session);
       if (tower.secret.adminIds.includes(args.senderId)) {
         let user = yield human_factory_default.instance.find({ id: args.targetHumanId }, session);
         if (user !== null) {
@@ -2337,7 +2337,7 @@ var create3 = (args, _session) => __async(void 0, null, function* () {
     if (!_session)
       session.endSession();
     if (success) {
-      return { success: true, invite };
+      return { success: true, invite: __spreadProps(__spreadValues({}, invite), { tower }) };
     } else {
       return { success: false };
     }

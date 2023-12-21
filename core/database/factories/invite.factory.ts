@@ -15,7 +15,7 @@ class InviteFactory {
         InviteFactory._instance = this;
     }
     async create(initData: IInvite, session: ClientSession): Promise<IInvite> {
-        return (await Invite.create([initData], { session }))[0];
+        return (await Invite.create([initData], { session }))[0].toObject();
     }
     async read(query?: any, offset?: number, count?: number): Promise<Array<IInvite>> {
         let cursor: mongoose.mongo.FindCursor

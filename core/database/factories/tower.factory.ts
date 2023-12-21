@@ -15,7 +15,7 @@ class TowerFactory {
         TowerFactory._instance = this;
     }
     async create(initData: ITower, session: ClientSession): Promise<ITower> {
-        return (await Tower.create([initData], { session }))[0];
+        return (await Tower.create([initData], { session }))[0].toObject();
     }
     async read(offset?: number, count?: number, query?: any): Promise<Array<ITower>> {
         let cursor: mongoose.mongo.FindCursor;

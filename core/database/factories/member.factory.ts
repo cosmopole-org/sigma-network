@@ -15,7 +15,7 @@ class MemberFactory {
         MemberFactory._instance = this;
     }
     async create(initData: any, session: ClientSession): Promise<IMember> {
-        return (await Member.create([initData], { session }))[0];
+        return (await Member.create([initData], { session }))[0].toObject();
     }
     async read(query?: any, offset?: number, count?: number): Promise<Array<IMember>> {
         let cursor: any;

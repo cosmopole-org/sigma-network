@@ -15,7 +15,7 @@ class MachineFactory {
         MachineFactory._instance = this;
     }
     async create(initData: IMachine, session: ClientSession): Promise<IMachine> {
-        return (await Machine.create([initData], { session }))[0];
+        return (await Machine.create([initData], { session }))[0].toObject();
     }
     async read(offset?: number, count?: number, query?: any): Promise<Array<IMachine>> {
         let cursor: mongoose.mongo.FindCursor;

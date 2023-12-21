@@ -15,7 +15,7 @@ class PendingFactory {
         PendingFactory._instance = this;
     }
     async create(initData: IPending, session: ClientSession): Promise<IPending> {
-        return (await Pending.create([initData], { session }))[0];
+        return (await Pending.create([initData], { session }))[0].toObject();
     }
     async read(offset: number, count: number, query: any): Promise<Array<IPending>> {
         let cursor: mongoose.mongo.FindCursor;

@@ -14,7 +14,7 @@ class RoomFactory {
         RoomFactory._instance = this;
     }
     async create(initData: IRoom, session: ClientSession): Promise<IRoom> {
-        return (await Room.create([initData], { session }))[0];
+        return (await Room.create([initData], { session }))[0].toObject();
     }
     async read(offset?: number, count?: number, query?: any): Promise<Array<IRoom>> {
         let cursor: mongoose.mongo.FindCursor
