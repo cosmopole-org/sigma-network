@@ -1,10 +1,10 @@
 
 import config from "config";
 import Client from "../drivers/network/client";
-import guardian from "../guardian";
 import BaseService from "../services/base.service";
 import fs from 'fs';
 import express from 'express'
+import Guardian from "../guardian";
 
 abstract class BaseMachine extends BaseService {
     abstract getName(): string
@@ -13,8 +13,8 @@ abstract class BaseMachine extends BaseService {
     route(key: Array<string>, client: Client, body: any) {
         return new Promise(async (resolve, reject) => {
             let action = this.getService()
-            for (let i = 0; i < key.length; i++) {
-                action = action[key[i]]
+            for (const element of key) {
+                action = action[element]
             }
             if (action) {
                 if (action.guardian.authenticate) {
@@ -29,7 +29,7 @@ abstract class BaseMachine extends BaseService {
                     return
                 }
                 if (action.guardian.authorize) {
-                    let result = await guardian.authorize(client, body['towerId'], body['roomId'])
+                    let result = await Guardian.instance.authorize(client, body['towerId'], body['roomId'])
                     if (result?.granted) {
                         report = { towerId: body.towerId, rights: result.rights, roomId: result.roomId }
                     } else {
@@ -80,7 +80,7 @@ abstract class BaseMachine extends BaseService {
                     return
                 }
                 if (action.guardian.authorize) {
-                    let result = await guardian.authorize(client, req.headers['towerid']?.toString(), req.headers['roomid'].toString())
+                    let result = await Guardian.instance.authorize(client, req.headers['towerid']?.toString(), req.headers['roomid'].toString())
                     if (result?.granted) {
                         report = { towerId: req.headers['towerid'].toString(), rights: result.rights, roomId: req.headers['roomid'].toString() }
                     } else {

@@ -6,16 +6,17 @@ import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
 import guardian from "../guardian";
 import MemoryDriver from "drivers/memory/memory";
+import Extendables, { EntityTypes } from "../extendables";
 
 class RoomService {
-    rcc: any
-    constructor(rcc: any) {
-        this.rcc = rcc
+    extendables: Extendables
+    constructor(meta: { extendables: Extendables }) {
+        this.extendables = meta.extendables
     }
     async create(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean, floor: string }, requestId: string) {
         let { granted, rights } = await guardian.authorize(client, body.towerId)
         if (granted) {
-            let result = await transactions.room.create({ ...body, humanId: client.humanId, creationCallback: this.rcc })
+            let result = await transactions.room.create({ ...body, humanId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] })
             if (result.success) {
                 NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.room.onCreate,
                     secureObject(result.room, 'secret')

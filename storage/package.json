@@ -1,6 +1,6 @@
 {
   "name": "sigma-storage",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -33,7 +33,7 @@
     "pdf2pic": "^2.1.4",
     "readline-sync": "^1.4.10",
     "redis": "^4.6.5",
-    "sharp": "^0.30.7",
+    "sharp": "^0.32.6",
     "simple-thumbnail": "^1.6.5",
     "socket.io": "^4.6.1",
     "socket.io-client": "^4.6.1",

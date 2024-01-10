@@ -14,11 +14,12 @@ const remove = async (args: { humanId: string, workerId: string, roomId: string,
         let worker = await Factories.WorkerFactory.instance.find({ id: args.workerId }, session);
         if (worker !== null) {
           await Factories.WorkerFactory.instance.remove({ id: args.workerId }, session);
+          let otherWorkersOfSameMachine = await Factories.WorkerFactory.instance.read({ machineId: worker.machineId, roomId: worker.roomId })
           if (!_session) {
             await session.commitTransaction();
             session.endSession();
           }
-          return { success: true, worker }
+          return { success: true, worker, wasTheLast: otherWorkersOfSameMachine.length === 0 }
         } else {
           if (!_session) {
             await session.abortTransaction();

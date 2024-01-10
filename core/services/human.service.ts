@@ -4,11 +4,12 @@ import MemoryDriver from "../drivers/memory/memory";
 import { secureObject } from "../utils/filter";
 import NetworkDriver from "../drivers/network/network";
 import guardian from "../guardian";
+import Extendables, { EntityTypes } from "../extendables";
 
 class HumanService {
-    rcc: any
-    constructor(rcc: any) {
-        this.rcc = rcc
+    extendables: Extendables
+    constructor(meta: { extendables: Extendables }) {
+        this.extendables = meta.extendables
     }
     async signUp(client: Client, body: { email: string }, requestId: string) {
         return transactions.human.signUp(body)
@@ -21,6 +22,7 @@ class HumanService {
             client.updateToken(body.token)
             NetworkDriver.instance.keepClient(body.token, client)
             client.joinTowers(result.memberships.map(m => m.towerId))
+            NetworkDriver.instance.lastSeens[humanId] = -1
             return { success: true }
         } else {
             return { success: false }
@@ -35,7 +37,7 @@ class HumanService {
         return result
     }
     async complete(client: Client, body: { cCode: string, firstName: string, lastName?: string }, requestId: string) {
-        let result = await transactions.human.complete({ ...body, creationCallback: this.rcc })
+        let result = await transactions.human.complete({ ...body, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] })
         if (result.success) {
             await Promise.all([
                 MemoryDriver.instance.save(`auth:${result.session.token}`, result.human.id),
@@ -78,10 +80,17 @@ class HumanService {
             NetworkDriver.instance.looseClient(client)
             client.leaveTowers(result.memberships.map(m => m.towerId))
             client.reset()
-            return { success: true }
+            return result
         } else {
             return { success: false }
         }
+    }
+    async lastSeens(client: Client, body: { humanIds: Array<string> }, requestId: string) {
+        let lastSeensData = {}
+        body.humanIds.forEach(humanId => {
+            lastSeensData[humanId] = NetworkDriver.instance.lastSeens[humanId]
+        })
+        return { success: true, lastSeens: lastSeensData }
     }
 }
 

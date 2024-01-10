@@ -13,14 +13,16 @@ import { Emitter } from "@socket.io/redis-emitter";
 import * as json from '../../utils/json'
 import HumanController from "../../controllers/human.controller";
 import CustomController from "../../controllers/custom.controller";
-import config from '../../config'
-import cors from 'cors'
+import config from '../../config';
+import cors from 'cors';
+import * as Factories from '../../database/factories';
+import { IHuman } from "models/human.model";
 
 class NetworkDriver {
     static _instance: NetworkDriver
     static get instance() { return NetworkDriver._instance }
-    static initialize() {
-        return new NetworkDriver()
+    static initialize(callback: any) {
+        return new NetworkDriver(callback)
     }
     app: Express
     server: HttpServer
@@ -29,6 +31,7 @@ class NetworkDriver {
     services: { [id: string]: BaseService } = {}
     clients: { [id: string]: Client } = {}
     restSessions: { [id: string]: Client } = {}
+    lastSeens: { [id: string]: number } = {}
     private emitter: Emitter
     public group(towerId: string) {
         return {
@@ -73,9 +76,9 @@ class NetworkDriver {
         let parts = path.split('/')
         let controller = this.controllers[parts[0]]
         if (controller instanceof CustomController) {
-            controller.route(parts.slice(1), client, body, requestId, callback)
+            controller.route(parts.slice(1), client, body, requestId, callback).catch((ex: any) => console.log(ex))
         } else {
-            controller[parts[1]](client, body, requestId, callback)
+            controller[parts[1]](client, body, requestId, callback).catch((ex: any) => console.log(ex))
         }
     }
     private routeRest(client: Client, path: string, req: express.Request, res: express.Response) {
@@ -83,43 +86,59 @@ class NetworkDriver {
         let parts = path.split('/')
         let controller = this.controllers[parts[0]]
         if (controller instanceof CustomController) {
-            controller.routeRest(parts.slice(1), client, req, res)
+            controller.routeRest(parts.slice(1), client, req, res).catch((ex: any) => console.log(ex))
+            return true
+        } else {
+            return false
         }
     }
-    constructor() {
+    constructor(callback) {
         NetworkDriver._instance = this
-        this.app = express()
-        this.app.use(cors())
-        this.app.use(express.urlencoded({ extended: true }))
-        this.app.use(express.json())
-        this.server = createServer(this.app)
-        this.io = new Server(this.server, {
-            cors: {
-                origin: "*",
-            },
-            maxHttpBufferSize: 1e8
-        })
-        let subClient = MemoryDriver.instance.redisClient.duplicate()
-        this.io.adapter(createAdapter(MemoryDriver.instance.redisClient, subClient));
-        this.emitter = new Emitter(MemoryDriver.instance.redisClient);
-        this.creaateWelcomeRoute()
-        this.startExpressServer()
-        this.io.on('connection', (socket: Socket) => {
-            console.log('a client connected');
-            let client = new Client(socket, this.emitter)
-
-            socket.on('disconnect', () => {
-                console.log('client disconnected');
-                delete this.clients[client.humanId]
-                let controller: HumanController = this.controllers['human'] as HumanController
-                controller.service.signOut(client, 'EMPTY')
-            });
-            socket.onAny((...args) => {
-                this.route(client, args[0], args[1], args[2], args[3]);
+        Factories.HumanFactory.instance.read().then((humans: Array<IHuman>) => {
+            humans.forEach(human => {
+                this.lastSeens[human.id] = human.secret.lastSeen
             })
-        });
-        this.app.all('*', (req: express.Request, res: express.Response) => {
-            this.routeRest(this.restSessions[req.headers['token']?.toString()], req.path.substring(1), req, res);
+            this.app = express()
+            this.app.use(cors())
+            this.app.use(express.urlencoded({ extended: true }))
+            this.app.use(express.json())
+            this.server = createServer(this.app)
+            this.io = new Server(this.server, {
+                cors: {
+                    origin: "*",
+                },
+                maxHttpBufferSize: 1e8
+            })
+            let subClient = MemoryDriver.instance.redisClient.duplicate()
+            this.io.adapter(createAdapter(MemoryDriver.instance.redisClient, subClient));
+            this.emitter = new Emitter(MemoryDriver.instance.redisClient);
+            this.creaateWelcomeRoute()
+            this.startExpressServer()
+            this.io.on('connection', (socket: Socket) => {
+                console.log('a client connected');
+                let client = new Client(socket, this.emitter)
+                socket.on('disconnect', async () => {
+                    console.log('client disconnected');
+                    delete this.clients[client.humanId]
+                    let humanId = client.humanId
+                    if (humanId) {
+                        let controller: HumanController = this.controllers['human'] as HumanController
+                        let result = await controller.service.signOut(client, 'EMPTY')
+                        if (result.success) {
+                            this.lastSeens[humanId] = result.lastSeen
+                        }
+                    }
+                });
+                socket.onAny((...args) => {
+                    this.route(client, args[0], args[1], args[2], args[3]);
+                })
+            });
+            this.app.all('*', (req: express.Request, res: express.Response, next: any) => {
+                if (!this.routeRest(this.restSessions[req.headers['token']?.toString()], req.path.substring(1), req, res)) {
+                    next();
+                }
+            })
+            callback()
         })
     }
 }

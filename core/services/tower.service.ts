@@ -6,15 +6,16 @@ import NetworkDriver from "../drivers/network/network";
 import updater from "../updater";
 import guardian from "../guardian";
 import MemoryDriver from "drivers/memory/memory";
+import Extendables, { EntityTypes } from "../extendables";
 
 class TowerService {
-    rcc: any
-    constructor(rcc: any) {
-        this.rcc = rcc
+    extendables: Extendables
+    constructor(meta: { extendables: Extendables }) {
+        this.extendables = meta.extendables
     }
     async create(client: Client, body: { title: string, avatarId: string, isPublic: boolean }, requestId: string) {
         if (client.humanId) {
-            let result = await transactions.tower.create({ ...body, ownerId: client.humanId, creationCallback: this.rcc })
+            let result = await transactions.tower.create({ ...body, ownerId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] })
             if (result.success) {
                 guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.tower.id, result.member.secret.permissions)

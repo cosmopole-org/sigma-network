@@ -1,8 +1,6 @@
 
 import mongoose, { ClientSession } from 'mongoose';
 import * as Factories from '../../factories'
-import { IMember } from 'models/member.model';
-import { human } from '../transactions';
 
 const readMembers = async (args: { towerId: string, humanId: string }, _session?: ClientSession) => {
   const session = _session ? _session : await mongoose.startSession();

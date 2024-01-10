@@ -44,7 +44,8 @@ let types = {
     },
     worker: {
         onRequest: { category: 'worker', key: 'onRequest' },
-        onResponse: { category: 'worker', key: 'onResponse' }
+        onResponse: { category: 'worker', key: 'onResponse' },
+        onPush: { category: 'worker', key: 'onPush' }
     },
 }
 
@@ -61,9 +62,19 @@ const group = (towerId: string) => {
     return NetworkDriver.instance.group(towerId)
 }
 
-export default {
-    types,
-    buildUpdate,
-    registerUpdateType,
-    group
+export default class Updater {
+    static _instance: Updater
+    public static get instance() {
+        return Updater._instance
+    }
+    public static initialize() {
+        return new Updater()
+    }
+    types = types
+    buildUpdate = buildUpdate
+    registerUpdateType = registerUpdateType
+    group = group
+    constructor() {
+        Updater._instance = this
+    }
 }

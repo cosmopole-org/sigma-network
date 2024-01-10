@@ -13,15 +13,16 @@ import MachineService from "../services/machine.service";
 import MachineController from "./machine.controller";
 import WorkerService from "services/worker.service";
 import WorkerController from "./worker.controller";
+import Extending from "../extendables";
 
-const build = (rcc: any) => {
-    NetworkDriver.instance.registerController(HumanController, HumanService, rcc)
-    NetworkDriver.instance.registerController(TowerController, TowerService, rcc)
-    NetworkDriver.instance.registerController(RoomController, RoomService, rcc)
-    NetworkDriver.instance.registerController(InviteController, InviteService)
-    NetworkDriver.instance.registerController(PermissionController, PermissionService)
-    NetworkDriver.instance.registerController(MachineController, MachineService)
-    NetworkDriver.instance.registerController(WorkerController, WorkerService)
+const build = (extending: Extending) => {
+    NetworkDriver.instance.registerController(HumanController, HumanService, { extending })
+    NetworkDriver.instance.registerController(TowerController, TowerService, { extending })
+    NetworkDriver.instance.registerController(RoomController, RoomService, { extending })
+    NetworkDriver.instance.registerController(InviteController, InviteService, { extending })
+    NetworkDriver.instance.registerController(PermissionController, PermissionService, { extending })
+    NetworkDriver.instance.registerController(MachineController, MachineService, { extending })
+    NetworkDriver.instance.registerController(WorkerController, WorkerService, { extending })
 }
 
 export {

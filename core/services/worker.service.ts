@@ -40,11 +40,18 @@ class WorkerService {
         if (granted) {
             let result = await transactions.worker.remove({ ...body, humanId: client.humanId })
             if (result.success) {
-                await Promise.all([
-                    MemoryDriver.instance.remove(`worker:${body.roomId}:${result.worker.machineId}`),
-                    MemoryDriver.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
-                    MemoryDriver.instance.remove(`machineWorker:${result.worker.id}`)
-                ])
+                if (result.wasTheLast) {
+                    await Promise.all([
+                        MemoryDriver.instance.remove(`worker:${body.roomId}:${result.worker.machineId}`),
+                        MemoryDriver.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
+                        MemoryDriver.instance.remove(`machineWorker:${result.worker.id}`)
+                    ])
+                } else {
+                    await Promise.all([
+                        MemoryDriver.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
+                        MemoryDriver.instance.remove(`machineWorker:${result.worker.id}`)
+                    ])
+                }
             }
             return result
         } else {
@@ -79,28 +86,57 @@ class WorkerService {
             }
         }
     }
-    async deliver(client: Client, body: { towerId?: string, roomId?: string, workerId?: string, humanId: string, packet: any }, requestId: string) {
+    async deliver(client: Client, body: { towerId?: string, roomId?: string, workerId?: string, humanId?: string, exceptionId?: string, packet: any }, requestId: string) {
         if (body.towerId) {
-            let [res1, res2, res3] = await Promise.all([
-                MemoryDriver.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
-                MemoryDriver.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
-                guardian.rules.isRule(body.towerId, body.humanId)
-            ])
-            if (res1 && res2 && res3) {
-                body.packet.towerId = body.towerId
-                body.packet.roomId = body.roomId
-                body.packet.workerId = body.workerId
-                body.packet.humanId = body.humanId
-                NetworkDriver.instance.clients[body.humanId]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
-                return { success: true }
+            if (body.humanId) {
+                let [res1, res2, res3] = await Promise.all([
+                    MemoryDriver.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+                    MemoryDriver.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
+                    guardian.rules.isRule(body.towerId, body.humanId)
+                ])
+                if (res1 && res2 && res3) {
+                    body.packet.towerId = body.towerId
+                    body.packet.roomId = body.roomId
+                    body.packet.workerId = body.workerId
+                    body.packet.humanId = body.humanId
+                    NetworkDriver.instance.clients[body.humanId]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
+                    return { success: true }
+                } else {
+                    return { success: false }
+                }
             } else {
-                return { success: false }
+                let [res1, res2] = await Promise.all([
+                    MemoryDriver.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+                    MemoryDriver.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
+                ])
+                if (res1 && res2) {
+                    body.packet.towerId = body.towerId
+                    body.packet.roomId = body.roomId
+                    body.packet.workerId = body.workerId
+                    if (body.exceptionId) {
+                        let exception = NetworkDriver.instance.clients[body.exceptionId]
+                        if (exception) {
+                            NetworkDriver.instance.group(body.towerId).boradcast.emit(exception, updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
+                        } else {
+                            NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
+                        }
+                    } else {
+                        NetworkDriver.instance.group(body.towerId).emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
+                    }
+                    return { success: true }
+                } else {
+                    return { success: false }
+                }
             }
         } else {
-            if (this.humanRequests[body.humanId] === client.humanId) {
-                body.packet.machineId = client.humanId
-                NetworkDriver.instance.clients[body.humanId]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
-                return { success: true }
+            if (body.humanId) {
+                if (this.humanRequests[body.humanId] === client.humanId) {
+                    body.packet.machineId = client.humanId
+                    NetworkDriver.instance.clients[body.humanId]?.emit(updater.buildUpdate(requestId, { category: 'worker', key: 'onResponse' }, body.packet))
+                    return { success: true }
+                } else {
+                    return { success: false }
+                }
             } else {
                 return { success: false }
             }

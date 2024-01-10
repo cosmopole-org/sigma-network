@@ -7,22 +7,23 @@ import CustomController from "./controllers/custom.controller"
 import BaseMachine from "./machines/base.machine"
 import { setupConfig } from "./config"
 import updaterEngine from "updater"
-import { IRoom } from "models/room.model"
-import { ClientSession } from "mongoose"
-import guardian from "./guardian"
+import Extendables from "./extendables"
+import { Express } from "express"
+import { Server as HttpServer } from 'node:http';
+import Guardian from "./guardian"
 
 class Sigma {
-    roomCreationCallback: (room: IRoom, mongoSession: ClientSession) => void
-    onRoomCreation(callback: (room: IRoom, mongoSession: ClientSession) => void) {
-        this.roomCreationCallback = callback
-    }
+    extendables: Extendables
     async start(): Promise<void> {
         return new Promise(resolve => {
             StorageDriver.initialize(() => {
+                Guardian.initialize()
                 MemoryDriver.initialize()
-                NetworkDriver.initialize()
-                Controllers.build(this.roomCreationCallback)
-                resolve()
+                updaterEngine.initialize()
+                NetworkDriver.initialize(() => {
+                    Controllers.build(this.extendables)
+                    resolve()
+                })
             })
         })
     }
@@ -32,21 +33,27 @@ class Sigma {
             NetworkDriver.instance.registerCustomController(controller)
         })
     }
-    core() {
-        return NetworkDriver.instance.services
+    expressApp(): Express {
+        return NetworkDriver.instance.app
     }
-    clients(humanId: string) {
+    httpServer(): HttpServer {
+        return NetworkDriver.instance.server
+    }
+    guardian(): Guardian {
+        return Guardian.instance
+    }
+    updater() {
+        return updaterEngine.instance
+    }
+    client(humanId: string) {
         return NetworkDriver.instance.clients[humanId]
     }
-    admin = {
-        addMember: (towerId: string, humanId: string) => {
-            return this.core()['tower']['addMember'](towerId, humanId)
-        }
+    service(serviceName: string) {
+        return NetworkDriver.instance.services[serviceName]
     }
-    guardian = guardian
-    updater = updaterEngine
     constructor(conf: any) {
         setupConfig(conf)
+        this.extendables = new Extendables()
     }
 }
 

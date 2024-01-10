@@ -919,51 +919,66 @@ var custom_controller_default = CustomController;
 // drivers/network/network.ts
 import cors from "cors";
 var NetworkDriver = class _NetworkDriver {
-  constructor() {
+  constructor(callback) {
     this.controllers = {};
     this.services = {};
     this.clients = {};
     this.restSessions = {};
+    this.lastSeens = {};
     _NetworkDriver._instance = this;
-    this.app = express();
-    this.app.use(cors());
-    this.app.use(express.urlencoded({ extended: true }));
-    this.app.use(express.json());
-    this.server = createServer(this.app);
-    this.io = new Server(this.server, {
-      cors: {
-        origin: "*"
-      },
-      maxHttpBufferSize: 1e8
-    });
-    let subClient = memory_default.instance.redisClient.duplicate();
-    this.io.adapter(createAdapter(memory_default.instance.redisClient, subClient));
-    this.emitter = new Emitter(memory_default.instance.redisClient);
-    this.creaateWelcomeRoute();
-    this.startExpressServer();
-    this.io.on("connection", (socket) => {
-      console.log("a client connected");
-      let client = new client_default(socket, this.emitter);
-      socket.on("disconnect", () => {
-        console.log("client disconnected");
-        delete this.clients[client.humanId];
-        let controller = this.controllers["human"];
-        controller.service.signOut(client, "EMPTY");
+    human_factory_default.instance.read().then((humans) => {
+      humans.forEach((human) => {
+        this.lastSeens[human.id] = human.secret.lastSeen;
       });
-      socket.onAny((...args) => {
-        this.route(client, args[0], args[1], args[2], args[3]);
+      this.app = express();
+      this.app.use(cors());
+      this.app.use(express.urlencoded({ extended: true }));
+      this.app.use(express.json());
+      this.server = createServer(this.app);
+      this.io = new Server(this.server, {
+        cors: {
+          origin: "*"
+        },
+        maxHttpBufferSize: 1e8
       });
-    });
-    this.app.all("*", (req, res) => {
-      var _a;
-      this.routeRest(this.restSessions[(_a = req.headers["token"]) == null ? void 0 : _a.toString()], req.path.substring(1), req, res);
+      let subClient = memory_default.instance.redisClient.duplicate();
+      this.io.adapter(createAdapter(memory_default.instance.redisClient, subClient));
+      this.emitter = new Emitter(memory_default.instance.redisClient);
+      this.creaateWelcomeRoute();
+      this.startExpressServer();
+      this.io.on("connection", (socket) => {
+        console.log("a client connected");
+        let client = new client_default(socket, this.emitter);
+        socket.on("disconnect", () => __async(this, null, function* () {
+          console.log("client disconnected");
+          delete this.clients[client.humanId];
+          let humanId = client.humanId;
+          if (humanId) {
+            let controller = this.controllers["human"];
+            let result = yield controller.service.signOut(client, "EMPTY");
+            if (result.success) {
+              this.lastSeens[humanId] = result.lastSeen;
+            }
+          }
+        }));
+        socket.onAny((...args) => {
+          this.route(client, args[0], args[1], args[2], args[3]);
+        });
+      });
+      this.app.all("*", (req, res, next) => {
+        var _a;
+        if (!this.routeRest(this.restSessions[(_a = req.headers["token"]) == null ? void 0 : _a.toString()], req.path.substring(1), req, res)) {
+          next();
+        }
+      });
+      callback();
     });
   }
   static get instance() {
     return _NetworkDriver._instance;
   }
-  static initialize() {
-    return new _NetworkDriver();
+  static initialize(callback) {
+    return new _NetworkDriver(callback);
   }
   group(towerId) {
     return {
@@ -1008,9 +1023,9 @@ var NetworkDriver = class _NetworkDriver {
     let parts = path.split("/");
     let controller = this.controllers[parts[0]];
     if (controller instanceof custom_controller_default) {
-      controller.route(parts.slice(1), client, body, requestId, callback);
+      controller.route(parts.slice(1), client, body, requestId, callback).catch((ex) => console.log(ex));
     } else {
-      controller[parts[1]](client, body, requestId, callback);
+      controller[parts[1]](client, body, requestId, callback).catch((ex) => console.log(ex));
     }
   }
   routeRest(client, path, req, res) {
@@ -1018,7 +1033,10 @@ var NetworkDriver = class _NetworkDriver {
     let parts = path.split("/");
     let controller = this.controllers[parts[0]];
     if (controller instanceof custom_controller_default) {
-      controller.routeRest(parts.slice(1), client, req, res);
+      controller.routeRest(parts.slice(1), client, req, res).catch((ex) => console.log(ex));
+      return true;
+    } else {
+      return false;
     }
   }
 };
@@ -1199,30 +1217,8 @@ import mongoose23 from "mongoose";
 
 // permissions.json
 var permissions_default = {
-  DEFAULT_ROOM_MEMBER_PERMISSIONS: {
-    createWorkspace: true,
-    createFilespace: true,
-    createDisk: true,
-    createFolder: true,
-    createFile: true,
-    createPost: true,
-    uploadFile: true,
-    createBlog: true,
-    inviteUser: true,
-    createMessage: true
-  },
-  DEFAULT_ROOM_ADMIN_PERMISSIONS: {
-    createWorkspace: true,
-    createFilespace: true,
-    createDisk: true,
-    createFolder: true,
-    createFile: true,
-    createPost: true,
-    uploadFile: true,
-    createBlog: true,
-    inviteUser: true,
-    createMessage: true
-  }
+  DEFAULT_ROOM_MEMBER_PERMISSIONS: {},
+  DEFAULT_ROOM_ADMIN_PERMISSIONS: {}
 };
 
 // database/transactions/human/complete.ts
@@ -1357,9 +1353,10 @@ var search_default = search;
 // database/transactions/human/signOut.ts
 var signOut = (args, _session) => __async(void 0, null, function* () {
   try {
-    yield human_factory_default.instance.update({ id: args.humanId }, { $set: { "secret.lastSeen": Date.now() } });
+    let lastSeen = Date.now();
+    yield human_factory_default.instance.update({ id: args.humanId }, { $set: { "secret.lastSeen": lastSeen } });
     let memberships = yield member_factory_default.instance.read({ humanId: args.humanId });
-    return { success: true, memberships };
+    return { success: true, memberships, lastSeen };
   } catch (error) {
     console.error(error);
     return { success: false };
@@ -2940,11 +2937,12 @@ var remove4 = (args, _session) => __async(void 0, null, function* () {
         let worker = yield worker_factory_default.instance.find({ id: args.workerId }, session);
         if (worker !== null) {
           yield worker_factory_default.instance.remove({ id: args.workerId }, session);
+          let otherWorkersOfSameMachine = yield worker_factory_default.instance.read({ machineId: worker.machineId, roomId: worker.roomId });
           if (!_session) {
             yield session.commitTransaction();
             session.endSession();
           }
-          return { success: true, worker };
+          return { success: true, worker, wasTheLast: otherWorkersOfSameMachine.length === 0 };
         } else {
           if (!_session) {
             yield session.abortTransaction();
@@ -3165,16 +3163,43 @@ var rules_default = {
 };
 
 // guardian/index.ts
-var guardian_default = {
-  authenticate: authenticate_default,
-  authorize: authorize_default,
-  rules: rules_default
+var Guardian = class _Guardian {
+  constructor() {
+    this.authenticate = authenticate_default;
+    this.authorize = authorize_default;
+    this.rules = rules_default;
+    _Guardian._instance = this;
+  }
+  static get instance() {
+    return _Guardian._instance;
+  }
+  static initialize() {
+    return new _Guardian();
+  }
+};
+
+// extendables.ts
+var EntityTypes = {
+  ROOM_CREATION: "room_creation"
+};
+var Extendables = class {
+  constructor() {
+    this.callbacks = {
+      creations: {
+        rooms: {
+          inject(callback) {
+            this.callbacks[EntityTypes.ROOM_CREATION] = callback;
+          }
+        }
+      }
+    };
+  }
 };
 
 // services/human.service.ts
 var HumanService = class {
-  constructor(rcc) {
-    this.rcc = rcc;
+  constructor(meta) {
+    this.extendables = meta.extendables;
   }
   signUp(client, body, requestId) {
     return __async(this, null, function* () {
@@ -3183,13 +3208,14 @@ var HumanService = class {
   }
   signIn(client, body, requestId) {
     return __async(this, null, function* () {
-      let { humanId, granted } = yield guardian_default.authenticate(body.token);
+      let { humanId, granted } = yield Guardian.authenticate(body.token);
       if (granted) {
         let result = yield human_exports.signIn({ humanId });
         client.updateHumanId(humanId);
         client.updateToken(body.token);
         network_default.instance.keepClient(body.token, client);
         client.joinTowers(result.memberships.map((m) => m.towerId));
+        network_default.instance.lastSeens[humanId] = -1;
         return { success: true };
       } else {
         return { success: false };
@@ -3208,12 +3234,12 @@ var HumanService = class {
   }
   complete(client, body, requestId) {
     return __async(this, null, function* () {
-      let result = yield human_exports.complete(__spreadProps(__spreadValues({}, body), { creationCallback: this.rcc }));
+      let result = yield human_exports.complete(__spreadProps(__spreadValues({}, body), { creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] }));
       if (result.success) {
         yield Promise.all([
           memory_default.instance.save(`auth:${result.session.token}`, result.human.id),
           memory_default.instance.save(`struct:${result.tower.id}:${result.room.id}`, true),
-          guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
+          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
         ]);
       }
       return result;
@@ -3261,10 +3287,19 @@ var HumanService = class {
         network_default.instance.looseClient(client);
         client.leaveTowers(result.memberships.map((m) => m.towerId));
         client.reset();
-        return { success: true };
+        return result;
       } else {
         return { success: false };
       }
+    });
+  }
+  lastSeens(client, body, requestId) {
+    return __async(this, null, function* () {
+      let lastSeensData = {};
+      body.humanIds.forEach((humanId) => {
+        lastSeensData[humanId] = network_default.instance.lastSeens[humanId];
+      });
+      return { success: true, lastSeens: lastSeensData };
     });
   }
 };
@@ -3590,7 +3625,8 @@ var types = {
   },
   worker: {
     onRequest: { category: "worker", key: "onRequest" },
-    onResponse: { category: "worker", key: "onResponse" }
+    onResponse: { category: "worker", key: "onResponse" },
+    onPush: { category: "worker", key: "onPush" }
   }
 };
 var registerUpdateType = (type, path) => {
@@ -3604,24 +3640,33 @@ var registerUpdateType = (type, path) => {
 var group = (towerId) => {
   return network_default.instance.group(towerId);
 };
-var updater_default = {
-  types,
-  buildUpdate,
-  registerUpdateType,
-  group
+var Updater = class _Updater {
+  constructor() {
+    this.types = types;
+    this.buildUpdate = buildUpdate;
+    this.registerUpdateType = registerUpdateType;
+    this.group = group;
+    _Updater._instance = this;
+  }
+  static get instance() {
+    return _Updater._instance;
+  }
+  static initialize() {
+    return new _Updater();
+  }
 };
 
 // services/tower.service.ts
 var TowerService = class {
-  constructor(rcc) {
-    this.rcc = rcc;
+  constructor(meta) {
+    this.extendables = meta.extendables;
   }
   create(client, body, requestId) {
     return __async(this, null, function* () {
       if (client.humanId) {
-        let result = yield tower_exports.create(__spreadProps(__spreadValues({}, body), { ownerId: client.humanId, creationCallback: this.rcc }));
+        let result = yield tower_exports.create(__spreadProps(__spreadValues({}, body), { ownerId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] }));
         if (result.success) {
-          guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
+          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.tower.id, result.member.secret.permissions);
           client.joinTower(result.tower.id);
           yield memory_default.instance.save(`struct:${result.tower.id}:${result.room.id}`, true);
@@ -3634,11 +3679,11 @@ var TowerService = class {
   }
   update(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield tower_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onUpdate, secureObject(result.tower, "secret")));
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onUpdate, secureObject(result.tower, "secret")));
         }
         return result;
       } else {
@@ -3648,12 +3693,12 @@ var TowerService = class {
   }
   remove(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield tower_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onRemove, secureObject(result.tower, "secret")));
-          guardian_default.rules.removeRules(body.towerId, result.memberIds);
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onRemove, secureObject(result.tower, "secret")));
+          Guardian.rules.removeRules(body.towerId, result.memberIds);
         }
         return result;
       } else {
@@ -3679,8 +3724,8 @@ var TowerService = class {
       if (client.humanId) {
         let result = yield tower_exports.join(__spreadProps(__spreadValues({}, body), { requesterId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(requestId, updater_default.types.tower.onHumanJoin, secureObject(result.member, "secret")));
-          guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onHumanJoin, secureObject(result.member, "secret")));
+          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.member.towerId, result.member.secret.permissions);
           client.joinTower(result.member.towerId);
         }
@@ -3697,7 +3742,7 @@ var TowerService = class {
   }
   readMembers(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         return tower_exports.readMembers(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
       } else {
@@ -3729,18 +3774,18 @@ var tower_service_default = TowerService;
 
 // services/room.service.ts
 var RoomService = class {
-  constructor(rcc) {
-    this.rcc = rcc;
+  constructor(meta) {
+    this.extendables = meta.extendables;
   }
   create(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
-        let result = yield room_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId, creationCallback: this.rcc }));
+        let result = yield room_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
             requestId,
-            updater_default.types.room.onCreate,
+            Updater.types.room.onCreate,
             secureObject(result.room, "secret")
           ));
           yield memory_default.instance.save(`struct:${body.towerId}:${result.room.id}`, true);
@@ -3753,13 +3798,13 @@ var RoomService = class {
   }
   remove(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
             requestId,
-            updater_default.types.room.onRemove,
+            Updater.types.room.onRemove,
             secureObject(result.room, "secret")
           ));
           yield memory_default.instance.remove(`struct:${body.towerId}:${result.room.id}`);
@@ -3772,7 +3817,7 @@ var RoomService = class {
   }
   search(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.search(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success && result.rooms) {
@@ -3797,13 +3842,13 @@ var RoomService = class {
   }
   update(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, updater_default.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
             requestId,
-            updater_default.types.room.onUpdate,
+            Updater.types.room.onUpdate,
             secureObject(result.room, "secret")
           ));
         }
@@ -3905,11 +3950,11 @@ var InviteService = class {
   create(client, body, requestId) {
     return __async(this, null, function* () {
       var _a;
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield invite_exports.create(__spreadProps(__spreadValues({}, body), { senderId: client.humanId }));
         if (result.success) {
-          (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCreate, result.invite));
+          (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, Updater.types.invite.onCreate, result.invite));
         }
         return result;
       } else {
@@ -3920,11 +3965,11 @@ var InviteService = class {
   cancel(client, body, requestId) {
     return __async(this, null, function* () {
       var _a;
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield invite_exports.cancel(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          (_a = network_default.instance.clients[result.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onCancel, body.inviteId));
+          (_a = network_default.instance.clients[result.targetHumanId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, Updater.types.invite.onCancel, body.inviteId));
           delete result.targetHumanId;
         }
         return result;
@@ -3940,7 +3985,7 @@ var InviteService = class {
         if (result.success) {
           result.adminIds.forEach((adminId) => {
             var _a;
-            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onDecline, body.inviteId));
+            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, Updater.types.invite.onDecline, body.inviteId));
           });
           delete result.adminIds;
         }
@@ -3957,9 +4002,9 @@ var InviteService = class {
         if (result.success) {
           result.tower.secret.adminIds.forEach((adminId) => {
             var _a;
-            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.invite.onAccept, body.inviteId));
+            (_a = network_default.instance.clients[adminId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, Updater.types.invite.onAccept, body.inviteId));
           });
-          guardian_default.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
+          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.member.towerId, result.member.secret.permissions);
           client.joinTower(result.member.towerId);
           result.tower = secureObject(result.tower, "secret");
@@ -4013,10 +4058,10 @@ var PermissionService = class {
   update(client, body, requestId) {
     return __async(this, null, function* () {
       var _a;
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield permission_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
-        (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, updater_default.types.permission.onUpdate, body.permissions));
+        (_a = network_default.instance.clients[body.targetHumanId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, Updater.types.permission.onUpdate, body.permissions));
         return result;
       } else {
         return { success: false };
@@ -4025,7 +4070,7 @@ var PermissionService = class {
   }
   read(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         return permission_exports.read(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
       } else {
@@ -4088,7 +4133,7 @@ var MachineService = class {
   }
   signIn(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, humanId } = yield guardian_default.authenticate(body.token);
+      let { granted, humanId } = yield Guardian.authenticate(body.token);
       if (granted) {
         let result = yield machine_exports.signIn(humanId);
         client.updateHumanId(humanId);
@@ -4158,7 +4203,7 @@ var WorkerService = class {
   }
   create(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield worker_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
@@ -4176,7 +4221,7 @@ var WorkerService = class {
   }
   update(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield worker_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         return result;
@@ -4187,15 +4232,22 @@ var WorkerService = class {
   }
   remove(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield guardian_default.authorize(client, body.towerId);
+      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
       if (granted) {
         let result = yield worker_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          yield Promise.all([
-            memory_default.instance.remove(`worker:${body.roomId}:${result.worker.machineId}`),
-            memory_default.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
-            memory_default.instance.remove(`machineWorker:${result.worker.id}`)
-          ]);
+          if (result.wasTheLast) {
+            yield Promise.all([
+              memory_default.instance.remove(`worker:${body.roomId}:${result.worker.machineId}`),
+              memory_default.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
+              memory_default.instance.remove(`machineWorker:${result.worker.id}`)
+            ]);
+          } else {
+            yield Promise.all([
+              memory_default.instance.remove(`workerExtra:${body.roomId}:${body.workerId}`),
+              memory_default.instance.remove(`machineWorker:${result.worker.id}`)
+            ]);
+          }
         }
         return result;
       } else {
@@ -4215,7 +4267,7 @@ var WorkerService = class {
       if (body.machineId) {
         this.humanRequests[client.humanId] = body.machineId;
         body.packet.humanId = client.humanId;
-        (_a = network_default.instance.clients[body.machineId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+        (_a = network_default.instance.clients[body.machineId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
         return { success: true };
       } else {
         let [res1, res2, res3] = yield Promise.all([
@@ -4228,7 +4280,7 @@ var WorkerService = class {
           body.packet.roomId = body.roomId;
           body.packet.workerId = body.workerId;
           body.packet.humanId = client.humanId;
-          (_b = network_default.instance.clients[res3]) == null ? void 0 : _b.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
+          (_b = network_default.instance.clients[res3]) == null ? void 0 : _b.emit(Updater.buildUpdate(requestId, { category: "worker", key: "onRequest" }, body.packet));
           return { success: true };
         } else {
           return { success: false };
@@ -4240,26 +4292,55 @@ var WorkerService = class {
     return __async(this, null, function* () {
       var _a, _b;
       if (body.towerId) {
-        let [res1, res2, res3] = yield Promise.all([
-          memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
-          memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
-          guardian_default.rules.isRule(body.towerId, body.humanId)
-        ]);
-        if (res1 && res2 && res3) {
-          body.packet.towerId = body.towerId;
-          body.packet.roomId = body.roomId;
-          body.packet.workerId = body.workerId;
-          body.packet.humanId = body.humanId;
-          (_a = network_default.instance.clients[body.humanId]) == null ? void 0 : _a.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
-          return { success: true };
+        if (body.humanId) {
+          let [res1, res2, res3] = yield Promise.all([
+            memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+            memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`),
+            Guardian.rules.isRule(body.towerId, body.humanId)
+          ]);
+          if (res1 && res2 && res3) {
+            body.packet.towerId = body.towerId;
+            body.packet.roomId = body.roomId;
+            body.packet.workerId = body.workerId;
+            body.packet.humanId = body.humanId;
+            (_a = network_default.instance.clients[body.humanId]) == null ? void 0 : _a.emit(Updater.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+            return { success: true };
+          } else {
+            return { success: false };
+          }
         } else {
-          return { success: false };
+          let [res1, res2] = yield Promise.all([
+            memory_default.instance.fetch(`struct:${body.towerId}:${body.roomId}`),
+            memory_default.instance.fetch(`worker:${body.roomId}:${client.humanId}`)
+          ]);
+          if (res1 && res2) {
+            body.packet.towerId = body.towerId;
+            body.packet.roomId = body.roomId;
+            body.packet.workerId = body.workerId;
+            if (body.exceptionId) {
+              let exception = network_default.instance.clients[body.exceptionId];
+              if (exception) {
+                network_default.instance.group(body.towerId).boradcast.emit(exception, Updater.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+              } else {
+                network_default.instance.group(body.towerId).emit(Updater.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+              }
+            } else {
+              network_default.instance.group(body.towerId).emit(Updater.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+            }
+            return { success: true };
+          } else {
+            return { success: false };
+          }
         }
       } else {
-        if (this.humanRequests[body.humanId] === client.humanId) {
-          body.packet.machineId = client.humanId;
-          (_b = network_default.instance.clients[body.humanId]) == null ? void 0 : _b.emit(updater_default.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
-          return { success: true };
+        if (body.humanId) {
+          if (this.humanRequests[body.humanId] === client.humanId) {
+            body.packet.machineId = client.humanId;
+            (_b = network_default.instance.clients[body.humanId]) == null ? void 0 : _b.emit(Updater.buildUpdate(requestId, { category: "worker", key: "onResponse" }, body.packet));
+            return { success: true };
+          } else {
+            return { success: false };
+          }
         } else {
           return { success: false };
         }
@@ -4318,39 +4399,29 @@ var WorkerController = class extends base_controller_default {
 var worker_controller_default = WorkerController;
 
 // controllers/index.ts
-var build2 = (rcc) => {
-  network_default.instance.registerController(human_controller_default, human_service_default, rcc);
-  network_default.instance.registerController(tower_controller_default, tower_service_default, rcc);
-  network_default.instance.registerController(room_controller_default, room_service_default, rcc);
-  network_default.instance.registerController(invite_controller_default, invite_service_default);
-  network_default.instance.registerController(permission_controller_default, permission_service_default);
-  network_default.instance.registerController(machine_controller_default, machine_service_default);
-  network_default.instance.registerController(worker_controller_default, worker_service_default);
+var build2 = (extending) => {
+  network_default.instance.registerController(human_controller_default, human_service_default, { extending });
+  network_default.instance.registerController(tower_controller_default, tower_service_default, { extending });
+  network_default.instance.registerController(room_controller_default, room_service_default, { extending });
+  network_default.instance.registerController(invite_controller_default, invite_service_default, { extending });
+  network_default.instance.registerController(permission_controller_default, permission_service_default, { extending });
+  network_default.instance.registerController(machine_controller_default, machine_service_default, { extending });
+  network_default.instance.registerController(worker_controller_default, worker_service_default, { extending });
 };
 
 // sigma.ts
 var Sigma = class {
-  constructor(conf) {
-    this.admin = {
-      addMember: (towerId, humanId) => {
-        return this.core()["tower"]["addMember"](towerId, humanId);
-      }
-    };
-    this.guardian = guardian_default;
-    this.updater = updater_default;
-    setupConfig(conf);
-  }
-  onRoomCreation(callback) {
-    this.roomCreationCallback = callback;
-  }
   start() {
     return __async(this, null, function* () {
       return new Promise((resolve) => {
         database_default.initialize(() => {
+          Guardian.initialize();
           memory_default.initialize();
-          network_default.initialize();
-          build2(this.roomCreationCallback);
-          resolve();
+          Updater.initialize();
+          network_default.initialize(() => {
+            build2(this.extendables);
+            resolve();
+          });
         });
       });
     });
@@ -4361,11 +4432,27 @@ var Sigma = class {
       network_default.instance.registerCustomController(controller);
     });
   }
-  core() {
-    return network_default.instance.services;
+  expressApp() {
+    return network_default.instance.app;
   }
-  clients(humanId) {
+  httpServer() {
+    return network_default.instance.server;
+  }
+  guardian() {
+    return Guardian.instance;
+  }
+  updater() {
+    return Updater.instance;
+  }
+  client(humanId) {
     return network_default.instance.clients[humanId];
+  }
+  service(serviceName) {
+    return network_default.instance.services[serviceName];
+  }
+  constructor(conf) {
+    setupConfig(conf);
+    this.extendables = new Extendables();
   }
 };
 var sigma_default = Sigma;
@@ -4381,8 +4468,8 @@ var BaseMachine = class extends base_service_default {
   route(key, client, body) {
     return new Promise((resolve, reject) => __async(this, null, function* () {
       let action = this.getService();
-      for (let i = 0; i < key.length; i++) {
-        action = action[key[i]];
+      for (const element of key) {
+        action = action[element];
       }
       if (action) {
         if (action.guardian.authenticate) {
@@ -4397,7 +4484,7 @@ var BaseMachine = class extends base_service_default {
           return;
         }
         if (action.guardian.authorize) {
-          let result = yield guardian_default.authorize(client, body["towerId"], body["roomId"]);
+          let result = yield Guardian.instance.authorize(client, body["towerId"], body["roomId"]);
           if (result == null ? void 0 : result.granted) {
             report = { towerId: body.towerId, rights: result.rights, roomId: result.roomId };
           } else {
@@ -4449,7 +4536,7 @@ var BaseMachine = class extends base_service_default {
           return;
         }
         if (action.guardian.authorize) {
-          let result = yield guardian_default.authorize(client, (_a = req.headers["towerid"]) == null ? void 0 : _a.toString(), req.headers["roomid"].toString());
+          let result = yield Guardian.instance.authorize(client, (_a = req.headers["towerid"]) == null ? void 0 : _a.toString(), req.headers["roomid"].toString());
           if (result == null ? void 0 : result.granted) {
             report = { towerId: req.headers["towerid"].toString(), rights: result.rights, roomId: req.headers["roomid"].toString() };
           } else {
@@ -4498,6 +4585,6 @@ export {
   client_default as Client,
   sigma_default as Sigma,
   base_default as Update,
-  updater_default as Updater
+  Updater
 };
 //# sourceMappingURL=index.mjs.map
