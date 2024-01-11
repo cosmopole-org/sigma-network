@@ -3,10 +3,10 @@ import * as transactions from '../database/transactions/transactions'
 import { secureObject } from "../utils/filter";
 import { ITower } from "../models/tower.model";
 import NetworkDriver from "../drivers/network/network";
-import updater from "../updater";
-import guardian from "../guardian";
 import MemoryDriver from "drivers/memory/memory";
 import Extendables, { EntityTypes } from "../extendables";
+import Guardian from "../guardian";
+import Updater from "updater";
 
 class TowerService {
     extendables: Extendables
@@ -17,7 +17,7 @@ class TowerService {
         if (client.humanId) {
             let result = await transactions.tower.create({ ...body, ownerId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] })
             if (result.success) {
-                guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
+                Guardian.instance.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.tower.id, result.member.secret.permissions)
                 client.joinTower(result.tower.id)
                 await MemoryDriver.instance.save(`struct:${result.tower.id}:${result.room.id}`, true)
@@ -28,11 +28,11 @@ class TowerService {
         }
     }
     async update(client: Client, body: { towerId: string, title: string, avatarId: string, isPublic: boolean }, requestId: string) {
-        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        let { granted } = await Guardian.instance.authorize(client, body.towerId)
         if (granted) {
             let result = await transactions.tower.update({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onUpdate, secureObject(result.tower, 'secret')))
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onUpdate, secureObject(result.tower, 'secret')))
             }
             return result
         } else {
@@ -40,12 +40,12 @@ class TowerService {
         }
     }
     async remove(client: Client, body: { towerId: string }, requestId: string) {
-        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        let { granted } = await Guardian.instance.authorize(client, body.towerId)
         if (granted) {
             let result = await transactions.tower.remove({ ...body, humanId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onRemove, secureObject(result.tower, 'secret')))
-                guardian.rules.removeRules(body.towerId, result.memberIds)
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onRemove, secureObject(result.tower, 'secret')))
+                Guardian.instance.rules.removeRules(body.towerId, result.memberIds)
             }
             return result
         } else {
@@ -67,8 +67,8 @@ class TowerService {
         if (client.humanId) {
             let result = await transactions.tower.join({ ...body, requesterId: client.humanId })
             if (result.success) {
-                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, updater.buildUpdate(requestId, updater.types.tower.onHumanJoin, secureObject(result.member, 'secret')))
-                guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
+                NetworkDriver.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onHumanJoin, secureObject(result.member, 'secret')))
+                Guardian.instance.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions)
                 client.updateTowerId(result.member.towerId, result.member.secret.permissions)
                 client.joinTower(result.member.towerId)
             }
@@ -81,7 +81,7 @@ class TowerService {
         return transactions.tower.readById({ ...body, humanId: client.humanId })
     }
     async readMembers(client: Client, body: { towerId: string }, requestId: string) {
-        let { granted, rights } = await guardian.authorize(client, body.towerId)
+        let { granted } = await Guardian.instance.authorize(client, body.towerId)
         if (granted) {
             return transactions.tower.readMembers({ ...body, humanId: client.humanId })
         } else {
