@@ -3699,7 +3699,7 @@ var TowerService = class {
       if (client.humanId) {
         let result = yield tower_exports.create(__spreadProps(__spreadValues({}, body), { ownerId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] }));
         if (result.success) {
-          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
+          Guardian.instance.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.tower.id, result.member.secret.permissions);
           client.joinTower(result.tower.id);
           yield memory_default.instance.save(`struct:${result.tower.id}:${result.room.id}`, true);
@@ -3712,11 +3712,11 @@ var TowerService = class {
   }
   update(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield tower_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onUpdate, secureObject(result.tower, "secret")));
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onUpdate, secureObject(result.tower, "secret")));
         }
         return result;
       } else {
@@ -3726,12 +3726,12 @@ var TowerService = class {
   }
   remove(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield tower_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onRemove, secureObject(result.tower, "secret")));
-          Guardian.rules.removeRules(body.towerId, result.memberIds);
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onRemove, secureObject(result.tower, "secret")));
+          Guardian.instance.rules.removeRules(body.towerId, result.memberIds);
         }
         return result;
       } else {
@@ -3757,8 +3757,8 @@ var TowerService = class {
       if (client.humanId) {
         let result = yield tower_exports.join(__spreadProps(__spreadValues({}, body), { requesterId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(requestId, Updater.types.tower.onHumanJoin, secureObject(result.member, "secret")));
-          Guardian.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(requestId, Updater.instance.types.tower.onHumanJoin, secureObject(result.member, "secret")));
+          Guardian.instance.rules.addRule(result.member.towerId, result.member.humanId, result.member.secret.permissions);
           client.updateTowerId(result.member.towerId, result.member.secret.permissions);
           client.joinTower(result.member.towerId);
         }
@@ -3775,7 +3775,7 @@ var TowerService = class {
   }
   readMembers(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         return tower_exports.readMembers(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
       } else {
@@ -3812,13 +3812,13 @@ var RoomService = class {
   }
   create(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.create(__spreadProps(__spreadValues({}, body), { humanId: client.humanId, creationCallback: this.extendables.store[EntityTypes.ROOM_CREATION] }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(
             requestId,
-            Updater.types.room.onCreate,
+            Updater.instance.types.room.onCreate,
             secureObject(result.room, "secret")
           ));
           yield memory_default.instance.save(`struct:${body.towerId}:${result.room.id}`, true);
@@ -3831,13 +3831,13 @@ var RoomService = class {
   }
   remove(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.remove(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(
             requestId,
-            Updater.types.room.onRemove,
+            Updater.instance.types.room.onRemove,
             secureObject(result.room, "secret")
           ));
           yield memory_default.instance.remove(`struct:${body.towerId}:${result.room.id}`);
@@ -3850,7 +3850,7 @@ var RoomService = class {
   }
   search(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.search(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success && result.rooms) {
@@ -3875,13 +3875,13 @@ var RoomService = class {
   }
   update(client, body, requestId) {
     return __async(this, null, function* () {
-      let { granted, rights } = yield Guardian.authorize(client, body.towerId);
+      let { granted } = yield Guardian.instance.authorize(client, body.towerId);
       if (granted) {
         let result = yield room_exports.update(__spreadProps(__spreadValues({}, body), { humanId: client.humanId }));
         if (result.success) {
-          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.buildUpdate(
+          network_default.instance.group(body.towerId).boradcast.emit(client, Updater.instance.buildUpdate(
             requestId,
-            Updater.types.room.onUpdate,
+            Updater.instance.types.room.onUpdate,
             secureObject(result.room, "secret")
           ));
         }
