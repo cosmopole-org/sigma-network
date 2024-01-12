@@ -1,29 +1,28 @@
 package types
 
-import "fmt"
-
-type IService interface {
-	
-}
+import (
+	"fmt"
+	"sigma/core/src/interfaces"
+)
 
 type Service struct {
 	key     string
-	methods map[string]*Method
+	methods map[string]interfaces.IMethod
 }
 
-func (s Service) AddMethod(method *Method) *Service {
-	s.methods[method.key] = method
-	return &s
+func (s Service) AddMethod(method interfaces.IMethod) interfaces.IService {
+	s.methods[method.GetKey()] = method
+	return s
 }
 
-func (s Service) GetMethod(key string) *Method {
+func (s Service) GetMethod(key string) interfaces.IMethod {
 	return s.methods[key]
 }
 
-func (s Service) CallMethod(key string, args []any) {
-	var method = *s.GetMethod(key)
+func (s Service) CallMethod(app *interfaces.IApp, key string, args []any) {
+    var method = s.GetMethod(key)
 	packet := CreateLogicPacket(args)
-	(*method.GetCallback())(&packet)
+	method.GetCallback()(app, packet)
 }
 
 func (s Service) GetKey() string {
@@ -34,11 +33,11 @@ func (s Service) SetKey(key string) {
 	s.key = key
 }
 
-func (s Service) SetMethods(methods map[string]*Method) {
+func (s Service) SetMethods(methods map[string]interfaces.IMethod) {
 	fmt.Println(methods)
 	s.methods = methods
 }
 
-func CreateService(key string) *Service {
-	return &Service{key: key, methods: map[string]*Method{}}
+func CreateService(key string) Service {
+	return Service{key: key, methods: map[string]interfaces.IMethod{}}
 }

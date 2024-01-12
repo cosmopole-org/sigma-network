@@ -2,26 +2,32 @@ package network
 
 import (
 	"fmt"
-	"strings"
-
+	"sigma/core/src/core/apps"
+	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
+	"strings"
 
 	"github.com/valyala/fasthttp"
 )
 
+var instance Network
+func Instance() *Network {
+	return &instance
+}
+
 type Network struct {
-	app types.IApp
+	app *interfaces.IApp
 }
 
 func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	var uri = string(ctx.RequestURI()[:])
 	parts := strings.Split(uri, "/")
-	service := n.app.GetService(parts[1])
+	service := (*n.app).(interfaces.IApp).GetService(parts[1])
 	if service != nil {
 		method := service.GetMethod(parts[2])
 		if method != nil {
 			packet := types.CreateWebPacket(ctx)
-			(*method.GetCallback())(&packet)
+			method.GetCallback()(n.app, packet)
 		}
 	}
 }
@@ -29,9 +35,10 @@ func (n Network) Listen(port int) {
 	fasthttp.ListenAndServe(fmt.Sprintf(":%d", port), n.fastHTTPHandler)
 }
 
-func CreateNetwork(app types.IApp) *Network {
+func CreateNetwork() *Network {
 	fmt.Println("running network...")
-	network := new(Network)
-	network.app = app
-	return network
+	var network = Network{}
+	network.app = apps.GetApp()
+	instance = network
+	return &instance
 }

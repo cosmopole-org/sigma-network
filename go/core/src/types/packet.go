@@ -1,10 +1,10 @@
 package types
 
-import "github.com/valyala/fasthttp"
+import (
+	"sigma/core/src/interfaces"
 
-type IPacket interface {
-	GetData() any
-}
+	"github.com/valyala/fasthttp"
+)
 
 type WebPacket struct {
 	httpContext *fasthttp.RequestCtx
@@ -26,8 +26,8 @@ func (p WebPacket) GetBody() []byte {
 	return p.httpContext.Request.Body()
 }
 
-func (p WebPacket) GetUri() []byte {
-	return p.httpContext.RequestURI()
+func (p WebPacket) GetUri() string {
+	return string(p.httpContext.RequestURI()[:])
 }
 
 func (p WebPacket) Context() *fasthttp.RequestCtx {
@@ -43,7 +43,7 @@ func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data []
 	p.httpContext.SetBody(data)
 }
 
-func CreateWebPacket(httpContext *fasthttp.RequestCtx) IPacket {
+func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
 	return WebPacket{ httpContext: httpContext }
 }
 
@@ -55,6 +55,6 @@ func (p LoginPacket) GetData() any {
 	return p.args
 }
 
-func CreateLogicPacket(args []any) IPacket {
+func CreateLogicPacket(args []any) interfaces.IPacket {
 	return LoginPacket{ args: args }
 }

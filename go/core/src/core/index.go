@@ -2,37 +2,48 @@ package core
 
 import (
 	"fmt"
+	"sigma/core/src/core/apps"
 	"sigma/core/src/database"
+	"sigma/core/src/interfaces"
 	"sigma/core/src/network"
-	"sigma/core/src/types"
+	"sigma/core/src/services"
 )
 
-var apps = map[string]*App{}
-
 type App struct {
-	appId string
-	services map[string]*types.Service
-	network *network.Network
+	appId    string
+	services map[string]interfaces.IService
+	network  *network.Network
 	database *database.Database
 }
-func (a App) AddService(s *types.Service) {
+
+func (a App) AddService(s interfaces.IService) {
 	a.services[s.GetKey()] = s
 }
-func (a App) GetService(key string) *types.Service {
+func (a App) GetService(key string) interfaces.IService {
 	return a.services[key]
+}
+func (a App) GetDatabase() interfaces.IDatabase {
+	return database.Instance()
+}
+func (a App) GetNetwork() interfaces.INetwork {
+	return network.Instance()
 }
 func (a App) Listen(port int) {
 	fmt.Println(fmt.Sprintf("Listening to port %d ...", port))
 	a.network.Listen(port)
 }
+func (a App) LoadServices() {
+	a.services["humans"] = services.CreateHumanService(apps.GetApp())
+}
 
 func CreateApp(appId string) *App {
-	app := new(App)
+	app := &App{}
 	app.appId = appId
-	apps[appId] = app
+	apps.PutApp(app)
 	fmt.Println("Creating app...")
-	app.services = map[string]*types.Service{}
+	app.services = map[string]interfaces.IService{}
 	app.database = database.CreateDatabase("postgresql://root:OadaAkhwtDfWLD7t9WGUYqbL@sinai.liara.cloud:33721/postgres")
-	app.network = network.CreateNetwork(app)
+	app.network = network.CreateNetwork()
+	app.LoadServices()
 	return app
 }

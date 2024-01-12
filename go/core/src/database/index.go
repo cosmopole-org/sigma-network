@@ -8,22 +8,32 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type Database struct {
-	Db *pgxpool.Pool
+var instance Database
+func Instance() *Database {
+	return &instance
 }
+
+var db pgxpool.Pool
+type Database struct{
+	
+}
+
 func (d Database) Connect(uri string) {
 	dbPool, err := pgxpool.Connect(context.Background(), uri)
-	if (err != nil) {
+	if err != nil {
 		log.Println(err)
 		return
 	}
-	d.Db = dbPool
-	defer dbPool.Close()
+	db = *dbPool
+}
+
+func (d Database) GetDb() *pgxpool.Pool {
+	return &db
 }
 
 func CreateDatabase(uri string) *Database {
 	fmt.Println("connecting to database...")
-	database := new(Database)
-	database.Connect(uri)
-	return database
+	instance = Database{}
+	instance.Connect(uri)
+	return &instance
 }
