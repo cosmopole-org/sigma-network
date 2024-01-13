@@ -10,9 +10,9 @@ type Check struct {
 
 type Method struct {
 	key        string
-	callback   func(app *interfaces.IApp, input interfaces.IPacket)
+	callback   func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto)
 	check      Check
-	inTemplate interface{}
+	inTemplate interfaces.IDto
 }
 
 func (m Method) GetKey() string {
@@ -23,19 +23,19 @@ func (m Method) SetKey(key string) {
 	m.key = key
 }
 
-func (m Method) SetCallback(callback func(app *interfaces.IApp, input interfaces.IPacket)) {
+func (m Method) SetCallback(callback func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto)) {
 	m.callback = callback
 }
 
-func (m Method) GetCallback() func(app *interfaces.IApp, input interfaces.IPacket) {
+func (m Method) GetCallback() func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto) {
 	return m.callback
 }
 
-func (m Method) GetInTemplate() interface{} {
+func (m Method) GetInTemplate() interfaces.IDto {
 	return m.inTemplate
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, input interfaces.IPacket), check Check, dto interface{}) Method {
+func CreateMethod(key string, callback func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto), check Check, dto interfaces.IDto) Method {
 	return Method{key: key, callback: callback, check: check, inTemplate: dto}
 }
 

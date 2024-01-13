@@ -22,7 +22,7 @@ func (s Service) GetMethod(key string) interfaces.IMethod {
 func (s Service) CallMethod(app *interfaces.IApp, key string, args []any) {
     var method = s.GetMethod(key)
 	packet := CreateLogicPacket(args)
-	method.GetCallback()(app, packet)
+	method.GetCallback()(app, packet, nil)
 }
 
 func (s Service) GetKey() string {

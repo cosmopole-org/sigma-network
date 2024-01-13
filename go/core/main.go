@@ -9,9 +9,13 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func hello(app *interfaces.IApp, input interfaces.IPacket) {
-	wp := input.(types.WebPacket)
+func hello(app *interfaces.IApp, p interfaces.IPacket) {
+	wp := p.(types.WebPacket)
 	wp.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, []byte(`{ "hello": "world" }`))
+}
+
+type Cat struct { 
+    Age int
 }
 
 func main() {
@@ -21,9 +25,11 @@ func main() {
 			AddMethod(
 				types.CreateMethod(
 					"hello",
-					hello,
+					func (app *interfaces.IApp, p interfaces.IPacket, d interfaces.IDto)  {
+						hello(app, p)	
+					},
 					*types.CreateCheck(false, false, false),
-					&dtos.HelloDto{},
+					dtos.HelloDto{},
 				),
 			),
 	)

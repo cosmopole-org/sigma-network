@@ -5,4 +5,5 @@ type Pending struct {
 	Email string `json:"email"`
 	VerifyCode string `json:"verifyCode"`
 	ClientCode string `json:"clientCode"`
+	State string`json:"state"`
 }

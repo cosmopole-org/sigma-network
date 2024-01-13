@@ -22,20 +22,21 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	if service != nil {
 		method := service.GetMethod(parts[2])
 		if method != nil {
+			var temp = method.GetInTemplate()
 			var packet = types.CreateWebPacket(ctx)
-			temp := method.GetInTemplate()
-			if (ctx.IsPost() || ctx.IsPut()) {
-				if utils.ValidateWebPacket(packet, temp, utils.BODY) {
-					method.GetCallback()(n.app, packet)
+			if ctx.IsPost() || ctx.IsPut() {
+				if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+					method.GetCallback()(n.app, packet, temp)
 				}
-			} else if (ctx.IsGet()) {
-				if utils.ValidateWebPacket(packet, temp, utils.QUERY) {
-					method.GetCallback()(n.app, packet)
+			} else if ctx.IsGet() {
+				if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
+					method.GetCallback()(n.app, packet, temp)
 				}
 			}
 		}
 	}
 }
+
 func (n Network) Listen(port int) {
 	fasthttp.ListenAndServe(fmt.Sprintf(":%d", port), n.fastHTTPHandler)
 }

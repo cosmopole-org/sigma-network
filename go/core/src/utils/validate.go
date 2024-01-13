@@ -36,13 +36,13 @@ const (
 	QUERY = 2
 )
 
-func ValidateWebPacket(packet interfaces.IPacket, dto interface{}, targetType int) bool {
+func ValidateWebPacket(packet interfaces.IPacket, dto *interfaces.IDto, targetType int) bool {
 	var wp = packet.(types.WebPacket)
 	if targetType == BODY {
 		var body = wp.GetBody()
-		if (body == nil) {
+		if body == nil {
 			wp.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, BuildErrorJson("body can't be empty"))
-			return false			
+			return false
 		}
 		err1 := json.Unmarshal(body, dto)
 		if err1 != nil {
@@ -52,7 +52,7 @@ func ValidateWebPacket(packet interfaces.IPacket, dto interface{}, targetType in
 		}
 		validate := validator.New()
 		LoadValidator(validate)
-		err2 := validate.Struct(dto)
+		err2 := validate.Struct(*dto)
 		if err2 != nil {
 			fmt.Println(err2)
 			wp.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, BuildErrorJson(err2.Error()))

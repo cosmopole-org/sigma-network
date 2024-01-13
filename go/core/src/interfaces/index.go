@@ -25,9 +25,9 @@ type IService interface {
 type IMethod interface {
 	GetKey() string
 	SetKey(key string)
-	SetCallback(callback func(app *IApp, input IPacket))
-	GetCallback() func(app *IApp, input IPacket)
-	GetInTemplate() interface{}
+	SetCallback(callback func(app *IApp, packet IPacket, input IDto))
+	GetCallback() func(app *IApp, packet IPacket, input IDto)
+	GetInTemplate() IDto
 }
 
 type IPacket interface {
@@ -40,4 +40,8 @@ type IDatabase interface {
 
 type INetwork interface {
 	Listen(port int)
+}
+
+type IDto interface {
+	GetData() any
 }
