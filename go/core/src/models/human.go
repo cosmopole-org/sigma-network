@@ -1,6 +1,6 @@
 package models
 
-type human struct {
+type Human struct {
 	id string
 	firstName string
 	lastName string

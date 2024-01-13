@@ -12,8 +12,8 @@ import (
 type App struct {
 	appId    string
 	services map[string]interfaces.IService
-	network  *network.Network
-	database *database.Database
+	network  network.Network
+	database database.Database
 }
 
 func (a App) AddService(s interfaces.IService) {
@@ -23,10 +23,10 @@ func (a App) GetService(key string) interfaces.IService {
 	return a.services[key]
 }
 func (a App) GetDatabase() interfaces.IDatabase {
-	return database.Instance()
+	return a.database
 }
 func (a App) GetNetwork() interfaces.INetwork {
-	return network.Instance()
+	return a.network
 }
 func (a App) Listen(port int) {
 	fmt.Println(fmt.Sprintf("Listening to port %d ...", port))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"sigma/core/src/core"
+	"sigma/core/src/dtos"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
 
@@ -22,6 +23,7 @@ func main() {
 					"hello",
 					hello,
 					*types.CreateCheck(false, false, false),
+					&dtos.HelloDto{},
 				),
 			),
 	)

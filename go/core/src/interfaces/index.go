@@ -1,7 +1,6 @@
 package interfaces
 
 import (
-
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
@@ -14,7 +13,7 @@ type IApp interface {
 	LoadServices()
 }
 
-type IService interface{
+type IService interface {
 	GetKey() string
 	AddMethod(method IMethod) IService
 	GetMethod(key string) IMethod
@@ -23,11 +22,12 @@ type IService interface{
 	SetMethods(methods map[string]IMethod)
 }
 
-type IMethod interface{
+type IMethod interface {
 	GetKey() string
 	SetKey(key string)
 	SetCallback(callback func(app *IApp, input IPacket))
 	GetCallback() func(app *IApp, input IPacket)
+	GetInTemplate() interface{}
 }
 
 type IPacket interface {
@@ -35,7 +35,6 @@ type IPacket interface {
 }
 
 type IDatabase interface {
-	Connect(uri string)
 	GetDb() *pgxpool.Pool
 }
 

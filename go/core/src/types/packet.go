@@ -1,6 +1,8 @@
 package types
 
 import (
+	"encoding/json"
+	"fmt"
 	"sigma/core/src/interfaces"
 
 	"github.com/valyala/fasthttp"
@@ -14,8 +16,15 @@ func (p WebPacket) GetData() any {
 	return p.httpContext
 }
 
-func (p WebPacket) GetQuery(key string) []byte {
-	return p.httpContext.QueryArgs().Peek(key)
+func (p WebPacket) GetQuery() map[string]string {
+	var dict = map[string]string{}
+	p.httpContext.QueryArgs().VisitAll(func(key, val []byte) {
+		dict[string(key)] = string(val)
+	})
+	return dict
+}
+func (p WebPacket) GetQueryParam(key string) string {
+	return string(p.httpContext.QueryArgs().Peek(key))
 }
 
 func (p WebPacket) GetHeader(key string) []byte {
@@ -34,17 +43,23 @@ func (p WebPacket) Context() *fasthttp.RequestCtx {
 	return p.httpContext
 }
 
-func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data []byte) {
+func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data any) {
 	p.httpContext.SetStatusCode(status)
 	p.httpContext.SetContentType("application/json")
-	for k, v := range headers { 
+	for k, v := range headers {
 		p.httpContext.Response.Header.Set(k, v)
 	}
-	p.httpContext.SetBody(data)
+	var output, err = json.Marshal(data)
+	if err != nil {
+		fmt.Println(err)
+		p.httpContext.SetStatusCode(status)
+	} else {
+		p.httpContext.SetBody(output)
+	}
 }
 
 func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
-	return WebPacket{ httpContext: httpContext }
+	return WebPacket{httpContext: httpContext}
 }
 
 type LoginPacket struct {
@@ -56,5 +71,5 @@ func (p LoginPacket) GetData() any {
 }
 
 func CreateLogicPacket(args []any) interfaces.IPacket {
-	return LoginPacket{ args: args }
+	return LoginPacket{args: args}
 }

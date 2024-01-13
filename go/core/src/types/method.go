@@ -9,9 +9,10 @@ type Check struct {
 }
 
 type Method struct {
-	key      string
-	callback func(app *interfaces.IApp, input interfaces.IPacket)
-	check    Check
+	key        string
+	callback   func(app *interfaces.IApp, input interfaces.IPacket)
+	check      Check
+	inTemplate interface{}
 }
 
 func (m Method) GetKey() string {
@@ -30,8 +31,12 @@ func (m Method) GetCallback() func(app *interfaces.IApp, input interfaces.IPacke
 	return m.callback
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, input interfaces.IPacket), check Check) Method {
-	return Method{key: key, callback: callback, check: check}
+func (m Method) GetInTemplate() interface{} {
+	return m.inTemplate
+}
+
+func CreateMethod(key string, callback func(app *interfaces.IApp, input interfaces.IPacket), check Check, dto interface{}) Method {
+	return Method{key: key, callback: callback, check: check, inTemplate: dto}
 }
 
 func CreateCheck(human bool, tower bool, room bool) *Check {
