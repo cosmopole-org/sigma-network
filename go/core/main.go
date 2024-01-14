@@ -28,8 +28,8 @@ func main() {
 					func (app *interfaces.IApp, p interfaces.IPacket, d interfaces.IDto)  {
 						hello(app, p)	
 					},
-					*types.CreateCheck(false, false, false),
-					dtos.HelloDto{},
+					types.CreateCheck(false, false, false),
+					&dtos.HelloDto{},
 				),
 			),
 	)

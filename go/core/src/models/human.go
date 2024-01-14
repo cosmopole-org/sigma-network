@@ -1,7 +1,8 @@
 package models
 
 type Human struct {
-	id string
-	firstName string
-	lastName string
+	Id        int64
+	Email     string
+	FirstName string
+	LastName  string
 }

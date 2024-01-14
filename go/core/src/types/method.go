@@ -39,6 +39,6 @@ func CreateMethod(key string, callback func(app *interfaces.IApp, packet interfa
 	return Method{key: key, callback: callback, check: check, inTemplate: dto}
 }
 
-func CreateCheck(human bool, tower bool, room bool) *Check {
-	return &Check{human: human, tower: tower, room: room}
+func CreateCheck(human bool, tower bool, room bool) Check {
+	return Check{human: human, tower: tower, room: room}
 }
