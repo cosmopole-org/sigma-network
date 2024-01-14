@@ -1,8 +1,8 @@
 package models
 
 type Human struct {
-	Id        int64
-	Email     string
-	FirstName string
-	LastName  string
+	Id        int64  `json:"id"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
 }

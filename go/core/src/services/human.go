@@ -31,12 +31,12 @@ func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 		insert into pending
 		(
 			email,
-			verifyCode,
-			clientCode,
+			verify_code,
+			client_code,
 			state
 		) values ($1, $2, $3, $4)
-		ON CONFLICT(email) DO UPDATE SET verifyCode = EXCLUDED.verifyCode, state = $4
-		RETURNING id, email, verifyCode, clientCode, state;
+		on conflict(email) do update set verify_code = excluded.verify_code, state = $4
+		returning id, email, verify_code, client_code, state;
 	`
 	var pending models.Pending
 	if err := (*app).GetDatabase().GetDb().QueryRow(
@@ -53,106 +53,86 @@ func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 	var input = dto.(*dtos_humans.VerifyDto)
 	var packet = p.(types.WebPacket)
 	var query = `
-		update pending set state = $1 where clientCode = $2 and verifyCode = $3 and state = 'created'
-		RETURNING id, email, verifyCode, clientCode, state;
+		select humans_verify($1, $2)
 	`
-	var pending models.Pending
+	type Record struct {
+		p_id         int64
+		p_cc         string
+		P_vc         string
+		P_state      string
+		P_email      string
+		h_id         int64
+		h_email      string
+		h_first_name string
+		h_last_name  string
+	}
+	var record []interface{}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, "verified", input.ClientCode, input.VerifyCode,
-	).Scan(&pending.Id, &pending.Email, &pending.VerifyCode, &pending.ClientCode, &pending.State); err != nil {
+		context.Background(), query, input.ClientCode, input.VerifyCode,
+	).Scan(
+		&record,
+	); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.VerifyOutput{Pending: pending})
+	var pending = models.Pending{
+		Id:         record[0].(int64),
+		ClientCode: record[1].(string),
+		VerifyCode: record[2].(string),
+		State:      record[3].(string),
+		Email:      record[4].(string),
+	}
+	if record[5] == nil {
+		packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.VerifyOutput{Pending: pending, Human: nil, Session: nil})
+	} else {
+		var human = models.Human{
+			Id:        record[5].(int64),
+			Email:     record[6].(string),
+			FirstName: record[7].(string),
+			LastName:  record[8].(string),
+		}
+		var session = models.Session{
+			Id:     record[9].(int64),
+			UserId: human.Id,
+			Token:  record[10].(string),
+		}
+		packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.VerifyOutput{Pending: pending, Human: human, Session: session})
+	}
 }
 
 func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 	var input = dto.(*dtos_humans.CompleteDto)
 	var packet = p.(types.WebPacket)
 	var human models.Human
+	var session models.Session
+	var token, tokenErr = utils.SecureUniqueString(32)
+	if tokenErr != nil {
+		fmt.Println(tokenErr)
+		return
+	}
 	var query = `
-		select * from humans_complete($1, $2, $3, $4)
+		select * from humans_complete($1, $2, $3, $4, $5)
 	`
-	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName).
-		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
+		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.UserId, &session.Token); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.CompleteOutput{Human: human})
+	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.CompleteOutput{Human: human, Session: session})
 }
 
 func CreateHumanService(app *interfaces.IApp) interfaces.IService {
-	var db = (*app).GetDatabase().GetDb()
-	result, err := db.Exec(context.Background(), `
-		create table pending
-		(
-   	 		id            bigserial    not null constraint pending_pk primary key,
-    		email         varchar(100) not null unique,
-    		verifyCode    varchar(100) not null,
-			clientCode    varchar(100) not null,
-			state         varchar(100) not null
-		);
-	`)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(result)
-	}
-	result2, err2 := db.Exec(context.Background(), `
-		create table human
-		(
-			id           bigserial    not null constraint person_pk primary key,
-			email        varchar(100) not null unique,
-			firstName    varchar(100) not null,
-			lastName     varchar(100) not null
-		);
-	`)
-	if err2 != nil {
-		fmt.Println(err2)
-	} else {
-		fmt.Println(result2)
-	}
-	result3, err3 := db.Exec(context.Background(), `
-		create function humans_complete(cc varchar(100), vc varchar(100), fname varchar(100), lname varchar(100))
-		returns TABLE (
-			i bigint,
-		    em text,
-			fn text,
-			ln text
-		) as $$
-		declare
-			res1   text;
-			res2   text;
-			hId    bigint;
-			hEmail text;
-			hFName text;
-			hLName text;
-		BEGIN
-			update pending set state = 'completed' where clientCode = cc and verifyCode = vc and state = 'verified'
-			returning state, email into res1, res2;
-			if res1 = 'completed' then
-				insert into human
-				(
-					email,
-					firstName,
-					lastName
-				) values (res2, fname, lname)
-				ON CONFLICT(email) DO UPDATE SET firstName = fname, lastName = lname
-				returning id, email, firstName, lastName into hId, hEmail, hFName, HLName;
-				RETURN QUERY SELECT hId as i, hEmail as em, hFName as fn, HLName as ln;
-			else
-				raise notice 'pending not found';
-  			end if;
-		END $$
-		LANGUAGE plpgsql;
-	`)
-	if err3 != nil {
-		fmt.Println(err3)
-	} else {
-		fmt.Println(result3)
-	}
+	
+	// Tables
+	utils.ExecuteSqlFile("src/database/tables/session.sql")
+	utils.ExecuteSqlFile("src/database/tables/pending.sql")
+	utils.ExecuteSqlFile("src/database/tables/human.sql")
+
+	// Functipns
+	utils.ExecuteSqlFile("src/database/functions/humans/complete.sql")
+	utils.ExecuteSqlFile("src/database/functions/humans/verify.sql")
 
 	return types.CreateService("humans").
 		AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), &dtos_humans.SignupDto{})).
