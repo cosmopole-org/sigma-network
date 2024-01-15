@@ -25,8 +25,9 @@ type IService interface {
 type IMethod interface {
 	GetKey() string
 	SetKey(key string)
-	SetCallback(callback func(app *IApp, packet IPacket, input IDto))
-	GetCallback() func(app *IApp, packet IPacket, input IDto)
+	SetCallback(callback func(app *IApp, packet IPacket, input IDto, guard IGuard))
+	GetCallback() func(app *IApp, packet IPacket, input IDto, guard IGuard)
+	GetCheck() ICheck
 	GetInTemplate() IDto
 }
 
@@ -44,4 +45,16 @@ type INetwork interface {
 
 type IDto interface {
 	GetData() any
+}
+
+type IGuard interface {
+	GetUserId() int64
+	GetTowerId() int64
+	GetRoomId() int64
+}
+
+type ICheck interface {
+	NeedUser() bool
+	NeedTower() bool
+	NeedRoom() bool
 }

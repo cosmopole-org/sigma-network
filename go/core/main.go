@@ -25,7 +25,7 @@ func main() {
 			AddMethod(
 				types.CreateMethod(
 					"hello",
-					func (app *interfaces.IApp, p interfaces.IPacket, d interfaces.IDto)  {
+					func (app *interfaces.IApp, p interfaces.IPacket, d interfaces.IDto, guard interfaces.IGuard)  {
 						hello(app, p)	
 					},
 					types.CreateCheck(false, false, false),

@@ -1,6 +1,7 @@
 package network
 
 import (
+	"context"
 	"fmt"
 	"sigma/core/src/core/apps"
 	"sigma/core/src/interfaces"
@@ -15,6 +16,21 @@ type Network struct {
 	app *interfaces.IApp
 }
 
+func (n Network) authenticate(packet types.WebPacket) int64 {
+	var query = `
+		select user_id from session where token = $1 limit 1
+	`
+	var id int64 = 0
+	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, packet.GetHeader("token")).
+		Scan(&id); err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return 0
+	} else {
+		return id
+	}
+}
+
 func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
 	parts := strings.Split(uri, "/")
@@ -23,14 +39,28 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 		method := service.GetMethod(parts[2])
 		if method != nil {
 			var temp = method.GetInTemplate()
-			var packet = types.CreateWebPacket(ctx)
+			var packet = types.CreateWebPacket(ctx).(types.WebPacket)
 			if ctx.IsPost() || ctx.IsPut() {
 				if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
-					method.GetCallback()(n.app, packet, temp)
+					if method.GetCheck().NeedUser() {
+						var userId = n.authenticate(packet)
+						if userId > 0 {
+							method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+						}
+					} else {
+						method.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
+					}
 				}
 			} else if ctx.IsGet() {
 				if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
-					method.GetCallback()(n.app, packet, temp)
+					if method.GetCheck().NeedUser() {
+						var userId = n.authenticate(packet)
+						if userId > 0 {
+							method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+						}
+					} else {
+						method.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
+					}
 				}
 			}
 		}

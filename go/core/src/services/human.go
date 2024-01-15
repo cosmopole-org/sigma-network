@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	dtos_humans "sigma/core/src/dtos/humans"
 	"sigma/core/src/interfaces"
@@ -14,7 +15,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
+func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
 	var input = dto.(*dtos_humans.SignupDto)
 	var packet = p.(types.WebPacket)
 	var cc, err1 = utils.SecureUniqueString(32)
@@ -49,7 +50,7 @@ func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.SignupOutput{Pending: pending})
 }
 
-func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
+func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
 	var input = dto.(*dtos_humans.VerifyDto)
 	var packet = p.(types.WebPacket)
 	var query = `
@@ -101,7 +102,7 @@ func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 	}
 }
 
-func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
+func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
 	var input = dto.(*dtos_humans.CompleteDto)
 	var packet = p.(types.WebPacket)
 	var human models.Human
@@ -123,8 +124,47 @@ func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto) {
 	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.CompleteOutput{Human: human, Session: session})
 }
 
+func update(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+	var input = dto.(*dtos_humans.UpdateDto)
+	var packet = p.(types.WebPacket)
+	var human models.Human
+	var query = `
+		update human set first_name = $1, last_name = $2 where id = $3
+		returning id, email, first_name, last_name;
+	`
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, guard.GetUserId()).
+		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return
+	}
+	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.UpdateOutput{Human: human})
+}
+
+func get(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+	var input = dto.(*dtos_humans.GetDto)
+	var packet = p.(types.WebPacket)
+	var human models.Human
+	var query = `
+		select id, first_name, last_name from human where id = $1;
+	`
+	userId, err := strconv.ParseInt(input.UserId, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return
+	}
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, userId).
+		Scan(&human.Id, &human.FirstName, &human.LastName); err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return
+	}
+	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.GetOutput{Human: human})
+}
+
 func CreateHumanService(app *interfaces.IApp) interfaces.IService {
-	
+
 	// Tables
 	utils.ExecuteSqlFile("src/database/tables/session.sql")
 	utils.ExecuteSqlFile("src/database/tables/pending.sql")
@@ -137,5 +177,7 @@ func CreateHumanService(app *interfaces.IApp) interfaces.IService {
 	return types.CreateService("humans").
 		AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), &dtos_humans.SignupDto{})).
 		AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), &dtos_humans.VerifyDto{})).
-		AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), &dtos_humans.CompleteDto{}))
+		AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), &dtos_humans.CompleteDto{})).
+		AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), &dtos_humans.UpdateDto{})).
+		AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), &dtos_humans.GetDto{}))
 }
