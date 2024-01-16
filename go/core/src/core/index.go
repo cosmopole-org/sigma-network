@@ -34,6 +34,7 @@ func (a App) Listen(port int) {
 }
 func (a App) LoadServices() {
 	a.services["humans"] = services.CreateHumanService(apps.GetApp())
+	a.services["towers"] = services.CreateTowerService(apps.GetApp())
 }
 
 func CreateApp(appId string) *App {

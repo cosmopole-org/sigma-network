@@ -8,7 +8,7 @@ import (
 	dtos_humans "sigma/core/src/dtos/humans"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/models"
-	outputs_humans "sigma/core/src/outputs"
+	outputs_humans "sigma/core/src/outputs/humans"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
 
