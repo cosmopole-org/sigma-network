@@ -151,7 +151,7 @@ func get(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard 
 	userId, err := strconv.ParseInt(input.UserId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, userId).

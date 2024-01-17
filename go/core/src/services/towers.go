@@ -9,6 +9,7 @@ import (
 	outputs_towers "sigma/core/src/outputs/towers"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
+	"strconv"
 
 	"github.com/valyala/fasthttp"
 )
@@ -39,24 +40,13 @@ func createTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 func updateTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
 	var input = dto.(*dtos_towers.UpdateDto)
 	var packet = p.(types.WebPacket)
-	var params []any
-	var query = ``
-	if input.AvatarId > 0 {
-		query = `
-			update tower set name = $1, avatar_id = $2, where id = $3 and creator_id = $4
-			returning id, name, avatar_id, creator_id;
-		`
-		params = []any{input.Name, input.AvatarId, input.TowerId, guard.GetUserId()}
-	} else {
-		query = `
-			update tower set name = $1, where id = $2 and creator_id = $3
-			returning id, name, avatar_id, creator_id;
-		`
-		params = []any{input.Name, input.TowerId, guard.GetUserId()}
-	}
+	var query = `
+		update tower set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
+		returning id, name, avatar_id, creator_id;
+	`
 	var tower models.Tower
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, params...,
+		context.Background(), query, input.Name, input.AvatarId, input.TowerId, guard.GetUserId(),
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.CreatorId); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
@@ -88,8 +78,14 @@ func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 		select id, name, avatar_id from tower where id = $1;
 	`
 	var tower models.Tower
+	towerId, err := strconv.ParseInt(input.TowerId, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return
+	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.TowerId,
+		context.Background(), query, towerId,
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
@@ -99,9 +95,12 @@ func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 }
 
 func CreateTowerService(app *interfaces.IApp) interfaces.IService {
+
+	utils.ExecuteSqlFile("src/database/tables/tower.sql")
+
 	return types.CreateService("towers").
 		AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{})).
-		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{})).
-		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{})).
-		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(false, false, false), &dtos_towers.CreateDto{}))
+		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.UpdateDto{})).
+		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.DeleteDto{})).
+		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(false, false, false), &dtos_towers.GetDto{}))
 }

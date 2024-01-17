@@ -1,7 +1,7 @@
-package dtos_towers
+package dtos_rooms
 
 type GetDto struct {
-	TowerId  string  `json:"towerId" validate:"required"`
+	RoomId  string  `json:"roomId" validate:"required"`
 }
 
 func (d GetDto) GetData() any {
