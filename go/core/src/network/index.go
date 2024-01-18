@@ -7,6 +7,7 @@ import (
 	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
+	"strconv"
 	"strings"
 
 	"github.com/valyala/fasthttp"
@@ -31,6 +32,35 @@ func (n Network) authenticate(packet types.WebPacket) int64 {
 	}
 }
 
+type Location struct {
+	TowerId int64
+	RoomId  int64
+}
+
+func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location {
+	var query = `
+		select id from member where human_id = $1 and tower_id = $2 limit 1
+	`
+	tid, err := strconv.ParseInt(string(packet.GetHeader("tower_id")), 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		return Location{TowerId: 0, RoomId: 0}
+	}
+	rid, err := strconv.ParseInt(string(packet.GetHeader("room_id")), 10, 64)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var id int64 = 0
+	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, humanId, tid).
+		Scan(&id); err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return Location{TowerId: 0, RoomId: 0}
+	} else {
+		return Location{TowerId: tid, RoomId: rid}
+	}
+}
+
 func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
 	parts := strings.Split(uri, "/")
@@ -45,7 +75,14 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 					if method.GetCheck().NeedUser() {
 						var userId = n.authenticate(packet)
 						if userId > 0 {
-							method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							if method.GetCheck().NeedTower() {
+								var location = n.authorizeHuman(userId, packet)
+								if location.TowerId > 0 {
+									method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+								}
+							} else {
+								method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							}
 						}
 					} else {
 						method.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
@@ -56,7 +93,14 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 					if method.GetCheck().NeedUser() {
 						var userId = n.authenticate(packet)
 						if userId > 0 {
-							method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							if method.GetCheck().NeedTower() {
+								var location = n.authorizeHuman(userId, packet)
+								if location.TowerId > 0 {
+									method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+								}
+							} else {
+								method.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							}
 						}
 					} else {
 						method.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))

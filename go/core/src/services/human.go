@@ -116,10 +116,13 @@ func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 		select * from humans_complete($1, $2, $3, $4, $5)
 	`
 	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
-		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.UserId, &session.Token); err != nil {
+		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
+	}
+	if (human.Id > 0) {
+		session.UserId = human.Id
 	}
 	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.CompleteOutput{Human: human, Session: session})
 }
