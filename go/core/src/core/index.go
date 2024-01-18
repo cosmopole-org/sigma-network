@@ -39,13 +39,13 @@ func (a App) LoadServices() {
 	a.services["invites"] = services.CreateInviteService(apps.GetApp())
 }
 
-func CreateApp(appId string) *App {
+func CreateApp(appId string, databaseUri string) *App {
 	app := &App{}
 	app.appId = appId
 	apps.PutApp(app)
 	fmt.Println("Creating app...")
 	app.services = map[string]interfaces.IService{}
-	app.database = database.CreateDatabase("postgresql://root:OadaAkhwtDfWLD7t9WGUYqbL@sinai.liara.cloud:33721/postgres")
+	app.database = database.CreateDatabase(databaseUri)
 	app.network = network.CreateNetwork()
 	app.LoadServices()
 	return app

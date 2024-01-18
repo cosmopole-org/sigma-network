@@ -1,0 +1,14 @@
+{
+    "app": "sigma-sample",
+    "port": "8000",
+    "platform": "docker",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "disks": [
+        {
+            "name": "sigma-data",
+            "mountTo": "/app/data"
+        }
+    ]
+}

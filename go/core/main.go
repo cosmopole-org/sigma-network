@@ -11,7 +11,7 @@ import (
 
 func hello(app *interfaces.IApp, p interfaces.IPacket) {
 	wp := p.(types.WebPacket)
-	wp.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, []byte(`{ "hello": "world" }`))
+	wp.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, "hello !")
 }
 
 type Cat struct { 
@@ -19,7 +19,7 @@ type Cat struct {
 }
 
 func main() {
-	app := core.CreateApp("sigma-sample")
+	app := core.CreateApp("sigma-sample", "")
 	app.AddService(
 		types.CreateService("api").
 			AddMethod(

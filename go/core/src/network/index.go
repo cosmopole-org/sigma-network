@@ -112,7 +112,7 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 }
 
 func (n Network) Listen(port int) {
-	fasthttp.ListenAndServe(fmt.Sprintf(":%d", port), n.fastHTTPHandler)
+	fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), n.fastHTTPHandler)
 }
 
 func CreateNetwork() Network {
