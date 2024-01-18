@@ -18,24 +18,26 @@ func createTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 	var input = dto.(*dtos_towers.CreateDto)
 	var packet = p.(types.WebPacket)
 	var query = `
-		insert into tower
-		(
-			name,
-			avatar_id,
-			is_public,
-			creator_id
-		) values ($1, $2, $3, $4)
-		returning id, name, avatar_id, is_public, creator_id;
+		select * from towers_create($1, $2, $3, $4)
 	`
 	var tower models.Tower
+	var member models.Member
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, guard.GetUserId(),
-	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId); err != nil {
+		context.Background(), query, guard.GetUserId(), input.Name, input.AvatarId, input.IsPublic,
+	).Scan(&member.Id, &tower.Id); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.CreateOutput{Tower: tower})
+	if tower.Id > 0 {
+		tower.Name = input.Name
+		tower.AvatarId = input.AvatarId
+		tower.CreatorId = guard.GetUserId()
+		tower.IsPublic = input.IsPublic
+		member.TowerId = tower.Id
+		member.HumanId = guard.GetUserId()
+	}
+	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.CreateOutput{Tower: tower, Member: member})
 }
 
 func updateTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
@@ -76,7 +78,7 @@ func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 	var input = dto.(*dtos_towers.GetDto)
 	var packet = p.(types.WebPacket)
 	var query = `
-		select id, name, avatar_id from tower where id = $1 and is_public = TRUE;
+		select * from towers_get($1, $2)
 	`
 	var tower models.Tower
 	towerId, err := strconv.ParseInt(input.TowerId, 10, 64)
@@ -86,8 +88,8 @@ func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 		return
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, towerId,
-	).Scan(&tower.Id, &tower.Name, &tower.AvatarId); err != nil {
+		context.Background(), query, guard.GetUserId(), towerId,
+	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic); err != nil {
 		fmt.Println(err)
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 		return
@@ -120,11 +122,13 @@ func CreateTowerService(app *interfaces.IApp) interfaces.IService {
 
 	// Functions
 	utils.ExecuteSqlFile("src/database/functions/towers/join.sql")
+	utils.ExecuteSqlFile("src/database/functions/towers/get.sql")
+	utils.ExecuteSqlFile("src/database/functions/towers/create.sql")
 
 	return types.CreateService("towers").
 		AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{})).
 		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.UpdateDto{})).
 		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.DeleteDto{})).
-		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(false, false, false), &dtos_towers.GetDto{})).
+		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(true, false, false), &dtos_towers.GetDto{})).
 		AddMethod(types.CreateMethod("join", joinTower, types.CreateCheck(true, false, false), &dtos_towers.JoinDto{}))
 }
