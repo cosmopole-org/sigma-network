@@ -11,22 +11,19 @@ import (
 	outputs_humans "sigma/core/src/outputs/humans"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
-
-	"github.com/valyala/fasthttp"
 )
 
-func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func signup(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_humans.SignupDto)
-	var packet = p.(types.WebPacket)
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		fmt.Println(err1)
-		return
+		return outputs_humans.SignupOutput{}, err1
 	}
 	var vc, err2 = utils.SecureUniqueString(32)
 	if err2 != nil {
 		fmt.Println(err2)
-		return
+		return outputs_humans.SignupOutput{}, err2
 	}
 	var query = `
 		insert into pending
@@ -44,15 +41,13 @@ func signup(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gua
 		context.Background(), query, input.Email, vc, cc, "created",
 	).Scan(&pending.Id, &pending.Email, &pending.VerifyCode, &pending.ClientCode, &pending.State); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.SignupOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.SignupOutput{Pending: pending})
+	return outputs_humans.SignupOutput{Pending: pending}, nil
 }
 
-func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func verify(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_humans.VerifyDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		select humans_verify($1, $2)
 	`
@@ -74,8 +69,7 @@ func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gua
 		&record,
 	); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.VerifyOutput{}, err
 	}
 	var pending = models.Pending{
 		Id:         record[0].(int64),
@@ -85,7 +79,7 @@ func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gua
 		Email:      record[4].(string),
 	}
 	if record[5] == nil {
-		packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.VerifyOutput{Pending: pending, Human: nil, Session: nil})
+		return outputs_humans.VerifyOutput{Pending: pending, Human: nil, Session: nil}, nil
 	} else {
 		var human = models.Human{
 			Id:        record[5].(int64),
@@ -98,19 +92,18 @@ func verify(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gua
 			UserId: human.Id,
 			Token:  record[10].(string),
 		}
-		packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.VerifyOutput{Pending: pending, Human: human, Session: session})
+		return outputs_humans.VerifyOutput{Pending: pending, Human: human, Session: session}, nil
 	}
 }
 
-func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func complete(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_humans.CompleteDto)
-	var packet = p.(types.WebPacket)
 	var human models.Human
 	var session models.Session
 	var token, tokenErr = utils.SecureUniqueString(32)
 	if tokenErr != nil {
 		fmt.Println(tokenErr)
-		return
+		return outputs_humans.CompleteOutput{}, tokenErr
 	}
 	var query = `
 		select * from humans_complete($1, $2, $3, $4, $5)
@@ -118,18 +111,16 @@ func complete(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.CompleteOutput{}, err
 	}
-	if (human.Id > 0) {
+	if human.Id > 0 {
 		session.UserId = human.Id
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.CompleteOutput{Human: human, Session: session})
+	return outputs_humans.CompleteOutput{Human: human, Session: session}, nil
 }
 
-func update(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func update(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_humans.UpdateDto)
-	var packet = p.(types.WebPacket)
 	var human models.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
@@ -138,15 +129,13 @@ func update(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gua
 	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, guard.GetUserId()).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.UpdateOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.UpdateOutput{Human: human})
+	return outputs_humans.UpdateOutput{Human: human}, nil
 }
 
-func get(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func get(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_humans.GetDto)
-	var packet = p.(types.WebPacket)
 	var human models.Human
 	var query = `
 		select id, first_name, last_name from human where id = $1;
@@ -154,16 +143,14 @@ func get(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard 
 	userId, err := strconv.ParseInt(input.UserId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.GetOutput{}, err
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, userId).
 		Scan(&human.Id, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_humans.GetOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_humans.GetOutput{Human: human})
+	return outputs_humans.GetOutput{Human: human}, nil
 }
 
 func CreateHumanService(app *interfaces.IApp) interfaces.IService {

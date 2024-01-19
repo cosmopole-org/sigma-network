@@ -7,17 +7,27 @@ import (
 type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
+	GetController(key string) IController
 	Listen(port int)
 	GetDatabase() IDatabase
 	GetNetwork() INetwork
 	LoadServices()
+	CreateControllers()
+}
+
+type IController interface {
+	GetKey() string
+	GetService() IService
+	CallEndpoint(app *IApp, key string, packet IPacket, dto IDto, guard IGuard) (any, error)
+	GetEndpoint(key string) IEndpoint
+	AddEndpoint(endpoint IEndpoint) IController
 }
 
 type IService interface {
 	GetKey() string
 	AddMethod(method IMethod) IService
 	GetMethod(key string) IMethod
-	CallMethod(app *IApp, key string, args []any)
+	CallMethod(app *IApp, key string, dto IDto, guard IGuard) (any, error)
 	SetKey(key string)
 	SetMethods(methods map[string]IMethod)
 }
@@ -25,10 +35,17 @@ type IService interface {
 type IMethod interface {
 	GetKey() string
 	SetKey(key string)
-	SetCallback(callback func(app *IApp, packet IPacket, input IDto, guard IGuard))
-	GetCallback() func(app *IApp, packet IPacket, input IDto, guard IGuard)
+	SetCallback(callback func(app *IApp, input IDto, guard IGuard) (any, error))
+	GetCallback() func(app *IApp, input IDto, guard IGuard) (any, error)
 	GetCheck() ICheck
 	GetInTemplate() IDto
+}
+
+type IEndpoint interface {
+	GetKey() string
+	GetCallback() func(app *IApp, packet IPacket, input IDto, guard IGuard)
+	GetServiceKey() string
+	GetMethodKey() string
 }
 
 type IPacket interface {

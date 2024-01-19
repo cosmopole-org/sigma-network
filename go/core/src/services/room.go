@@ -10,13 +10,10 @@ import (
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
 	"strconv"
-
-	"github.com/valyala/fasthttp"
 )
 
-func createRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_rooms.CreateDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		insert into room
 		(
@@ -31,15 +28,13 @@ func createRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto,
 		context.Background(), query, input.Name, input.AvatarId, guard.GetTowerId(),
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_rooms.CreateOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_rooms.CreateOutput{Room: room})
+	return outputs_rooms.CreateOutput{Room: room}, nil
 }
 
-func updateRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func updateRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_rooms.UpdateDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
 		returning id, name, avatar_id, tower_id;
@@ -49,15 +44,13 @@ func updateRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto,
 		context.Background(), query, input.Name, input.AvatarId, input.RoomId, guard.GetTowerId(),
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_rooms.UpdateOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_rooms.UpdateOutput{Room: room})
+	return outputs_rooms.UpdateOutput{Room: room}, nil
 }
 
-func deleteRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_rooms.DeleteDto)
-	var packet = p.(types.WebPacket)
 	var query = ``
 	query = `
 		delete from room where id = $1 and tower_id = $2;
@@ -65,42 +58,43 @@ func deleteRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto,
 	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.RoomId, guard.GetTowerId())
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_rooms.DeleteOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_rooms.DeleteOutput{})
+	return outputs_rooms.DeleteOutput{}, nil
 }
 
-func getRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func getRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_rooms.GetDto)
-	var packet = p.(types.WebPacket)
 	var query = `
-		select id, name, avatar_id from tower where id = $1 and tower_id = $2;
+		select * from rooms_get($1, $2, $3);
 	`
 	var room models.Room
 	roomId, err := strconv.ParseInt(input.RoomId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_rooms.GetOutput{}, err
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, roomId,
+		context.Background(), query, guard.GetUserId(), guard.GetTowerId(), roomId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_rooms.GetOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_rooms.GetOutput{Room: room})
+	room.TowerId = guard.GetTowerId()
+	return outputs_rooms.GetOutput{Room: room}, nil
 }
 
 func CreateRoomService(app *interfaces.IApp) interfaces.IService {
 
+	// Tables
 	utils.ExecuteSqlFile("src/database/tables/room.sql")
+
+	// Functions
+	utils.ExecuteSqlFile("src/database/functions/rooms/get.sql")
 
 	return types.CreateService("rooms").
 		AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), &dtos_rooms.CreateDto{})).
 		AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), &dtos_rooms.UpdateDto{})).
 		AddMethod(types.CreateMethod("delete", deleteRoom, types.CreateCheck(true, true, false), &dtos_rooms.DeleteDto{})).
-		AddMethod(types.CreateMethod("get", getRoom, types.CreateCheck(true, false, false), &dtos_rooms.GetDto{}))
+		AddMethod(types.CreateMethod("get", getRoom, types.CreateCheck(true, true, false), &dtos_rooms.GetDto{}))
 }

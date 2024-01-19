@@ -9,12 +9,10 @@ import (
 	outputs_invites "sigma/core/src/outputs/invites"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
-
-	"github.com/valyala/fasthttp"
 )
 
-func createInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
-	var packet = p.(types.WebPacket)
+func createInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+	var input = dto.(dtos_invites.CreateDto)
 	var query = `
 		insert into invite
 		(
@@ -25,33 +23,29 @@ func createInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDt
 	`
 	var invite models.Invite
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), guard.GetTowerId(),
+		context.Background(), query, input.HumanId, guard.GetTowerId(),
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_invites.CreateOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_invites.CreateOutput{Invite: invite})
+	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
-func cancelInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func cancelInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_invites.CancelDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		delete from invite where id = $1 and tower_id = $2;
 	`
 	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.InviteId, guard.GetTowerId())
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_invites.CancelOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_invites.CancelOutput{})
+	return outputs_invites.CancelOutput{}, nil
 }
 
-func acceptInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func acceptInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_invites.AcceptDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		select * from invites_accept($1, $2)
 	`
@@ -60,15 +54,13 @@ func acceptInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDt
 		context.Background(), query, guard.GetUserId(), input.InviteId,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_invites.AcceptOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_invites.AcceptOutput{Member: member})
+	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
-func declineInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func declineInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_invites.DeclineDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		delete from invite where id = $1 and human_id = $2
 	`
@@ -77,10 +69,9 @@ func declineInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.ID
 	)
 	if (err != nil) {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_invites.DeclineOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_invites.DeclineOutput{})
+	return outputs_invites.DeclineOutput{}, nil
 }
 
 func CreateInviteService(app *interfaces.IApp) interfaces.IService {

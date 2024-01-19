@@ -9,9 +9,9 @@ create function invites_accept(humanid bigint, inviteid bigint)
 			h_id         bigint;
 			t_id         bigint;
 		begin
-			select human_id, tower_id into h_id, t_id from invite where invite_id = inviteid limit 1;
+			select human_id, tower_id into h_id, t_id from invite where id = inviteid limit 1;
 			if h_id = humanid then
-				delete from invite where invite_id = inviteid;
+				delete from invite where id = inviteid;
 				insert into member
 				(
 					human_id,

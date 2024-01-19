@@ -10,13 +10,10 @@ import (
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
 	"strconv"
-
-	"github.com/valyala/fasthttp"
 )
 
-func createTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func createTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.CreateDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		select * from towers_create($1, $2, $3, $4)
 	`
@@ -26,8 +23,7 @@ func createTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 		context.Background(), query, guard.GetUserId(), input.Name, input.AvatarId, input.IsPublic,
 	).Scan(&member.Id, &tower.Id); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.CreateOutput{}, err
 	}
 	if tower.Id > 0 {
 		tower.Name = input.Name
@@ -37,12 +33,11 @@ func createTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 		member.TowerId = tower.Id
 		member.HumanId = guard.GetUserId()
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.CreateOutput{Tower: tower, Member: member})
+	return outputs_towers.CreateOutput{Tower: tower, Member: member}, nil
 }
 
-func updateTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func updateTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.UpdateDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		update tower set name = $1, avatar_id = $2, is_public = $3 where id = $4 and creator_id = $5
 		returning id, name, avatar_id, is_public, creator_id;
@@ -52,15 +47,13 @@ func updateTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, input.TowerId, guard.GetUserId(),
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.UpdateOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.UpdateOutput{Tower: tower})
+	return outputs_towers.UpdateOutput{Tower: tower}, nil
 }
 
-func deleteTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func deleteTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.DeleteDto)
-	var packet = p.(types.WebPacket)
 	var query = ``
 	query = `
 		delete from tower where id = $1 and creator_id = $2;
@@ -68,15 +61,13 @@ func deleteTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto
 	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.TowerId, guard.GetUserId())
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.DeleteOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.DeleteOutput{})
+	return outputs_towers.DeleteOutput{}, nil
 }
 
-func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func getTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.GetDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		select * from towers_get($1, $2)
 	`
@@ -84,22 +75,19 @@ func getTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, g
 	towerId, err := strconv.ParseInt(input.TowerId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.GetOutput{}, err
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
 		context.Background(), query, guard.GetUserId(), towerId,
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.GetOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.GetOutput{Tower: tower})
+	return outputs_towers.GetOutput{Tower: tower}, nil
 }
 
-func joinTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func joinTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.JoinDto)
-	var packet = p.(types.WebPacket)
 	var query = `
 		select * from towers_join($1, $2)
 	`
@@ -108,10 +96,9 @@ func joinTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, 
 		context.Background(), query, guard.GetUserId(), input.TowerId,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return
+		return outputs_towers.JoinOutput{}, err
 	}
-	packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, outputs_towers.JoinOutput{Member: member})
+	return outputs_towers.JoinOutput{Member: member}, nil
 }
 
 func CreateTowerService(app *interfaces.IApp) interfaces.IService {

@@ -5,33 +5,44 @@ import (
 	"sigma/core/src/dtos"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
+	"sigma/core/src/utils"
 
 	"github.com/valyala/fasthttp"
 )
 
-func hello(app *interfaces.IApp, p interfaces.IPacket) {
-	wp := p.(types.WebPacket)
-	wp.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, "hello !")
+func hello(app *interfaces.IApp, d interfaces.IDto, guard interfaces.IGuard) (any, error) {
+	return `{ "hello": "world" }`, nil
 }
 
-type Cat struct { 
-    Age int
+type Cat struct {
+	Age int
 }
 
 func main() {
 	app := core.CreateApp("sigma-sample", "")
-	app.AddService(
-		types.CreateService("api").
-			AddMethod(
-				types.CreateMethod(
-					"hello",
-					func (app *interfaces.IApp, p interfaces.IPacket, d interfaces.IDto, guard interfaces.IGuard)  {
-						hello(app, p)	
-					},
-					types.CreateCheck(false, false, false),
-					&dtos.HelloDto{},
-				),
+
+	var apiService = types.CreateService("api").
+		AddMethod(
+			types.CreateMethod(
+				"hello",
+				hello,
+				types.CreateCheck(false, false, false),
+				&dtos.HelloDto{},
 			),
-	)
+		)
+	app.AddService(apiService)
+	var apiController = types.CreateController("api", apiService)
+	apiController.AddEndpoint(types.CreateEndpoint("hello", "api", "hello",
+		func(app *interfaces.IApp, packet interfaces.IPacket, input interfaces.IDto, guard interfaces.IGuard) {
+			wp := packet.(types.WebPacket)
+			result, err := hello(app, input, guard)
+			if err != nil {
+				wp.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+			} else {
+				wp.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, result)
+			}
+		}))
+	app.AddController(apiController)
+
 	app.Listen(8000)
 }

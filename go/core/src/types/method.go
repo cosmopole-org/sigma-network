@@ -40,7 +40,7 @@ func (g Guard) GetRoomId() int64 {
 
 type Method struct {
 	key        string
-	callback   func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard)
+	callback   func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error)
 	check      Check
 	inTemplate interfaces.IDto
 }
@@ -53,11 +53,11 @@ func (m Method) SetKey(key string) {
 	m.key = key
 }
 
-func (m Method) SetCallback(callback func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard)) {
+func (m Method) SetCallback(callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error)) {
 	m.callback = callback
 }
 
-func (m Method) GetCallback() func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard) {
+func (m Method) GetCallback() func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	return m.callback
 }
 
@@ -69,7 +69,7 @@ func (m Method) GetCheck() interfaces.ICheck {
 	return m.check
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, packet interfaces.IPacket, dto interfaces.IDto, guard interfaces.IGuard), check Check, dto interfaces.IDto) Method {
+func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error), check Check, dto interfaces.IDto) Method {
 	return Method{key: key, callback: callback, check: check, inTemplate: dto}
 }
 
