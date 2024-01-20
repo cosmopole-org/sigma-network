@@ -10,8 +10,17 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/fasthttp/websocket"
 	"github.com/valyala/fasthttp"
 )
+
+var upgrader = websocket.FastHTTPUpgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	CheckOrigin: func(r *fasthttp.RequestCtx) bool {
+		return true
+	},
+}
 
 type Network struct {
 	app *interfaces.IApp
@@ -75,58 +84,128 @@ func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location 
 	return Location{TowerId: tid, RoomId: rid}
 }
 
+func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
+	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
+		for {
+			messageType, p, err := conn.ReadMessage()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			var dataStr = string(p[:])
+			var splittedMsg = strings.Split(dataStr, " ")
+			var uri = splittedMsg[0]
+			var requestId = splittedMsg[1]
+			var body = dataStr[(len(uri) + 1 + len(requestId)):]
+			parts := strings.Split(uri, "/")
+			if len(parts) == 3 {
+				controller := (*n.app).(interfaces.IApp).GetController(parts[1])
+				if controller != nil {
+					service := controller.GetService()
+					var endpoint = controller.GetEndpoint(parts[2])
+					var method = service.GetMethod(endpoint.GetKey())
+					var temp = method.GetInTemplate()
+					var packet = types.CreateWebPacketForSocket(
+						uri,
+						[]byte(body),
+						requestId,
+						func(answer []byte) {
+							if err := conn.WriteMessage(messageType, answer); err != nil {
+								fmt.Println(err)
+								return
+							}
+						},
+					).(types.WebPacket)
+					if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+						if method.GetCheck().NeedUser() {
+							var userId = n.authenticate(packet)
+							if userId > 0 {
+								if method.GetCheck().NeedTower() {
+									var location = n.authorizeHuman(userId, packet)
+									if location.TowerId > 0 {
+										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+									}
+								} else {
+									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+								}
+							}
+						} else {
+							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
+						}
+					}
+				}
+			}
+		}
+	})
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
 func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
-	var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
-	parts := strings.Split(uri, "/")
-	controller := (*n.app).(interfaces.IApp).GetController(parts[1])
-	service := controller.GetService()
-	if controller != nil {
-		var endpoint = controller.GetEndpoint(parts[2])
-		var method = service.GetMethod(endpoint.GetKey())
-		var temp = method.GetInTemplate()
+	if string(ctx.Request.Header.Peek("Upgrade")) == "websocket" {
+		n.handleWebsocket(ctx)
+	} else {
+		var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
+		parts := strings.Split(uri, "/")
 		var packet = types.CreateWebPacket(ctx).(types.WebPacket)
-		if ctx.IsPost() || ctx.IsPut() {
-			if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
-				if method.GetCheck().NeedUser() {
-					var userId = n.authenticate(packet)
-					if userId > 0 {
-						if method.GetCheck().NeedTower() {
-							var location = n.authorizeHuman(userId, packet)
-							if location.TowerId > 0 {
-								endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+		if len(parts) == 3 {
+			controller := (*n.app).(interfaces.IApp).GetController(parts[1])
+			service := controller.GetService()
+			if controller != nil {
+				var endpoint = controller.GetEndpoint(parts[2])
+				var method = service.GetMethod(endpoint.GetKey())
+				var temp = method.GetInTemplate()
+				if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
+					if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+						if method.GetCheck().NeedUser() {
+							var userId = n.authenticate(packet)
+							if userId > 0 {
+								if method.GetCheck().NeedTower() {
+									var location = n.authorizeHuman(userId, packet)
+									if location.TowerId > 0 {
+										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+									}
+								} else {
+									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+								}
 							}
 						} else {
-							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
 						}
 					}
-				} else {
-					endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
-				}
-			}
-		} else if ctx.IsGet() {
-			if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
-				if method.GetCheck().NeedUser() {
-					var userId = n.authenticate(packet)
-					if userId > 0 {
-						if method.GetCheck().NeedTower() {
-							var location = n.authorizeHuman(userId, packet)
-							if location.TowerId > 0 {
-								endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+				} else if ctx.IsGet() {
+					if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
+						if method.GetCheck().NeedUser() {
+							var userId = n.authenticate(packet)
+							if userId > 0 {
+								if method.GetCheck().NeedTower() {
+									var location = n.authorizeHuman(userId, packet)
+									if location.TowerId > 0 {
+										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+									}
+								} else {
+									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+								}
 							}
 						} else {
-							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
 						}
 					}
-				} else {
-					endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
 				}
+			} else {
+				packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("controller not found"))
 			}
+		} else {
+			packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson("service path is not specific"))
 		}
 	}
 }
 
-func (n Network) Listen(port int) {
-	fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), n.fastHTTPHandler)
+func (n Network) Listen(restPort int, socketPort int) {
+	fmt.Println(fmt.Sprintf("Listening to rest port %d ...", restPort))
+	go fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", restPort), n.fastHTTPHandler)
 }
 
 func CreateNetwork() Network {

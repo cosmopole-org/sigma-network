@@ -36,9 +36,8 @@ func (a App) GetDatabase() interfaces.IDatabase {
 func (a App) GetNetwork() interfaces.INetwork {
 	return a.network
 }
-func (a App) Listen(port int) {
-	fmt.Println(fmt.Sprintf("Listening to port %d ...", port))
-	a.network.Listen(port)
+func (a App) Listen(restPort int, socketPort int) {
+	a.network.Listen(restPort, socketPort)
 }
 func (a App) LoadServices() {
 	a.services["humans"] = services.CreateHumanService(apps.GetApp())

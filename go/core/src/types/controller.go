@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"sigma/core/src/interfaces"
 )
 
@@ -24,13 +23,11 @@ func (c Controller) CallEndpoint(app *interfaces.IApp, key string, packet interf
 }
 
 func (c Controller) AddEndpoint(endpoint interfaces.IEndpoint) interfaces.IController {
-	fmt.Println(c.endpoints, endpoint.GetKey())
 	c.endpoints[endpoint.GetKey()] = endpoint
 	return c
 }
 
 func (c Controller) GetEndpoint(key string) interfaces.IEndpoint {
-	//fmt.Println(key, c.endpoints)
 	return c.endpoints[key]
 }
 

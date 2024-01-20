@@ -8,7 +8,7 @@ type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
 	GetController(key string) IController
-	Listen(port int)
+	Listen(restPort int, socketPort int)
 	GetDatabase() IDatabase
 	GetNetwork() INetwork
 	LoadServices()
@@ -57,7 +57,7 @@ type IDatabase interface {
 }
 
 type INetwork interface {
-	Listen(port int)
+	Listen(restPort int, socketPort int)
 }
 
 type IDto interface {

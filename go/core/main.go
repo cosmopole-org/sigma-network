@@ -18,8 +18,10 @@ type Cat struct {
 	Age int
 }
 
+var quit = make(chan struct{})
+
 func main() {
-	app := core.CreateApp("sigma-sample", "")
+	app := core.CreateApp("sigma-sample", "postgresql://root:OadaAkhwtDfWLD7t9WGUYqbL@sinai.liara.cloud:33721/postgres")
 
 	var apiService = types.CreateService("api").
 		AddMethod(
@@ -44,5 +46,7 @@ func main() {
 		}))
 	app.AddController(apiController)
 
-	app.Listen(8000)
+	app.Listen(8000, 8001)
+	
+	<-quit
 }
