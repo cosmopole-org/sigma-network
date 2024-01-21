@@ -49,13 +49,6 @@ func getRoom(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, gu
 }
 
 func CreateRoomController(app *interfaces.IApp) interfaces.IController {
-
-	// Tables
-	utils.ExecuteSqlFile("src/database/tables/room.sql")
-
-	// Functions
-	utils.ExecuteSqlFile("src/database/functions/rooms/get.sql")
-
 	return types.CreateController("rooms", (*app).GetService("rooms")).
 		AddEndpoint(types.CreateEndpoint("create", "rooms", "create", createRoom)).
 		AddEndpoint(types.CreateEndpoint("update", "rooms", "update", updateRoom)).

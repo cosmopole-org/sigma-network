@@ -1,5 +1,6 @@
 
-const serverUrl = "http://localhost:8000";
+//const serverUrl = "ws://localhost:8000";
+const serverUrl = "wss://sigma-sample.liara.run";
 
 const hello = async () => {
     var requestOptions = {
@@ -105,11 +106,11 @@ const WebSocket = require('ws');
         })
     }
 
-    let socket = new WebSocket("ws://localhost:8000/");
+    let socket = new WebSocket(serverUrl);
     socket.onopen = async function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
-        let result = await request(`/humans/signup`, { email: "testotest2" });
+        let result = await request(`/humans/signup`, { email: "testotest5" });
         console.log(result);
         let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
         console.log(result2)

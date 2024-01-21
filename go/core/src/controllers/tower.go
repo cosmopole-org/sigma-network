@@ -59,16 +59,6 @@ func joinTower(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, 
 }
 
 func CreateTowerController(app *interfaces.IApp) interfaces.IController {
-
-	// Tables
-	utils.ExecuteSqlFile("src/database/tables/tower.sql")
-	utils.ExecuteSqlFile("src/database/tables/member.sql")
-
-	// Functions
-	utils.ExecuteSqlFile("src/database/functions/towers/join.sql")
-	utils.ExecuteSqlFile("src/database/functions/towers/get.sql")
-	utils.ExecuteSqlFile("src/database/functions/towers/create.sql")
-
 	return types.CreateController("towers", (*app).GetService("towers")).
 		AddEndpoint(types.CreateEndpoint("create", "towers", "create", createTower)).
 		AddEndpoint(types.CreateEndpoint("update", "towers", "update", updateTower)).

@@ -44,6 +44,7 @@ func (a App) LoadServices() {
 	a.services["towers"] = services.CreateTowerService(apps.GetApp())
 	a.services["rooms"] = services.CreateRoomService(apps.GetApp())
 	a.services["invites"] = services.CreateInviteService(apps.GetApp())
+	a.services["machines"] = services.CreateMachineService(apps.GetApp())
 }
 
 func (a App) CreateControllers() {
@@ -51,6 +52,7 @@ func (a App) CreateControllers() {
 	a.controllers["towers"] = controllers.CreateTowerController(apps.GetApp())
 	a.controllers["rooms"] = controllers.CreateRoomController(apps.GetApp())
 	a.controllers["invites"] = controllers.CreateInviteController(apps.GetApp())
+	a.controllers["machines"] = controllers.CreateMachineController(apps.GetApp())
 }
 
 func CreateApp(appId string, databaseUri string) *App {

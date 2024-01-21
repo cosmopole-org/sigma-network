@@ -49,13 +49,6 @@ func declineInvite(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.ID
 }
 
 func CreateInviteController(app *interfaces.IApp) interfaces.IController {
-
-	// Tables
-	utils.ExecuteSqlFile("src/database/tables/invite.sql")
-
-	// Functions
-	utils.ExecuteSqlFile("src/database/functions/invites/accept.sql")
-
 	return types.CreateController("invites", (*app).GetService("invites")).
 		AddEndpoint(types.CreateEndpoint("create", "invites", "create", createInvite)).
 		AddEndpoint(types.CreateEndpoint("cancel", "invites", "cancel", cancelInvite)).

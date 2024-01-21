@@ -59,16 +59,6 @@ func get(app *interfaces.IApp, p interfaces.IPacket, dto interfaces.IDto, guard 
 }
 
 func CreateHumanController(app *interfaces.IApp) interfaces.IController {
-
-	// Tables
-	utils.ExecuteSqlFile("src/database/tables/session.sql")
-	utils.ExecuteSqlFile("src/database/tables/pending.sql")
-	utils.ExecuteSqlFile("src/database/tables/human.sql")
-
-	// Functipns
-	utils.ExecuteSqlFile("src/database/functions/humans/complete.sql")
-	utils.ExecuteSqlFile("src/database/functions/humans/verify.sql")
-
 	return types.CreateController("humans", (*app).GetService("humans")).
 		AddEndpoint(types.CreateEndpoint("signup", "humans", "signup", signup)).
 		AddEndpoint(types.CreateEndpoint("verify", "humans", "verify", verify)).
