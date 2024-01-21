@@ -13,7 +13,7 @@ create function machines_delete(humanid bigint, machineid bigint)
 				raise exception 'machine not found';
 			else
 				delete from machine where id = machineid;
-				delete from session where machine_id = machineid;
+				delete from session where user_id = machineid;
 				return m_id;
 			end if;
 		end $$

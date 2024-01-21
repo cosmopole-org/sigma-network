@@ -110,12 +110,14 @@ const WebSocket = require('ws');
     socket.onopen = async function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
+        let resultHello = await request(`/api/hello`, { });
+        console.log(resultHello);
         let result = await request(`/humans/signup`, { email: "testotest5" });
         console.log(result);
         let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        console.log(result2)
+        console.log(result2);
         let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        console.log(result3)
+        console.log(result3);
     };
     socket.onmessage = function (event) {
         let data = event.data.split(" ");

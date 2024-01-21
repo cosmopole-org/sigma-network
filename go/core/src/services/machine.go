@@ -20,7 +20,7 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 		return outputs_machines.CreateOutput{}, err1
 	}
 	var query = `
-		select * from macines_create($1, $2, $3, $4);
+		select * from machines_create($1, $2, $3, $4);
 	`
 	var machine models.Machine
 	var Session models.Session
@@ -34,6 +34,7 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 		machine.Name = input.Name
 		machine.AvatarId = input.AvatarId
 		machine.CreatorId = guard.GetUserId()
+		Session.UserId = machine.Id
 		Session.Token = token
 	}
 	return outputs_machines.CreateOutput{Machine: machine, Session: Session}, nil
@@ -42,7 +43,7 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 func updateMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_machines.UpdateDto)
 	var query = `
-		update machine set name = $1, avatar_id = $2, where id = $3 and creator_id = $4
+		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
 		returning id, name, avatar_id, creator_id;
 	`
 	var machine models.Machine
@@ -93,6 +94,8 @@ func getMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 		machine.CreatorId = 0
 		session.Token = ""
 		session.Id = 0
+	} else {
+		session.UserId = machine.Id
 	}
 	return outputs_machines.GetOutput{Machine: machine, Session: session}, nil
 }
