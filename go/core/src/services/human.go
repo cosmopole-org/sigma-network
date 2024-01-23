@@ -165,9 +165,9 @@ func CreateHumanService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/humans/verify.sql")
 
 	return types.CreateService("humans").
-		AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), &dtos_humans.SignupDto{})).
-		AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), &dtos_humans.VerifyDto{})).
-		AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), &dtos_humans.CompleteDto{})).
-		AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), &dtos_humans.UpdateDto{})).
-		AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), &dtos_humans.GetDto{}))
+		AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), &dtos_humans.SignupDto{}, true)).
+		AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), &dtos_humans.VerifyDto{}, true)).
+		AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), &dtos_humans.CompleteDto{}, true)).
+		AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), &dtos_humans.UpdateDto{}, true)).
+		AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), &dtos_humans.GetDto{}, true))
 }

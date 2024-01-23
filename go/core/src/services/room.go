@@ -93,8 +93,8 @@ func CreateRoomService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/rooms/get.sql")
 
 	return types.CreateService("rooms").
-		AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), &dtos_rooms.CreateDto{})).
-		AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), &dtos_rooms.UpdateDto{})).
-		AddMethod(types.CreateMethod("delete", deleteRoom, types.CreateCheck(true, true, false), &dtos_rooms.DeleteDto{})).
-		AddMethod(types.CreateMethod("get", getRoom, types.CreateCheck(true, true, false), &dtos_rooms.GetDto{}))
+		AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), &dtos_rooms.CreateDto{}, true)).
+		AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), &dtos_rooms.UpdateDto{}, true)).
+		AddMethod(types.CreateMethod("delete", deleteRoom, types.CreateCheck(true, true, false), &dtos_rooms.DeleteDto{}, true)).
+		AddMethod(types.CreateMethod("get", getRoom, types.CreateCheck(true, true, false), &dtos_rooms.GetDto{}, true))
 }

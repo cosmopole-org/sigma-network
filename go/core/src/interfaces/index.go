@@ -7,12 +7,10 @@ import (
 type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
-	GetController(key string) IController
 	Listen(restPort int, socketPort int)
 	GetDatabase() IDatabase
 	GetNetwork() INetwork
 	LoadServices()
-	CreateControllers()
 }
 
 type IController interface {
@@ -39,6 +37,7 @@ type IMethod interface {
 	GetCallback() func(app *IApp, input IDto, guard IGuard) (any, error)
 	GetCheck() ICheck
 	GetInTemplate() IDto
+	AsEndpoint() bool
 }
 
 type IEndpoint interface {

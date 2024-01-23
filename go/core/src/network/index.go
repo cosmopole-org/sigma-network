@@ -84,6 +84,20 @@ func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location 
 	return Location{TowerId: tid, RoomId: rid}
 }
 
+func (n Network) handleResult(
+	callback func(app *interfaces.IApp, input interfaces.IDto, guard interfaces.IGuard) (any, error),
+	packet types.WebPacket,
+	temp interfaces.IDto,
+	guard interfaces.IGuard,
+) {
+	result, err := callback(n.app, temp, guard)
+	if err != nil {
+		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+	} else {
+		packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, result)
+	}
+}
+
 func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
 		for {
@@ -99,38 +113,38 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 			var body = dataStr[(len(uri) + 1 + len(requestId)):]
 			parts := strings.Split(uri, "/")
 			if len(parts) == 3 {
-				controller := (*n.app).(interfaces.IApp).GetController(parts[1])
-				if controller != nil {
-					service := controller.GetService()
-					var endpoint = controller.GetEndpoint(parts[2])
-					var method = service.GetMethod(endpoint.GetKey())
-					var temp = method.GetInTemplate()
-					var packet = types.CreateWebPacketForSocket(
-						uri,
-						[]byte(body),
-						requestId,
-						func(answer []byte) {
-							if err := conn.WriteMessage(messageType, answer); err != nil {
-								fmt.Println(err)
-								return
-							}
-						},
-					).(types.WebPacket)
-					if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
-						if method.GetCheck().NeedUser() {
-							var userId = n.authenticate(packet)
-							if userId > 0 {
-								if method.GetCheck().NeedTower() {
-									var location = n.authorizeHuman(userId, packet)
-									if location.TowerId > 0 {
-										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
-									}
-								} else {
-									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
+				service := (*n.app).GetService(parts[1])
+				if service != nil {
+					var method = service.GetMethod(parts[2])
+					if method != nil && method.AsEndpoint() {
+						var temp = method.GetInTemplate()
+						var packet = types.CreateWebPacketForSocket(
+							uri,
+							[]byte(body),
+							requestId,
+							func(answer []byte) {
+								if err := conn.WriteMessage(messageType, answer); err != nil {
+									fmt.Println(err)
+									return
 								}
+							},
+						).(types.WebPacket)
+						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+							if method.GetCheck().NeedUser() {
+								var userId = n.authenticate(packet)
+								if userId > 0 {
+									if method.GetCheck().NeedTower() {
+										var location = n.authorizeHuman(userId, packet)
+										if location.TowerId > 0 {
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										}
+									} else {
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
+									}
+								}
+							} else {
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
 							}
-						} else {
-							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
 						}
 					}
 				}
@@ -151,48 +165,50 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 		parts := strings.Split(uri, "/")
 		var packet = types.CreateWebPacket(ctx).(types.WebPacket)
 		if len(parts) == 3 {
-			controller := (*n.app).(interfaces.IApp).GetController(parts[1])
-			service := controller.GetService()
-			if controller != nil {
-				var endpoint = controller.GetEndpoint(parts[2])
-				var method = service.GetMethod(endpoint.GetKey())
-				var temp = method.GetInTemplate()
-				if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
-					if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
-						if method.GetCheck().NeedUser() {
-							var userId = n.authenticate(packet)
-							if userId > 0 {
-								if method.GetCheck().NeedTower() {
-									var location = n.authorizeHuman(userId, packet)
-									if location.TowerId > 0 {
-										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+			service := (*n.app).GetService(parts[1])
+			if service != nil {
+				var method = service.GetMethod(parts[2])
+				if method != nil && method.AsEndpoint() {
+					var temp = method.GetInTemplate()
+					if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
+						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+							if method.GetCheck().NeedUser() {
+								var userId = n.authenticate(packet)
+								if userId > 0 {
+									if method.GetCheck().NeedTower() {
+										var location = n.authorizeHuman(userId, packet)
+										if location.TowerId > 0 {
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										}
+									} else {
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
 									}
-								} else {
-									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
 								}
+							} else {
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
 							}
-						} else {
-							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
+						}
+					} else if ctx.IsGet() {
+						if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
+							if method.GetCheck().NeedUser() {
+								var userId = n.authenticate(packet)
+								if userId > 0 {
+									if method.GetCheck().NeedTower() {
+										var location = n.authorizeHuman(userId, packet)
+										if location.TowerId > 0 {
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										}
+									} else {
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
+									}
+								}
+							} else {
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
+							}
 						}
 					}
-				} else if ctx.IsGet() {
-					if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
-						if method.GetCheck().NeedUser() {
-							var userId = n.authenticate(packet)
-							if userId > 0 {
-								if method.GetCheck().NeedTower() {
-									var location = n.authorizeHuman(userId, packet)
-									if location.TowerId > 0 {
-										endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
-									}
-								} else {
-									endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(userId, 0, 0))
-								}
-							}
-						} else {
-							endpoint.GetCallback()(n.app, packet, temp, types.CreateGuard(0, 0, 0))
-						}
-					}
+				} else {
+					packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("endpoint not found"))
 				}
 			} else {
 				packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("controller not found"))

@@ -3,7 +3,7 @@ package types
 import "sigma/core/src/interfaces"
 
 type Check struct {
-	user bool
+	user  bool
 	tower bool
 	room  bool
 }
@@ -21,7 +21,7 @@ func (c Check) NeedRoom() bool {
 }
 
 type Guard struct {
-	userId int64
+	userId  int64
 	towerId int64
 	roomId  int64
 }
@@ -43,6 +43,7 @@ type Method struct {
 	callback   func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error)
 	check      Check
 	inTemplate interfaces.IDto
+	asEndpoint bool
 }
 
 func (m Method) GetKey() string {
@@ -69,8 +70,12 @@ func (m Method) GetCheck() interfaces.ICheck {
 	return m.check
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error), check Check, dto interfaces.IDto) Method {
-	return Method{key: key, callback: callback, check: check, inTemplate: dto}
+func (m Method) AsEndpoint() bool {
+	return m.asEndpoint
+}
+
+func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error), check Check, dto interfaces.IDto, asEndpoint bool) Method {
+	return Method{key: key, callback: callback, check: check, inTemplate: dto, asEndpoint: asEndpoint}
 }
 
 func CreateCheck(user bool, tower bool, room bool) Check {
