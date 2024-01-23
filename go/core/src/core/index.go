@@ -37,6 +37,7 @@ func (a App) LoadServices() {
 	a.services["rooms"] = services.CreateRoomService(apps.GetApp())
 	a.services["invites"] = services.CreateInviteService(apps.GetApp())
 	a.services["machines"] = services.CreateMachineService(apps.GetApp())
+	a.services["workers"] = services.CreateWorkerService(apps.GetApp())
 }
 
 func CreateApp(appId string, databaseUri string) *App {
