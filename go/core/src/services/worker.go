@@ -99,14 +99,35 @@ func readWorkers(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	return outputs_workers.GetOutput{Workers: rowSlice}, nil
 }
 
+func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+	var input = dto.(*dtos_workers.DeliverDto)
+	
+	var query = ``
+	query = `
+		select * from workers_deliver($!, $2, $3);
+	`
+	var allowed = false
+	if err := (*app).GetDatabase().GetDb().QueryRow(
+		context.Background(), query, guard.GetUserId(), input.WorkerId, guard.GetRoomId(),
+	).Scan(&allowed); err != nil {
+		fmt.Println(err)
+		return outputs_workers.DeliverOutput{}, err
+	}
+	return outputs_workers.DeliverOutput{Passed: allowed}, nil
+}
+
 func CreateWorkerService(app *interfaces.IApp) interfaces.IService {
 
 	// Tables
 	utils.ExecuteSqlFile("src/database/tables/worker.sql")
 
+	// Functions
+	utils.ExecuteSqlFile("src/database/functions/workers/deliver.sql")
+
 	return types.CreateService("machines").
 		AddMethod(types.CreateMethod("create", createWorker, types.CreateCheck(true, true, true), &dtos_workers.CreateDto{}, true)).
 		AddMethod(types.CreateMethod("update", updateWorker, types.CreateCheck(true, true, true), &dtos_workers.UpdateDto{}, true)).
 		AddMethod(types.CreateMethod("delete", deleteWorker, types.CreateCheck(true, true, true), &dtos_workers.DeleteDto{}, true)).
-		AddMethod(types.CreateMethod("read", readWorkers, types.CreateCheck(true, true, true), &dtos_workers.ReadDto{}, true))
+		AddMethod(types.CreateMethod("read", readWorkers, types.CreateCheck(true, true, true), &dtos_workers.ReadDto{}, true)).
+		AddMethod(types.CreateMethod("deliver", deliver, types.CreateCheck(true, true, true), &dtos_workers.DeliverDto{}, true))
 }
