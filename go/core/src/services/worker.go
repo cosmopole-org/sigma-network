@@ -15,16 +15,16 @@ import (
 func createWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_workers.CreateDto)
 	var query = `
-		insert into (
+		insert into worker (
 			machine_id,
 			room_id,
 			metadata
-		) values ($1, $2)
+		) values ($1, $2, $3)
 		returning id;
 	`
 	var worker models.Worker
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.MachineId, guard.GetRoomId(), input.Metadata,
+		context.Background(), query, input.MachineId, guard.GetRoomId(), input.Metadata,
 	).Scan(&worker.Id); err != nil {
 		fmt.Println(err)
 		return outputs_workers.CreateOutput{}, err
@@ -41,12 +41,12 @@ func updateWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	var input = dto.(*dtos_workers.UpdateDto)
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
-		returning id;
+		returning id, machine_id;
 	`
 	var worker models.Worker
 	if err := (*app).GetDatabase().GetDb().QueryRow(
 		context.Background(), query, input.Metadata, input.WorkerId, guard.GetRoomId(),
-	).Scan(&worker.Id); err != nil {
+	).Scan(&worker.Id, &worker.MachineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.UpdateOutput{}, err
 	}
@@ -104,7 +104,7 @@ func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 	
 	var query = ``
 	query = `
-		select * from workers_deliver($!, $2, $3);
+		select * from workers_deliver($1, $2, $3);
 	`
 	var allowed = false
 	if err := (*app).GetDatabase().GetDb().QueryRow(

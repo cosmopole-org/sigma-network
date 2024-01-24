@@ -3,9 +3,11 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 
+	"github.com/jackc/pgx/v4/log/logrusadapter"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/sirupsen/logrus"
 )
 
 type Database struct {
@@ -19,11 +21,23 @@ func (d Database) GetDb() *pgxpool.Pool {
 func CreateDatabase(uri string) Database {
 	fmt.Println("connecting to database...")
 	var dbInstance = Database{}
-	dbPool, err := pgxpool.Connect(context.Background(), uri)
+	config, err := pgxpool.ParseConfig(uri)
 	if err != nil {
-		log.Println(err)
-	} else {
-		dbInstance.db = *dbPool
+		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err)
 	}
+	logrusLogger := &logrus.Logger{
+		Out:          os.Stderr,
+		Formatter:    new(logrus.JSONFormatter),
+		Hooks:        make(logrus.LevelHooks),
+		Level:        logrus.InfoLevel,
+		ExitFunc:     os.Exit,
+		ReportCaller: false,
+	}
+	config.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
+	conn, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+	}
+	dbInstance.db = *conn
 	return dbInstance
 }

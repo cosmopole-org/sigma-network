@@ -137,6 +137,8 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 										var location = n.authorizeHuman(userId, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										} else {
+											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
 										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
@@ -179,6 +181,8 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 										var location = n.authorizeHuman(userId, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										} else {
+											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
 										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
@@ -197,6 +201,8 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 										var location = n.authorizeHuman(userId, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+										} else {
+											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
 										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
