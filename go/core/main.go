@@ -18,7 +18,7 @@ type Cat struct {
 var quit = make(chan struct{})
 
 func main() {
-	app := core.CreateApp("sigma-sample", "postgresql://root:OadaAkhwtDfWLD7t9WGUYqbL@sinai.liara.cloud:33721/postgres")
+	app := core.CreateApp("sigma-sample", "")
 
 	var apiService = types.CreateService("api").
 		AddMethod(
