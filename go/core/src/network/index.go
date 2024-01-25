@@ -2,6 +2,7 @@ package network
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sigma/core/src/core/apps"
 	"sigma/core/src/interfaces"
@@ -23,21 +24,44 @@ var upgrader = websocket.FastHTTPUpgrader{
 }
 
 type Network struct {
-	app *interfaces.IApp
+	app     *interfaces.IApp
+	clients map[int64]*websocket.Conn
 }
 
-func (n Network) authenticate(packet types.WebPacket) int64 {
+func (n Network) authWithToken(token string) int64 {
 	var query = `
-		select user_id from session where token = $1 limit 1
+		select user_id from session where token = $1 limit 1;
 	`
 	var id int64 = 0
-	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, packet.GetHeader("token")).
-		Scan(&id); err != nil {
+	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, token).Scan(&id); err != nil {
 		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err.Error()))
-		return 0
+	}
+	return id
+}
+
+func (n Network) authenticate(packet types.WebPacket) (int64, string) {
+	var id int64 = n.authWithToken(string(packet.GetHeader("token")))
+	if id == 0 {
+		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson("token authentication failed"))
+		return 0, ""
 	} else {
-		return id
+		var humanId int64 = 0
+		var machineId int64 = 0
+		var queryHuman = `
+			select id from human where id = $1 limit 1
+		`
+		if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryHuman, id).Scan(&humanId); err != nil {
+			var queryMachine = `
+				select id from machine where id = $1 limit 1
+			`
+			if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryMachine, id).Scan(&machineId); err != nil {
+				return 0, ""
+			} else {
+				return machineId, "machine"
+			}
+		} else {
+			return humanId, "human"
+		}
 	}
 }
 
@@ -84,6 +108,30 @@ func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location 
 	return Location{TowerId: tid, RoomId: rid}
 }
 
+func (n Network) authorizeMachine(machineId int64, packet types.WebPacket) Location {
+	var query = `
+		select room_id from worker where machine_id = $1 limit 1
+	`
+	var roomId int64 = 0
+	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, machineId).
+		Scan(&roomId); err != nil {
+		fmt.Println(err)
+		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		return Location{TowerId: 0, RoomId: 0}
+	}
+	var query2 = `
+		select tower_id from room where id = $1 limit 1
+	`
+	var towerId int64 = 0
+	if err2 := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query2, roomId).
+		Scan(&towerId); err2 != nil {
+		fmt.Println(err2)
+		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err2.Error()))
+		return Location{TowerId: 0, RoomId: 0}
+	}
+	return Location{TowerId: towerId, RoomId: roomId}
+}
+
 func (n Network) handleResult(
 	callback func(app *interfaces.IApp, input interfaces.IDto, guard interfaces.IGuard) (any, error),
 	packet types.WebPacket,
@@ -98,11 +146,26 @@ func (n Network) handleResult(
 	}
 }
 
+func (n Network) handleLocation(userId int64, userType string, packet types.WebPacket) Location {
+	var location Location
+	if userType == "human" {
+		location = n.authorizeHuman(userId, packet)
+	} else {
+		location = n.authorizeMachine(userId, packet)
+	}
+	return location
+}
+
+type AuthHolder struct {
+	Token string `json:"token"`
+}
+
 func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
 		for {
-			messageType, p, err := conn.ReadMessage()
+			_, p, err := conn.ReadMessage()
 			if err != nil {
+				conn.CloseHandler()(1, "connection closed")
 				fmt.Println(err)
 				return
 			}
@@ -123,7 +186,7 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 							[]byte(body),
 							requestId,
 							func(answer []byte) {
-								if err := conn.WriteMessage(messageType, answer); err != nil {
+								if err := conn.WriteMessage(websocket.BinaryMessage, answer); err != nil {
 									fmt.Println(err)
 									return
 								}
@@ -131,10 +194,10 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 						).(types.WebPacket)
 						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
 							if method.GetCheck().NeedUser() {
-								var userId = n.authenticate(packet)
+								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
-										var location = n.authorizeHuman(userId, packet)
+										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
 										} else {
@@ -146,6 +209,37 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 								}
 							} else {
 								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
+							}
+						}
+					}
+				} else {
+					fmt.Println("authenticating socket...")
+					if parts[1] == "auth" && parts[2] == "login" {
+						var authHolder = AuthHolder{}
+						var err = json.Unmarshal([]byte(body), &authHolder)
+						if err != nil {
+							fmt.Println(err.Error())
+						} else {
+							var userId = n.authWithToken(authHolder.Token)
+							if userId > 0 {
+								n.clients[userId] = conn
+								conn.SetCloseHandler(func(code int, text string) error {
+									fmt.Println("client disconnected")
+									delete(n.clients, userId)
+									return nil
+								})
+								var packet = types.CreateWebPacketForSocket(
+									uri,
+									[]byte(body),
+									requestId,
+									func(answer []byte) {
+										if err := conn.WriteMessage(websocket.BinaryMessage, answer); err != nil {
+											fmt.Println(err)
+											return
+										}
+									},
+								).(types.WebPacket)
+								packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, `{ "success": true }`)
 							}
 						}
 					}
@@ -175,10 +269,10 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 					if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
 						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
 							if method.GetCheck().NeedUser() {
-								var userId = n.authenticate(packet)
+								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
-										var location = n.authorizeHuman(userId, packet)
+										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
 										} else {
@@ -195,10 +289,10 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 					} else if ctx.IsGet() {
 						if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
 							if method.GetCheck().NeedUser() {
-								var userId = n.authenticate(packet)
+								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
-										var location = n.authorizeHuman(userId, packet)
+										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
 											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
 										} else {
@@ -230,9 +324,22 @@ func (n Network) Listen(restPort int, socketPort int) {
 	go fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", restPort), n.fastHTTPHandler)
 }
 
+func (n Network) PushToUser(userId int64, data any) {
+	var conn = n.clients[userId]
+	if conn != nil {
+		message, err := json.Marshal(data)
+		if err == nil {
+			fmt.Println(err.Error())
+		} else {
+			conn.WriteMessage(websocket.BinaryMessage, message)
+		}
+	}
+}
+
 func CreateNetwork() Network {
 	fmt.Println("running network...")
 	var netInstance = Network{}
 	netInstance.app = apps.GetApp()
+	netInstance.clients = map[int64]*websocket.Conn{}
 	return netInstance
 }

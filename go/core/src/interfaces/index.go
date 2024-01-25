@@ -57,6 +57,7 @@ type IDatabase interface {
 
 type INetwork interface {
 	Listen(restPort int, socketPort int)
+	PushToUser(userId int64, data any)
 }
 
 type IDto interface {

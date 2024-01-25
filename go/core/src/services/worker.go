@@ -101,17 +101,19 @@ func readWorkers(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 
 func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_workers.DeliverDto)
-	
-	var query = ``
-	query = `
-		select * from workers_deliver($1, $2, $3);
+	var query = `
+		select * from workers_deliver($1, $2, $3, $4);
 	`
 	var allowed = false
+	var userType = ""
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.WorkerId, guard.GetRoomId(),
-	).Scan(&allowed); err != nil {
+		context.Background(), query, guard.GetUserId(), input.WorkerId, guard.GetTowerId(), guard.GetRoomId(),
+	).Scan(&allowed, &userType); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeliverOutput{}, err
+	}
+	if (allowed) {
+		//(*app).GetNetwork().PushToUser()
 	}
 	return outputs_workers.DeliverOutput{Passed: allowed}, nil
 }
