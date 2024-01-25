@@ -12,7 +12,7 @@ import (
 type App struct {
 	appId       string
 	services    map[string]interfaces.IService
-	network     network.Network
+	network     *network.Network
 	database    database.Database
 }
 

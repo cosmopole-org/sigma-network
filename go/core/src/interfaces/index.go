@@ -58,6 +58,9 @@ type IDatabase interface {
 type INetwork interface {
 	Listen(restPort int, socketPort int)
 	PushToUser(userId int64, data any)
+	PushToGroup(groupId int64, data any, exceptions []int64)
+	JoinGroup(groupId int64, userId int64)
+	LeaveGroup(groupId int64, userId int64)
 }
 
 type IDto interface {

@@ -10,6 +10,7 @@ import (
 	"sigma/core/src/utils"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/fasthttp/websocket"
 	"github.com/valyala/fasthttp"
@@ -26,9 +27,10 @@ var upgrader = websocket.FastHTTPUpgrader{
 type Network struct {
 	app     *interfaces.IApp
 	clients map[int64]*websocket.Conn
+	groups  sync.Map
 }
 
-func (n Network) authWithToken(token string) int64 {
+func (n *Network) authWithToken(token string) int64 {
 	var query = `
 		select user_id from session where token = $1 limit 1;
 	`
@@ -39,7 +41,7 @@ func (n Network) authWithToken(token string) int64 {
 	return id
 }
 
-func (n Network) authenticate(packet types.WebPacket) (int64, string) {
+func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
 	var id int64 = n.authWithToken(string(packet.GetHeader("token")))
 	if id == 0 {
 		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson("token authentication failed"))
@@ -70,7 +72,7 @@ type Location struct {
 	RoomId  int64
 }
 
-func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location {
+func (n *Network) authorizeHuman(humanId int64, packet types.WebPacket) Location {
 	var query = `
 		select id from member where human_id = $1 and tower_id = $2 limit 1
 	`
@@ -108,7 +110,7 @@ func (n Network) authorizeHuman(humanId int64, packet types.WebPacket) Location 
 	return Location{TowerId: tid, RoomId: rid}
 }
 
-func (n Network) authorizeMachine(machineId int64, packet types.WebPacket) Location {
+func (n *Network) authorizeMachine(machineId int64, packet types.WebPacket) Location {
 	var query = `
 		select room_id from worker where machine_id = $1 limit 1
 	`
@@ -132,7 +134,7 @@ func (n Network) authorizeMachine(machineId int64, packet types.WebPacket) Locat
 	return Location{TowerId: towerId, RoomId: roomId}
 }
 
-func (n Network) handleResult(
+func (n *Network) handleResult(
 	callback func(app *interfaces.IApp, input interfaces.IDto, guard interfaces.IGuard) (any, error),
 	packet types.WebPacket,
 	temp interfaces.IDto,
@@ -146,7 +148,7 @@ func (n Network) handleResult(
 	}
 }
 
-func (n Network) handleLocation(userId int64, userType string, packet types.WebPacket) Location {
+func (n *Network) handleLocation(userId int64, userType string, packet types.WebPacket) Location {
 	var location Location
 	if userType == "human" {
 		location = n.authorizeHuman(userId, packet)
@@ -160,7 +162,7 @@ type AuthHolder struct {
 	Token string `json:"token"`
 }
 
-func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
+func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
 		for {
 			_, p, err := conn.ReadMessage()
@@ -253,7 +255,7 @@ func (n Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
+func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	if string(ctx.Request.Header.Peek("Upgrade")) == "websocket" {
 		n.handleWebsocket(ctx)
 	} else {
@@ -319,12 +321,12 @@ func (n Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (n Network) Listen(restPort int, socketPort int) {
+func (n *Network) Listen(restPort int, socketPort int) {
 	fmt.Println(fmt.Sprintf("Listening to rest port %d ...", restPort))
 	go fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", restPort), n.fastHTTPHandler)
 }
 
-func (n Network) PushToUser(userId int64, data any) {
+func (n *Network) PushToUser(userId int64, data any) {
 	var conn = n.clients[userId]
 	if conn != nil {
 		message, err := json.Marshal(data)
@@ -336,10 +338,47 @@ func (n Network) PushToUser(userId int64, data any) {
 	}
 }
 
-func CreateNetwork() Network {
+func (n *Network) PushToGroup(groupId int64, data any, exceptions []int64) {
+	var excepDict = map[int64]bool{}
+	for _, exc := range exceptions {
+		excepDict[exc] = true
+	}
+	g, _ := n.groups.LoadOrStore(groupId, sync.Map{})
+	var group = g.(*sync.Map)
+	message, err := json.Marshal(data)
+	if err == nil {
+		fmt.Println(err.Error())
+	} else {
+		group.Range(func(key, value any) bool {
+			var userId = key.(int64)
+			if !excepDict[userId] {
+				var conn = n.clients[userId]
+				if conn != nil {
+					conn.WriteMessage(websocket.BinaryMessage, message)
+				}
+			}
+			return true
+		})
+	}
+}
+
+func (n *Network) JoinGroup(groupId int64, userId int64) {
+	g,_ := n.groups.LoadOrStore(groupId, sync.Map{})
+	var group = g.(*sync.Map)
+	group.Store(userId, true)
+}
+
+func (n *Network) LeaveGroup(groupId int64, userId int64) {
+	g,_ := n.groups.LoadOrStore(groupId, sync.Map{})
+	var group = g.(*sync.Map)
+	group.Delete(userId)
+}
+
+func CreateNetwork() *Network {
 	fmt.Println("running network...")
 	var netInstance = Network{}
 	netInstance.app = apps.GetApp()
 	netInstance.clients = map[int64]*websocket.Conn{}
-	return netInstance
+	netInstance.groups = sync.Map{}
+	return &netInstance
 }

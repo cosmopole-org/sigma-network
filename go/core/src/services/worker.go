@@ -106,14 +106,19 @@ func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 	`
 	var allowed = false
 	var userType = ""
+	var machineId int64 = 0
 	if err := (*app).GetDatabase().GetDb().QueryRow(
 		context.Background(), query, guard.GetUserId(), input.WorkerId, guard.GetTowerId(), guard.GetRoomId(),
-	).Scan(&allowed, &userType); err != nil {
+	).Scan(&allowed, &userType, &machineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeliverOutput{}, err
 	}
 	if (allowed) {
-		//(*app).GetNetwork().PushToUser()
+		if userType == "human" {
+			(*app).GetNetwork().PushToUser(machineId, input.Data)
+		} else {
+			(*app).GetNetwork().PushToUser(guard.GetUserId(), input.Data)
+		}
 	}
 	return outputs_workers.DeliverOutput{Passed: allowed}, nil
 }
