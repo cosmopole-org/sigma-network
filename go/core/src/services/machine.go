@@ -36,6 +36,7 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 		machine.CreatorId = guard.GetUserId()
 		Session.UserId = machine.Id
 		Session.Token = token
+		Session.CreatureType = 2
 	}
 	return outputs_machines.CreateOutput{Machine: machine, Session: Session}, nil
 }

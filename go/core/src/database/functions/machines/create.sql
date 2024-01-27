@@ -1,4 +1,4 @@
-create function machines_create(humanid bigint, tname varchar(100), tavatarid bigint, token varchar(100))
+create or replace function machines_create(humanid bigint, tname varchar(100), tavatarid bigint, token varchar(100))
 		returns table (
 			m_id 	     bigint,
 			s_id	     bigint
@@ -17,8 +17,9 @@ create function machines_create(humanid bigint, tname varchar(100), tavatarid bi
 			insert into session
 			(
 				user_id,
-				token
-			) values (m_id, token)
+				token,
+				c_type
+			) values (m_id, token, 2)
 			returning id into s_id;
 			return query select m_id, s_id;
 		end $$

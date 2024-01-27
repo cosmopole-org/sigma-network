@@ -1,4 +1,4 @@
-create function humans_complete(cc varchar(100), vc varchar(100), fname varchar(100), lname varchar(100), t varchar(100))
+create or replace function humans_complete(cc varchar(100), vc varchar(100), fname varchar(100), lname varchar(100), t varchar(100))
 		returns table (
 			h_id 	     bigint,
 		    h_email      text,
@@ -31,8 +31,9 @@ create function humans_complete(cc varchar(100), vc varchar(100), fname varchar(
 				insert into session
 				(
 					user_id,
-					token
-				) values (h_id, t)
+					token,
+					c_type
+				) values (h_id, t, 1)
 				returning id, token into s_id, s_token;
 				return query select h_id, h_email, h_first_name, h_last_name, s_id, s_token;
 			else

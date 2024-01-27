@@ -8,6 +8,7 @@ import (
 	"sigma/core/src/models"
 	outputs_towers "sigma/core/src/outputs/towers"
 	"sigma/core/src/types"
+	updates_towers "sigma/core/src/updates/towers"
 	"sigma/core/src/utils"
 	"strconv"
 )
@@ -49,6 +50,7 @@ func updateTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 		fmt.Println(err)
 		return outputs_towers.UpdateOutput{}, err
 	}
+	go (*app).GetNetwork().PushToGroup(tower.Id, updates_towers.Update{Tower: tower}, []int64{})
 	return outputs_towers.UpdateOutput{Tower: tower}, nil
 }
 
@@ -56,13 +58,15 @@ func deleteTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	var input = dto.(*dtos_towers.DeleteDto)
 	var query = ``
 	query = `
-		delete from tower where id = $1 and creator_id = $2;
+		delete from tower where id = $1 and creator_id = $2
+		returning id, name, avatar_id, creator_id;
 	`
-	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.TowerId, guard.GetUserId())
-	if err != nil {
+	var tower models.Tower
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.TowerId, guard.GetUserId()).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.CreatorId); err != nil {
 		fmt.Println(err)
 		return outputs_towers.DeleteOutput{}, err
 	}
+	go (*app).GetNetwork().PushToGroup(tower.Id, updates_towers.Delete{Tower: tower}, []int64{})
 	return outputs_towers.DeleteOutput{}, nil
 }
 
@@ -88,6 +92,7 @@ func getTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 
 func joinTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_towers.JoinDto)
+	fmt.Println(guard)
 	var query = `
 		select * from towers_join($1, $2)
 	`
@@ -98,6 +103,8 @@ func joinTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuar
 		fmt.Println(err)
 		return outputs_towers.JoinOutput{}, err
 	}
+	(*app).GetNetwork().JoinGroup(member.TowerId, member.HumanId)
+	go (*app).GetNetwork().PushToGroup(member.TowerId, updates_towers.Join{Member: member}, []int64{ member.HumanId })
 	return outputs_towers.JoinOutput{Member: member}, nil
 }
 

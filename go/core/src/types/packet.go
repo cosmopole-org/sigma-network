@@ -11,6 +11,7 @@ import (
 type WebPacket struct {
 	uri         string
 	body        []byte
+	headers     map[string]string
 	httpContext *fasthttp.RequestCtx
 	onAnswer    func(answer []byte)
 	requestId   string
@@ -40,7 +41,7 @@ func (p WebPacket) GetHeader(key string) []byte {
 	if p.httpContext != nil {
 		return p.httpContext.Request.Header.Peek(key)
 	}
-	return []byte("")
+	return []byte(p.headers[key])
 }
 
 func (p WebPacket) GetBody() []byte {
@@ -98,7 +99,13 @@ func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
 }
 
 func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) interfaces.IPacket {
-	return WebPacket{uri: uri, body: body, onAnswer: onAnswer, requestId: requestId}
+	var headers map[string]string
+	err := json.Unmarshal(body, &headers)
+	if (err != nil) {
+		fmt.Println(err.Error())
+	}
+	fmt.Println(headers)
+	return WebPacket{uri: uri, body: body, headers: headers, onAnswer: onAnswer, requestId: requestId}
 }
 
 type LoginPacket struct {

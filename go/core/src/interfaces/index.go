@@ -69,6 +69,7 @@ type IDto interface {
 
 type IGuard interface {
 	GetUserId() int64
+	GetUserType() string
 	GetTowerId() int64
 	GetRoomId() int64
 }

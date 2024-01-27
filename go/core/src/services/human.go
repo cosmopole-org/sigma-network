@@ -92,6 +92,7 @@ func verify(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) 
 			UserId: human.Id,
 			Token:  record[10].(string),
 		}
+		session.CreatureType = 1
 		return outputs_humans.VerifyOutput{Pending: pending, Human: human, Session: session}, nil
 	}
 }
@@ -115,6 +116,7 @@ func complete(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 	}
 	if human.Id > 0 {
 		session.UserId = human.Id
+		session.CreatureType = 1
 	}
 	return outputs_humans.CompleteOutput{Human: human, Session: session}, nil
 }

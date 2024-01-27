@@ -8,6 +8,7 @@ import (
 	"sigma/core/src/models"
 	outputs_rooms "sigma/core/src/outputs/rooms"
 	"sigma/core/src/types"
+	updates_rooms "sigma/core/src/updates/rooms"
 	"sigma/core/src/utils"
 	"strconv"
 )
@@ -30,6 +31,7 @@ func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 		fmt.Println(err)
 		return outputs_rooms.CreateOutput{}, err
 	}
+	go (*app).GetNetwork().PushToGroup(room.TowerId, updates_rooms.Create{Room: room}, []int64{})
 	return outputs_rooms.CreateOutput{Room: room}, nil
 }
 
@@ -46,6 +48,7 @@ func updateRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 		fmt.Println(err)
 		return outputs_rooms.UpdateOutput{}, err
 	}
+	go (*app).GetNetwork().PushToGroup(room.TowerId, updates_rooms.Update{Room: room}, []int64{})
 	return outputs_rooms.UpdateOutput{Room: room}, nil
 }
 
@@ -53,13 +56,17 @@ func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	var input = dto.(*dtos_rooms.DeleteDto)
 	var query = ``
 	query = `
-		delete from room where id = $1 and tower_id = $2;
+		delete from room where id = $1 and tower_id = $2
+		returning id, name, avatar_id, tower_id;
 	`
-	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.RoomId, guard.GetTowerId())
-	if err != nil {
+	var room models.Room
+	if err := (*app).GetDatabase().GetDb().QueryRow(
+		context.Background(), query, query, input.RoomId, guard.GetTowerId(),
+	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.DeleteOutput{}, err
 	}
+	go (*app).GetNetwork().PushToGroup(room.TowerId, updates_rooms.Update{Room: room}, []int64{})
 	return outputs_rooms.DeleteOutput{}, nil
 }
 

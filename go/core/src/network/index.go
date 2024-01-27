@@ -24,46 +24,52 @@ var upgrader = websocket.FastHTTPUpgrader{
 	},
 }
 
+var groups = sync.Map{}
+
 type Network struct {
 	app     *interfaces.IApp
 	clients map[int64]*websocket.Conn
-	groups  sync.Map
 }
 
-func (n *Network) authWithToken(token string) int64 {
+func (n *Network) authWithToken(token string) (int64, int32) {
 	var query = `
-		select user_id from session where token = $1 limit 1;
+		select user_id, c_type from session where token = $1 limit 1;
 	`
 	var id int64 = 0
-	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, token).Scan(&id); err != nil {
+	var creatureType int32 = 0
+	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, token).Scan(&id, &creatureType); err != nil {
 		fmt.Println(err)
 	}
-	return id
+	return id, creatureType
 }
 
 func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
-	var id int64 = n.authWithToken(string(packet.GetHeader("token")))
+	var id, creatureType = n.authWithToken(string(packet.GetHeader("token")))
 	if id == 0 {
 		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson("token authentication failed"))
 		return 0, ""
 	} else {
-		var humanId int64 = 0
-		var machineId int64 = 0
-		var queryHuman = `
-			select id from human where id = $1 limit 1
-		`
-		if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryHuman, id).Scan(&humanId); err != nil {
+		if creatureType == 1 {
+			var humanId int64 = 0
+			var queryHuman = `
+				select id from human where id = $1 limit 1
+			`
+			if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryHuman, id).Scan(&humanId); err != nil {
+				fmt.Println(err)
+				return 0, ""
+			}
+			return humanId, "human"
+		} else if creatureType == 2 {
+			var machineId int64 = 0
 			var queryMachine = `
 				select id from machine where id = $1 limit 1
 			`
 			if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryMachine, id).Scan(&machineId); err != nil {
 				return 0, ""
-			} else {
-				return machineId, "machine"
 			}
-		} else {
-			return humanId, "human"
+			return machineId, "machine"
 		}
+		return 0, ""
 	}
 }
 
@@ -188,7 +194,7 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 							[]byte(body),
 							requestId,
 							func(answer []byte) {
-								if err := conn.WriteMessage(websocket.BinaryMessage, answer); err != nil {
+								if err := conn.WriteMessage(websocket.TextMessage, answer); err != nil {
 									fmt.Println(err)
 									return
 								}
@@ -201,16 +207,16 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
 							}
 						}
 					}
@@ -220,9 +226,9 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 						var authHolder = AuthHolder{}
 						var err = json.Unmarshal([]byte(body), &authHolder)
 						if err != nil {
-							fmt.Println(err.Error())
+							fmt.Println(err)
 						} else {
-							var userId = n.authWithToken(authHolder.Token)
+							var userId, _ = n.authWithToken(authHolder.Token)
 							if userId > 0 {
 								n.clients[userId] = conn
 								conn.SetCloseHandler(func(code int, text string) error {
@@ -235,7 +241,7 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 									[]byte(body),
 									requestId,
 									func(answer []byte) {
-										if err := conn.WriteMessage(websocket.BinaryMessage, answer); err != nil {
+										if err := conn.WriteMessage(websocket.TextMessage, answer); err != nil {
 											fmt.Println(err)
 											return
 										}
@@ -276,16 +282,16 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
 							}
 						}
 					} else if ctx.IsGet() {
@@ -296,16 +302,16 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
 							}
 						}
 					}
@@ -327,13 +333,14 @@ func (n *Network) Listen(restPort int, socketPort int) {
 }
 
 func (n *Network) PushToUser(userId int64, data any) {
-	var conn = n.clients[userId]
+	conn := n.clients[userId]
 	if conn != nil {
 		message, err := json.Marshal(data)
-		if err == nil {
-			fmt.Println(err.Error())
+		if err != nil {
+			fmt.Println(err)
 		} else {
-			conn.WriteMessage(websocket.BinaryMessage, message)
+			var p = "update " + string(message)
+			conn.WriteMessage(websocket.TextMessage, []byte(p))
 		}
 	}
 }
@@ -343,18 +350,19 @@ func (n *Network) PushToGroup(groupId int64, data any, exceptions []int64) {
 	for _, exc := range exceptions {
 		excepDict[exc] = true
 	}
-	g, _ := n.groups.LoadOrStore(groupId, sync.Map{})
-	var group = g.(*sync.Map)
+	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+	group := g.(*sync.Map)
 	message, err := json.Marshal(data)
-	if err == nil {
-		fmt.Println(err.Error())
+	if err != nil {
+		fmt.Println(err)
 	} else {
+		var packet = []byte("update " + string(message))
 		group.Range(func(key, value any) bool {
 			var userId = key.(int64)
 			if !excepDict[userId] {
 				var conn = n.clients[userId]
 				if conn != nil {
-					conn.WriteMessage(websocket.BinaryMessage, message)
+					conn.WriteMessage(websocket.TextMessage, packet)
 				}
 			}
 			return true
@@ -363,14 +371,14 @@ func (n *Network) PushToGroup(groupId int64, data any, exceptions []int64) {
 }
 
 func (n *Network) JoinGroup(groupId int64, userId int64) {
-	g,_ := n.groups.LoadOrStore(groupId, sync.Map{})
-	var group = g.(*sync.Map)
+	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+	group := g.(*sync.Map)
 	group.Store(userId, true)
 }
 
 func (n *Network) LeaveGroup(groupId int64, userId int64) {
-	g,_ := n.groups.LoadOrStore(groupId, sync.Map{})
-	var group = g.(*sync.Map)
+	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+    group := g.(*sync.Map)
 	group.Delete(userId)
 }
 
@@ -379,6 +387,5 @@ func CreateNetwork() *Network {
 	var netInstance = Network{}
 	netInstance.app = apps.GetApp()
 	netInstance.clients = map[int64]*websocket.Conn{}
-	netInstance.groups = sync.Map{}
 	return &netInstance
 }

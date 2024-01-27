@@ -107,10 +107,22 @@ const WebSocket = require('ws');
     }
 
     let socket = new WebSocket(serverUrl);
+    socket.onmessage = function (event) {
+        let data = event.data.split(" ");
+        if (data[0] === "update") {
+            console.log(JSON.parse(event.data.substring(data[0].length)))
+        } else {
+            let resolve = requestDict[data[0]];
+            if (resolve) {
+                delete requestDict[data[0] + 1]
+                resolve(JSON.parse(event.data.substring(data[0].length)))
+            }
+        }
+    };
     socket.onopen = async function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
-        let resultHello = await request(`/api/hello`, { });
+        let resultHello = await request(`/api/hello`, {});
         console.log(resultHello);
         let result = await request(`/humans/signup`, { email: Date.now().toString() });
         console.log(result);
@@ -120,21 +132,13 @@ const WebSocket = require('ws');
         console.log(result3);
         let resultAuth = await request(`/auth/login`, { token: result3.session.token })
         console.log(resultAuth);
-    };
-    socket.onmessage = function (event) {
-        let data = event.data.split(" ");
-        let resolve = requestDict[data[0]];
-        if (resolve) {
-            delete requestDict[data[0] + 1]
-            resolve(JSON.parse(event.data.substring(data[0].length)))
-        }
+        let result4 = await request(`/towers/join`, { token: result3.session.token, towerId: 28 })
+        console.log(result4);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {
             console.log(`[close] Connection closed cleanly, code=${event.code} reason=${event.reason}`);
         } else {
-            // e.g. server process killed or network down
-            // event.code is usually 1006 in this case
             console.log('[close] Connection died');
         }
     };

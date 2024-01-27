@@ -9,6 +9,7 @@ import (
 	"sigma/core/src/models"
 	outputs_workers "sigma/core/src/outputs/workers"
 	"sigma/core/src/types"
+	updates_workers "sigma/core/src/updates/workers"
 	"sigma/core/src/utils"
 )
 
@@ -102,22 +103,28 @@ func readWorkers(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_workers.DeliverDto)
 	var query = `
-		select * from workers_deliver($1, $2, $3, $4);
+		select * from workers_deliver($1, $2, $3, $4, $5);
 	`
 	var allowed = false
-	var userType = ""
 	var machineId int64 = 0
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.WorkerId, guard.GetTowerId(), guard.GetRoomId(),
-	).Scan(&allowed, &userType, &machineId); err != nil {
+		context.Background(), query, guard.GetUserId(), guard.GetUserType(), input.WorkerId, guard.GetTowerId(), guard.GetRoomId(),
+	).Scan(&allowed, &machineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeliverOutput{}, err
 	}
-	if (allowed) {
-		if userType == "human" {
-			(*app).GetNetwork().PushToUser(machineId, input.Data)
+	if allowed {
+		if guard.GetUserType() == "human" {
+			var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: machineId, UserId: guard.GetUserId(), Data: input.Data}
+			(*app).GetNetwork().PushToUser(machineId, p)
 		} else {
-			(*app).GetNetwork().PushToUser(guard.GetUserId(), input.Data)
+			if input.UserId > 0 {
+				var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: guard.GetUserId(), UserId: input.UserId, Data: input.Data}
+				(*app).GetNetwork().PushToUser(input.UserId, p)
+			} else {
+				var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: guard.GetUserId(), Data: input.Data}
+				(*app).GetNetwork().PushToGroup(guard.GetTowerId(), p, []int64{})
+			}
 		}
 	}
 	return outputs_workers.DeliverOutput{Passed: allowed}, nil

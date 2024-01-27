@@ -8,11 +8,12 @@ import (
 	"sigma/core/src/models"
 	outputs_invites "sigma/core/src/outputs/invites"
 	"sigma/core/src/types"
+	updates_invites "sigma/core/src/updates/invites"
 	"sigma/core/src/utils"
 )
 
 func createInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
-	var input = dto.(dtos_invites.CreateDto)
+	var input = dto.(*dtos_invites.CreateDto)
 	var query = `
 		insert into invite
 		(
@@ -28,19 +29,24 @@ func createInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 		fmt.Println(err)
 		return outputs_invites.CreateOutput{}, err
 	}
+	go (*app).GetNetwork().PushToUser(input.HumanId, updates_invites.Create{Invite: invite})
 	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
 func cancelInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*dtos_invites.CancelDto)
 	var query = `
-		delete from invite where id = $1 and tower_id = $2;
+		delete from invite where id = $1 and tower_id = $2
+		returning id, human_id, tower_id;
 	`
-	_, err := (*app).GetDatabase().GetDb().Exec(context.Background(), query, input.InviteId, guard.GetTowerId())
-	if err != nil {
+	var invite models.Invite
+	if err := (*app).GetDatabase().GetDb().QueryRow(
+		context.Background(), query, input.InviteId, guard.GetTowerId(),
+	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_invites.CancelOutput{}, err
 	}
+	go (*app).GetNetwork().PushToUser(invite.HumanId, updates_invites.Cancel{Invite: invite})
 	return outputs_invites.CancelOutput{}, nil
 }
 
@@ -56,6 +62,8 @@ func acceptInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 		fmt.Println(err)
 		return outputs_invites.AcceptOutput{}, err
 	}
+	var invite = models.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
+	go (*app).GetNetwork().PushToUser(invite.HumanId, updates_invites.Accept{Invite: invite})
 	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
@@ -63,14 +71,16 @@ func declineInvite(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	var input = dto.(*dtos_invites.DeclineDto)
 	var query = `
 		delete from invite where id = $1 and human_id = $2
+		returning id, human_id, tower_id
 	`
-	_, err := (*app).GetDatabase().GetDb().Exec(
+	var invite models.Invite
+    if err := (*app).GetDatabase().GetDb().QueryRow(
 		context.Background(), query, input.InviteId, guard.GetUserId(),
-	)
-	if (err != nil) {
+	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_invites.DeclineOutput{}, err
 	}
+	go (*app).GetNetwork().PushToUser(invite.HumanId, updates_invites.Decline{Invite: invite})
 	return outputs_invites.DeclineOutput{}, nil
 }
 
