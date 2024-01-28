@@ -23,6 +23,7 @@ func (c Check) NeedRoom() bool {
 type Guard struct {
 	userId   int64
 	userType string
+	workerId int64
 	towerId  int64
 	roomId   int64
 }
@@ -41,6 +42,10 @@ func (g Guard) GetTowerId() int64 {
 
 func (g Guard) GetRoomId() int64 {
 	return g.roomId
+}
+
+func (g Guard) GetWorkerId() int64 {
+	return g.workerId
 }
 
 type Method struct {
@@ -87,6 +92,6 @@ func CreateCheck(user bool, tower bool, room bool) Check {
 	return Check{user: user, tower: tower, room: room}
 }
 
-func CreateGuard(userId int64, userType string, towerId int64, roomId int64) Guard {
-	return Guard{userId: userId, userType: userType, towerId: towerId, roomId: roomId}
+func CreateGuard(userId int64, userType string, towerId int64, roomId int64, workerId int64) Guard {
+	return Guard{userId: userId, userType: userType, towerId: towerId, roomId: roomId, workerId: workerId }
 }

@@ -35,6 +35,7 @@ func createWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 		worker.RoomId = guard.GetRoomId()
 		worker.Metadata = input.Metadata
 	}
+	(*app).GetMemory().Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d", worker.RoomId, worker.MachineId))
 	return outputs_workers.CreateOutput{Worker: worker}, nil
 }
 
@@ -107,8 +108,14 @@ func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 	`
 	var allowed = false
 	var machineId int64 = 0
+	var workerId int64 = 0
+	if (guard.GetUserType() == "human") {
+		workerId = input.WorkerId
+	} else if (guard.GetUserType() == "machine") {
+		workerId = guard.GetWorkerId()
+	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), guard.GetUserType(), input.WorkerId, guard.GetTowerId(), guard.GetRoomId(),
+		context.Background(), query, guard.GetUserId(), guard.GetUserType(), workerId, guard.GetTowerId(), guard.GetRoomId(),
 	).Scan(&allowed, &machineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeliverOutput{}, err
@@ -117,7 +124,7 @@ func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 		if guard.GetUserType() == "human" {
 			var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: machineId, UserId: guard.GetUserId(), Data: input.Data}
 			(*app).GetNetwork().PushToUser(machineId, p)
-		} else {
+		} else if (guard.GetUserType() == "machine") {
 			if input.UserId > 0 {
 				var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: guard.GetUserId(), UserId: input.UserId, Data: input.Data}
 				(*app).GetNetwork().PushToUser(input.UserId, p)

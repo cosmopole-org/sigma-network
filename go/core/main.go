@@ -18,7 +18,11 @@ type Cat struct {
 var quit = make(chan struct{})
 
 func main() {
-	app := core.CreateApp("sigma-sample", "")
+	app := core.CreateApp(
+		"sigma-sample",
+		"",
+		"",
+	)
 
 	var apiService = types.CreateService("api").
 		AddMethod(

@@ -31,6 +31,7 @@ func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 		fmt.Println(err)
 		return outputs_rooms.CreateOutput{}, err
 	}
+	(*app).GetMemory().Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
 	go (*app).GetNetwork().PushToGroup(room.TowerId, updates_rooms.Create{Room: room}, []int64{})
 	return outputs_rooms.CreateOutput{Room: room}, nil
 }
@@ -66,6 +67,7 @@ func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 		fmt.Println(err)
 		return outputs_rooms.DeleteOutput{}, err
 	}
+	(*app).GetMemory().Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
 	go (*app).GetNetwork().PushToGroup(room.TowerId, updates_rooms.Update{Room: room}, []int64{})
 	return outputs_rooms.DeleteOutput{}, nil
 }

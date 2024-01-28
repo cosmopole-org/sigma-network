@@ -23,10 +23,10 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 		select * from machines_create($1, $2, $3, $4);
 	`
 	var machine models.Machine
-	var Session models.Session
+	var session models.Session
 	if err := (*app).GetDatabase().GetDb().QueryRow(
 		context.Background(), query, guard.GetUserId(), input.Name, input.AvatarId, token,
-	).Scan(&machine.Id, &Session.Id); err != nil {
+	).Scan(&machine.Id, &session.Id); err != nil {
 		fmt.Println(err)
 		return outputs_machines.CreateOutput{}, err
 	}
@@ -34,11 +34,12 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 		machine.Name = input.Name
 		machine.AvatarId = input.AvatarId
 		machine.CreatorId = guard.GetUserId()
-		Session.UserId = machine.Id
-		Session.Token = token
-		Session.CreatureType = 2
+		session.UserId = machine.Id
+		session.Token = token
+		session.CreatureType = 2
 	}
-	return outputs_machines.CreateOutput{Machine: machine, Session: Session}, nil
+	(*app).GetMemory().Put("auth::" + session.Token, fmt.Sprintf("machine/%d", machine.Id))
+	return outputs_machines.CreateOutput{Machine: machine, Session: session}, nil
 }
 
 func updateMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {

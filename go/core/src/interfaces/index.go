@@ -9,6 +9,7 @@ type IApp interface {
 	GetService(key string) IService
 	Listen(restPort int, socketPort int)
 	GetDatabase() IDatabase
+	GetMemory() IMemory
 	GetNetwork() INetwork
 	LoadServices()
 }
@@ -55,6 +56,12 @@ type IDatabase interface {
 	GetDb() *pgxpool.Pool
 }
 
+type IMemory interface {
+	Put(key string, value string)
+	Get(key string) string
+	Del(key string)
+}
+
 type INetwork interface {
 	Listen(restPort int, socketPort int)
 	PushToUser(userId int64, data any)
@@ -69,6 +76,7 @@ type IDto interface {
 
 type IGuard interface {
 	GetUserId() int64
+	GetWorkerId() int64
 	GetUserType() string
 	GetTowerId() int64
 	GetRoomId() int64

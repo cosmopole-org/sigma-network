@@ -34,6 +34,7 @@ func createTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 		member.TowerId = tower.Id
 		member.HumanId = guard.GetUserId()
 	}
+	(*app).GetMemory().Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
 	return outputs_towers.CreateOutput{Tower: tower, Member: member}, nil
 }
 
@@ -104,6 +105,7 @@ func joinTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuar
 		return outputs_towers.JoinOutput{}, err
 	}
 	(*app).GetNetwork().JoinGroup(member.TowerId, member.HumanId)
+	(*app).GetMemory().Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
 	go (*app).GetNetwork().PushToGroup(member.TowerId, updates_towers.Join{Member: member}, []int64{ member.HumanId })
 	return outputs_towers.JoinOutput{Member: member}, nil
 }

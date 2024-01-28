@@ -5,6 +5,7 @@ import (
 	"sigma/core/src/core/apps"
 	"sigma/core/src/database"
 	"sigma/core/src/interfaces"
+	"sigma/core/src/memory"
 	"sigma/core/src/network"
 	"sigma/core/src/services"
 )
@@ -14,6 +15,7 @@ type App struct {
 	services    map[string]interfaces.IService
 	network     *network.Network
 	database    database.Database
+	memory      *memory.Memory
 }
 
 func (a App) AddService(s interfaces.IService) {
@@ -24,6 +26,9 @@ func (a App) GetService(key string) interfaces.IService {
 }
 func (a App) GetDatabase() interfaces.IDatabase {
 	return a.database
+}
+func (a App) GetMemory() interfaces.IMemory {
+	return a.memory
 }
 func (a App) GetNetwork() interfaces.INetwork {
 	return a.network
@@ -40,13 +45,14 @@ func (a App) LoadServices() {
 	a.services["workers"] = services.CreateWorkerService(apps.GetApp())
 }
 
-func CreateApp(appId string, databaseUri string) *App {
+func CreateApp(appId string, databaseUri string, redisUri string) *App {
 	app := &App{}
 	app.appId = appId
 	apps.PutApp(app)
 	fmt.Println("Creating app...")
 	app.services = map[string]interfaces.IService{}
 	app.database = database.CreateDatabase(databaseUri)
+	app.memory = memory.CreateMemory(redisUri)
 	app.network = network.CreateNetwork()
 	app.LoadServices()
 	return app

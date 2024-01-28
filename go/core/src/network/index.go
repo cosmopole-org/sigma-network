@@ -1,7 +1,6 @@
 package network
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"sigma/core/src/core/apps"
@@ -32,15 +31,24 @@ type Network struct {
 }
 
 func (n *Network) authWithToken(token string) (int64, int32) {
-	var query = `
-		select user_id, c_type from session where token = $1 limit 1;
-	`
-	var id int64 = 0
-	var creatureType int32 = 0
-	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, token).Scan(&id, &creatureType); err != nil {
-		fmt.Println(err)
+	var auth = (*n.app).GetMemory().Get("auth::" + token)
+	var userId int64 = 0
+	var userType int32 = 0
+	if auth != "" {
+		var dataParts = strings.Split(auth, "/")
+		i, err := strconv.ParseInt(dataParts[1], 10, 64)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			userId = i
+		}
+		if dataParts[0] == "human" {
+			userType = 1
+		} else if dataParts[0] == "machine" {
+			userType = 2
+		}
 	}
-	return id, creatureType
+	return userId, userType
 }
 
 func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
@@ -50,24 +58,9 @@ func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
 		return 0, ""
 	} else {
 		if creatureType == 1 {
-			var humanId int64 = 0
-			var queryHuman = `
-				select id from human where id = $1 limit 1
-			`
-			if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryHuman, id).Scan(&humanId); err != nil {
-				fmt.Println(err)
-				return 0, ""
-			}
-			return humanId, "human"
+			return id, "human"
 		} else if creatureType == 2 {
-			var machineId int64 = 0
-			var queryMachine = `
-				select id from machine where id = $1 limit 1
-			`
-			if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), queryMachine, id).Scan(&machineId); err != nil {
-				return 0, ""
-			}
-			return machineId, "machine"
+			return id, "machine"
 		}
 		return 0, ""
 	}
@@ -76,68 +69,70 @@ func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
 type Location struct {
 	TowerId int64
 	RoomId  int64
+	WorkerId int64
 }
 
 func (n *Network) authorizeHuman(humanId int64, packet types.WebPacket) Location {
-	var query = `
-		select id from member where human_id = $1 and tower_id = $2 limit 1
-	`
-	tid, err1 := strconv.ParseInt(string(packet.GetHeader("tower_id")), 10, 64)
+	var towerId = string(packet.GetHeader("tower_id"))
+	tid, err1 := strconv.ParseInt(towerId, 10, 64)
 	if err1 != nil {
 		fmt.Println(err1)
 		return Location{TowerId: 0, RoomId: 0}
 	}
-	var id int64 = 0
-	if err2 := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, humanId, tid).
-		Scan(&id); err2 != nil {
-		fmt.Println(err2)
-		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err2.Error()))
+	rid, err1 := strconv.ParseInt(string(packet.GetHeader("room_id")), 10, 64)
+	if err1 != nil {
+		fmt.Println(err1)
+	}
+	var memberData = (*n.app).GetMemory().Get(fmt.Sprintf("member::%d::%d", tid, humanId))
+	var cityData = (*n.app).GetMemory().Get(fmt.Sprintf("city::%d", rid))
+	if memberData != "" {
+		if cityData != "" && cityData == towerId {
+			return Location{TowerId: tid, RoomId: rid}
+		} else {
+			return Location{TowerId: tid, RoomId: 0}
+		}
+	} else {
 		return Location{TowerId: 0, RoomId: 0}
 	}
-	var query2 = `
-		select id from room where id = $1 and tower_id = $2 limit 1
-	`
-	rid, err3 := strconv.ParseInt(string(packet.GetHeader("room_id")), 10, 64)
-	if err3 != nil {
-		fmt.Println(err3)
-	}
-	if rid > 0 {
-		if err4 := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query2, rid, tid).
-			Scan(&id); err4 != nil {
-			fmt.Println(err4)
-			packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err4.Error()))
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		if id == 0 {
-			packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson("Room not found in tower"))
-			return Location{TowerId: 0, RoomId: 0}
-		}
-	}
-	return Location{TowerId: tid, RoomId: rid}
 }
 
 func (n *Network) authorizeMachine(machineId int64, packet types.WebPacket) Location {
-	var query = `
-		select room_id from worker where machine_id = $1 limit 1
-	`
-	var roomId int64 = 0
-	if err := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query, machineId).
-		Scan(&roomId); err != nil {
-		fmt.Println(err)
-		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err.Error()))
+	wid, err1 := strconv.ParseInt(string(packet.GetHeader("worker_id")), 10, 64)
+	if err1 != nil {
+		fmt.Println(err1)
 		return Location{TowerId: 0, RoomId: 0}
 	}
-	var query2 = `
-		select tower_id from room where id = $1 limit 1
-	`
-	var towerId int64 = 0
-	if err2 := (*n.app).GetDatabase().GetDb().QueryRow(context.Background(), query2, roomId).
-		Scan(&towerId); err2 != nil {
-		fmt.Println(err2)
-		packet.AnswerWithJson(fasthttp.StatusForbidden, map[string]string{}, utils.BuildErrorJson(err2.Error()))
+	var workerData = (*n.app).GetMemory().Get(fmt.Sprintf("worker::%d", wid))
+	if workerData != "" {
+		var dataParts = strings.Split(workerData, "/")
+		var rid = dataParts[0]
+		roomId, err2 := strconv.ParseInt(rid, 10, 64)
+		if err2 != nil {
+			fmt.Println(err2)
+			return Location{TowerId: 0, RoomId: 0}
+		}
+		var mid = dataParts[1]
+		machId, err3 := strconv.ParseInt(mid, 10, 64)
+		if err3 != nil {
+			fmt.Println(err3)
+			return Location{TowerId: 0, RoomId: 0}
+		}
+		if (machId != machineId) {
+			return Location{TowerId: 0, RoomId: 0}
+		}
+		var cityData = (*n.app).GetMemory().Get(fmt.Sprintf("city::%s", rid))
+		if (cityData == "") {
+			return Location{TowerId: 0, RoomId: 0}
+		}
+		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
+		if err4 != nil {
+			fmt.Println(err4)
+			return Location{TowerId: 0, RoomId: 0}
+		}
+		return Location{TowerId: towerId, RoomId: roomId, WorkerId: wid}
+	} else {
 		return Location{TowerId: 0, RoomId: 0}
 	}
-	return Location{TowerId: towerId, RoomId: roomId}
 }
 
 func (n *Network) handleResult(
@@ -207,16 +202,16 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
 							}
 						}
 					}
@@ -282,16 +277,16 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
 							}
 						}
 					} else if ctx.IsGet() {
@@ -302,16 +297,16 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
 							}
 						}
 					}
@@ -378,7 +373,7 @@ func (n *Network) JoinGroup(groupId int64, userId int64) {
 
 func (n *Network) LeaveGroup(groupId int64, userId int64) {
 	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
-    group := g.(*sync.Map)
+	group := g.(*sync.Map)
 	group.Delete(userId)
 }
 

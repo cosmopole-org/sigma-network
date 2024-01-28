@@ -118,6 +118,7 @@ func complete(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 		session.UserId = human.Id
 		session.CreatureType = 1
 	}
+	(*app).GetMemory().Put("auth::" + session.Token, fmt.Sprintf("human/%d", human.Id))
 	return outputs_humans.CompleteOutput{Human: human, Session: session}, nil
 }
 
