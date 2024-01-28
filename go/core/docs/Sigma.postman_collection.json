@@ -29,7 +29,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan\"\n}",
+							"raw": "{\n    \"email\": \"kasper 3\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -234,7 +234,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"test tower\",\n    \"avatarId\": 123\n}",
+							"raw": "{\n    \"name\": \"test tower\",\n    \"avatarId\": 123,\n    \"isPublic\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -249,6 +249,52 @@
 							"path": [
 								"towers",
 								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "join",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"towerId\", jsonData.tower.id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"towerId\": {{towerId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/towers/join",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"towers",
+								"join"
 							]
 						}
 					},
@@ -278,7 +324,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"towerId\": {{towerId}},\n    \"name\": \"test tower updated\",\n    \"avatarId\": 0\n}",
+							"raw": "{\n    \"towerId\": {{towerId}},\n    \"name\": \"test tower updated\",\n    \"avatarId\": 0,\n    \"isPublic\": true\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -768,6 +814,7 @@
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
 									"postman.setEnvironmentVariable(\"machineId\", jsonData.machine.id);",
+									"postman.setEnvironmentVariable(\"machineToken\", jsonData.session.token);",
 									""
 								],
 								"type": "text/javascript"
@@ -991,8 +1038,6 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"workerId\", jsonData.worker.id);",
 									""
 								],
 								"type": "text/javascript"
@@ -1020,7 +1065,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"data\": \"test 123\"\n}",
+							"raw": "{\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61\n}",
 							"options": {
 								"raw": {
 									"language": "json"

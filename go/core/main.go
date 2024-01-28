@@ -1,6 +1,7 @@
 package main
 
 import (
+	cosmopole_services "sigma/core/cosmopole/services"
 	"sigma/core/src/core"
 	"sigma/core/src/dtos"
 	"sigma/core/src/interfaces"
@@ -35,6 +36,9 @@ func main() {
 			),
 		)
 	app.AddService(apiService)
+
+	var iapp interfaces.IApp = *app
+	app.AddService(cosmopole_services.CreateMessengerService(&iapp))
 
 	app.Listen(8000, 8001)
 
