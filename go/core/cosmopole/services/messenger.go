@@ -11,6 +11,7 @@ import (
 	outputs_rooms "sigma/core/src/outputs/rooms"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
+	"strconv"
 	"time"
 )
 
@@ -47,7 +48,7 @@ func createMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 func updateMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.UpdateDto)
 	var query = `
-		update message set data = $1 where author_id = $2 and id = $3 limit 1
+		update message set data = $1 where author_id = $2 and id = $3
 		returning id, author_id, data, space_id, time;
 	`
 	var message cosmopole_models.Message
@@ -64,7 +65,7 @@ func updateMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 func deleteMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.DeleteDto)
 	var query = `
-		delete from message where author_id = $1 and id = $2 limit 1
+		delete from message where author_id = $1 and id = $2
 		returning id, author_id, data, space_id, time;
 	`
 	var message cosmopole_models.Message
@@ -80,13 +81,30 @@ func deleteMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 
 func readMessages(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.ReadDto)
+	var offset int64 = 0
+	var count int64 = 0
+	if (input.Offset != "") {
+		o, err := strconv.ParseInt(input.Offset, 10, 64)
+		if (err == nil) {
+			offset = o
+		}
+	}
+	if (input.Count != "") {
+		c, err := strconv.ParseInt(input.Count, 10, 64)
+		if (err == nil) {
+			count = c
+		}
+	}
+	if (count == 0) {
+		count = 1
+	}
 	var query = `
 		with t as (
 			select id, data, author_id, space_id, time from message where space_id = $1 order by time desc offset $2 limit $3
 		)
 		select id, data, author_id, space_id, time from t order by time asc;
 	`
-	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, guard.GetRoomId(), input.Offset, input.Count)
+	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, guard.GetRoomId(), offset, count)
 	if err != nil {
 		fmt.Println(err)
 	}

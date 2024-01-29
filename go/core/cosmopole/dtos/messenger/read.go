@@ -1,8 +1,8 @@
 package cosmopole_dtos_messenger
 
 type ReadDto struct {
-	Offset int64 `json:"offset" validate:"required"`
-	Count  int64 `json:"count" validate:"required"`
+	Offset string `json:"offset"`
+	Count  string `json:"count"`
 }
 
 func (d ReadDto) GetData() any {
