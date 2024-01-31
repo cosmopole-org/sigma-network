@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sigma/core/src/core/apps"
 	"sigma/core/src/interfaces"
+	services_native_storage "sigma/core/src/services/native"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
 	"strconv"
@@ -67,8 +68,8 @@ func (n *Network) authenticate(packet types.WebPacket) (int64, string) {
 }
 
 type Location struct {
-	TowerId int64
-	RoomId  int64
+	TowerId  int64
+	RoomId   int64
 	WorkerId int64
 }
 
@@ -117,11 +118,11 @@ func (n *Network) authorizeMachine(machineId int64, packet types.WebPacket) Loca
 			fmt.Println(err3)
 			return Location{TowerId: 0, RoomId: 0}
 		}
-		if (machId != machineId) {
+		if machId != machineId {
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		var cityData = (*n.app).GetMemory().Get(fmt.Sprintf("city::%s", rid))
-		if (cityData == "") {
+		if cityData == "" {
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
@@ -136,12 +137,12 @@ func (n *Network) authorizeMachine(machineId int64, packet types.WebPacket) Loca
 }
 
 func (n *Network) handleResult(
-	callback func(app *interfaces.IApp, input interfaces.IDto, guard interfaces.IGuard) (any, error),
+	callback func(app *interfaces.IApp, input interfaces.IDto, assistant interfaces.IAssistant) (any, error),
 	packet types.WebPacket,
 	temp interfaces.IDto,
-	guard interfaces.IGuard,
+	assistant interfaces.IAssistant,
 ) {
-	result, err := callback(n.app, temp, guard)
+	result, err := callback(n.app, temp, assistant)
 	if err != nil {
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 	} else {
@@ -202,16 +203,16 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
+										n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
+								n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0))
 							}
 						}
 					}
@@ -264,57 +265,76 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 		parts := strings.Split(uri, "/")
 		var packet = types.CreateWebPacket(ctx).(types.WebPacket)
 		if len(parts) == 3 {
-			service := (*n.app).GetService(parts[1])
-			if service != nil {
-				var method = service.GetMethod(parts[2])
-				if method != nil && method.AsEndpoint() {
-					var temp = method.GetInTemplate()
-					if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
-						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
-							if method.GetCheck().NeedUser() {
-								var userId, userType = n.authenticate(packet)
-								if userId > 0 {
-									if method.GetCheck().NeedTower() {
-										var location = n.handleLocation(userId, userType, packet)
-										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
-										} else {
-											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
-										}
-									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
-									}
-								}
-							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
-							}
+			if parts[1] == "storage" {
+				if parts[2] == "save" {
+					var userId, userType = n.authenticate(packet)
+					if userId > 0 {
+						var location = n.handleLocation(userId, userType, packet)
+						if location.TowerId > 0 && location.RoomId > 0 {
+							services_native_storage.HandleBinaryDataToStorage((*n.app).GetStorageRoot(), ctx, packet, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
+						} else {
+							packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 						}
-					} else if ctx.IsGet() {
-						if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
-							if method.GetCheck().NeedUser() {
-								var userId, userType = n.authenticate(packet)
-								if userId > 0 {
-									if method.GetCheck().NeedTower() {
-										var location = n.handleLocation(userId, userType, packet)
-										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
-										} else {
-											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
-										}
-									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(userId, userType, 0, 0, 0))
-									}
-								}
-							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateGuard(0, "", 0, 0, 0))
-							}
-						}
+					} else {
+						packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("user not found"))
+
 					}
 				} else {
 					packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("endpoint not found"))
 				}
 			} else {
-				packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("controller not found"))
+				service := (*n.app).GetService(parts[1])
+				if service != nil {
+					var method = service.GetMethod(parts[2])
+					if method != nil && method.AsEndpoint() {
+						var temp = method.GetInTemplate()
+						if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
+							if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+								if method.GetCheck().NeedUser() {
+									var userId, userType = n.authenticate(packet)
+									if userId > 0 {
+										if method.GetCheck().NeedTower() {
+											var location = n.handleLocation(userId, userType, packet)
+											if location.TowerId > 0 {
+												n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
+											} else {
+												packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
+											}
+										} else {
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0))
+										}
+									}
+								} else {
+									n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0))
+								}
+							}
+						} else if ctx.IsGet() {
+							if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
+								if method.GetCheck().NeedUser() {
+									var userId, userType = n.authenticate(packet)
+									if userId > 0 {
+										if method.GetCheck().NeedTower() {
+											var location = n.handleLocation(userId, userType, packet)
+											if location.TowerId > 0 {
+												n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId))
+											} else {
+												packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
+											}
+										} else {
+											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0))
+										}
+									}
+								} else {
+									n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0))
+								}
+							}
+						}
+					} else {
+						packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("endpoint not found"))
+					}
+				} else {
+					packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("controller not found"))
+				}
 			}
 		} else {
 			packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson("service path is not specific"))

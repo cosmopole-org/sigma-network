@@ -1220,6 +1220,19 @@
 			]
 		},
 		{
+			"name": "storage",
+			"item": [
+				{
+					"name": "save",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "hello",
 			"request": {
 				"method": "GET",

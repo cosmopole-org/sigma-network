@@ -13,7 +13,7 @@ import (
 	"strconv"
 )
 
-func createTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func createTower(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_towers.CreateDto)
 	var query = `
 		select * from towers_create($1, $2, $3, $4)
@@ -21,7 +21,7 @@ func createTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	var tower models.Tower
 	var member models.Member
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.Name, input.AvatarId, input.IsPublic,
+		context.Background(), query, assistant.GetUserId(), input.Name, input.AvatarId, input.IsPublic,
 	).Scan(&member.Id, &tower.Id); err != nil {
 		fmt.Println(err)
 		return outputs_towers.CreateOutput{}, err
@@ -29,16 +29,16 @@ func createTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	if tower.Id > 0 {
 		tower.Name = input.Name
 		tower.AvatarId = input.AvatarId
-		tower.CreatorId = guard.GetUserId()
+		tower.CreatorId = assistant.GetUserId()
 		tower.IsPublic = input.IsPublic
 		member.TowerId = tower.Id
-		member.HumanId = guard.GetUserId()
+		member.HumanId = assistant.GetUserId()
 	}
 	(*app).GetMemory().Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
 	return outputs_towers.CreateOutput{Tower: tower, Member: member}, nil
 }
 
-func updateTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func updateTower(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_towers.UpdateDto)
 	var query = `
 		update tower set name = $1, avatar_id = $2, is_public = $3 where id = $4 and creator_id = $5
@@ -46,7 +46,7 @@ func updateTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	`
 	var tower models.Tower
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, input.TowerId, guard.GetUserId(),
+		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, input.TowerId, assistant.GetUserId(),
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId); err != nil {
 		fmt.Println(err)
 		return outputs_towers.UpdateOutput{}, err
@@ -55,7 +55,7 @@ func updateTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	return outputs_towers.UpdateOutput{Tower: tower}, nil
 }
 
-func deleteTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deleteTower(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_towers.DeleteDto)
 	var query = ``
 	query = `
@@ -63,7 +63,7 @@ func deleteTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 		returning id, name, avatar_id, creator_id;
 	`
 	var tower models.Tower
-	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.TowerId, guard.GetUserId()).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.CreatorId); err != nil {
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.TowerId, assistant.GetUserId()).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.CreatorId); err != nil {
 		fmt.Println(err)
 		return outputs_towers.DeleteOutput{}, err
 	}
@@ -71,7 +71,7 @@ func deleteTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	return outputs_towers.DeleteOutput{}, nil
 }
 
-func getTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func getTower(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_towers.GetDto)
 	var query = `
 		select * from towers_get($1, $2)
@@ -83,7 +83,7 @@ func getTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 		return outputs_towers.GetOutput{}, err
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), towerId,
+		context.Background(), query, assistant.GetUserId(), towerId,
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic); err != nil {
 		fmt.Println(err)
 		return outputs_towers.GetOutput{}, err
@@ -91,22 +91,22 @@ func getTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 	return outputs_towers.GetOutput{Tower: tower}, nil
 }
 
-func joinTower(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func joinTower(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_towers.JoinDto)
-	fmt.Println(guard)
+	fmt.Println(assistant)
 	var query = `
 		select * from towers_join($1, $2)
 	`
 	var member models.Member
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.TowerId,
+		context.Background(), query, assistant.GetUserId(), input.TowerId,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_towers.JoinOutput{}, err
 	}
 	(*app).GetNetwork().JoinGroup(member.TowerId, member.HumanId)
 	(*app).GetMemory().Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
-	go (*app).GetNetwork().PushToGroup(member.TowerId, updates_towers.Join{Member: member}, []int64{ member.HumanId })
+	go (*app).GetNetwork().PushToGroup(member.TowerId, updates_towers.Join{Member: member}, []int64{member.HumanId})
 	return outputs_towers.JoinOutput{Member: member}, nil
 }
 

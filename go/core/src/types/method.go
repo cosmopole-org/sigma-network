@@ -1,6 +1,13 @@
 package types
 
-import "sigma/core/src/interfaces"
+import (
+	"bytes"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"sigma/core/src/interfaces"
+)
 
 type Check struct {
 	user  bool
@@ -20,7 +27,7 @@ func (c Check) NeedRoom() bool {
 	return c.room
 }
 
-type Guard struct {
+type Assistant struct {
 	userId   int64
 	userType string
 	workerId int64
@@ -28,29 +35,52 @@ type Guard struct {
 	roomId   int64
 }
 
-func (g Guard) GetUserId() int64 {
+func (g *Assistant) SaveToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
+	var dirPath = fmt.Sprintf("%s/%d", storageRoot, g.roomId)
+	os.MkdirAll(dirPath, os.ModePerm)
+	f, err := fh.Open()
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	buf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(buf, f); err != nil {
+		return err
+	}
+	dest, err := os.OpenFile(fmt.Sprintf("%s/%s", dirPath, key), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0600)
+	if err != nil {
+		return err
+	}
+	defer dest.Close()
+	if _, err = dest.Write(buf.Bytes()); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (g *Assistant) GetUserId() int64 {
 	return g.userId
 }
 
-func (g Guard) GetUserType() string {
+func (g *Assistant) GetUserType() string {
 	return g.userType
 }
 
-func (g Guard) GetTowerId() int64 {
+func (g *Assistant) GetTowerId() int64 {
 	return g.towerId
 }
 
-func (g Guard) GetRoomId() int64 {
+func (g *Assistant) GetRoomId() int64 {
 	return g.roomId
 }
 
-func (g Guard) GetWorkerId() int64 {
+func (g *Assistant) GetWorkerId() int64 {
 	return g.workerId
 }
 
 type Method struct {
 	key        string
-	callback   func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error)
+	callback   func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error)
 	check      Check
 	inTemplate interfaces.IDto
 	asEndpoint bool
@@ -64,11 +94,11 @@ func (m Method) SetKey(key string) {
 	m.key = key
 }
 
-func (m Method) SetCallback(callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error)) {
+func (m Method) SetCallback(callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error)) {
 	m.callback = callback
 }
 
-func (m Method) GetCallback() func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func (m Method) GetCallback() func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	return m.callback
 }
 
@@ -84,7 +114,7 @@ func (m Method) AsEndpoint() bool {
 	return m.asEndpoint
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error), check Check, dto interfaces.IDto, asEndpoint bool) Method {
+func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error), check Check, dto interfaces.IDto, asEndpoint bool) Method {
 	return Method{key: key, callback: callback, check: check, inTemplate: dto, asEndpoint: asEndpoint}
 }
 
@@ -92,6 +122,6 @@ func CreateCheck(user bool, tower bool, room bool) Check {
 	return Check{user: user, tower: tower, room: room}
 }
 
-func CreateGuard(userId int64, userType string, towerId int64, roomId int64, workerId int64) Guard {
-	return Guard{userId: userId, userType: userType, towerId: towerId, roomId: roomId, workerId: workerId }
+func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64) *Assistant {
+	return &Assistant{userId: userId, userType: userType, towerId: towerId, roomId: roomId, workerId: workerId}
 }

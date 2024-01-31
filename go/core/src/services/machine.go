@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func createMachine(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_machines.CreateDto)
 	var token, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
@@ -25,7 +25,7 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	var machine models.Machine
 	var session models.Session
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.Name, input.AvatarId, token,
+		context.Background(), query, assistant.GetUserId(), input.Name, input.AvatarId, token,
 	).Scan(&machine.Id, &session.Id); err != nil {
 		fmt.Println(err)
 		return outputs_machines.CreateOutput{}, err
@@ -33,16 +33,16 @@ func createMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	if machine.Id > 0 {
 		machine.Name = input.Name
 		machine.AvatarId = input.AvatarId
-		machine.CreatorId = guard.GetUserId()
+		machine.CreatorId = assistant.GetUserId()
 		session.UserId = machine.Id
 		session.Token = token
 		session.CreatureType = 2
 	}
-	(*app).GetMemory().Put("auth::" + session.Token, fmt.Sprintf("machine/%d", machine.Id))
+	(*app).GetMemory().Put("auth::"+session.Token, fmt.Sprintf("machine/%d", machine.Id))
 	return outputs_machines.CreateOutput{Machine: machine, Session: session}, nil
 }
 
-func updateMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func updateMachine(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_machines.UpdateDto)
 	var query = `
 		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
@@ -50,7 +50,7 @@ func updateMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	`
 	var machine models.Machine
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.MachineId, guard.GetUserId(),
+		context.Background(), query, input.Name, input.AvatarId, input.MachineId, assistant.GetUserId(),
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId); err != nil {
 		fmt.Println(err)
 		return outputs_machines.UpdateOutput{}, err
@@ -58,7 +58,7 @@ func updateMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	return outputs_machines.UpdateOutput{Machine: machine}, nil
 }
 
-func deleteMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deleteMachine(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_machines.DeleteDto)
 	var query = ``
 	query = `
@@ -66,7 +66,7 @@ func deleteMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	`
 	var id = 0
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.MachineId,
+		context.Background(), query, assistant.GetUserId(), input.MachineId,
 	).Scan(&id); err != nil {
 		fmt.Println(err)
 		return outputs_machines.DeleteOutput{}, err
@@ -74,7 +74,7 @@ func deleteMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	return outputs_machines.DeleteOutput{}, nil
 }
 
-func getMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func getMachine(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_machines.GetDto)
 	machineId, err := strconv.ParseInt(input.MachineId, 10, 64)
 	if err != nil {
@@ -87,12 +87,12 @@ func getMachine(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	var machine models.Machine
 	var session models.Session
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), machineId,
+		context.Background(), query, assistant.GetUserId(), machineId,
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
 		return outputs_machines.GetOutput{}, err
 	}
-	if (machine.CreatorId != guard.GetUserId()) {
+	if machine.CreatorId != assistant.GetUserId() {
 		machine.CreatorId = 0
 		session.Token = ""
 		session.Id = 0

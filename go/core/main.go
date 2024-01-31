@@ -8,7 +8,7 @@ import (
 	"sigma/core/src/types"
 )
 
-func hello(app *interfaces.IApp, d interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func hello(app *interfaces.IApp, d interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	return `{ "hello": "world" }`, nil
 }
 
@@ -20,9 +20,7 @@ var quit = make(chan struct{})
 
 func main() {
 	app := core.CreateApp(
-		"sigma-sample",
-		"",
-		"",
+		"sigma-sample", "", "", "",
 	)
 
 	var apiService = types.CreateService("api").

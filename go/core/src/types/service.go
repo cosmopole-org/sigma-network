@@ -19,9 +19,9 @@ func (s Service) GetMethod(key string) interfaces.IMethod {
 	return s.methods[key]
 }
 
-func (s Service) CallMethod(app *interfaces.IApp, key string, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
-    var method = s.GetMethod(key)
-	return method.GetCallback()(app, dto, guard)
+func (s Service) CallMethod(app *interfaces.IApp, key string, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
+	var method = s.GetMethod(key)
+	return method.GetCallback()(app, dto, assistant)
 }
 
 func (s Service) GetKey() string {

@@ -13,7 +13,7 @@ import (
 	"sigma/core/src/utils"
 )
 
-func signup(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func signup(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_humans.SignupDto)
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
@@ -46,7 +46,7 @@ func signup(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) 
 	return outputs_humans.SignupOutput{Pending: pending}, nil
 }
 
-func verify(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func verify(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_humans.VerifyDto)
 	var query = `
 		select humans_verify($1, $2)
@@ -97,7 +97,7 @@ func verify(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) 
 	}
 }
 
-func complete(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func complete(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_humans.CompleteDto)
 	var human models.Human
 	var session models.Session
@@ -118,18 +118,18 @@ func complete(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard
 		session.UserId = human.Id
 		session.CreatureType = 1
 	}
-	(*app).GetMemory().Put("auth::" + session.Token, fmt.Sprintf("human/%d", human.Id))
+	(*app).GetMemory().Put("auth::"+session.Token, fmt.Sprintf("human/%d", human.Id))
 	return outputs_humans.CompleteOutput{Human: human, Session: session}, nil
 }
 
-func update(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func update(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_humans.UpdateDto)
 	var human models.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
 		returning id, email, first_name, last_name;
 	`
-	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, guard.GetUserId()).
+	if err := (*app).GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.GetUserId()).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
 		return outputs_humans.UpdateOutput{}, err
@@ -137,7 +137,7 @@ func update(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) 
 	return outputs_humans.UpdateOutput{Human: human}, nil
 }
 
-func get(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func get(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_humans.GetDto)
 	var human models.Human
 	var query = `

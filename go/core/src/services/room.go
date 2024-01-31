@@ -13,7 +13,7 @@ import (
 	"strconv"
 )
 
-func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func createRoom(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_rooms.CreateDto)
 	var query = `
 		insert into room
@@ -26,7 +26,7 @@ func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	`
 	var room models.Room
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, guard.GetTowerId(),
+		context.Background(), query, input.Name, input.AvatarId, assistant.GetTowerId(),
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.CreateOutput{}, err
@@ -36,7 +36,7 @@ func createRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	return outputs_rooms.CreateOutput{Room: room}, nil
 }
 
-func updateRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func updateRoom(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_rooms.UpdateDto)
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
@@ -44,7 +44,7 @@ func updateRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	`
 	var room models.Room
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.RoomId, guard.GetTowerId(),
+		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.GetTowerId(),
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.UpdateOutput{}, err
@@ -53,7 +53,7 @@ func updateRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	return outputs_rooms.UpdateOutput{Room: room}, nil
 }
 
-func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_rooms.DeleteDto)
 	var query = ``
 	query = `
@@ -62,7 +62,7 @@ func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	`
 	var room models.Room
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, query, input.RoomId, guard.GetTowerId(),
+		context.Background(), query, query, input.RoomId, assistant.GetTowerId(),
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.DeleteOutput{}, err
@@ -72,7 +72,7 @@ func deleteRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGua
 	return outputs_rooms.DeleteOutput{}, nil
 }
 
-func getRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func getRoom(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_rooms.GetDto)
 	var query = `
 		select * from rooms_get($1, $2, $3);
@@ -84,12 +84,12 @@ func getRoom(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 		return outputs_rooms.GetOutput{}, err
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), guard.GetTowerId(), roomId,
+		context.Background(), query, assistant.GetUserId(), assistant.GetTowerId(), roomId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.GetOutput{}, err
 	}
-	room.TowerId = guard.GetTowerId()
+	room.TowerId = assistant.GetTowerId()
 	return outputs_rooms.GetOutput{Room: room}, nil
 }
 

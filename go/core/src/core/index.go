@@ -16,6 +16,7 @@ type App struct {
 	network     *network.Network
 	database    database.Database
 	memory      *memory.Memory
+	storageRoot string
 }
 
 func (a App) AddService(s interfaces.IService) {
@@ -33,6 +34,9 @@ func (a App) GetMemory() interfaces.IMemory {
 func (a App) GetNetwork() interfaces.INetwork {
 	return a.network
 }
+func (a App) GetStorageRoot() string {
+	return a.storageRoot
+}
 func (a App) Listen(restPort int, socketPort int) {
 	a.network.Listen(restPort, socketPort)
 }
@@ -45,11 +49,12 @@ func (a App) LoadServices() {
 	a.services["workers"] = services.CreateWorkerService(apps.GetApp())
 }
 
-func CreateApp(appId string, databaseUri string, redisUri string) *App {
+func CreateApp(appId string, databaseUri string, redisUri string, storageRoot string) *App {
 	app := &App{}
 	app.appId = appId
 	apps.PutApp(app)
 	fmt.Println("Creating app...")
+	app.storageRoot = storageRoot
 	app.services = map[string]interfaces.IService{}
 	app.database = database.CreateDatabase(databaseUri)
 	app.memory = memory.CreateMemory(redisUri)

@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func createMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func createMessage(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.CreateDto)
 	var query = `
 		insert into message
@@ -30,22 +30,22 @@ func createMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	var message cosmopole_models.Message
 	var now = time.Now().UnixMilli()
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Data, now, guard.GetUserId(), guard.GetRoomId(),
+		context.Background(), query, input.Data, now, assistant.GetUserId(), assistant.GetRoomId(),
 	).Scan(&message.Id); err != nil {
 		fmt.Println(err)
 		return outputs_rooms.CreateOutput{}, err
 	}
 	if message.Id > 0 {
 		message.Time = now
-		message.AuthorId = guard.GetUserId()
-		message.SpaceId = guard.GetRoomId()
+		message.AuthorId = assistant.GetUserId()
+		message.SpaceId = assistant.GetRoomId()
 		message.Data = input.Data
 	}
-	go (*app).GetNetwork().PushToGroup(guard.GetRoomId(), cosmopole_updates_messenger.Create{Message: message}, []int64{guard.GetUserId()})
+	go (*app).GetNetwork().PushToGroup(assistant.GetRoomId(), cosmopole_updates_messenger.Create{Message: message}, []int64{assistant.GetUserId()})
 	return cosmopole_outputs_messenger.CreateOutput{Message: message}, nil
 }
 
-func updateMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func updateMessage(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.UpdateDto)
 	var query = `
 		update message set data = $1 where author_id = $2 and id = $3
@@ -53,16 +53,16 @@ func updateMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	`
 	var message cosmopole_models.Message
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Data, guard.GetUserId(), input.MessageId,
+		context.Background(), query, input.Data, assistant.GetUserId(), input.MessageId,
 	).Scan(&message.Id, &message.AuthorId, &message.Data, &message.SpaceId, &message.Time); err != nil {
 		fmt.Println(err)
 		return cosmopole_outputs_messenger.UpdateOutput{Message: message}, err
 	}
-	go (*app).GetNetwork().PushToGroup(message.SpaceId, cosmopole_updates_messenger.Update{Message: message}, []int64{guard.GetUserId()})
+	go (*app).GetNetwork().PushToGroup(message.SpaceId, cosmopole_updates_messenger.Update{Message: message}, []int64{assistant.GetUserId()})
 	return cosmopole_outputs_messenger.UpdateOutput{Message: message}, nil
 }
 
-func deleteMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deleteMessage(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.DeleteDto)
 	var query = `
 		delete from message where author_id = $1 and id = $2
@@ -70,32 +70,32 @@ func deleteMessage(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.I
 	`
 	var message cosmopole_models.Message
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), input.MessageId,
+		context.Background(), query, assistant.GetUserId(), input.MessageId,
 	).Scan(&message.Id, &message.AuthorId, &message.Data, &message.SpaceId, &message.Time); err != nil {
 		fmt.Println(err)
 		return cosmopole_outputs_messenger.DeleteOutput{Message: message}, err
 	}
-	go (*app).GetNetwork().PushToGroup(message.SpaceId, cosmopole_updates_messenger.Delete{Message: message}, []int64{guard.GetUserId()})
+	go (*app).GetNetwork().PushToGroup(message.SpaceId, cosmopole_updates_messenger.Delete{Message: message}, []int64{assistant.GetUserId()})
 	return cosmopole_outputs_messenger.DeleteOutput{Message: message}, nil
 }
 
-func readMessages(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func readMessages(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*cosmopole_dtos_messenger.ReadDto)
 	var offset int64 = 0
 	var count int64 = 0
-	if (input.Offset != "") {
+	if input.Offset != "" {
 		o, err := strconv.ParseInt(input.Offset, 10, 64)
-		if (err == nil) {
+		if err == nil {
 			offset = o
 		}
 	}
-	if (input.Count != "") {
+	if input.Count != "" {
 		c, err := strconv.ParseInt(input.Count, 10, 64)
-		if (err == nil) {
+		if err == nil {
 			count = c
 		}
 	}
-	if (count == 0) {
+	if count == 0 {
 		count = 1
 	}
 	var query = `
@@ -104,7 +104,7 @@ func readMessages(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 		)
 		select id, data, author_id, space_id, time from t order by time asc;
 	`
-	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, guard.GetRoomId(), offset, count)
+	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, assistant.GetRoomId(), offset, count)
 	if err != nil {
 		fmt.Println(err)
 	}

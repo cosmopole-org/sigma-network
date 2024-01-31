@@ -13,7 +13,7 @@ import (
 	"sigma/core/src/utils"
 )
 
-func createWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func createWorker(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_workers.CreateDto)
 	var query = `
 		insert into worker (
@@ -25,21 +25,21 @@ func createWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	`
 	var worker models.Worker
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.MachineId, guard.GetRoomId(), input.Metadata,
+		context.Background(), query, input.MachineId, assistant.GetRoomId(), input.Metadata,
 	).Scan(&worker.Id); err != nil {
 		fmt.Println(err)
 		return outputs_workers.CreateOutput{}, err
 	}
 	if worker.Id > 0 {
 		worker.MachineId = input.MachineId
-		worker.RoomId = guard.GetRoomId()
+		worker.RoomId = assistant.GetRoomId()
 		worker.Metadata = input.Metadata
 	}
 	(*app).GetMemory().Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d", worker.RoomId, worker.MachineId))
 	return outputs_workers.CreateOutput{Worker: worker}, nil
 }
 
-func updateWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func updateWorker(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_workers.UpdateDto)
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
@@ -47,14 +47,14 @@ func updateWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	`
 	var worker models.Worker
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Metadata, input.WorkerId, guard.GetRoomId(),
+		context.Background(), query, input.Metadata, input.WorkerId, assistant.GetRoomId(),
 	).Scan(&worker.Id, &worker.MachineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.UpdateOutput{}, err
 	}
 	if worker.Id > 0 {
 		worker.Id = input.WorkerId
-		worker.RoomId = guard.GetRoomId()
+		worker.RoomId = assistant.GetRoomId()
 		worker.Metadata = input.Metadata
 		return outputs_workers.UpdateOutput{Worker: worker}, nil
 	} else {
@@ -62,7 +62,7 @@ func updateWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	}
 }
 
-func deleteWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deleteWorker(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_workers.DeleteDto)
 	var query = ``
 	query = `
@@ -70,7 +70,7 @@ func deleteWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	`
 	var id = 0
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.WorkerId, guard.GetRoomId(),
+		context.Background(), query, input.WorkerId, assistant.GetRoomId(),
 	).Scan(&id); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeleteOutput{}, err
@@ -78,11 +78,11 @@ func deleteWorker(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IG
 	return outputs_workers.DeleteOutput{}, nil
 }
 
-func readWorkers(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func readWorkers(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var query = `
 		select id, machine_id, room_id, metadata from worker where room_id = $1;
 	`
-	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, guard.GetRoomId())
+	rows, err := (*app).GetDatabase().GetDb().Query(context.Background(), query, assistant.GetRoomId())
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -101,7 +101,7 @@ func readWorkers(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGu
 	return outputs_workers.GetOutput{Workers: rowSlice}, nil
 }
 
-func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard) (any, error) {
+func deliver(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
 	var input = dto.(*dtos_workers.DeliverDto)
 	var query = `
 		select * from workers_deliver($1, $2, $3, $4, $5);
@@ -109,28 +109,28 @@ func deliver(app *interfaces.IApp, dto interfaces.IDto, guard interfaces.IGuard)
 	var allowed = false
 	var machineId int64 = 0
 	var workerId int64 = 0
-	if (guard.GetUserType() == "human") {
+	if assistant.GetUserType() == "human" {
 		workerId = input.WorkerId
-	} else if (guard.GetUserType() == "machine") {
-		workerId = guard.GetWorkerId()
+	} else if assistant.GetUserType() == "machine" {
+		workerId = assistant.GetWorkerId()
 	}
 	if err := (*app).GetDatabase().GetDb().QueryRow(
-		context.Background(), query, guard.GetUserId(), guard.GetUserType(), workerId, guard.GetTowerId(), guard.GetRoomId(),
+		context.Background(), query, assistant.GetUserId(), assistant.GetUserType(), workerId, assistant.GetTowerId(), assistant.GetRoomId(),
 	).Scan(&allowed, &machineId); err != nil {
 		fmt.Println(err)
 		return outputs_workers.DeliverOutput{}, err
 	}
 	if allowed {
-		if guard.GetUserType() == "human" {
-			var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: machineId, UserId: guard.GetUserId(), Data: input.Data}
+		if assistant.GetUserType() == "human" {
+			var p = updates_workers.Delivery{TowerId: assistant.GetTowerId(), RoomId: assistant.GetRoomId(), WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.GetUserId(), Data: input.Data}
 			(*app).GetNetwork().PushToUser(machineId, p)
-		} else if (guard.GetUserType() == "machine") {
+		} else if assistant.GetUserType() == "machine" {
 			if input.UserId > 0 {
-				var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: guard.GetUserId(), UserId: input.UserId, Data: input.Data}
+				var p = updates_workers.Delivery{TowerId: assistant.GetTowerId(), RoomId: assistant.GetRoomId(), WorkerId: input.WorkerId, MachineId: assistant.GetUserId(), UserId: input.UserId, Data: input.Data}
 				(*app).GetNetwork().PushToUser(input.UserId, p)
 			} else {
-				var p = updates_workers.Delivery{TowerId: guard.GetTowerId(), RoomId: guard.GetRoomId(), WorkerId: input.WorkerId, MachineId: guard.GetUserId(), Data: input.Data}
-				(*app).GetNetwork().PushToGroup(guard.GetTowerId(), p, []int64{})
+				var p = updates_workers.Delivery{TowerId: assistant.GetTowerId(), RoomId: assistant.GetRoomId(), WorkerId: input.WorkerId, MachineId: assistant.GetUserId(), Data: input.Data}
+				(*app).GetNetwork().PushToGroup(assistant.GetTowerId(), p, []int64{})
 			}
 		}
 	}
