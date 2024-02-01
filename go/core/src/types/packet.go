@@ -2,7 +2,9 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"mime/multipart"
 	"sigma/core/src/interfaces"
 
 	"github.com/valyala/fasthttp"
@@ -60,6 +62,15 @@ func (p WebPacket) GetUri() string {
 	}
 }
 
+func (p WebPacket) GetFormFile(key string) (*multipart.FileHeader, error) {
+	if p.httpContext != nil {
+		fh, err := p.httpContext.FormFile("data")
+		return fh, err
+	} else {
+		return nil, errors.New("context not available")
+	}
+}
+
 func (p WebPacket) Context() *fasthttp.RequestCtx {
 	return p.httpContext
 }
@@ -94,6 +105,17 @@ func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data an
 	}
 }
 
+func (p WebPacket) AnswerWithFile(status int, headers map[string]string, filePath string) {
+	if p.httpContext != nil {
+		p.httpContext.SetStatusCode(status)
+		p.httpContext.SetContentType("application/octet-stream")
+		for k, v := range headers {
+			p.httpContext.Response.Header.Set(k, v)
+		}
+		p.httpContext.SendFile(filePath)
+	}
+}
+
 func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
 	return WebPacket{httpContext: httpContext}
 }
@@ -101,7 +123,7 @@ func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
 func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) interfaces.IPacket {
 	var headers map[string]string
 	err := json.Unmarshal(body, &headers)
-	if (err != nil) {
+	if err != nil {
 		fmt.Println(err.Error())
 	}
 	fmt.Println(headers)

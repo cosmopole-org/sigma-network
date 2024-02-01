@@ -20,7 +20,10 @@ var quit = make(chan struct{})
 
 func main() {
 	app := core.CreateApp(
-		"sigma-sample", "", "", "",
+		"sigma-sample",
+		"",
+		"",
+		"",
 	)
 
 	var apiService = types.CreateService("api").
@@ -31,6 +34,7 @@ func main() {
 				types.CreateCheck(false, false, false),
 				&dtos.HelloDto{},
 				true,
+				false,
 			),
 		)
 	app.AddService(apiService)

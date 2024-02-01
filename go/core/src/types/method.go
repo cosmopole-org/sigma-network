@@ -33,9 +33,10 @@ type Assistant struct {
 	workerId int64
 	towerId  int64
 	roomId   int64
+	packet   interfaces.IPacket
 }
 
-func (g *Assistant) SaveToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
+func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
 	var dirPath = fmt.Sprintf("%s/%d", storageRoot, g.roomId)
 	os.MkdirAll(dirPath, os.ModePerm)
 	f, err := fh.Open()
@@ -56,6 +57,10 @@ func (g *Assistant) SaveToStorage(storageRoot string, fh *multipart.FileHeader, 
 		return err
 	}
 	return nil
+}
+
+func (g *Assistant) GetWebPacket() interfaces.IPacket {
+	return g.packet
 }
 
 func (g *Assistant) GetUserId() int64 {
@@ -84,6 +89,7 @@ type Method struct {
 	check      Check
 	inTemplate interfaces.IDto
 	asEndpoint bool
+	asRaw      bool
 }
 
 func (m Method) GetKey() string {
@@ -114,14 +120,18 @@ func (m Method) AsEndpoint() bool {
 	return m.asEndpoint
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error), check Check, dto interfaces.IDto, asEndpoint bool) Method {
-	return Method{key: key, callback: callback, check: check, inTemplate: dto, asEndpoint: asEndpoint}
+func (m Method) AsRaw() bool {
+	return m.asRaw
+}
+
+func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error), check Check, dto interfaces.IDto, asEndpoint bool, asRaw bool) Method {
+	return Method{key: key, callback: callback, check: check, inTemplate: dto, asEndpoint: asEndpoint, asRaw: asRaw}
 }
 
 func CreateCheck(user bool, tower bool, room bool) Check {
 	return Check{user: user, tower: tower, room: room}
 }
 
-func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64) *Assistant {
-	return &Assistant{userId: userId, userType: userType, towerId: towerId, roomId: roomId, workerId: workerId}
+func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64, packet interfaces.IPacket) *Assistant {
+	return &Assistant{userId: userId, userType: userType, towerId: towerId, roomId: roomId, workerId: workerId, packet: packet}
 }

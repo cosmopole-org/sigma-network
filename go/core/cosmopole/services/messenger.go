@@ -129,8 +129,8 @@ func CreateMessengerService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("cosmopole/database/tables/message.sql")
 
 	return types.CreateService("messenger").
-		AddMethod(types.CreateMethod("create", createMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.CreateDto{}, true)).
-		AddMethod(types.CreateMethod("update", updateMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.UpdateDto{}, true)).
-		AddMethod(types.CreateMethod("delete", deleteMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.DeleteDto{}, true)).
-		AddMethod(types.CreateMethod("read", readMessages, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.ReadDto{}, true))
+		AddMethod(types.CreateMethod("create", createMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.CreateDto{}, true, false)).
+		AddMethod(types.CreateMethod("update", updateMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.UpdateDto{}, true, false)).
+		AddMethod(types.CreateMethod("delete", deleteMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.DeleteDto{}, true, false)).
+		AddMethod(types.CreateMethod("read", readMessages, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.ReadDto{}, true, false))
 }

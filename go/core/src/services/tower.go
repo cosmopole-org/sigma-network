@@ -122,9 +122,9 @@ func CreateTowerService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/towers/create.sql")
 
 	return types.CreateService("towers").
-		AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{}, true)).
-		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.UpdateDto{}, true)).
-		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.DeleteDto{}, true)).
-		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(true, false, false), &dtos_towers.GetDto{}, true)).
-		AddMethod(types.CreateMethod("join", joinTower, types.CreateCheck(true, false, false), &dtos_towers.JoinDto{}, true))
+		AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{}, true, false)).
+		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.UpdateDto{}, true, false)).
+		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.DeleteDto{}, true, false)).
+		AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(true, false, false), &dtos_towers.GetDto{}, true, false)).
+		AddMethod(types.CreateMethod("join", joinTower, types.CreateCheck(true, false, false), &dtos_towers.JoinDto{}, true, false))
 }

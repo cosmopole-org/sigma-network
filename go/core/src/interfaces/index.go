@@ -42,6 +42,7 @@ type IMethod interface {
 	GetCheck() ICheck
 	GetInTemplate() IDto
 	AsEndpoint() bool
+	AsRaw() bool
 }
 
 type IEndpoint interface {
@@ -83,7 +84,8 @@ type IAssistant interface {
 	GetUserType() string
 	GetTowerId() int64
 	GetRoomId() int64
-	SaveToStorage(storageRoot string, fh *multipart.FileHeader, key string) error
+	GetWebPacket() IPacket
+	SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error
 }
 
 type ICheck interface {

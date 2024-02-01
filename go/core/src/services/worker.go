@@ -146,9 +146,9 @@ func CreateWorkerService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/workers/deliver.sql")
 
 	return types.CreateService("machines").
-		AddMethod(types.CreateMethod("create", createWorker, types.CreateCheck(true, true, true), &dtos_workers.CreateDto{}, true)).
-		AddMethod(types.CreateMethod("update", updateWorker, types.CreateCheck(true, true, true), &dtos_workers.UpdateDto{}, true)).
-		AddMethod(types.CreateMethod("delete", deleteWorker, types.CreateCheck(true, true, true), &dtos_workers.DeleteDto{}, true)).
-		AddMethod(types.CreateMethod("read", readWorkers, types.CreateCheck(true, true, true), &dtos_workers.ReadDto{}, true)).
-		AddMethod(types.CreateMethod("deliver", deliver, types.CreateCheck(true, true, true), &dtos_workers.DeliverDto{}, true))
+		AddMethod(types.CreateMethod("create", createWorker, types.CreateCheck(true, true, true), &dtos_workers.CreateDto{}, true, false)).
+		AddMethod(types.CreateMethod("update", updateWorker, types.CreateCheck(true, true, true), &dtos_workers.UpdateDto{}, true, false)).
+		AddMethod(types.CreateMethod("delete", deleteWorker, types.CreateCheck(true, true, true), &dtos_workers.DeleteDto{}, true, false)).
+		AddMethod(types.CreateMethod("read", readWorkers, types.CreateCheck(true, true, true), &dtos_workers.ReadDto{}, true, false)).
+		AddMethod(types.CreateMethod("deliver", deliver, types.CreateCheck(true, true, true), &dtos_workers.DeliverDto{}, true, false))
 }

@@ -93,8 +93,8 @@ func CreateInviteService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/invites/accept.sql")
 
 	return types.CreateService("invites").
-		AddMethod(types.CreateMethod("create", createInvite, types.CreateCheck(true, true, false), &dtos_invites.CreateDto{}, true)).
-		AddMethod(types.CreateMethod("cancel", cancelInvite, types.CreateCheck(true, true, false), &dtos_invites.CancelDto{}, true)).
-		AddMethod(types.CreateMethod("accept", acceptInvite, types.CreateCheck(true, false, false), &dtos_invites.AcceptDto{}, true)).
-		AddMethod(types.CreateMethod("decline", declineInvite, types.CreateCheck(true, false, false), &dtos_invites.DeclineDto{}, true))
+		AddMethod(types.CreateMethod("create", createInvite, types.CreateCheck(true, true, false), &dtos_invites.CreateDto{}, true, false)).
+		AddMethod(types.CreateMethod("cancel", cancelInvite, types.CreateCheck(true, true, false), &dtos_invites.CancelDto{}, true, false)).
+		AddMethod(types.CreateMethod("accept", acceptInvite, types.CreateCheck(true, false, false), &dtos_invites.AcceptDto{}, true, false)).
+		AddMethod(types.CreateMethod("decline", declineInvite, types.CreateCheck(true, false, false), &dtos_invites.DeclineDto{}, true, false))
 }

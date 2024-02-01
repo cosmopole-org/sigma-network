@@ -47,6 +47,7 @@ func (a App) LoadServices() {
 	a.services["invites"] = services.CreateInviteService(apps.GetApp())
 	a.services["machines"] = services.CreateMachineService(apps.GetApp())
 	a.services["workers"] = services.CreateWorkerService(apps.GetApp())
+	a.services["storage"] = services.CreateStorageService(apps.GetApp())
 }
 
 func CreateApp(appId string, databaseUri string, redisUri string, storageRoot string) *App {
