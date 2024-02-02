@@ -1,11 +1,14 @@
 package main
 
 import (
+	"os"
 	cosmopole_services "sigma/core/cosmopole/services"
 	"sigma/core/src/core"
 	"sigma/core/src/dtos"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
+
+	"github.com/joho/godotenv"
 )
 
 func hello(app *interfaces.IApp, d interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
@@ -19,11 +22,17 @@ type Cat struct {
 var quit = make(chan struct{})
 
 func main() {
+
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+
 	app := core.CreateApp(
 		"sigma-sample",
-		"",
-		"",
-		"",
+		os.Getenv("POSTGRES_URI"),
+		os.Getenv("REDIS_URI"),
+		os.Getenv("STORAGE_ROOT_PATH"),
 	)
 
 	var apiService = types.CreateService("api").

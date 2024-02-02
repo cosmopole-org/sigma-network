@@ -67,7 +67,7 @@ func ValidateWebPacket(packet interfaces.IPacket, dto *interfaces.IDto, targetTy
 			wp.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, BuildErrorJson(err.Error()))
 			return false
 		}
-		err1 := json.Unmarshal(body, *dto)
+		err1 := json.Unmarshal(body, dto)
 		if err1 != nil {
 			fmt.Println(err1)
 			wp.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, BuildErrorJson(err1.Error()))

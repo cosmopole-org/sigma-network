@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"sigma/core/src/core/apps"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/outputs"
@@ -13,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/fasthttp/websocket"
+	"github.com/mitchellh/mapstructure"
 	"github.com/valyala/fasthttp"
 )
 
@@ -203,23 +205,24 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 								}
 							},
 						).(types.WebPacket)
-						if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+						var d = temp.(interfaces.IDto)
+						if utils.ValidateWebPacket(packet, &d, utils.BODY) {
 							if method.GetCheck().NeedUser() {
 								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
+										n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0, packet))
+								n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						}
 					}
@@ -264,8 +267,11 @@ func (n *Network) handleWebsocket(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (n *Network) handleRawResult(method *types.Method, assistant *types.Assistant, packet types.WebPacket) {
-	result, err := method.GetCallback()(n.app, nil, assistant)
+func (n *Network) handleRawResult(method *types.Method, assistant *types.Assistant, packet types.WebPacket, formData map[string]any) {
+	var dto = method.GetInTemplate()
+	var d = dto.(interfaces.IDto)
+	mapstructure.Decode(formData, &d)
+	result, err := method.GetCallback()(n.app, d, assistant)
 	if err != nil {
 		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
 	} else {
@@ -280,23 +286,30 @@ func (n *Network) handleRawResult(method *types.Method, assistant *types.Assista
 	}
 }
 
-func (n *Network) handleRawMethod(method types.Method, packet types.WebPacket) {
+func (n *Network) handleRawMethod(method types.Method, packet types.WebPacket, form *multipart.Form) {
+	var formData = map[string]any{}
+	for k, v := range form.Value {
+		formData[k] = v
+	}
+	for k, v := range form.File {
+		formData[k] = v
+	}
 	if method.GetCheck().NeedUser() {
 		var userId, userType = n.authenticate(packet)
 		if userId > 0 {
 			if method.GetCheck().NeedTower() {
 				var location = n.handleLocation(userId, userType, packet)
 				if location.TowerId > 0 {
-					n.handleRawResult(&method, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet), packet)
+					n.handleRawResult(&method, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet), packet, formData)
 				} else {
 					packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 				}
 			} else {
-				n.handleRawResult(&method, types.CreateAssistant(userId, userType, 0, 0, 0, packet), packet)
+				n.handleRawResult(&method, types.CreateAssistant(userId, userType, 0, 0, 0, packet), packet, formData)
 			}
 		}
 	} else {
-		n.handleRawResult(&method, types.CreateAssistant(0, "", 0, 0, 0, packet), packet)
+		n.handleRawResult(&method, types.CreateAssistant(0, "", 0, 0, 0, packet), packet, formData)
 	}
 }
 
@@ -314,47 +327,48 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 				if method != nil && method.AsEndpoint() {
 					var temp = method.GetInTemplate()
 					if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
-						if method.AsRaw() {
-							n.handleRawMethod(method.(types.Method), packet)
-						} else if utils.ValidateWebPacket(packet, &temp, utils.BODY) {
+						form, err := ctx.MultipartForm()
+						var d = temp.(interfaces.IDto)
+						if err == nil {
+							n.handleRawMethod(method.(types.Method), packet, form)
+						} else if utils.ValidateWebPacket(packet, &d, utils.BODY) {
 							if method.GetCheck().NeedUser() {
 								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
+										n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0, packet))
+								n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						}
 					} else if ctx.IsGet() {
-						if method.AsRaw() {
-							n.handleRawMethod(method.(types.Method), packet)
-						} else if utils.ValidateWebPacket(packet, &temp, utils.QUERY) {
+						var d = temp.(interfaces.IDto)
+						if utils.ValidateWebPacket(packet, &d, utils.QUERY) {
 							if method.GetCheck().NeedUser() {
 								var userId, userType = n.authenticate(packet)
 								if userId > 0 {
 									if method.GetCheck().NeedTower() {
 										var location = n.handleLocation(userId, userType, packet)
 										if location.TowerId > 0 {
-											n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
+										n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								n.handleResult(method.GetCallback(), packet, temp, types.CreateAssistant(0, "", 0, 0, 0, packet))
+								n.handleResult(method.GetCallback(), packet, d, types.CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						}
 					}

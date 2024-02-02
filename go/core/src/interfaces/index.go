@@ -40,7 +40,7 @@ type IMethod interface {
 	SetCallback(callback func(app *IApp, input IDto, assistant IAssistant) (any, error))
 	GetCallback() func(app *IApp, input IDto, assistant IAssistant) (any, error)
 	GetCheck() ICheck
-	GetInTemplate() IDto
+	GetInTemplate() interface{}
 	AsEndpoint() bool
 	AsRaw() bool
 }

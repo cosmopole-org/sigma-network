@@ -87,7 +87,7 @@ type Method struct {
 	key        string
 	callback   func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error)
 	check      Check
-	inTemplate interfaces.IDto
+	inTemplate interface{}
 	asEndpoint bool
 	asRaw      bool
 }
@@ -108,7 +108,7 @@ func (m Method) GetCallback() func(app *interfaces.IApp, dto interfaces.IDto, as
 	return m.callback
 }
 
-func (m Method) GetInTemplate() interfaces.IDto {
+func (m Method) GetInTemplate() interface{} {
 	return m.inTemplate
 }
 
@@ -124,7 +124,7 @@ func (m Method) AsRaw() bool {
 	return m.asRaw
 }
 
-func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error), check Check, dto interfaces.IDto, asEndpoint bool, asRaw bool) Method {
+func CreateMethod(key string, callback func(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error), check Check, dto interface{}, asEndpoint bool, asRaw bool) Method {
 	return Method{key: key, callback: callback, check: check, inTemplate: dto, asEndpoint: asEndpoint, asRaw: asRaw}
 }
 

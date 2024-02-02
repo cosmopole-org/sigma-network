@@ -12,13 +12,8 @@ import (
 )
 
 func UploadFile(app *interfaces.IApp, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
-	packet := assistant.GetWebPacket().(types.WebPacket)
-	fh, err := packet.GetFormFile("data")
-	if err != nil {
-		fmt.Println(err)
-		return outputs_storage.Binary{}, err
-	}
-	if err := assistant.SaveFileToStorage((*app).GetStorageRoot(), fh, string(packet.GetHeader("data_key"))); err != nil {
+	var input = dto.(*dtos_storage.UploadDto)
+	if err := assistant.SaveFileToStorage((*app).GetStorageRoot(), input.Data[0], input.DataKey[0]); err != nil {
 		fmt.Println(err)
 		return outputs_storage.Binary{}, err
 	}
@@ -37,6 +32,6 @@ func DownloadFile(app *interfaces.IApp, dto interfaces.IDto, assistant interface
 
 func CreateStorageService(app *interfaces.IApp) interfaces.IService {
 	return types.CreateService("storage").
-		AddMethod(types.CreateMethod("upload", UploadFile, types.CreateCheck(true, true, true), nil, true, true)).
+		AddMethod(types.CreateMethod("upload", UploadFile, types.CreateCheck(true, true, true), &dtos_storage.UploadDto{}, true, false)).
 		AddMethod(types.CreateMethod("download", DownloadFile, types.CreateCheck(true, true, true), &dtos_storage.DownloadDto{}, true, false))
 }
