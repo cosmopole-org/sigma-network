@@ -31,7 +31,7 @@ func DownloadFile(app *interfaces.IApp, dto interfaces.IDto, assistant interface
 }
 
 func CreateStorageService(app *interfaces.IApp) interfaces.IService {
-	return types.CreateService("storage").
+	return types.CreateService(app, "storage").
 		AddMethod(types.CreateMethod("upload", UploadFile, types.CreateCheck(true, true, true), &dtos_storage.UploadDto{}, true, false)).
 		AddMethod(types.CreateMethod("download", DownloadFile, types.CreateCheck(true, true, true), &dtos_storage.DownloadDto{}, true, false))
 }

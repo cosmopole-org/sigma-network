@@ -382,9 +382,9 @@ func (n *Network) fastHTTPHandler(ctx *fasthttp.RequestCtx) {
 	}
 }
 
-func (n *Network) Listen(restPort int, socketPort int) {
-	fmt.Println(fmt.Sprintf("Listening to rest port %d ...", restPort))
-	go fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", restPort), n.fastHTTPHandler)
+func (n *Network) Listen(port int) {
+	fmt.Println(fmt.Sprintf("Listening to rest port %d ...", port))
+	go fasthttp.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), n.fastHTTPHandler)
 }
 
 func (n *Network) PushToUser(userId int64, data any) {

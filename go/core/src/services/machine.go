@@ -112,7 +112,7 @@ func CreateMachineService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/machines/delete.sql")
 	utils.ExecuteSqlFile("src/database/functions/machines/get.sql")
 
-	return types.CreateService("machines").
+	return types.CreateService(app, "machines").
 		AddMethod(types.CreateMethod("create", createMachine, types.CreateCheck(true, false, false), &dtos_machines.CreateDto{}, true, false)).
 		AddMethod(types.CreateMethod("update", updateMachine, types.CreateCheck(true, false, false), &dtos_machines.UpdateDto{}, true, false)).
 		AddMethod(types.CreateMethod("delete", deleteMachine, types.CreateCheck(true, false, false), &dtos_machines.DeleteDto{}, true, false)).

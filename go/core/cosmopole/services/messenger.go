@@ -128,7 +128,7 @@ func CreateMessengerService(app *interfaces.IApp) interfaces.IService {
 	// Tables
 	utils.ExecuteSqlFile("cosmopole/database/tables/message.sql")
 
-	return types.CreateService("messenger").
+	return types.CreateService(app, "messenger").
 		AddMethod(types.CreateMethod("create", createMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.CreateDto{}, true, false)).
 		AddMethod(types.CreateMethod("update", updateMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.UpdateDto{}, true, false)).
 		AddMethod(types.CreateMethod("delete", deleteMessage, types.CreateCheck(true, true, true), &cosmopole_dtos_messenger.DeleteDto{}, true, false)).

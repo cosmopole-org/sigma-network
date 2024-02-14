@@ -121,7 +121,7 @@ func CreateTowerService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/towers/get.sql")
 	utils.ExecuteSqlFile("src/database/functions/towers/create.sql")
 
-	return types.CreateService("towers").
+	return types.CreateService(app, "towers").
 		AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), &dtos_towers.CreateDto{}, true, false)).
 		AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), &dtos_towers.UpdateDto{}, true, false)).
 		AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), &dtos_towers.DeleteDto{}, true, false)).

@@ -167,7 +167,7 @@ func CreateHumanService(app *interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/humans/complete.sql")
 	utils.ExecuteSqlFile("src/database/functions/humans/verify.sql")
 
-	return types.CreateService("humans").
+	return types.CreateService(app, "humans").
 		AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), &dtos_humans.SignupDto{}, true, false)).
 		AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), &dtos_humans.VerifyDto{}, true, false)).
 		AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), &dtos_humans.CompleteDto{}, true, false)).

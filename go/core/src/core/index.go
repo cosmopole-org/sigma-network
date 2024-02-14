@@ -37,8 +37,8 @@ func (a App) GetNetwork() interfaces.INetwork {
 func (a App) GetStorageRoot() string {
 	return a.storageRoot
 }
-func (a App) Listen(restPort int, socketPort int) {
-	a.network.Listen(restPort, socketPort)
+func (a App) Listen(port int) {
+	a.network.Listen(port)
 }
 func (a App) LoadServices() {
 	a.services["humans"] = services.CreateHumanService(apps.GetApp())

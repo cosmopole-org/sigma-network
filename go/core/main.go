@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	cosmopole_services "sigma/core/cosmopole/services"
 	"sigma/core/src/core"
 	"sigma/core/src/dtos"
+	dtos_humans "sigma/core/src/dtos/humans"
 	"sigma/core/src/interfaces"
 	"sigma/core/src/types"
 
@@ -35,7 +37,8 @@ func main() {
 		os.Getenv("STORAGE_ROOT_PATH"),
 	)
 
-	var apiService = types.CreateService("api").
+	var iapp interfaces.IApp = *app
+	var apiService = types.CreateService(&iapp, "api").
 		AddMethod(
 			types.CreateMethod(
 				"hello",
@@ -47,11 +50,15 @@ func main() {
 			),
 		)
 	app.AddService(apiService)
-
-	var iapp interfaces.IApp = *app
 	app.AddService(cosmopole_services.CreateMessengerService(&iapp))
 
-	app.Listen(8000, 8001)
+	app.Listen(8000)
 
+	result, err := app.GetService("humans").CallMethod("signup", &dtos_humans.SignupDto{Email: "..."}, types.CreateAssistant(0, "", 0, 0, 0, nil))
+	if (err != nil) {
+		fmt.Println(err)
+	} else {
+		fmt.Println(result)
+	}
 	<-quit
 }

@@ -9,7 +9,7 @@ import (
 type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
-	Listen(restPort int, socketPort int)
+	Listen(port int)
 	GetDatabase() IDatabase
 	GetMemory() IMemory
 	GetNetwork() INetwork
@@ -29,7 +29,7 @@ type IService interface {
 	GetKey() string
 	AddMethod(method IMethod) IService
 	GetMethod(key string) IMethod
-	CallMethod(app *IApp, key string, dto IDto, assistant IAssistant) (any, error)
+	CallMethod(key string, dto IDto, assistant IAssistant) (any, error)
 	SetKey(key string)
 	SetMethods(methods map[string]IMethod)
 }
@@ -67,7 +67,7 @@ type IMemory interface {
 }
 
 type INetwork interface {
-	Listen(restPort int, socketPort int)
+	Listen(port int)
 	PushToUser(userId int64, data any)
 	PushToGroup(groupId int64, data any, exceptions []int64)
 	JoinGroup(groupId int64, userId int64)
