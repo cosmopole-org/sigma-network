@@ -20,9 +20,9 @@ func (s Service) GetMethod(key string) interfaces.IMethod {
 	return s.methods[key]
 }
 
-func (s Service) CallMethod(key string, dto interfaces.IDto, assistant interfaces.IAssistant) (any, error) {
+func (s Service) CallMethod(key string, dto interfaces.IDto, meta interfaces.Meta) (any, error) {
 	var method = s.GetMethod(key)
-	return method.GetCallback()(s.app, dto, assistant)
+	return method.GetCallback()(s.app, dto, CreateAssistant(meta.UserId, "human", meta.TowerId, meta.RoomId, 0, nil))
 }
 
 func (s Service) GetKey() string {

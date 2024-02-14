@@ -6,6 +6,12 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
+type Meta struct {
+	UserId int64
+	TowerId int64
+	RoomId int64
+}
+
 type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
@@ -29,7 +35,7 @@ type IService interface {
 	GetKey() string
 	AddMethod(method IMethod) IService
 	GetMethod(key string) IMethod
-	CallMethod(key string, dto IDto, assistant IAssistant) (any, error)
+	CallMethod(key string, dto IDto, meta Meta) (any, error)
 	SetKey(key string)
 	SetMethods(methods map[string]IMethod)
 }

@@ -54,7 +54,7 @@ func main() {
 
 	app.Listen(8000)
 
-	result, err := app.GetService("humans").CallMethod("signup", &dtos_humans.SignupDto{Email: "..."}, types.CreateAssistant(0, "", 0, 0, 0, nil))
+	result, err := app.GetService("humans").CallMethod("signup", &dtos_humans.SignupDto{Email: "..."}, interfaces.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	if (err != nil) {
 		fmt.Println(err)
 	} else {
