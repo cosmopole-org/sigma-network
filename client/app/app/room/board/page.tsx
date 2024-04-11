@@ -15,8 +15,8 @@ export default function Board() {
                     <img
                         alt="header"
                         src={theme === 'light' ?
-                            'https://i.pinimg.com/564x/95/65/ac/9565acb26c627decd036b2118fdb68f3.jpg' :
-                            'https://i.pinimg.com/564x/88/f5/46/88f546fea513dc0e73bccefe3ac92eef.jpg'}
+                            'https://i.pinimg.com/564x/ca/87/e9/ca87e97194cd4c53fcb270db01b6e86d.jpg' :
+                            'https://i.pinimg.com/564x/51/93/43/519343f938c61822d039f31fb9ad96c8.jpg'}
                         className="object-cover w-full h-full absolute left-0 top-0"
                     />
                 </div>

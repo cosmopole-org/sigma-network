@@ -10,7 +10,7 @@ import TowerCreateModal, { switchTowerCreateModal } from "@/components/home/towe
 
 export default function Spaces() {
     return (
-        <div className="w-full relative bg-white dark:bg-darker-black">
+        <div className="w-full relative">
             <HomeNavbar />
             <HomeTowersList />
             <HomeRoomsList />

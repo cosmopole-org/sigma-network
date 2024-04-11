@@ -1,7 +1,8 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react"
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react"
+import TextField from "../elements/textfield";
 
 const towerCreateModalShow = hookstate(false);
 export const switchTowerCreateModal = (v: boolean) => {
@@ -25,7 +26,7 @@ export default function TowerCreateModal() {
                             <p>
                                 Please choose a name for your tower.
                             </p>
-                            <Input label="Tower Name" />
+                            <TextField label="Tower Name" />
                         </ModalBody>
                         <ModalFooter>
                             <Button color="danger" variant="light" onPress={onClose}>

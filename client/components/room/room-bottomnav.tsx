@@ -28,7 +28,7 @@ export default function RoomBottomNav() {
         router.replace('/app/room/' + key);
     }
     return (
-        <Card isBlurred className="grid grid-cols-4 fixed bottom-0 left-0 w-full h-[72px] pt-1" style={{ borderRadius: '24px 24px 0px 0px', zIndex: 1000, backgroundColor: theme === 'light' ? "#ffffffaf" : "#171717bf" }}>
+        <Card isBlurred className="grid grid-cols-4 fixed bottom-0 left-0 w-full h-[72px] pt-1" style={{ borderRadius: '24px 24px 0px 0px', zIndex: 1000, backgroundColor: theme === 'light' ? "#ffffffaf" : "#172024af" }}>
             <BottomNavItem itemKey="board" selected={selectedState.get({ noproxy: true })} title="Board" icon="board" onClick={onItemClick('board')} />
             <BottomNavItem itemKey="chat" selected={selectedState.get({ noproxy: true })} title="Chat" icon="chat" onClick={onItemClick('chat')} />
             <BottomNavItem itemKey="files" selected={selectedState.get({ noproxy: true })} title="Files" icon="storage" onClick={onItemClick('files')} />

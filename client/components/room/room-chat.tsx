@@ -12,7 +12,7 @@ export default function Chat() {
                     base: "h-10",
                     mainWrapper: "items-center h-full",
                     input: "text-small text-center",
-                    inputWrapper: "w-[90%] backdrop-blur items-center fixed bottom-20 left-[5%] h-12 font-normal text-default-500 rounded-3xl",
+                    inputWrapper: "bg-content2 w-[90%] backdrop-blur items-center fixed bottom-20 left-[5%] h-12 font-normal text-default-500 rounded-3xl",
                 }}
                 placeholder="Type your message..."
                 size="lg"

@@ -12,6 +12,7 @@ export default function CallNavbar() {
         <Navbar
             isBordered
             className={"h-[64px] fixed"}
+            isBlurred={false}
         >
             <NavbarContent as="div" className={"items-center w-full h-[64px]"} justify="center">
                 <div className={"w-full"}>

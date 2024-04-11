@@ -19,9 +19,7 @@ module.exports = {
       'white': '#ffffff',
       'black': '#171717',
       's-white': '#e6e6e6',
-      's-black': '#2f2f2f',
-      'darker-black': '#18181b',
-      'dark-black': '#202023',
+      's-black': '#172024',
       'passive': '#888888',
       'message': '#bbf',
       'link': '#08f'
@@ -47,7 +45,11 @@ module.exports = {
             DEFAULT: "rgb(41, 98, 255)",
             foreground: "#ffffff",
           },
-          content1: '#202023'
+          background: '#0f171b',
+          content1: '#172024',
+          content2: '#1b2730',
+          content3: '#213037',
+          content4: '#334048',
         },
       },
     },

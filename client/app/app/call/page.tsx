@@ -23,7 +23,7 @@ export default function Call() {
                 ))}
                 <div className='w-full h-[84px] grid-span-2' />
             </div>
-            <Card radius='none' className="w-full h-[88px] fixed bottom-0 left-0 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-lg gap-6 items-center justify-center flex flex-row">
+            <Card radius='none' className="w-full h-[88px] fixed bottom-0 left-0 backdrop-blur-lg gap-6 items-center justify-center flex flex-row">
                 <Button radius='full' isIconOnly className='w-12 h-12' onClick={() => setCam(!cam)}>
                     <Icon name='toggleCam' size={[32, 32]} color={cam ? '#0b7' : undefined} />
                 </Button>

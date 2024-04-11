@@ -1,7 +1,8 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Button, Input, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react"
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@nextui-org/react"
+import TextField from "../elements/textfield";
 
 const contactCreateModalShow = hookstate(false);
 export const switchContactCreateModal = (v: boolean) => {
@@ -25,9 +26,9 @@ export default function ContactCreateModal() {
                             <p>
                                 Please enter your new contact info below.
                             </p>
-                            <Input label="Contact Firstname" />
-                            <Input label="Contact Lastname" />
-                            <Input label="Phone Number" />
+                            <TextField label="Contact Firstname" />
+                            <TextField label="Contact Lastname" />
+                            <TextField label="Phone Number" />
                         </ModalBody>
                         <ModalFooter>
                             <Button color="danger" variant="light" onPress={onClose}>

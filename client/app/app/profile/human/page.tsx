@@ -13,7 +13,7 @@ export default function HumanProfile() {
     const containerRef = useRef<HTMLDivElement>(null);
     return (
         <div ref={containerRef} className={"w-full h-full relative overflow-x-hidden overflow-y-auto"}>
-            <div className="fixed left-0 top-0 w-full h-full bg-white dark:bg-dark-black" />
+            <div className="fixed left-0 top-0 w-full h-full bg-s-white dark:bg-background" />
             <div className="area" style={{ backgroundColor: 'rgb(41, 98, 255)' }}>
                 <ul className="circles">
                     <li></li>
