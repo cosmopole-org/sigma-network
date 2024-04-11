@@ -38,6 +38,13 @@ const emojis = [
 
 export const getFiles = () => files
 
+const wallpapers = {
+    LIGHT: 'https://i.pinimg.com/564x/e8/a6/00/e8a6003f5a429ea2a02b50b5f1fba747.jpg',
+    DARK: 'https://i.pinimg.com/564x/4e/96/62/4e9662ad414c005a9026ff029fb85720.jpg'
+}
+
+export const getWallpapers = () => wallpapers
+
 const files = [
     {
         title: "Orange",
