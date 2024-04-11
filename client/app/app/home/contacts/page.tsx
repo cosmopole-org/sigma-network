@@ -9,7 +9,7 @@ import ContactCreateModal, { switchContactCreateModal } from "@/components/home/
 
 export default function Contacts() {
     return (
-        <div className="w-full relative">
+        <div className="w-full relative bg-white dark:bg-darker-black">
             <HomeNavbar />
             <HomePeopleList />
             <Button

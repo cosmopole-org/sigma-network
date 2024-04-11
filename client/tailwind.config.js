@@ -20,6 +20,8 @@ module.exports = {
       'black': '#171717',
       's-white': '#e6e6e6',
       's-black': '#2f2f2f',
+      'darker-black': '#18181b',
+      'dark-black': '#202023',
       'passive': '#888888',
       'message': '#bbf',
       'link': '#08f'
@@ -44,7 +46,8 @@ module.exports = {
           primary: {
             DEFAULT: "rgb(41, 98, 255)",
             foreground: "#ffffff",
-          }
+          },
+          content1: '#202023'
         },
       },
     },
