@@ -34,7 +34,7 @@ module.exports = {
       light: {
         colors: {
           primary: {
-            DEFAULT: "rgb(41, 98, 255)",
+            DEFAULT: "#006FEE",
             foreground: "#ffffff",
           }
         },
@@ -42,8 +42,8 @@ module.exports = {
       dark: {
         colors: {
           primary: {
-            DEFAULT: "rgb(41, 98, 255)",
-            foreground: "#ffffff",
+            DEFAULT: "#BEF264",
+            foreground: "#000000",
           },
           background: '#0f171b',
           content1: '#172024',

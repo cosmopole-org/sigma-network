@@ -154,6 +154,7 @@ function Board({ changeScrollLock, getSCrollY }: Readonly<{ changeScrollLock: (v
                             <div
                                 className="overflow-hidden w-full h-full rounded-xl"
                                 style={{
+                                    border: theme === 'light' ? '1px solid #006FEE' : '1px solid #BEF264',
                                     backgroundColor: dragging === k ? 'transparent' : theme === 'light' ? '#ffffff6f' : '#2828286f',
                                     display: draggingIdState.get({ noproxy: true }) === k ? 'none' : 'block'
                                 }}>
