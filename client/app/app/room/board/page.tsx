@@ -9,7 +9,7 @@ export default function Board() {
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     return (
-        <div ref={containerRef} className="w-full h-full relative">
+        <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto">
             <div className="fixed top-0 left-0 overflow-hidden w-full h-full">
                 <div className="relative w-full h-full">
                     <img
@@ -29,7 +29,7 @@ export default function Board() {
                     }
                 }}
                 getSCrollY={() => {
-                    return (containerRef.current?.scrollTop ?? 0) + 196;
+                    return (containerRef.current?.scrollTop ?? 0) + 72;
                 }} />
         </div>
     );

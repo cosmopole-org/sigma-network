@@ -18,7 +18,7 @@ export const switchRoomNav = (v: boolean) => {
 export default function RoomNavbar() {
     const router = useRouter();
     const roomSectionState = useHookstate(selectedRoomSection);
-    const showSearchbar = ['board', 'files'].includes(roomSectionState.get({ noproxy: true }));
+    const showSearchbar = ['files'].includes(roomSectionState.get({ noproxy: true }));
     const roomNavShowState = useHookstate(roomNavShow);
     return (
         <Navbar
