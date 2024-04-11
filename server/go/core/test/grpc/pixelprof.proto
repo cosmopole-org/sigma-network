@@ -1,0 +1,130 @@
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+option go_package = "google.golang.org/grpc/pixelprof_grpc";
+option java_multiple_files = true;
+option java_package = "io.grpc.pixelprof";
+option java_outer_classname = "PixelProfProto";
+
+package pixelprof;
+
+// service
+
+service DaService {
+  rpc update (DaUpdateRequest) returns (DaUpdateReply) {}
+  rpc report (DaReportRequest) returns (DaReportReply) {}
+  rpc read (DaReadRequest) returns (DaReadReply) {}
+}
+
+// models
+
+message DeviceApp {
+	int64  id = 1;
+  string appId = 2;
+	string appName = 3;
+	int64  usage = 4;
+	string isBlocked = 5;
+	string deviceId = 6;
+	int64  creditMultiply = 7;
+}
+
+// messages
+
+message DaUpdateRequest {
+  string data = 1;
+  string appId = 2;
+	string deviceId = 3;
+	string type = 4;
+	string isBlocked = 5;
+	int64  usage = 6;
+	int64  creditMultiply = 7;
+}
+
+message DaUpdateReply {}
+
+message DaReportRequest {
+  repeated DeviceApp apps = 1;
+}
+
+message DaReportReply {}
+
+message DaReadRequest {
+  string deviceId = 1;
+	string offset = 2;
+	string count = 3;
+}
+
+message DaReadReply {
+  repeated DeviceApp deviceApps = 1;
+}
+
+// service
+
+service DiService {
+  rpc create (DiCreateRequest) returns (DiCreateReply) {}
+  rpc update (DiUpdateRequest) returns (DiUpdateReply) {}
+  rpc find (DiFindRequest) returns (DiFindReply) {}
+  rpc read (DiReadRequest) returns (DiReadReply) {}
+}
+
+// models
+
+message DeviceInfo {
+	int64 id = 1;
+  	string deviceId = 2;
+  	int64 credit = 3;
+  	int64 creditTimeRatio = 4;
+	int64 supervisor = 5;
+}
+
+// messages
+
+message DiCreateRequest {
+	string deviceId = 1;
+	int64 credit = 2;
+	int64 creditTimeRatio = 3;
+	string kidName = 4;
+}
+
+message DiCreateReply {
+  DeviceInfo deviceInfo = 1;
+}
+
+message DiUpdateRequest {
+  string deviceId = 1;
+	int64 credit = 2;
+	int64 creditTimeRatio = 3;
+	string kidName = 4;
+}
+
+message DiUpdateReply {}
+
+message DiFindRequest {
+  string DeviceId = 1;
+}
+
+message DiFindReply {
+  DeviceInfo deviceInfo = 1;
+}
+
+message DiReadRequest {
+	string offset = 2;
+	string count = 3;
+}
+
+message DiReadReply {
+  repeated DeviceInfo deviceInfos = 1;
+}
