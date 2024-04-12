@@ -29,13 +29,19 @@ export default function HumanProfile() {
                 <p className="text-xl text-center w-full mt-6" style={{ color: color }}>Edward Kasperian</p>
             </div>
             <div className="justify-center flex w-full h-auto pl-4 pr-4 gap-4 absolute top-[280px]">
-                <Button isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
+                <Button
+                    onClick={() => router.push('/app/room/chat')}
+                    isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='message' size={[24, 24]} />
                 </Button>
-                <Button isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
+                <Button
+                    onClick={() => router.push('/app/call')}
+                    isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='toggleCam' size={[24, 24]} />
                 </Button>
-                <Button isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
+                <Button
+                    onClick={() => router.push('/app/call')}
+                    isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='call' size={[24, 24]} />
                 </Button>
                 <Button isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">

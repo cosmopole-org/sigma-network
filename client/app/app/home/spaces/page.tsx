@@ -7,6 +7,7 @@ import HomeNavbar from "@/components/home/home-navbar";
 import { Button } from "@nextui-org/react";
 import Icon from "@/components/elements/icon";
 import TowerCreateModal, { switchTowerCreateModal } from "@/components/home/tower-create-modal";
+import HomeFoldersModal, { switchHomeFoldersModal } from "@/components/home/home-folders-modal";
 
 export default function Spaces() {
     return (
@@ -25,7 +26,18 @@ export default function Spaces() {
                 <Icon name="add" />
                 Create new space
             </Button>
+            <Button
+                isIconOnly
+                color="primary"
+                variant="shadow"
+                className="fixed bottom-[88px] right-2/4 translate-x-[155px]"
+                radius="full"
+                onClick={() => switchHomeFoldersModal(true)}
+            >
+                <Icon name="storage" />
+            </Button>
             <TowerCreateModal />
+            <HomeFoldersModal />
         </div>
     );
 }

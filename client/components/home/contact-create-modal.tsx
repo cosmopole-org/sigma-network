@@ -18,7 +18,7 @@ export default function ContactCreateModal() {
             isOpen={open.get({ noproxy: true })}
             onClose={() => open.set(false)}
         >
-            <ModalContent>
+            <ModalContent className="m-6">
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col gap-1">Create new contact</ModalHeader>
