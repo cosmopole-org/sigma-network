@@ -32,7 +32,7 @@ export default function HomeFoldersModal() {
                                         }
                                     } className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                                         <div className="flex gap-2 w-full">
-                                            <Icon iconType="circle" name="storage" size={[48, 48]} className="w-[68px]" />
+                                            <Icon iconType="circle" name="storage" size={[40, 40]} className="w-[68px]" />
                                             <div className="flex flex-col relative w-full">
                                                 <span className="text-lg text-left">{item.name}</span>
                                                 <span className="text-md text-default-400 text-left">3 towers</span>
