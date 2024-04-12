@@ -22,7 +22,7 @@ export default function HomeFoldersModal() {
             <ModalContent className="m-6">
                 {(onClose) => (
                     <>
-                        <ModalHeader className="flex flex-col gap-1">Create new tower</ModalHeader>
+                        <ModalHeader className="flex flex-col gap-1">Towers Folders</ModalHeader>
                         <ModalBody className="p-0">
                             <div className="w-full h-[400px] overflow-x-hidden overflow-y-auto pl-4 pr-4">
                                 {getUsers().map(item => (

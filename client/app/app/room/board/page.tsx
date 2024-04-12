@@ -22,6 +22,7 @@ export default function Board() {
             </div>
             <RoomNavbar />
             <BoardEl
+                highlightColor={theme === 'light' ? '#006FEE' : '#ffffff'}
                 changeScrollLock={(v: boolean) => {
                     if (containerRef.current) {
                         containerRef.current.style.overflow = v ? 'hidden' : '';

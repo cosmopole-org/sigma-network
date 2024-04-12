@@ -13,11 +13,11 @@ export default function HumanProfile() {
     const router = useRouter()
     const containerRef = useRef<HTMLDivElement>(null);
     const { theme } = useTheme();
-    const color = theme === 'light' ? '#fff' : '#000';
+    const color = '#fff';
     return (
         <div ref={containerRef} className={"w-full h-full relative overflow-x-hidden overflow-y-auto"}>
             <div className="fixed left-0 top-0 w-full h-full bg-s-white dark:bg-background" />
-            <div className="area" style={{ backgroundColor: theme === 'light' ? 'rgb(41, 98, 255)' : '#BEF264' }}>
+            <div className="area" style={{ backgroundColor: theme === 'light' ? 'rgb(41, 98, 255)' : '#7828C8' }}>
                 <ul className="circles">
                     {Array.from(Array(10).keys()).map(i => <li style={{ backgroundColor: theme === 'light' ? '#fff7' : '#0005' }} key={i}></li>)}
                 </ul>
@@ -51,6 +51,7 @@ export default function HumanProfile() {
             <div className="w-full h-auto pl-2 pr-2 pt-1 pb-2 gap-4">
                 <div className="w-full h-auto absolute left-0">
                     <Board
+                        highlightColor={theme === 'light' ? '#006FEE' : '#7828C8'}
                         changeScrollLock={(v: boolean) => {
                             if (containerRef.current) {
                                 containerRef.current.style.overflow = v ? 'hidden' : '';

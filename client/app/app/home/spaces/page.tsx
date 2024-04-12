@@ -8,6 +8,7 @@ import { Button } from "@nextui-org/react";
 import Icon from "@/components/elements/icon";
 import TowerCreateModal, { switchTowerCreateModal } from "@/components/home/tower-create-modal";
 import HomeFoldersModal, { switchHomeFoldersModal } from "@/components/home/home-folders-modal";
+import HomeArchiveModal, { switchHomeArchiveModal } from "@/components/home/home-archive-modal";
 
 export default function Spaces() {
     return (
@@ -36,8 +37,19 @@ export default function Spaces() {
             >
                 <Icon name="storage" />
             </Button>
+            <Button
+                isIconOnly
+                color="primary"
+                variant="shadow"
+                className="fixed bottom-[88px] left-2/4 -translate-x-[155px]"
+                radius="full"
+                onClick={() => switchHomeArchiveModal(true)}
+            >
+                <Icon name="archive" />
+            </Button>
             <TowerCreateModal />
             <HomeFoldersModal />
+            <HomeArchiveModal />
         </div>
     );
 }

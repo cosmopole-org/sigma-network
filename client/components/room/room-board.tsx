@@ -14,12 +14,12 @@ type Box = { el: HTMLDivElement | any, key: string, x: number, y: number, w: num
 let boxes: { [id: string]: Box } = {
     red: { el: null, key: 'red', x: 0, y: 0, w: 150, h: 150, color: '#ffffff6f', oldY: 0 },
     green: { el: null, key: 'green', x: 0, y: 150, w: 150, h: 150, color: '#ffffff6f', oldY: 150 },
-    post1: { el: null, key: 'post1', x: 0, y: 300, w: 300, h: 270, color: '#ffffff6f', oldY: 300 },
-    blue: { el: null, key: 'blue', x: 0, y: 450, w: 150, h: 150, color: '#ffffff6f', oldY: 300 },
-    red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: '#ffffff6f', oldY: 450 },
-    post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 270, color: '#ffffff6f', oldY: 300 },
-    green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: '#ffffff6f', oldY: 600 },
-    blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: '#ffffff6f', oldY: 750 }
+    post1: { el: null, key: 'post1', x: 0, y: 300, w: 300, h: 262, color: '#ffffff6f', oldY: 300 },
+    blue: { el: null, key: 'blue', x: 0, y: 450, w: 150, h: 150, color: '#ffffff6f', oldY: 450 },
+    red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: '#ffffff6f', oldY: 600 },
+    post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 262, color: '#ffffff6f', oldY: 750 },
+    green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: '#ffffff6f', oldY: 900 },
+    blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: '#ffffff6f', oldY: 1050 }
 }
 let dragging: string | undefined = undefined;
 let mdX = 0, mdY = 0
@@ -55,7 +55,7 @@ const measureFinal = () => {
 
 let initialPosX = 0, initialPosY = 0, relPosX = -1, relPosY = -1;
 
-function Board({ changeScrollLock, getSCrollY }: Readonly<{ changeScrollLock: (v: boolean) => void, getSCrollY: () => number }>) {
+function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ highlightColor: string, changeScrollLock: (v: boolean) => void, getSCrollY: () => number }>) {
     let wid = 0;
     let blockWidth = 0;
     if (typeof window !== 'undefined') {
@@ -84,7 +84,7 @@ function Board({ changeScrollLock, getSCrollY }: Readonly<{ changeScrollLock: (v
                     else boxes[k].x = blockWidth + 4;
                 } else {
                     boxes[k].w = blockWidth * 2;
-                    boxes[k].h = 270;
+                    boxes[k].h = 262;
                     boxes[k].x = 4;
                 }
             })
@@ -154,7 +154,7 @@ function Board({ changeScrollLock, getSCrollY }: Readonly<{ changeScrollLock: (v
                             <div
                                 className="overflow-hidden w-full h-full rounded-xl"
                                 style={{
-                                    border: theme === 'light' ? '1px solid #006FEE' : '1px solid #BEF264',
+                                    border: `1px solid ${highlightColor}`,
                                     backgroundColor: dragging === k ? 'transparent' : theme === 'light' ? '#ffffff6f' : '#2828286f',
                                     display: draggingIdState.get({ noproxy: true }) === k ? 'none' : 'block'
                                 }}>
