@@ -129,6 +129,7 @@ export default function RootLayout({
 				<title>Sigma</title>
 				<meta name='description' content='Welcome to Sigma universe!' />
 				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
+				<link rel="manifest" href="/manifest.json" />
 			</head>
 			<body
 				className={clsx(
