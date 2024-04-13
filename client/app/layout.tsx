@@ -16,6 +16,7 @@ import 'swiper/css';
 import 'swiper/css/effect-creative';
 import { switchHomeNav } from "@/components/home/home-navbar";
 import { switchRoomNav } from "@/components/room/room-navbar";
+import { useTheme } from "next-themes";
 
 let dynamicPath = '';
 
@@ -92,6 +93,7 @@ export default function RootLayout({
 	const showLoadingState = useHookstate(showMainLoading);
 	const [h, setH] = useState(0)
 	const handleResize = () => setH(window.innerHeight);
+	const { theme } = useTheme();
 	useEffect(() => {
 		handleResize()
 		window.addEventListener('resize', handleResize)
@@ -100,7 +102,9 @@ export default function RootLayout({
 	}, [])
 	return (
 		<html lang="en" suppressHydrationWarning>
-			<head />
+			<head>
+				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
+			</head>
 			<body
 				className={clsx(
 					"bg-background font-sans antialiased",
@@ -108,7 +112,7 @@ export default function RootLayout({
 				)}
 			>
 				<Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-					<div className="relative flex flex-col" style={{height: h}}>
+					<div className="relative flex flex-col" style={{ height: h }}>
 						<main className="w-full h-full">
 							<Swiper
 								onInit={(swiper: any) => {
