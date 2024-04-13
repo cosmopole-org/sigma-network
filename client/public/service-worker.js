@@ -1,10 +1,8 @@
-const CACHE_NAME = 'my-cache';
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll([]);
-    })
-  );
+self.addEventListener('install', () => {
+  console.log('service worker installed')
+});
+self.addEventListener('activate', () => {
+  console.log('service worker activated')
 });
 self.addEventListener('fetch', event => {
   event.respondWith(

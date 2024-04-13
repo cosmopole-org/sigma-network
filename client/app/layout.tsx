@@ -103,17 +103,15 @@ export default function RootLayout({
 	useEffect(() => {
 		handleResize()
 		loadTheme()
-		if ('serviceWorker' in navigator) {
-			window.addEventListener('load', () => {
-				navigator.serviceWorker.register('/service-worker.js')
-					.then(registration => {
-						console.log('Service Worker registered with scope:', registration.scope);
-					})
-					.catch(error => {
-						console.error('Service Worker registration failed:', error);
-					});
-			});
-		}
+		window.addEventListener('load', () => {
+			navigator.serviceWorker.register('/service-worker.js')
+				.then(registration => {
+					console.log('Service Worker registered with scope:', registration.scope);
+				})
+				.catch(error => {
+					console.error('Service Worker registration failed:', error);
+				});
+		});
 		window.addEventListener('resize', handleResize)
 		return () => window.removeEventListener('resize', handleResize)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
@@ -124,6 +122,8 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
+				<title>Sigma</title>
+				<meta name='description' content='Welcome to Sigma universe!' />
 				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
 			</head>
 			<body
