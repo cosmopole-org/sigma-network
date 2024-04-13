@@ -94,12 +94,22 @@ export default function RootLayout({
 	const [h, setH] = useState(0)
 	const handleResize = () => setH(window.innerHeight);
 	const { theme } = useTheme();
+	const loadTheme = () => {
+		if (typeof window !== 'undefined') {
+			const m = document.querySelector('meta[name="theme-color"]');
+			if (m) m.setAttribute('content', theme === 'light' ? '#ffffff' : '#172024');
+		}
+	}
 	useEffect(() => {
 		handleResize()
+		loadTheme()
 		window.addEventListener('resize', handleResize)
 		return () => window.removeEventListener('resize', handleResize)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
+	useEffect(() => {
+		loadTheme()
+	}, [theme]);
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
