@@ -9,6 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@grpc/grpc-js": "^1.10.6",
+    "@grpc/proto-loader": "^0.7.12",
     "@hookstate/core": "^4.0.1",
     "@nextui-org/react": "^2.2.10",
     "@nextui-org/system": "2.0.15",

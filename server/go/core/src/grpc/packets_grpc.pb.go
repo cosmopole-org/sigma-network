@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HumanServiceClient interface {
-	Signup(ctx context.Context, in *SignupDto, opts ...grpc.CallOption) (*SignupOutput, error)
-	Verify(ctx context.Context, in *VerifyDto, opts ...grpc.CallOption) (*VerifyOutput, error)
-	Complete(ctx context.Context, in *CompleteDto, opts ...grpc.CallOption) (*CompleteOutput, error)
-	Update(ctx context.Context, in *UpdateDto, opts ...grpc.CallOption) (*UpdateOutput, error)
-	Get(ctx context.Context, in *GetDto, opts ...grpc.CallOption) (*GetOutput, error)
+	Signup(ctx context.Context, in *HumanSignupDto, opts ...grpc.CallOption) (*HumanSignupOutput, error)
+	Verify(ctx context.Context, in *HumanVerifyDto, opts ...grpc.CallOption) (*HumanVerifyOutput, error)
+	Complete(ctx context.Context, in *HumanCompleteDto, opts ...grpc.CallOption) (*HumanCompleteOutput, error)
+	Update(ctx context.Context, in *HumanUpdateDto, opts ...grpc.CallOption) (*HumanUpdateOutput, error)
+	Get(ctx context.Context, in *HumanGetDto, opts ...grpc.CallOption) (*HumanGetOutput, error)
 }
 
 type humanServiceClient struct {
@@ -37,8 +37,8 @@ func NewHumanServiceClient(cc grpc.ClientConnInterface) HumanServiceClient {
 	return &humanServiceClient{cc}
 }
 
-func (c *humanServiceClient) Signup(ctx context.Context, in *SignupDto, opts ...grpc.CallOption) (*SignupOutput, error) {
-	out := new(SignupOutput)
+func (c *humanServiceClient) Signup(ctx context.Context, in *HumanSignupDto, opts ...grpc.CallOption) (*HumanSignupOutput, error) {
+	out := new(HumanSignupOutput)
 	err := c.cc.Invoke(ctx, "/sigma.HumanService/signup", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *humanServiceClient) Signup(ctx context.Context, in *SignupDto, opts ...
 	return out, nil
 }
 
-func (c *humanServiceClient) Verify(ctx context.Context, in *VerifyDto, opts ...grpc.CallOption) (*VerifyOutput, error) {
-	out := new(VerifyOutput)
+func (c *humanServiceClient) Verify(ctx context.Context, in *HumanVerifyDto, opts ...grpc.CallOption) (*HumanVerifyOutput, error) {
+	out := new(HumanVerifyOutput)
 	err := c.cc.Invoke(ctx, "/sigma.HumanService/verify", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,8 +55,8 @@ func (c *humanServiceClient) Verify(ctx context.Context, in *VerifyDto, opts ...
 	return out, nil
 }
 
-func (c *humanServiceClient) Complete(ctx context.Context, in *CompleteDto, opts ...grpc.CallOption) (*CompleteOutput, error) {
-	out := new(CompleteOutput)
+func (c *humanServiceClient) Complete(ctx context.Context, in *HumanCompleteDto, opts ...grpc.CallOption) (*HumanCompleteOutput, error) {
+	out := new(HumanCompleteOutput)
 	err := c.cc.Invoke(ctx, "/sigma.HumanService/complete", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -64,8 +64,8 @@ func (c *humanServiceClient) Complete(ctx context.Context, in *CompleteDto, opts
 	return out, nil
 }
 
-func (c *humanServiceClient) Update(ctx context.Context, in *UpdateDto, opts ...grpc.CallOption) (*UpdateOutput, error) {
-	out := new(UpdateOutput)
+func (c *humanServiceClient) Update(ctx context.Context, in *HumanUpdateDto, opts ...grpc.CallOption) (*HumanUpdateOutput, error) {
+	out := new(HumanUpdateOutput)
 	err := c.cc.Invoke(ctx, "/sigma.HumanService/update", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -73,8 +73,8 @@ func (c *humanServiceClient) Update(ctx context.Context, in *UpdateDto, opts ...
 	return out, nil
 }
 
-func (c *humanServiceClient) Get(ctx context.Context, in *GetDto, opts ...grpc.CallOption) (*GetOutput, error) {
-	out := new(GetOutput)
+func (c *humanServiceClient) Get(ctx context.Context, in *HumanGetDto, opts ...grpc.CallOption) (*HumanGetOutput, error) {
+	out := new(HumanGetOutput)
 	err := c.cc.Invoke(ctx, "/sigma.HumanService/get", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -86,11 +86,11 @@ func (c *humanServiceClient) Get(ctx context.Context, in *GetDto, opts ...grpc.C
 // All implementations must embed UnimplementedHumanServiceServer
 // for forward compatibility
 type HumanServiceServer interface {
-	Signup(context.Context, *SignupDto) (*SignupOutput, error)
-	Verify(context.Context, *VerifyDto) (*VerifyOutput, error)
-	Complete(context.Context, *CompleteDto) (*CompleteOutput, error)
-	Update(context.Context, *UpdateDto) (*UpdateOutput, error)
-	Get(context.Context, *GetDto) (*GetOutput, error)
+	Signup(context.Context, *HumanSignupDto) (*HumanSignupOutput, error)
+	Verify(context.Context, *HumanVerifyDto) (*HumanVerifyOutput, error)
+	Complete(context.Context, *HumanCompleteDto) (*HumanCompleteOutput, error)
+	Update(context.Context, *HumanUpdateDto) (*HumanUpdateOutput, error)
+	Get(context.Context, *HumanGetDto) (*HumanGetOutput, error)
 	mustEmbedUnimplementedHumanServiceServer()
 }
 
@@ -98,19 +98,19 @@ type HumanServiceServer interface {
 type UnimplementedHumanServiceServer struct {
 }
 
-func (UnimplementedHumanServiceServer) Signup(context.Context, *SignupDto) (*SignupOutput, error) {
+func (UnimplementedHumanServiceServer) Signup(context.Context, *HumanSignupDto) (*HumanSignupOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Signup not implemented")
 }
-func (UnimplementedHumanServiceServer) Verify(context.Context, *VerifyDto) (*VerifyOutput, error) {
+func (UnimplementedHumanServiceServer) Verify(context.Context, *HumanVerifyDto) (*HumanVerifyOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Verify not implemented")
 }
-func (UnimplementedHumanServiceServer) Complete(context.Context, *CompleteDto) (*CompleteOutput, error) {
+func (UnimplementedHumanServiceServer) Complete(context.Context, *HumanCompleteDto) (*HumanCompleteOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Complete not implemented")
 }
-func (UnimplementedHumanServiceServer) Update(context.Context, *UpdateDto) (*UpdateOutput, error) {
+func (UnimplementedHumanServiceServer) Update(context.Context, *HumanUpdateDto) (*HumanUpdateOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
 }
-func (UnimplementedHumanServiceServer) Get(context.Context, *GetDto) (*GetOutput, error) {
+func (UnimplementedHumanServiceServer) Get(context.Context, *HumanGetDto) (*HumanGetOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
 }
 func (UnimplementedHumanServiceServer) mustEmbedUnimplementedHumanServiceServer() {}
@@ -127,7 +127,7 @@ func RegisterHumanServiceServer(s grpc.ServiceRegistrar, srv HumanServiceServer)
 }
 
 func _HumanService_Signup_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SignupDto)
+	in := new(HumanSignupDto)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -139,13 +139,13 @@ func _HumanService_Signup_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/sigma.HumanService/signup",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HumanServiceServer).Signup(ctx, req.(*SignupDto))
+		return srv.(HumanServiceServer).Signup(ctx, req.(*HumanSignupDto))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _HumanService_Verify_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(VerifyDto)
+	in := new(HumanVerifyDto)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -157,13 +157,13 @@ func _HumanService_Verify_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/sigma.HumanService/verify",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HumanServiceServer).Verify(ctx, req.(*VerifyDto))
+		return srv.(HumanServiceServer).Verify(ctx, req.(*HumanVerifyDto))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _HumanService_Complete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CompleteDto)
+	in := new(HumanCompleteDto)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -175,13 +175,13 @@ func _HumanService_Complete_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/sigma.HumanService/complete",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HumanServiceServer).Complete(ctx, req.(*CompleteDto))
+		return srv.(HumanServiceServer).Complete(ctx, req.(*HumanCompleteDto))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _HumanService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateDto)
+	in := new(HumanUpdateDto)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -193,13 +193,13 @@ func _HumanService_Update_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: "/sigma.HumanService/update",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HumanServiceServer).Update(ctx, req.(*UpdateDto))
+		return srv.(HumanServiceServer).Update(ctx, req.(*HumanUpdateDto))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _HumanService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetDto)
+	in := new(HumanGetDto)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func _HumanService_Get_Handler(srv interface{}, ctx context.Context, dec func(in
 		FullMethod: "/sigma.HumanService/get",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(HumanServiceServer).Get(ctx, req.(*GetDto))
+		return srv.(HumanServiceServer).Get(ctx, req.(*HumanGetDto))
 	}
 	return interceptor(ctx, in, info, handler)
 }
