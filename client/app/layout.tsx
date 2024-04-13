@@ -18,6 +18,19 @@ import { switchHomeNav } from "@/components/home/home-navbar";
 import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
 
+if (typeof window !== 'undefined') {
+	window.addEventListener('load', () => {
+		navigator.serviceWorker.register('/service-worker.js')
+			.then(registration => {
+				console.log('Service Worker registered with scope:', registration.scope);
+			})
+			.catch(error => {
+				console.error('Service Worker registration failed:', error);
+			});
+	});
+}
+
+
 let dynamicPath = '';
 
 let oldPath = '';
@@ -103,15 +116,6 @@ export default function RootLayout({
 	useEffect(() => {
 		handleResize()
 		loadTheme()
-		window.addEventListener('load', () => {
-			navigator.serviceWorker.register('/service-worker.js')
-				.then(registration => {
-					console.log('Service Worker registered with scope:', registration.scope);
-				})
-				.catch(error => {
-					console.error('Service Worker registration failed:', error);
-				});
-		});
 		window.addEventListener('resize', handleResize)
 		return () => window.removeEventListener('resize', handleResize)
 		// eslint-disable-next-line react-hooks/exhaustive-deps
