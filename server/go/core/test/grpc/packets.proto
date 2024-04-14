@@ -1,0 +1,93 @@
+
+syntax = "proto3";
+
+option go_package = "google.golang.org/grpc/sigma_grpc";
+option java_multiple_files = true;
+option java_package = "io.grpc.sigma";
+option java_outer_classname = "SigmaProto";
+
+package sigma;
+
+// service
+
+service HumanService {
+  rpc signup (HumanSignupDto) returns (HumanSignupOutput) {}
+  rpc verify (HumanVerifyDto) returns (HumanVerifyOutput) {}
+  rpc complete (HumanCompleteDto) returns (HumanCompleteOutput) {}
+  rpc update (HumanUpdateDto) returns (HumanUpdateOutput) {}
+  rpc get (HumanGetDto) returns (HumanGetOutput) {}
+}
+
+// models
+
+message Human {
+	int64 id = 1;
+  	string email = 2;
+	string firstName = 3;
+	string lastName = 4;
+}
+
+message Pending {
+	int64 id = 1;
+	string email = 2;
+	string verifyCode = 3;
+	string clientCode = 4;
+	string state = 5;     
+}
+
+message Session {
+	int64 id = 1;
+	int64 userId = 2;
+	int32 creatureType = 3;
+	string token = 4;
+}
+
+// messages
+
+message HumanSignupDto {
+	string email = 1;
+}
+
+message HumanSignupOutput {
+	Pending pending = 1;
+}
+
+message HumanVerifyDto {
+	string verifyCode = 1;
+	string clientCode = 2;
+}
+  
+message HumanVerifyOutput {
+	Pending pending = 1;
+	Human human = 2;
+	Session session = 3;
+}
+
+message HumanCompleteDto {
+	string verifyCode = 1;
+	string clientCode = 2;
+	string firstName = 3;
+	string lastName = 4;
+}
+  
+message HumanCompleteOutput {
+	Human human = 2;
+	Session session = 3;
+}
+
+message HumanUpdateDto {
+	string firstName = 1;
+	string lastName = 2;
+}
+  
+message HumanUpdateOutput {
+	Human human = 1;
+}
+
+message HumanGetDto {
+	string userId = 1;
+}
+  
+message HumanGetOutput {
+	Human human = 1;
+}

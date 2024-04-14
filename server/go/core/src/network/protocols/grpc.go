@@ -20,9 +20,11 @@ func serverInterceptor(ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
 	handler grpc.UnaryHandler) (interface{}, error) {
+	fmt.Println(info.FullMethod)
 	parts := strings.Split(info.FullMethod, "/")
 	if len(parts) == 3 {
 		service := holder.Instance().GetService(parts[1])
+		fmt.Println(parts[1])
 		if service != nil {
 			var method = service.GetMethod(parts[2])
 			if method != nil && method.MethodOptions().AsEndpoint() {

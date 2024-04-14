@@ -11,19 +11,21 @@ import (
 	outputs_humans "sigma/core/src/outputs/humans"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
+
+	pb "sigma/core/src/grpc"
 )
 
 func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	var input = (dto).(*dtos_humans.SignupDto)
+	var input = (dto).(*pb.HumanSignupDto)
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		fmt.Println(err1)
-		return outputs_humans.SignupOutput{}, err1
+		return &pb.HumanSignupOutput{}, err1
 	}
 	var vc, err2 = utils.SecureUniqueString(32)
 	if err2 != nil {
 		fmt.Println(err2)
-		return outputs_humans.SignupOutput{}, err2
+		return &pb.HumanSignupOutput{}, err2
 	}
 	var query = `
 		insert into pending
@@ -36,14 +38,14 @@ func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 		on conflict(email) do update set verify_code = excluded.verify_code, state = $4
 		returning id, email, verify_code, client_code, state;
 	`
-	var pending models.Pending
+	var pending pb.Pending
 	if err := app.GetDatabase().GetDb().QueryRow(
 		context.Background(), query, input.Email, vc, cc, "created",
 	).Scan(&pending.Id, &pending.Email, &pending.VerifyCode, &pending.ClientCode, &pending.State); err != nil {
 		fmt.Println(err)
-		return outputs_humans.SignupOutput{}, err
+		return &pb.HumanSignupOutput{}, err
 	}
-	return outputs_humans.SignupOutput{Pending: pending}, nil
+	return &pb.HumanSignupOutput{Pending: &pending}, nil
 }
 
 func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
@@ -156,8 +158,14 @@ func CreateHumanService(app interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("src/database/functions/humans/complete.sql")
 	utils.ExecuteSqlFile("src/database/functions/humans/verify.sql")
 
-	var s = types.CreateService(app, "humans")
-	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), dtos_humans.SignupDto{}, types.CreateMethodOptions(true, false)))
+	var s = types.CreateService(app, "sigma.HumanService")
+	s.AddGrpcLoader(func() {
+		type server struct {
+			pb.UnimplementedHumanServiceServer
+		}
+		pb.RegisterHumanServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+	})
+	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), pb.HumanSignupDto{}, types.CreateMethodOptions(true, true)))
 	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), dtos_humans.VerifyDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), dtos_humans.CompleteDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), dtos_humans.UpdateDto{}, types.CreateMethodOptions(true, false)))
