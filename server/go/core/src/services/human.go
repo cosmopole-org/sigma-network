@@ -163,10 +163,10 @@ func CreateHumanService(app interfaces.IApp) interfaces.IService {
 		pb.RegisterHumanServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
 	})
 	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), pb.HumanSignupDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), pb.HumanVerifyDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), pb.HumanCompleteDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), pb.HumanUpdateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), pb.HumanGetDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), pb.HumanVerifyDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), pb.HumanCompleteDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), pb.HumanUpdateDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), pb.HumanGetDto{}, types.CreateMethodOptions(true, true)))
 
 	return s
 }

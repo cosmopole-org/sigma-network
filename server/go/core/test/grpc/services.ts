@@ -17,4 +17,4 @@ const clientService = (
   grpc.loadPackageDefinition(packageDefinition) as unknown as ProtoGrpcType
 ).sigma;
 
-export const { HumanService } = clientService;
+export const { HumanService: IHumanService } = clientService;
