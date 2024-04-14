@@ -87,7 +87,79 @@ message HumanUpdateOutput {
 message HumanGetDto {
 	string userId = 1;
 }
-  
+
 message HumanGetOutput {
 	Human human = 1;
+}
+
+// service
+
+service TowerService {
+	rpc create (TowerCreateDto) returns (TowerCreateOutput) {}
+	rpc update (TowerUpdateDto) returns (TowerUpdateOutput) {}
+	rpc delete (TowerDeleteDto) returns (TowerDeleteOutput) {}
+	rpc get (TowerGetDto) returns (TowerGetOutput) {}
+	rpc join (TowerJoinDto) returns (TowerJoinOutput) {}
+}
+  
+// models
+
+message Tower {
+	int64 id = 1;
+  	string name = 2;
+	int64 avatarId = 3;
+	bool isPublic = 4;
+	int64 creatorId = 5;
+}
+
+message Member {
+	int64 id = 1;
+	int64 humanId = 2;
+	int64 towerId = 3;
+}
+
+// messages
+
+message TowerCreateDto {
+	string name = 1;
+	int64 avatarId = 2;
+	bool isPublic = 3;
+}
+
+message TowerCreateOutput {
+	Tower tower = 1;
+	Member member = 2;
+}
+
+message TowerUpdateDto {
+	int64 towerId = 1;
+	string name = 2;
+	int64 avatarId = 3;
+	bool isPublic = 4;
+}
+
+message TowerUpdateOutput {
+	Tower tower = 1;
+}
+
+message TowerDeleteDto {
+	int64 towerId = 1;
+}
+
+message TowerDeleteOutput {}
+
+message TowerGetDto {
+	string towerId = 1;
+}
+
+message TowerGetOutput {
+	Tower tower = 1;
+}
+
+message TowerJoinDto {
+	string towerId = 1;
+}
+
+message TowerJoinOutput {
+	Member member = 1;
 }

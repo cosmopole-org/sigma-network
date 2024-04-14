@@ -1,4 +1,4 @@
-// Original file: grpc/packets.proto
+// Original file: packets.proto
 
 import type { Pending as _sigma_Pending, Pending__Output as _sigma_Pending__Output } from '../sigma/Pending';
 import type { Human as _sigma_Human, Human__Output as _sigma_Human__Output } from '../sigma/Human';

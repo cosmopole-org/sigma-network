@@ -1,4 +1,4 @@
-// Original file: grpc/packets.proto
+// Original file: packets.proto
 
 
 export interface HumanGetDto {

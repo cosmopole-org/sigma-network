@@ -48,7 +48,7 @@ func (a *App) GetStorageRoot() string {
 }
 func (a *App) LoadServices() {
 	a.services["sigma.HumanService"] = services.CreateHumanService(holder.Instance())
-	a.services["towers"] = services.CreateTowerService(holder.Instance())
+	a.services["sigma.TowerService"] = services.CreateTowerService(holder.Instance())
 	a.services["rooms"] = services.CreateRoomService(holder.Instance())
 	a.services["invites"] = services.CreateInviteService(holder.Instance())
 	a.services["machines"] = services.CreateMachineService(holder.Instance())

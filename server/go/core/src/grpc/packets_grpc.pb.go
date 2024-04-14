@@ -247,3 +247,233 @@ var HumanService_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "packets.proto",
 }
+
+// TowerServiceClient is the client API for TowerService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type TowerServiceClient interface {
+	Create(ctx context.Context, in *TowerCreateDto, opts ...grpc.CallOption) (*TowerCreateOutput, error)
+	Update(ctx context.Context, in *TowerUpdateDto, opts ...grpc.CallOption) (*TowerUpdateOutput, error)
+	Delete(ctx context.Context, in *TowerDeleteDto, opts ...grpc.CallOption) (*TowerDeleteOutput, error)
+	Get(ctx context.Context, in *TowerGetDto, opts ...grpc.CallOption) (*TowerGetOutput, error)
+	Join(ctx context.Context, in *TowerJoinDto, opts ...grpc.CallOption) (*TowerJoinOutput, error)
+}
+
+type towerServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewTowerServiceClient(cc grpc.ClientConnInterface) TowerServiceClient {
+	return &towerServiceClient{cc}
+}
+
+func (c *towerServiceClient) Create(ctx context.Context, in *TowerCreateDto, opts ...grpc.CallOption) (*TowerCreateOutput, error) {
+	out := new(TowerCreateOutput)
+	err := c.cc.Invoke(ctx, "/sigma.TowerService/create", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *towerServiceClient) Update(ctx context.Context, in *TowerUpdateDto, opts ...grpc.CallOption) (*TowerUpdateOutput, error) {
+	out := new(TowerUpdateOutput)
+	err := c.cc.Invoke(ctx, "/sigma.TowerService/update", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *towerServiceClient) Delete(ctx context.Context, in *TowerDeleteDto, opts ...grpc.CallOption) (*TowerDeleteOutput, error) {
+	out := new(TowerDeleteOutput)
+	err := c.cc.Invoke(ctx, "/sigma.TowerService/delete", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *towerServiceClient) Get(ctx context.Context, in *TowerGetDto, opts ...grpc.CallOption) (*TowerGetOutput, error) {
+	out := new(TowerGetOutput)
+	err := c.cc.Invoke(ctx, "/sigma.TowerService/get", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *towerServiceClient) Join(ctx context.Context, in *TowerJoinDto, opts ...grpc.CallOption) (*TowerJoinOutput, error) {
+	out := new(TowerJoinOutput)
+	err := c.cc.Invoke(ctx, "/sigma.TowerService/join", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// TowerServiceServer is the server API for TowerService service.
+// All implementations must embed UnimplementedTowerServiceServer
+// for forward compatibility
+type TowerServiceServer interface {
+	Create(context.Context, *TowerCreateDto) (*TowerCreateOutput, error)
+	Update(context.Context, *TowerUpdateDto) (*TowerUpdateOutput, error)
+	Delete(context.Context, *TowerDeleteDto) (*TowerDeleteOutput, error)
+	Get(context.Context, *TowerGetDto) (*TowerGetOutput, error)
+	Join(context.Context, *TowerJoinDto) (*TowerJoinOutput, error)
+	mustEmbedUnimplementedTowerServiceServer()
+}
+
+// UnimplementedTowerServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedTowerServiceServer struct {
+}
+
+func (UnimplementedTowerServiceServer) Create(context.Context, *TowerCreateDto) (*TowerCreateOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Create not implemented")
+}
+func (UnimplementedTowerServiceServer) Update(context.Context, *TowerUpdateDto) (*TowerUpdateOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Update not implemented")
+}
+func (UnimplementedTowerServiceServer) Delete(context.Context, *TowerDeleteDto) (*TowerDeleteOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedTowerServiceServer) Get(context.Context, *TowerGetDto) (*TowerGetOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedTowerServiceServer) Join(context.Context, *TowerJoinDto) (*TowerJoinOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Join not implemented")
+}
+func (UnimplementedTowerServiceServer) mustEmbedUnimplementedTowerServiceServer() {}
+
+// UnsafeTowerServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TowerServiceServer will
+// result in compilation errors.
+type UnsafeTowerServiceServer interface {
+	mustEmbedUnimplementedTowerServiceServer()
+}
+
+func RegisterTowerServiceServer(s grpc.ServiceRegistrar, srv TowerServiceServer) {
+	s.RegisterService(&TowerService_ServiceDesc, srv)
+}
+
+func _TowerService_Create_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TowerCreateDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TowerServiceServer).Create(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.TowerService/create",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TowerServiceServer).Create(ctx, req.(*TowerCreateDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TowerService_Update_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TowerUpdateDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TowerServiceServer).Update(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.TowerService/update",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TowerServiceServer).Update(ctx, req.(*TowerUpdateDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TowerService_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TowerDeleteDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TowerServiceServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.TowerService/delete",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TowerServiceServer).Delete(ctx, req.(*TowerDeleteDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TowerService_Get_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TowerGetDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TowerServiceServer).Get(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.TowerService/get",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TowerServiceServer).Get(ctx, req.(*TowerGetDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TowerService_Join_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TowerJoinDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TowerServiceServer).Join(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.TowerService/join",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TowerServiceServer).Join(ctx, req.(*TowerJoinDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// TowerService_ServiceDesc is the grpc.ServiceDesc for TowerService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var TowerService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "sigma.TowerService",
+	HandlerType: (*TowerServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "create",
+			Handler:    _TowerService_Create_Handler,
+		},
+		{
+			MethodName: "update",
+			Handler:    _TowerService_Update_Handler,
+		},
+		{
+			MethodName: "delete",
+			Handler:    _TowerService_Delete_Handler,
+		},
+		{
+			MethodName: "get",
+			Handler:    _TowerService_Get_Handler,
+		},
+		{
+			MethodName: "join",
+			Handler:    _TowerService_Join_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "packets.proto",
+}

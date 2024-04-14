@@ -1,5 +1,9 @@
 package updates_towers
 
+import (
+	pb "sigma/core/src/grpc"
+)
+
 type Join struct {
-	Member any `json:"member"`
+	Member *pb.Member `json:"member"`
 }
