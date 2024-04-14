@@ -5,10 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	dtos_humans "sigma/core/src/dtos/humans"
 	"sigma/core/src/interfaces"
-	"sigma/core/src/models"
-	outputs_humans "sigma/core/src/outputs/humans"
 	"sigma/core/src/types"
 	"sigma/core/src/utils"
 
@@ -49,7 +46,7 @@ func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 }
 
 func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	var input = (dto).(*dtos_humans.VerifyDto)
+	var input = (dto).(*pb.HumanVerifyDto)
 	var query = `
 		select humans_verify($1, $2)
 	`
@@ -60,9 +57,9 @@ func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 		&record,
 	); err != nil {
 		fmt.Println(err)
-		return outputs_humans.VerifyOutput{}, err
+		return &pb.HumanVerifyOutput{}, err
 	}
-	var pending = models.Pending{
+	var pending = pb.Pending{
 		Id:         record[0].(int64),
 		ClientCode: record[1].(string),
 		VerifyCode: record[2].(string),
@@ -70,32 +67,32 @@ func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 		Email:      record[4].(string),
 	}
 	if record[5] == nil {
-		return outputs_humans.VerifyOutput{Pending: pending, Human: nil, Session: nil}, nil
+		return &pb.HumanVerifyOutput{Pending: &pending, Human: nil, Session: nil}, nil
 	} else {
-		var human = models.Human{
+		var human = pb.Human{
 			Id:        record[5].(int64),
 			Email:     record[6].(string),
 			FirstName: record[7].(string),
 			LastName:  record[8].(string),
 		}
-		var session = models.Session{
+		var session = pb.Session{
 			Id:     record[9].(int64),
 			UserId: human.Id,
 			Token:  record[10].(string),
 		}
 		session.CreatureType = 1
-		return outputs_humans.VerifyOutput{Pending: pending, Human: human, Session: session}, nil
+		return &pb.HumanVerifyOutput{Pending: &pending, Human: &human, Session: &session}, nil
 	}
 }
 
 func complete(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	var input = (dto).(*dtos_humans.CompleteDto)
-	var human models.Human
-	var session models.Session
+	var input = (dto).(*pb.HumanCompleteDto)
+	var human pb.Human
+	var session pb.Session
 	var token, tokenErr = utils.SecureUniqueString(32)
 	if tokenErr != nil {
 		fmt.Println(tokenErr)
-		return outputs_humans.CompleteOutput{}, tokenErr
+		return &pb.HumanCompleteOutput{}, tokenErr
 	}
 	var query = `
 		select * from humans_complete($1, $2, $3, $4, $5)
@@ -103,19 +100,19 @@ func complete(app interfaces.IApp, dto interface{}, assistant interfaces.IAssist
 	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
-		return outputs_humans.CompleteOutput{}, err
+		return &pb.HumanCompleteOutput{}, err
 	}
 	if human.Id > 0 {
 		session.UserId = human.Id
 		session.CreatureType = 1
 	}
 	app.GetMemory().Put("auth::"+session.Token, fmt.Sprintf("human/%d", human.Id))
-	return outputs_humans.CompleteOutput{Human: human, Session: session}, nil
+	return &pb.HumanCompleteOutput{Human: &human, Session: &session}, nil
 }
 
 func update(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	var input = (dto).(*dtos_humans.UpdateDto)
-	var human models.Human
+	var input = (dto).(*pb.HumanUpdateDto)
+	var human pb.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
 		returning id, email, first_name, last_name;
@@ -123,28 +120,28 @@ func update(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.GetUserId()).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
-		return outputs_humans.UpdateOutput{}, err
+		return &pb.HumanUpdateOutput{}, err
 	}
-	return outputs_humans.UpdateOutput{Human: human}, nil
+	return &pb.HumanUpdateOutput{Human: &human}, nil
 }
 
 func get(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	var input = (dto).(*dtos_humans.GetDto)
-	var human models.Human
+	var input = (dto).(*pb.HumanGetDto)
+	var human pb.Human
 	var query = `
 		select id, first_name, last_name from human where id = $1;
 	`
 	userId, err := strconv.ParseInt(input.UserId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
-		return outputs_humans.GetOutput{}, err
+		return &pb.HumanGetOutput{}, err
 	}
 	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, userId).
 		Scan(&human.Id, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
-		return outputs_humans.GetOutput{}, err
+		return &pb.HumanGetOutput{}, err
 	}
-	return outputs_humans.GetOutput{Human: human}, nil
+	return &pb.HumanGetOutput{Human: &human}, nil
 }
 
 func CreateHumanService(app interfaces.IApp) interfaces.IService {
@@ -166,10 +163,10 @@ func CreateHumanService(app interfaces.IApp) interfaces.IService {
 		pb.RegisterHumanServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
 	})
 	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), pb.HumanSignupDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), dtos_humans.VerifyDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), dtos_humans.CompleteDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), dtos_humans.UpdateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), dtos_humans.GetDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), pb.HumanVerifyDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), pb.HumanCompleteDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), pb.HumanUpdateDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), pb.HumanGetDto{}, types.CreateMethodOptions(true, false)))
 
 	return s
 }
