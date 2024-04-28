@@ -2,14 +2,14 @@ package core
 
 import (
 	"fmt"
-	"sigma/main/core/core/holder"
-	"sigma/main/core/database"
-	"sigma/main/core/interfaces"
-	"sigma/main/core/memory"
-	"sigma/main/core/models"
-	"sigma/main/core/network"
-	"sigma/main/core/security"
-	"sigma/main/core/services"
+	"sigma/admin/core/core/holder"
+	"sigma/admin/core/database"
+	"sigma/admin/core/interfaces"
+	"sigma/admin/core/memory"
+	"sigma/admin/core/models"
+	"sigma/admin/core/network"
+	"sigma/admin/core/security"
+	"sigma/admin/core/services"
 )
 
 type App struct {

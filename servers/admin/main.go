@@ -2,10 +2,9 @@ package main
 
 import (
 	"os"
-	"sigma/main/core/core"
-	"sigma/main/core/models"
-	"sigma/main/core/network"
-	football_services "sigma/main/football/services"
+	"sigma/admin/core/core"
+	"sigma/admin/core/models"
+	"sigma/admin/core/network"
 
 	"github.com/joho/godotenv"
 )
@@ -31,8 +30,6 @@ func main() {
 			{Email: "amir@midopia.com", FirstName: "amir", LastName: "ebadi"},
 		},
 	)
-
-	app.AddService(football_services.CreateAdminService(app))
 
 	app.GetNetwork().Listen(network.CreateListenOptions(true, 8085, false, 0))
 

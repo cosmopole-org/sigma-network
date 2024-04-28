@@ -2,10 +2,10 @@ package network
 
 import (
 	"fmt"
-	"sigma/main/core/core/holder"
-	"sigma/main/core/interfaces"
-	sigma_network_protocols "sigma/main/core/network/protocols"
-	"sigma/main/core/utils"
+	"sigma/admin/core/core/holder"
+	"sigma/admin/core/interfaces"
+	sigma_network_protocols "sigma/admin/core/network/protocols"
+	"sigma/admin/core/utils"
 
 	"google.golang.org/grpc"
 )

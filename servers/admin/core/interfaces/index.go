@@ -2,7 +2,7 @@ package interfaces
 
 import (
 	"mime/multipart"
-	"sigma/main/core/models"
+	"sigma/admin/core/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/redis/go-redis/v9"

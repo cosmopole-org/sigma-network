@@ -6,7 +6,7 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"sigma/main/core/interfaces"
+	"sigma/admin/core/interfaces"
 )
 
 type MethodOptions struct {

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sigma/main/core/core/holder"
-	"sigma/main/core/models"
-	"sigma/main/core/utils"
+	"sigma/admin/core/core/holder"
+	"sigma/admin/core/models"
+	"sigma/admin/core/utils"
 )
 
 type Security struct {

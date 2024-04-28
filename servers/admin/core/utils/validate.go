@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"sigma/main/core/interfaces"
-	"sigma/main/core/types"
+	"sigma/admin/core/interfaces"
+	"sigma/admin/core/types"
 	"strings"
 
 	"github.com/go-playground/validator/v10"

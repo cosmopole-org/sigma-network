@@ -91,7 +91,13 @@ func CreateInviteService(app interfaces.IApp) interfaces.IService {
 	// Functions
 	utils.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
-	var s = types.CreateService(app, "invites")
+	var s = types.CreateService(app, "sigma.InviteService")
+	s.AddGrpcLoader(func() {
+		type server struct {
+			pb.UnimplementedInviteServiceServer
+		}
+		pb.RegisterInviteServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+	})
 	s.AddMethod(types.CreateMethod("create", createInvite, types.CreateCheck(true, true, false), pb.InviteCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("cancel", cancelInvite, types.CreateCheck(true, true, false), pb.InviteCancelDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("accept", acceptInvite, types.CreateCheck(true, false, false), pb.InviteAcceptDto{}, types.CreateMethodOptions(true, false)))

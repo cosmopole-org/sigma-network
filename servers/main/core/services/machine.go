@@ -111,7 +111,13 @@ func CreateMachineService(app interfaces.IApp) interfaces.IService {
 	utils.ExecuteSqlFile("core/database/functions/machines/delete.sql")
 	utils.ExecuteSqlFile("core/database/functions/machines/get.sql")
 
-	var s = types.CreateService(app, "machines")
+	var s = types.CreateService(app, "sigma.MachineService")
+	s.AddGrpcLoader(func() {
+		type server struct {
+			pb.UnimplementedMachineServiceServer
+		}
+		pb.RegisterMachineServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+	})
 	s.AddMethod(types.CreateMethod("create", createMachine, types.CreateCheck(true, false, false), pb.MachineCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("update", updateMachine, types.CreateCheck(true, false, false), pb.MachineUpdateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("delete", deleteMachine, types.CreateCheck(true, false, false), pb.MachineDeleteDto{}, types.CreateMethodOptions(true, false)))

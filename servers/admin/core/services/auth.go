@@ -4,11 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sigma/main/core/interfaces"
-	"sigma/main/core/types"
-	"sigma/main/core/utils"
+	"sigma/admin/core/interfaces"
+	"sigma/admin/core/types"
+	"sigma/admin/core/utils"
 
-	pb "sigma/main/core/grpc"
+	pb "sigma/admin/core/grpc"
 )
 
 func signin(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {

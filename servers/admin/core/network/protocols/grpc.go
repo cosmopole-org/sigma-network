@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"sigma/main/core/core/holder"
-	"sigma/main/core/types"
-	sigma_network_security "sigma/main/core/network/security"
+	"sigma/admin/core/core/holder"
+	sigma_network_security "sigma/admin/core/network/security"
+	"sigma/admin/core/types"
 	"strings"
 
 	"google.golang.org/grpc"

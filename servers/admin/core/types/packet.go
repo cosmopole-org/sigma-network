@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
-	"sigma/main/core/interfaces"
+	"sigma/admin/core/interfaces"
 
 	"github.com/valyala/fasthttp"
 )

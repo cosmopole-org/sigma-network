@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"sigma/main/core/core/holder"
+	"sigma/admin/core/core/holder"
 )
 
 func ExecuteSqlFile(path string) {

@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"sigma/main/core/models"
+	"sigma/admin/core/models"
 )
 
 func BuildErrorJson(message string) models.Error {

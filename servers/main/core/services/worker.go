@@ -144,7 +144,13 @@ func CreateWorkerService(app interfaces.IApp) interfaces.IService {
 	// Functions
 	utils.ExecuteSqlFile("core/database/functions/workers/deliver.sql")
 
-	var s = types.CreateService(app, "machines")
+	var s = types.CreateService(app, "sigma.WorkerService")
+	s.AddGrpcLoader(func() {
+		type server struct {
+			pb.UnimplementedWorkerServiceServer
+		}
+		pb.RegisterWorkerServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+	})
 	s.AddMethod(types.CreateMethod("create", createWorker, types.CreateCheck(true, true, true), pb.WorkerCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("update", updateWorker, types.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("delete", deleteWorker, types.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, types.CreateMethodOptions(true, false)))

@@ -2,9 +2,9 @@ package sigma_network_security
 
 import (
 	"fmt"
-	"sigma/main/core/interfaces"
-	"sigma/main/core/types"
-	"sigma/main/core/utils"
+	"sigma/admin/core/interfaces"
+	"sigma/admin/core/types"
+	"sigma/admin/core/utils"
 	"strconv"
 	"strings"
 

@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"sigma/main/core/interfaces"
+	"sigma/admin/core/interfaces"
 )
 
 type Service struct {

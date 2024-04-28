@@ -1,4 +1,4 @@
-module sigma/main
+module sigma/admin
 
 go 1.21
 

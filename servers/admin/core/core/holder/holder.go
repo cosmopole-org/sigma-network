@@ -1,6 +1,6 @@
 package holder
 
-import "sigma/main/core/interfaces"
+import "sigma/admin/core/interfaces"
 
 var app interfaces.IApp
 

@@ -2,11 +2,11 @@ package sigma_network_protocols
 
 import (
 	"fmt"
-	"sigma/main/core/interfaces"
-	sigma_network_handlers "sigma/main/core/network/handlers"
-	sigma_network_security "sigma/main/core/network/security"
-	"sigma/main/core/types"
-	"sigma/main/core/utils"
+	"sigma/admin/core/interfaces"
+	sigma_network_handlers "sigma/admin/core/network/handlers"
+	sigma_network_security "sigma/admin/core/network/security"
+	"sigma/admin/core/types"
+	"sigma/admin/core/utils"
 	"strings"
 
 	"github.com/valyala/fasthttp"

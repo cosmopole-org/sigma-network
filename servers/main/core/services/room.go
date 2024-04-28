@@ -101,7 +101,13 @@ func CreateRoomService(app interfaces.IApp) interfaces.IService {
 	// Functions
 	utils.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
-	var s = types.CreateService(app, "rooms")
+	var s = types.CreateService(app, "sigma.RoomService")
+	s.AddGrpcLoader(func() {
+		type server struct {
+			pb.UnimplementedRoomServiceServer
+		}
+		pb.RegisterRoomServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+	})
 	s.AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), pb.RoomCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), pb.RoomUpdateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("delete", deleteRoom, types.CreateCheck(true, true, false), pb.RoomDeleteDto{}, types.CreateMethodOptions(true, false)))
