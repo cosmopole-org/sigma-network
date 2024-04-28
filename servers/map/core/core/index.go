@@ -16,7 +16,6 @@ type App struct {
 	network     interfaces.INetwork
 	database    interfaces.IDatabase
 	memory      interfaces.IMemory
-	security    interfaces.ISecurity
 	storageRoot string
 }
 
@@ -43,12 +42,6 @@ func (a *App) SetMemory(memory interfaces.IMemory) {
 }
 func (a *App) SetNetwork(network interfaces.INetwork) {
 	a.network = network
-}
-func (a *App) SetSecurity(security interfaces.ISecurity) {
-	a.security = security
-}
-func (a *App) GetSecurity() interfaces.ISecurity {
-	return a.security
 }
 func (a *App) GetStorageRoot() string {
 	return a.storageRoot

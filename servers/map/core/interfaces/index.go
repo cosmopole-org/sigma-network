@@ -2,7 +2,6 @@ package interfaces
 
 import (
 	"mime/multipart"
-	"sigma/map/core/models"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/redis/go-redis/v9"
@@ -25,11 +24,9 @@ type IPusher interface {
 type IApp interface {
 	AddService(s IService)
 	GetService(key string) IService
-	GetSecurity() ISecurity
 	GetDatabase() IDatabase
 	GetMemory() IMemory
 	GetNetwork() INetwork
-	SetSecurity(security ISecurity)
 	SetDatabase(database IDatabase)
 	SetMemory(memory IMemory)
 	SetNetwork(network INetwork)
@@ -91,12 +88,6 @@ type INetwork interface {
 	GetGrpcServer() *grpc.Server
 	GetPusherServer() IPusher
 	Listen(options IListenOptions)
-}
-
-type ISecurity interface {
-	SetGodEmails(gods []models.Admin)
-	IsGodEmail(email string) bool
-	GetGodByEmail(email string) *models.Admin
 }
 
 type IDto interface {
