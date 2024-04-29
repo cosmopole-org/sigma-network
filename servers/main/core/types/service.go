@@ -1,41 +1,40 @@
 package types
 
-import (
-	"fmt"
-	"sigma/main/core/interfaces"
-)
-
+type Service struct {
+	App     *App
+	Key     string
+	Methods map[string]*Method
+}
 
 func (s *Service) AddGrpcLoader(fn func()) {
 	fn()
 }
 
-func (s *Service) AddMethod(method interfaces.IMethod) {
-	s.methods[method.GetKey()] = method
+func (s *Service) AddMethod(method *Method) {
+	s.Methods[method.Key] = method
 }
 
-func (s *Service) GetMethod(key string) interfaces.IMethod {
-	return s.methods[key]
+func (s *Service) GetMethod(key string) *Method {
+	return s.Methods[key]
 }
 
-func (s *Service) CallMethod(key string, dto interface{}, meta interfaces.Meta) (any, error) {
+func (s *Service) CallMethod(key string, dto interface{}, meta *Meta) (any, error) {
 	var method = s.GetMethod(key)
-	return method.GetCallback()(s.app, dto, CreateAssistant(meta.UserId, "human", meta.TowerId, meta.RoomId, 0, nil))
+	return method.Callback(s.App, dto, CreateAssistant(meta.UserId, "human", meta.TowerId, meta.RoomId, 0, nil))
 }
 
-func (s *Service) GetKey() string {
-	return s.key
+func CreateService(app *App, key string) *Service {
+	return &Service{App: app, Key: key, Methods: map[string]*Method{}}
 }
 
-func (s *Service) SetKey(key string) {
-	s.key = key
+func CreateMethod(key string, callback func(app *App, dto interface{}, assistant Assistant) (any, error), check *Check, dto any, mOptions *MethodOptions) *Method {
+	return &Method{Key: key, Callback: callback, Check: check, InTemplate: dto, MethodOptions: mOptions}
 }
 
-func (s *Service) SetMethods(methods map[string]interfaces.IMethod) {
-	fmt.Println(methods)
-	s.methods = methods
+func CreateCheck(user bool, tower bool, room bool) *Check {
+	return &Check{User: user, Tower: tower, Room: room}
 }
 
-func CreateService(app interfaces.IApp, key string) interfaces.IService {
-	return &Service{app: app, key: key, methods: map[string]interfaces.IMethod{}}
+func CreateMethodOptions(asEndpoint bool, asGrpc bool) *MethodOptions {
+	return &MethodOptions{AsEndpoint: asEndpoint, AsGrpc: asGrpc}
 }

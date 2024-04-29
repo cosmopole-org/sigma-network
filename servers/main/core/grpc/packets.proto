@@ -295,7 +295,7 @@ message InviteAcceptOutput {
 }
 
 message InviteDeclineDto {
-	string inviteId = 1;
+	int64 inviteId = 1;
 }
 
 message InviteDeclineOutput {

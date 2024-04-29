@@ -2,9 +2,9 @@ package main
 
 import (
 	"os"
-	"sigma/admin/core/core"
+	app "sigma/admin/core/core"
 	"sigma/admin/core/models"
-	"sigma/admin/core/network"
+	"sigma/admin/core/types"
 
 	"github.com/joho/godotenv"
 )
@@ -18,7 +18,7 @@ func main() {
 		panic(err)
 	}
 
-	app := core.CreateApp(
+	app := app.New(
 		"sigma-sample",
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("REDIS_URI"),
@@ -31,7 +31,7 @@ func main() {
 		},
 	)
 
-	app.GetNetwork().Listen(network.CreateListenOptions(true, 8085, false, 0))
+	app.Network.Listen(types.CreateListenOptions(true, 8085, false, 0))
 
 	<-quit
 }

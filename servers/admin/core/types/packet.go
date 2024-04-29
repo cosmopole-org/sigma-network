@@ -5,66 +5,65 @@ import (
 	"errors"
 	"fmt"
 	"mime/multipart"
-	"sigma/admin/core/interfaces"
 
 	"github.com/valyala/fasthttp"
 )
 
 type WebPacket struct {
-	uri         string
-	body        []byte
-	headers     map[string]string
-	httpContext *fasthttp.RequestCtx
-	onAnswer    func(answer []byte)
-	requestId   string
+	Uri         string
+	Body        []byte
+	Headers     map[string]string
+	HttpContext *fasthttp.RequestCtx
+	OnAnswer    func(answer []byte)
+	RequestId   string
 }
 
 func (p WebPacket) GetData() any {
-	return p.httpContext
+	return p.HttpContext
 }
 
 func (p WebPacket) GetQuery() map[string]string {
 	var dict = map[string]string{}
-	if p.httpContext != nil {
-		p.httpContext.QueryArgs().VisitAll(func(key, val []byte) {
+	if p.HttpContext != nil {
+		p.HttpContext.QueryArgs().VisitAll(func(key, val []byte) {
 			dict[string(key)] = string(val)
 		})
 	}
 	return dict
 }
 func (p WebPacket) GetQueryParam(key string) string {
-	if p.httpContext != nil {
-		return string(p.httpContext.QueryArgs().Peek(key))
+	if p.HttpContext != nil {
+		return string(p.HttpContext.QueryArgs().Peek(key))
 	}
 	return ""
 }
 
 func (p WebPacket) GetHeader(key string) []byte {
-	if p.httpContext != nil {
-		return p.httpContext.Request.Header.Peek(key)
+	if p.HttpContext != nil {
+		return p.HttpContext.Request.Header.Peek(key)
 	}
-	return []byte(p.headers[key])
+	return []byte(p.Headers[key])
 }
 
 func (p WebPacket) GetBody() []byte {
-	if p.httpContext != nil {
-		return p.httpContext.Request.Body()
+	if p.HttpContext != nil {
+		return p.HttpContext.Request.Body()
 	} else {
-		return p.body
+		return p.Body
 	}
 }
 
 func (p WebPacket) GetUri() string {
-	if p.httpContext != nil {
-		return string(p.httpContext.RequestURI()[:])
+	if p.HttpContext != nil {
+		return string(p.HttpContext.RequestURI()[:])
 	} else {
-		return p.uri
+		return p.Uri
 	}
 }
 
 func (p WebPacket) GetFormFile(key string) (*multipart.FileHeader, error) {
-	if p.httpContext != nil {
-		fh, err := p.httpContext.FormFile("data")
+	if p.HttpContext != nil {
+		fh, err := p.HttpContext.FormFile("data")
 		return fh, err
 	} else {
 		return nil, errors.New("context not available")
@@ -72,75 +71,69 @@ func (p WebPacket) GetFormFile(key string) (*multipart.FileHeader, error) {
 }
 
 func (p WebPacket) Context() *fasthttp.RequestCtx {
-	return p.httpContext
-}
-
-type WebsocketAnswer struct {
-	status    int
-	requestId string
-	data      any
+	return p.HttpContext
 }
 
 func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data any) {
-	if p.httpContext != nil {
-		p.httpContext.SetStatusCode(status)
-		p.httpContext.SetContentType("application/json")
+	if p.HttpContext != nil {
+		p.HttpContext.SetStatusCode(status)
+		p.HttpContext.SetContentType("application/json")
 		for k, v := range headers {
-			p.httpContext.Response.Header.Set(k, v)
+			p.HttpContext.Response.Header.Set(k, v)
 		}
-		p.httpContext.Response.Header.Set("Access-Control-Allow-Origin", "*")
-		p.httpContext.Response.Header.Set("Access-Control-Allow-Headers", "*")
-		p.httpContext.Response.Header.Set("Access-Control-Allow-Methods", "*")
+		p.HttpContext.Response.Header.Set("Access-Control-Allow-Origin", "*")
+		p.HttpContext.Response.Header.Set("Access-Control-Allow-Headers", "*")
+		p.HttpContext.Response.Header.Set("Access-Control-Allow-Methods", "*")
 		var output, err = json.Marshal(data)
 		if err != nil {
 			fmt.Println(err)
-			p.httpContext.SetStatusCode(status)
+			p.HttpContext.SetStatusCode(status)
 		} else {
-			p.httpContext.SetBody(output)
+			p.HttpContext.SetBody(output)
 		}
 	} else {
 		var output, err = json.Marshal(data)
 		if err != nil {
 			fmt.Println(err)
 		} else {
-			p.onAnswer([]byte(p.requestId + " " + string(output)))
+			p.OnAnswer([]byte(p.RequestId + " " + string(output)))
 		}
 	}
 }
 
 func (p WebPacket) AnswerWithFile(status int, headers map[string]string, filePath string) {
-	if p.httpContext != nil {
-		p.httpContext.SetStatusCode(status)
-		p.httpContext.SetContentType("application/octet-stream")
+	if p.HttpContext != nil {
+		p.HttpContext.SetStatusCode(status)
+		p.HttpContext.SetContentType("application/octet-stream")
 		for k, v := range headers {
-			p.httpContext.Response.Header.Set(k, v)
+			p.HttpContext.Response.Header.Set(k, v)
 		}
-		p.httpContext.SendFile(filePath)
+		p.HttpContext.SendFile(filePath)
 	}
 }
 
-func CreateWebPacket(httpContext *fasthttp.RequestCtx) interfaces.IPacket {
-	return WebPacket{httpContext: httpContext}
+func CreateWebPacket(HttpContext *fasthttp.RequestCtx) IPacket {
+	return WebPacket{HttpContext: HttpContext}
 }
 
-func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) interfaces.IPacket {
+func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) IPacket {
 	var headers map[string]string
 	err := json.Unmarshal(body, &headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	fmt.Println(headers)
-	return WebPacket{uri: uri, body: body, headers: headers, onAnswer: onAnswer, requestId: requestId}
+	return WebPacket{Uri: uri, Body: body, Headers: headers, OnAnswer: onAnswer, RequestId: requestId}
 }
 
 type LoginPacket struct {
-	args []any
+	Args []any
 }
 
 func (p LoginPacket) GetData() any {
-	return p.args
+	return p.Args
 }
 
-func CreateLogicPacket(args []any) interfaces.IPacket {
-	return LoginPacket{args: args}
+func CreateLogicPacket(args []any) IPacket {
+	return LoginPacket{Args: args}
 }

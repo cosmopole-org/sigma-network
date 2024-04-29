@@ -3,17 +3,15 @@ package services
 import (
 	"context"
 	"fmt"
-	"sigma/main/core/interfaces"
 	"sigma/main/core/models"
 	"sigma/main/core/types"
 	updates_rooms "sigma/main/core/updates/rooms"
-	"sigma/main/core/utils"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func createRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomCreateDto)
 	var query = `
 		insert into room
@@ -25,35 +23,35 @@ func createRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssi
 		returning id, name, avatar_id, tower_id;
 	`
 	var room pb.Room
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, assistant.GetTowerId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, input.Name, input.AvatarId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomCreateOutput{}, err
 	}
-	app.GetMemory().Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
-	go app.GetNetwork().GetPusherServer().PushToGroup(room.TowerId, updates_rooms.Create{Room: &room}, []int64{})
+	app.Memory.Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
+	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Create{Room: &room}, []int64{})
 	return &pb.RoomCreateOutput{Room: &room}, nil
 }
 
-func updateRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func updateRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomUpdateDto)
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
 		returning id, name, avatar_id, tower_id;
 	`
 	var room pb.Room
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.GetTowerId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomUpdateOutput{}, err
 	}
-	go app.GetNetwork().GetPusherServer().PushToGroup(room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
 	return &pb.RoomUpdateOutput{Room: &room}, nil
 }
 
-func deleteRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func deleteRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomDeleteDto)
 	var query = ``
 	query = `
@@ -61,18 +59,18 @@ func deleteRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssi
 		returning id, name, avatar_id, tower_id;
 	`
 	var room models.Room
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, query, input.RoomId, assistant.GetTowerId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, query, input.RoomId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomDeleteOutput{}, err
 	}
-	app.GetMemory().Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
-	go app.GetNetwork().GetPusherServer().PushToGroup(room.TowerId, updates_rooms.Update{Room: room}, []int64{})
+	app.Memory.Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
+	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Update{Room: room}, []int64{})
 	return &pb.RoomDeleteOutput{}, nil
 }
 
-func getRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func getRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomGetDto)
 	var query = `
 		select * from rooms_get($1, $2, $3);
@@ -83,30 +81,30 @@ func getRoom(app interfaces.IApp, dto interface{}, assistant interfaces.IAssista
 		fmt.Println(err)
 		return &pb.RoomGetOutput{}, err
 	}
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, assistant.GetUserId(), assistant.GetTowerId(), roomId,
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, assistant.UserId, assistant.TowerId, roomId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomGetOutput{}, err
 	}
-	room.TowerId = assistant.GetTowerId()
+	room.TowerId = assistant.TowerId
 	return &pb.RoomGetOutput{Room: &room}, nil
 }
 
-func CreateRoomService(app interfaces.IApp) interfaces.IService {
+func CreateRoomService(app *types.App) *types.Service {
 
 	// Tables
-	utils.ExecuteSqlFile("core/database/tables/room.sql")
+	app.Database.ExecuteSqlFile("core/database/tables/room.sql")
 
 	// Functions
-	utils.ExecuteSqlFile("core/database/functions/rooms/get.sql")
+	app.Database.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
 	var s = types.CreateService(app, "sigma.RoomService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedRoomServiceServer
 		}
-		pb.RegisterRoomServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+		pb.RegisterRoomServiceServer(app.Network.GrpcServer, &server{})
 	})
 	s.AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), pb.RoomCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), pb.RoomUpdateDto{}, types.CreateMethodOptions(true, false)))

@@ -2,8 +2,8 @@ package main
 
 import (
 	"os"
-	"sigma/map/core/core"
-	"sigma/map/core/network"
+	app "sigma/map/core/core"
+	"sigma/map/core/types"
 
 	"github.com/joho/godotenv"
 )
@@ -17,14 +17,14 @@ func main() {
 		panic(err)
 	}
 
-	app := core.CreateApp(
+	app := app.New(
 		"sigma-sample",
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
 	)
 
-	app.GetNetwork().Listen(network.CreateListenOptions(true, 8086, false, 0))
+	app.Network.Listen(types.CreateListenOptions(true, 8086, false, 0))
 
 	<-quit
 }

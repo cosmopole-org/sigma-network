@@ -3,15 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"sigma/main/core/interfaces"
 	"sigma/main/core/types"
 	updates_invites "sigma/main/core/updates/invites"
-	"sigma/main/core/utils"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createInvite(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func createInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteCreateDto)
 	var query = `
 		insert into invite
@@ -22,81 +20,81 @@ func createInvite(app interfaces.IApp, dto interface{}, assistant interfaces.IAs
 		returning id, human_id, tower_id;
 	`
 	var invite pb.Invite
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.HumanId, assistant.GetTowerId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, input.HumanId, assistant.TowerId,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteCreateOutput{}, err
 	}
-	go app.GetNetwork().GetPusherServer().PushToUser(input.HumanId, updates_invites.Create{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite})
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
-func cancelInvite(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func cancelInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteCancelDto)
 	var query = `
 		delete from invite where id = $1 and tower_id = $2
 		returning id, human_id, tower_id;
 	`
 	var invite pb.Invite
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.InviteId, assistant.GetTowerId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, input.InviteId, assistant.TowerId,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.GetNetwork().GetPusherServer().PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite})
 	return &pb.InviteCancelOutput{}, nil
 }
 
-func acceptInvite(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func acceptInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteAcceptDto)
 	var query = `
 		select * from invites_accept($1, $2)
 	`
 	var member pb.Member
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, assistant.GetUserId(), input.InviteId,
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, assistant.UserId, input.InviteId,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteAcceptOutput{}, err
 	}
 	var invite = pb.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.GetNetwork().GetPusherServer().PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite})
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
-func declineInvite(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func declineInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteDeclineDto)
 	var query = `
 		delete from invite where id = $1 and human_id = $2
 		returning id, human_id, tower_id
 	`
 	var invite pb.Invite
-	if err := app.GetDatabase().GetDb().QueryRow(
-		context.Background(), query, input.InviteId, assistant.GetUserId(),
+	if err := app.Database.Db.QueryRow(
+		context.Background(), query, input.InviteId, assistant.UserId,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteDeclineOutput{}, err
 	}
-	go app.GetNetwork().GetPusherServer().PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite})
 	return &pb.InviteDeclineOutput{}, nil
 }
 
-func CreateInviteService(app interfaces.IApp) interfaces.IService {
+func CreateInviteService(app *types.App) *types.Service {
 
 	// Tables
-	utils.ExecuteSqlFile("core/database/tables/invite.sql")
+	app.Database.ExecuteSqlFile("core/database/tables/invite.sql")
 
 	// Functions
-	utils.ExecuteSqlFile("core/database/functions/invites/accept.sql")
+	app.Database.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
 	var s = types.CreateService(app, "sigma.InviteService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedInviteServiceServer
 		}
-		pb.RegisterInviteServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+		pb.RegisterInviteServiceServer(app.Network.GrpcServer, &server{})
 	})
 	s.AddMethod(types.CreateMethod("create", createInvite, types.CreateCheck(true, true, false), pb.InviteCreateDto{}, types.CreateMethodOptions(true, false)))
 	s.AddMethod(types.CreateMethod("cancel", cancelInvite, types.CreateCheck(true, true, false), pb.InviteCancelDto{}, types.CreateMethodOptions(true, false)))

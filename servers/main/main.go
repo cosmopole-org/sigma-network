@@ -4,15 +4,13 @@ import (
 	"os"
 	app "sigma/main/core/core"
 	"sigma/main/core/dtos"
-	"sigma/main/core/interfaces"
-	"sigma/main/core/network"
 	"sigma/main/core/types"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-func hello(app interfaces.IApp, d interface{}, assistant interfaces.IAssistant) (any, error) {
+func hello(app *types.App, d interface{}, assistant types.Assistant) (any, error) {
 	return `{ "hello": "world" }`, nil
 }
 
@@ -45,7 +43,7 @@ func main() {
 	apiService.AddMethod(
 		types.CreateMethod(
 			"ping",
-			func (app interfaces.IApp, d interface{}, assistant interfaces.IAssistant) (any, error) {
+			func (app *types.App, d interface{}, assistant types.Assistant) (any, error) {
 				return os.Getenv("PORT"), nil
 			},
 			types.CreateCheck(false, false, false),
@@ -61,7 +59,7 @@ func main() {
 		panic(err)
 	}
 
-	app.GetNetwork().Listen(network.CreateListenOptions(true, int(port), false, 0))
+	app.Network.Listen(types.CreateListenOptions(true, int(port), false, 0))
 
 	<-quit
 }

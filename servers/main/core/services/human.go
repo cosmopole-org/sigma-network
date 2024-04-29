@@ -5,20 +5,19 @@ import (
 	"fmt"
 	"strconv"
 
-	"sigma/main/core/interfaces"
 	"sigma/main/core/types"
 	"sigma/main/core/utils"
 
 	pb "sigma/main/core/grpc"
 )
 
-func authenticate(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
-	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.GetUserId())}, interfaces.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+func authenticate(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.UserId)}, &types.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
 
-func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func signup(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanSignupDto)
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
@@ -42,7 +41,7 @@ func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 		returning id, email, verify_code, client_code, state;
 	`
 	var pending pb.Pending
-	if err := app.GetDatabase().GetDb().QueryRow(
+	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Email, vc, cc, "created",
 	).Scan(&pending.Id, &pending.Email, &pending.VerifyCode, &pending.ClientCode, &pending.State); err != nil {
 		fmt.Println(err)
@@ -51,13 +50,13 @@ func signup(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 	return &pb.HumanSignupOutput{Pending: &pending}, nil
 }
 
-func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func verify(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanVerifyDto)
 	var query = `
 		select humans_verify($1, $2)
 	`
 	var record []interface{}
-	if err := app.GetDatabase().GetDb().QueryRow(
+	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.ClientCode, input.VerifyCode,
 	).Scan(
 		&record,
@@ -91,7 +90,7 @@ func verify(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 	}
 }
 
-func complete(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func complete(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanCompleteDto)
 	var human pb.Human
 	var session pb.Session
@@ -103,7 +102,7 @@ func complete(app interfaces.IApp, dto interface{}, assistant interfaces.IAssist
 	var query = `
 		select * from humans_complete($1, $2, $3, $4, $5)
 	`
-	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
+	if err := app.Database.Db.QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
 		return &pb.HumanCompleteOutput{}, err
@@ -112,18 +111,18 @@ func complete(app interfaces.IApp, dto interface{}, assistant interfaces.IAssist
 		session.UserId = human.Id
 		session.CreatureType = 1
 	}
-	app.GetMemory().Put("auth::"+session.Token, fmt.Sprintf("human/%d", human.Id))
+	app.Memory.Put("auth::"+session.Token, fmt.Sprintf("human/%d", human.Id))
 	return &pb.HumanCompleteOutput{Human: &human, Session: &session}, nil
 }
 
-func update(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func update(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanUpdateDto)
 	var human pb.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
 		returning id, email, first_name, last_name;
 	`
-	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.GetUserId()).
+	if err := app.Database.Db.QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.UserId).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
 		return &pb.HumanUpdateOutput{}, err
@@ -131,7 +130,7 @@ func update(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistan
 	return &pb.HumanUpdateOutput{Human: &human}, nil
 }
 
-func get(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
+func get(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanGetDto)
 	var human pb.Human
 	var query = `
@@ -142,7 +141,7 @@ func get(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) 
 		fmt.Println(err)
 		return &pb.HumanGetOutput{}, err
 	}
-	if err := app.GetDatabase().GetDb().QueryRow(context.Background(), query, userId).
+	if err := app.Database.Db.QueryRow(context.Background(), query, userId).
 		Scan(&human.Id, &human.FirstName, &human.LastName); err != nil {
 		fmt.Println(err)
 		return &pb.HumanGetOutput{}, err
@@ -150,23 +149,23 @@ func get(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) 
 	return &pb.HumanGetOutput{Human: &human}, nil
 }
 
-func CreateHumanService(app interfaces.IApp) interfaces.IService {
+func CreateHumanService(app *types.App) *types.Service {
 
 	// Tables
-	utils.ExecuteSqlFile("core/database/tables/session.sql")
-	utils.ExecuteSqlFile("core/database/tables/pending.sql")
-	utils.ExecuteSqlFile("core/database/tables/human.sql")
+	app.Database.ExecuteSqlFile("core/database/tables/session.sql")
+	app.Database.ExecuteSqlFile("core/database/tables/pending.sql")
+	app.Database.ExecuteSqlFile("core/database/tables/human.sql")
 
 	// Functipns
-	utils.ExecuteSqlFile("core/database/functions/humans/complete.sql")
-	utils.ExecuteSqlFile("core/database/functions/humans/verify.sql")
+	app.Database.ExecuteSqlFile("core/database/functions/humans/complete.sql")
+	app.Database.ExecuteSqlFile("core/database/functions/humans/verify.sql")
 
 	var s = types.CreateService(app, "sigma.HumanService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedHumanServiceServer
 		}
-		pb.RegisterHumanServiceServer(app.GetNetwork().GetGrpcServer(), &server{})
+		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
 	s.AddMethod(types.CreateMethod("authenticate", authenticate, types.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, types.CreateMethodOptions(true, true)))
 	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), pb.HumanSignupDto{}, types.CreateMethodOptions(true, true)))
