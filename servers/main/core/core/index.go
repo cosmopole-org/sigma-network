@@ -1,4 +1,4 @@
-package core
+package app
 
 import (
 	"context"
@@ -13,15 +13,6 @@ import (
 	"sigma/main/core/utils"
 	"time"
 )
-
-type App struct {
-	appId       string
-	services    map[string]interfaces.IService
-	network     interfaces.INetwork
-	database    interfaces.IDatabase
-	memory      interfaces.IMemory
-	storageRoot string
-}
 
 func (a *App) AddService(s interfaces.IService) {
 	a.services[s.GetKey()] = s
@@ -66,7 +57,7 @@ func (a *App) LoadServices() {
 	a.services["storage"] = services.CreateStorageService(a)
 }
 
-func CreateApp(appId string, databaseUri string, redisUri string, storageRoot string) interfaces.IApp {
+func New(appId string, databaseUri string, redisUri string, storageRoot string) interfaces.IApp {
 	fmt.Println("Creating app...")
 	var app interfaces.IApp = &App{
 		appId:       appId,

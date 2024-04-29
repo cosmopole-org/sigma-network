@@ -10,15 +10,6 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-type WebPacket struct {
-	uri         string
-	body        []byte
-	headers     map[string]string
-	httpContext *fasthttp.RequestCtx
-	onAnswer    func(answer []byte)
-	requestId   string
-}
-
 func (p WebPacket) GetData() any {
 	return p.httpContext
 }
@@ -73,12 +64,6 @@ func (p WebPacket) GetFormFile(key string) (*multipart.FileHeader, error) {
 
 func (p WebPacket) Context() *fasthttp.RequestCtx {
 	return p.httpContext
-}
-
-type WebsocketAnswer struct {
-	status    int
-	requestId string
-	data      any
 }
 
 func (p WebPacket) AnswerWithJson(status int, headers map[string]string, data any) {

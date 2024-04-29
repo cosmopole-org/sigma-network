@@ -5,12 +5,16 @@ import (
 	"sigma/map/core/interfaces"
 	"sigma/map/core/outputs"
 	"sigma/map/core/types"
+	"sigma/map/core/models"
 )
 
 func getServersMap(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error) {
 	return &outputs.Servers{
-		Map: map[string]string{
-			"cosmopole": "http://localhost:8080",
+		Map: map[string]models.Server{
+			"cosmopole": {
+				Host: "localhost",
+				Port: 8080,
+			},
 		},
 	}, nil
 }

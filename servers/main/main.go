@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	"sigma/main/core/core"
+	app "sigma/main/core/core"
 	"sigma/main/core/dtos"
 	"sigma/main/core/interfaces"
 	"sigma/main/core/network"
@@ -25,7 +25,7 @@ func main() {
 		panic(err)
 	}
 
-	app := core.CreateApp(
+	app := app.New(
 		"sigma-sample",
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("REDIS_URI"),

@@ -9,10 +9,6 @@ import (
 	"sigma/main/core/interfaces"
 )
 
-type MethodOptions struct {
-	asEndpoint bool
-	asGrpc     bool
-}
 
 func (mo MethodOptions) AsEndpoint() bool {
 	return mo.asEndpoint
@@ -22,11 +18,6 @@ func (mo MethodOptions) AsGrpc() bool {
 	return mo.asGrpc
 }
 
-type Check struct {
-	user  bool
-	tower bool
-	room  bool
-}
 
 func (c Check) NeedUser() bool {
 	return c.user
@@ -40,14 +31,6 @@ func (c Check) NeedRoom() bool {
 	return c.room
 }
 
-type Assistant struct {
-	userId   int64
-	userType string
-	workerId int64
-	towerId  int64
-	roomId   int64
-	packet   interfaces.IPacket
-}
 
 func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
 	var dirPath = fmt.Sprintf("%s/%d", storageRoot, g.roomId)
@@ -96,13 +79,6 @@ func (g *Assistant) GetWorkerId() int64 {
 	return g.workerId
 }
 
-type Method struct {
-	key           string
-	callback      func(app interfaces.IApp, dto interface{}, assistant interfaces.IAssistant) (any, error)
-	check         Check
-	inTemplate    any
-	methodOptions MethodOptions
-}
 
 func (m Method) GetKey() string {
 	return m.key

@@ -10,11 +10,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-type Network struct {
-	grpcServer   *grpc.Server
-	pusherServer interfaces.IPusher
-}
-
 type ListenOptions struct {
 	https     bool
 	httpsPort int

@@ -10,10 +10,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type Database struct {
-	db *pgxpool.Pool
-}
-
 func (d Database) GetDb() *pgxpool.Pool {
 	return d.db
 }

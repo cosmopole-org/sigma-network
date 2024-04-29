@@ -5,11 +5,6 @@ import (
 	"sigma/main/core/interfaces"
 )
 
-type Service struct {
-	app     interfaces.IApp
-	key     string
-	methods map[string]interfaces.IMethod
-}
 
 func (s *Service) AddGrpcLoader(fn func()) {
 	fn()
