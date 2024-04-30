@@ -34,6 +34,22 @@ message AdminSigninOutput {
 
 // service
 
+service AuthService {
+	rpc getServerPublicKey (AuthGetServerPublicKeyDto) returns (AuthGetServerPublicKeyOutput) {}
+}
+
+// messages
+
+message AuthGetServerPublicKeyDto {
+
+}
+
+message AuthGetServerPublicKeyOutput {
+	string publicKey = 1;
+}
+
+// service
+
 service HumanService {
   rpc authenticate (HumanAuthenticateDto) returns (HumanAuthenticateOutput) {}
   rpc signup (HumanSignupDto) returns (HumanSignupOutput) {}

@@ -140,6 +140,92 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "packets.proto",
 }
 
+// AuthServiceClient is the client API for AuthService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AuthServiceClient interface {
+	GetServerPublicKey(ctx context.Context, in *AuthGetServerPublicKeyDto, opts ...grpc.CallOption) (*AuthGetServerPublicKeyOutput, error)
+}
+
+type authServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAuthServiceClient(cc grpc.ClientConnInterface) AuthServiceClient {
+	return &authServiceClient{cc}
+}
+
+func (c *authServiceClient) GetServerPublicKey(ctx context.Context, in *AuthGetServerPublicKeyDto, opts ...grpc.CallOption) (*AuthGetServerPublicKeyOutput, error) {
+	out := new(AuthGetServerPublicKeyOutput)
+	err := c.cc.Invoke(ctx, "/sigma.AuthService/getServerPublicKey", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AuthServiceServer is the server API for AuthService service.
+// All implementations must embed UnimplementedAuthServiceServer
+// for forward compatibility
+type AuthServiceServer interface {
+	GetServerPublicKey(context.Context, *AuthGetServerPublicKeyDto) (*AuthGetServerPublicKeyOutput, error)
+	mustEmbedUnimplementedAuthServiceServer()
+}
+
+// UnimplementedAuthServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedAuthServiceServer struct {
+}
+
+func (UnimplementedAuthServiceServer) GetServerPublicKey(context.Context, *AuthGetServerPublicKeyDto) (*AuthGetServerPublicKeyOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetServerPublicKey not implemented")
+}
+func (UnimplementedAuthServiceServer) mustEmbedUnimplementedAuthServiceServer() {}
+
+// UnsafeAuthServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AuthServiceServer will
+// result in compilation errors.
+type UnsafeAuthServiceServer interface {
+	mustEmbedUnimplementedAuthServiceServer()
+}
+
+func RegisterAuthServiceServer(s grpc.ServiceRegistrar, srv AuthServiceServer) {
+	s.RegisterService(&AuthService_ServiceDesc, srv)
+}
+
+func _AuthService_GetServerPublicKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AuthGetServerPublicKeyDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetServerPublicKey(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.AuthService/getServerPublicKey",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetServerPublicKey(ctx, req.(*AuthGetServerPublicKeyDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AuthService_ServiceDesc is the grpc.ServiceDesc for AuthService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AuthService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "sigma.AuthService",
+	HandlerType: (*AuthServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "getServerPublicKey",
+			Handler:    _AuthService_GetServerPublicKey_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "packets.proto",
+}
+
 // HumanServiceClient is the client API for HumanService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.

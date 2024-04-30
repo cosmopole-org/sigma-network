@@ -6,7 +6,7 @@ import (
 	"sigma/main/core/utils"
 )
 
-var keys = map[string][2][]byte{}
+var keys = map[string][][]byte{}
 
 func LoadKeys() {
 	files, err := os.ReadDir(Instance().StorageRoot)
@@ -25,16 +25,16 @@ func LoadKeys() {
 				fmt.Println(err2)
 				continue
 			}
-			keys[file.Name()] = [2][]byte{priKey, pubKey}
+			keys[file.Name()] = [][]byte{priKey, pubKey}
 		}
     }
 }
 
 func GenerateSecureKeyPair(tag string) {
 	var priKey, pubKey = utils.SecureKeyPairs(Instance().StorageRoot + tag)
-	keys[tag] = [2][]byte{priKey, pubKey}
+	keys[tag] = [][]byte{priKey, pubKey}
 }
 
-func FetchKeyPair(tag string) [2][]byte {
+func FetchKeyPair(tag string) [][]byte {
 	return keys[tag]
 }

@@ -19,6 +19,8 @@ type ServersOutput struct {
 }
 
 func LoadServices(a *types.App) {
+	a.Services["sigma.AuthService"] = services.CreateAuthService(a)
+	a.Services["auth"] = a.Services["sigma.AuthService"]
 	a.Services["sigma.HumanService"] = services.CreateHumanService(a)
 	a.Services["humans"] = a.Services["sigma.HumanService"]
 	a.Services["sigma.TowerService"] = services.CreateTowerService(a)
@@ -32,6 +34,13 @@ func LoadServices(a *types.App) {
 	a.Services["sigma.WorkerService"] = services.CreateWorkerService(a)
 	a.Services["workers"] = a.Services["sigma.WorkerService"]
 	a.Services["storage"] = services.CreateStorageService(a)
+}
+
+func LoadKeys() {
+	types.LoadKeys()
+	if types.FetchKeyPair("server_public_key") == nil {
+		types.GenerateSecureKeyPair("server_public_key")
+	}
 }
 
 func New(appId string, databaseUri string, redisUri string, storageRoot string, mapServerAddr string) *types.App {
@@ -49,7 +58,7 @@ func New(appId string, databaseUri string, redisUri string, storageRoot string, 
 			fmt.Println("Federation: ", string(serversMapStr))
 			var res ServersOutput
 			err3 := json.Unmarshal(serversMapStr, &res)
-			if (err3 != nil) {
+			if err3 != nil {
 				fmt.Println(err3)
 			} else {
 				serversMap = res.Map
@@ -61,10 +70,11 @@ func New(appId string, databaseUri string, redisUri string, storageRoot string, 
 		AppId:       appId,
 		StorageRoot: storageRoot,
 		Services:    map[string]*types.Service{},
-		Federation: serversMap,
+		Federation:  serversMap,
 	}
 	types.Keep(a)
 	inst := types.Instance()
+	LoadKeys()
 	inst.Database = types.CreateDatabase(databaseUri)
 	inst.Memory = types.CreateMemory(redisUri)
 	inst.Network = types.CreateNetwork()
