@@ -112,18 +112,18 @@ func (p WebPacket) AnswerWithFile(status int, headers map[string]string, filePat
 	}
 }
 
-func CreateWebPacket(HttpContext *fasthttp.RequestCtx) IPacket {
-	return WebPacket{HttpContext: HttpContext}
+func CreateWebPacket(HttpContext *fasthttp.RequestCtx) *WebPacket {
+	return &WebPacket{HttpContext: HttpContext}
 }
 
-func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) IPacket {
+func CreateWebPacketForSocket(uri string, body []byte, requestId string, onAnswer func(answer []byte)) *WebPacket {
 	var headers map[string]string
 	err := json.Unmarshal(body, &headers)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
 	fmt.Println(headers)
-	return WebPacket{Uri: uri, Body: body, Headers: headers, OnAnswer: onAnswer, RequestId: requestId}
+	return &WebPacket{Uri: uri, Body: body, Headers: headers, OnAnswer: onAnswer, RequestId: requestId}
 }
 
 type LoginPacket struct {

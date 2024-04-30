@@ -2,10 +2,26 @@ package types
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/redis/go-redis/v9"
 )
+
+type InterfedPacket struct {
+	Key       string
+	UserId    int64
+	TowerId   int64
+	RoomId    int64
+	RequestId string
+	Data      string
+}
+
+type Memory struct {
+	Storage      *redis.Client
+	FedHandler   func(app *App, channelId string, payload InterfedPacket)
+	IFResChannel chan [2][]byte
+}
 
 func (m *Memory) GetClient() *redis.Client {
 	return m.Storage
@@ -21,14 +37,26 @@ func (m *Memory) CreateClient(redisUri string) {
 	db := redis.NewClient(opts)
 	m.Storage = db
 	ctx := context.Background()
-	pubsub := db.PSubscribe(ctx, channelPrefix + "*")
+	pubsub := db.PSubscribe(ctx, channelPrefix+"*")
+	go func() {
+		for {
+			res := <- m.IFResChannel
+			db.Publish(ctx, string(res[0]), res[1])
+		}
+	}()
 	go func() {
 		for {
 			msg, err := pubsub.ReceiveMessage(ctx)
 			if err != nil {
 				panic(err)
 			}
-        	m.FedHandler(msg.Channel[len(channelPrefix):], msg.Payload)
+			var interfedPacket InterfedPacket
+			err2 := json.Unmarshal([]byte(msg.Payload), &interfedPacket)
+			if err2 != nil {
+				fmt.Println(err2)
+				continue
+			}
+			m.FedHandler(Instance(), msg.Channel[len(channelPrefix):], interfedPacket)
 		}
 	}()
 }

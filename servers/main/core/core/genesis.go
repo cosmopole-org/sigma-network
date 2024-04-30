@@ -38,8 +38,8 @@ func LoadServices(a *types.App) {
 
 func LoadKeys() {
 	types.LoadKeys()
-	if types.FetchKeyPair("server_public_key") == nil {
-		types.GenerateSecureKeyPair("server_public_key")
+	if types.FetchKeyPair("server_key") == nil {
+		types.GenerateSecureKeyPair("server_key")
 	}
 }
 

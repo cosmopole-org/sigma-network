@@ -1,6 +1,10 @@
 package types
 
 import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
 	"fmt"
 	"os"
 	"sigma/main/core/utils"
@@ -38,4 +42,36 @@ func GenerateSecureKeyPair(tag string) {
 
 func FetchKeyPair(tag string) [][]byte {
 	return keys[tag]
+}
+
+func Encrypt(tag string, plainText string) string {
+    publicKeyPEM := keys[tag][1]
+    publicKeyBlock, _ := pem.Decode(publicKeyPEM)
+    publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
+    if err != nil {
+        fmt.Println(err)
+		return ""
+    }
+    ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), []byte(plainText))
+    if err != nil {
+        fmt.Println(err)
+		return ""
+    }
+	return fmt.Sprintf("%x", ciphertext)
+}
+
+func Decrypt(tag string, cipherText string) string {
+	privateKeyPEM := keys[tag][0]
+    privateKeyBlock, _ := pem.Decode(privateKeyPEM)
+    privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
+    if err != nil {
+        fmt.Println(err)
+		return ""
+    }
+    plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, []byte(cipherText))
+    if err != nil {
+        fmt.Println(err)
+		return ""
+    }
+	return string(plaintext)
 }

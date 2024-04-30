@@ -18,7 +18,7 @@ func HttpHandler(app *App, ctx *fasthttp.RequestCtx) {
 	} else {
 		var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
 		parts := strings.Split(uri, "/")
-		var packet = CreateWebPacket(ctx).(WebPacket)
+		packet := CreateWebPacket(ctx)
 		if len(parts) == 3 {
 			service := app.GetService(parts[1])
 			if service != nil {
@@ -34,10 +34,10 @@ func HttpHandler(app *App, ctx *fasthttp.RequestCtx) {
 							HandleRawMethod(app, method, packet, form)
 						} else if data, success, err := utils.ValidateWebPacket(packet.GetBody(), nil, d, utils.BODY); success {
 							if method.Check.User {
-								var userId, userType, token = Authenticate(app, &packet)
+								var userId, userType, token = Authenticate(app, packet)
 								if userId > 0 {
 									if method.Check.Tower {
-										var location = HandleLocation(app, token, userId, userType, &packet)
+										var location = HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
 											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
@@ -57,10 +57,10 @@ func HttpHandler(app *App, ctx *fasthttp.RequestCtx) {
 						var d = temp
 						if data, success, err := utils.ValidateWebPacket(nil, packet.GetQuery(), d, utils.QUERY); success {
 							if method.Check.User {
-								var userId, userType, token = Authenticate(app, &packet)
+								var userId, userType, token = Authenticate(app, packet)
 								if userId > 0 {
 									if method.Check.Tower {
-										var location = HandleLocation(app, token, userId, userType, &packet)
+										var location = HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
 											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {

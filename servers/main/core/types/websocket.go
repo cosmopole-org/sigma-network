@@ -11,6 +11,12 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
+type WebsocketAnswer struct {
+	Status    int
+	RequestId string
+	Data      any
+}
+
 var upgrader = websocket.FastHTTPUpgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -52,14 +58,14 @@ func HandleWebsocket(app *App, ctx *fasthttp.RequestCtx) {
 									return
 								}
 							},
-						).(WebPacket)
+						)
 						var d = temp
 						if data, success, err := utils.ValidateWebPacket(packet.Body, nil, d, utils.BODY); success {
 							if method.Check.User {
-								var userId, userType, token = Authenticate(app, &packet)
+								var userId, userType, token = Authenticate(app, packet)
 								if userId > 0 {
 									if method.Check.Tower {
-										var location = HandleLocation(app, token, userId, userType, &packet)
+										var location = HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
 											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
@@ -102,7 +108,7 @@ func HandleWebsocket(app *App, ctx *fasthttp.RequestCtx) {
 											return
 										}
 									},
-								).(WebPacket)
+								)
 								packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, `{ "success": true }`)
 							}
 						}

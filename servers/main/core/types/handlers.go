@@ -12,7 +12,7 @@ import (
 func HandleResult(
 	app *App,
 	callback func(app *App, input interface{}, assistant Assistant) (any, error),
-	packet WebPacket,
+	packet *WebPacket,
 	temp interface{},
 	assistant Assistant) {
 	result, err := callback(app, temp, assistant)
@@ -30,7 +30,7 @@ func HandleResult(
 	}
 }
 
-func HandleRawResult(app *App, method *Method, assistant Assistant, packet WebPacket, formData map[string]any) {
+func HandleRawResult(app *App, method *Method, assistant Assistant, packet *WebPacket, formData map[string]any) {
 	var d = method.InTemplate
 	mapstructure.Decode(formData, &d)
 	result, err := method.Callback(app, d, assistant)
@@ -48,7 +48,7 @@ func HandleRawResult(app *App, method *Method, assistant Assistant, packet WebPa
 	}
 }
 
-func HandleRawMethod(app *App, method *Method, packet WebPacket, form *multipart.Form) {
+func HandleRawMethod(app *App, method *Method, packet *WebPacket, form *multipart.Form) {
 	var formData = map[string]any{}
 	for k, v := range form.Value {
 		formData[k] = v
@@ -57,10 +57,10 @@ func HandleRawMethod(app *App, method *Method, packet WebPacket, form *multipart
 		formData[k] = v
 	}
 	if method.Check.User {
-		var userId, userType, token = Authenticate(app, &packet)
+		var userId, userType, token = Authenticate(app, packet)
 		if userId > 0 {
 			if method.Check.Tower {
-				var location = HandleLocation(app, token, userId, userType, &packet)
+				var location = HandleLocation(app, token, userId, userType, packet)
 				if location.TowerId > 0 {
 					HandleRawResult(app, method, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet), packet, formData)
 				} else {

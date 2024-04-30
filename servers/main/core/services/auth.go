@@ -7,7 +7,7 @@ import (
 )
 
 func getServerPublicKey(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
-	return &pb.AuthGetServerPublicKeyOutput{PublicKey: string(types.FetchKeyPair("server_public_key")[1])}, nil
+	return &pb.AuthGetServerPublicKeyOutput{PublicKey: string(types.FetchKeyPair("server_key")[1])}, nil
 }
 
 func CreateAuthService(app *types.App) *types.Service {
