@@ -34,7 +34,7 @@ func SecureKeyPairs(savePath string) ([]byte, []byte) {
 		Type:  "RSA PRIVATE KEY",
 		Bytes: privateKeyBytes,
 	})
-	err = os.WriteFile(savePath+"private.pem", privateKeyPEM, 0644)
+	err = os.WriteFile(savePath+"/private.pem", privateKeyPEM, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -47,7 +47,7 @@ func SecureKeyPairs(savePath string) ([]byte, []byte) {
 		Type:  "RSA PUBLIC KEY",
 		Bytes: publicKeyBytes,
 	})
-	err = os.WriteFile(savePath+"public.pem", publicKeyPEM, 0644)
+	err = os.WriteFile(savePath+"/public.pem", publicKeyPEM, 0644)
 	if err != nil {
 		panic(err)
 	}
