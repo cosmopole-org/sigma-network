@@ -18,7 +18,7 @@ func serverInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler) (interface{}, error) {
+) (interface{}, error) {
 	fmt.Println(info.FullMethod)
 	parts := strings.Split(info.FullMethod, "/")
 	if len(parts) == 3 {
@@ -57,13 +57,12 @@ func withServerUnaryInterceptor() grpc.ServerOption {
 			ctx context.Context,
 			req interface{},
 			info *grpc.UnaryServerInfo,
-			handler grpc.UnaryHandler) (interface{}, error) {
+			_ grpc.UnaryHandler) (interface{}, error) {
 				return serverInterceptor(
 					Instance(),
 					ctx,
 					req,
 					info,
-					handler,
 				)
 			},
 	)

@@ -19,9 +19,9 @@ func Keep(a App) {
 	app = a
 }
 
-func (a App) AddService(s *Service) {
+func (a *App) AddService(s *Service) {
 	a.Services[s.Key] = s
 }
-func (a App) GetService(key string) *Service {
+func (a *App) GetService(key string) *Service {
 	return a.Services[key]
 }
