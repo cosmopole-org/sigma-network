@@ -191,7 +191,7 @@ message TowerGetOutput {
 }
 
 message TowerJoinDto {
-	string towerId = 1;
+	int64 towerId = 1;
 }
 
 message TowerJoinOutput {
@@ -418,4 +418,11 @@ message WorkerDeliverDto {
 
 message WorkerDeliverOutput {
 	bool passed = 1;
+}
+
+// other models
+
+message Server {
+	string host = 1;
+	int32 port = 2;
 }

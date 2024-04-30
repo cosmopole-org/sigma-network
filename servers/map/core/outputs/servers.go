@@ -1,7 +1,7 @@
 package outputs
 
-import "sigma/map/core/models"
+import pb "sigma/map/core/grpc"
 
 type Servers struct {
-	Map map[string]models.Server `json:"map"`
+	Map map[string]pb.Server `json:"map"`
 }

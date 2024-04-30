@@ -1,5 +1,7 @@
 package types
 
+import pb "sigma/main/core/grpc"
+
 type App struct {
 	AppId       string
 	Services    map[string]*Service
@@ -7,6 +9,7 @@ type App struct {
 	Database    *Database
 	Memory      *Memory
 	StorageRoot string
+	Federation map[string]pb.Server
 }
 
 var app App

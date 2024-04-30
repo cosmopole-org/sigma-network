@@ -4,12 +4,12 @@ import (
 	"sigma/map/core/dtos"
 	"sigma/map/core/outputs"
 	"sigma/map/core/types"
-	"sigma/map/core/models"
+	pb "sigma/map/core/grpc"
 )
 
 func getServersMap(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
 	return &outputs.Servers{
-		Map: map[string]models.Server{
+		Map: map[string]pb.Server{
 			"cosmopole": {
 				Host: "localhost",
 				Port: 8080,

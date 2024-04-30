@@ -28,6 +28,7 @@ func main() {
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
+		os.Getenv("MAP_SERVER"),
 	)
 
 	var apiService = types.CreateService(app, "api")

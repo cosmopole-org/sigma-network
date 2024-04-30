@@ -419,3 +419,10 @@ message WorkerDeliverDto {
 message WorkerDeliverOutput {
 	bool passed = 1;
 }
+
+// other models
+
+message Server {
+	string host = 1;
+	int32 port = 2;
+}

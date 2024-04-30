@@ -14,3 +14,7 @@ cp packets.pb.go ../../servers/admin/core/grpc/packets.pb.go
 cp packets.proto ../../servers/main/core/grpc/packets.proto
 cp packets_grpc.pb.go ../../servers/main/core/grpc/packets_grpc.pb.go
 cp packets.pb.go ../../servers/main/core/grpc/packets.pb.go
+
+cp packets.proto ../../servers/map/core/grpc/packets.proto
+cp packets_grpc.pb.go ../../servers/map/core/grpc/packets_grpc.pb.go
+cp packets.pb.go ../../servers/map/core/grpc/packets.pb.go

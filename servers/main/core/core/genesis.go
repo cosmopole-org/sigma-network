@@ -2,13 +2,21 @@ package genesis
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"runtime"
+	pb "sigma/main/core/grpc"
 	"sigma/main/core/services"
 	"sigma/main/core/types"
 	"sigma/main/core/utils"
 	"time"
 )
+
+type ServersOutput struct {
+	Map map[string]pb.Server `json:"map"`
+}
 
 func LoadServices(a *types.App) {
 	a.Services["sigma.HumanService"] = services.CreateHumanService(a)
@@ -26,12 +34,34 @@ func LoadServices(a *types.App) {
 	a.Services["storage"] = services.CreateStorageService(a)
 }
 
-func New(appId string, databaseUri string, redisUri string, storageRoot string) *types.App {
+func New(appId string, databaseUri string, redisUri string, storageRoot string, mapServerAddr string) *types.App {
 	fmt.Println("Creating app...")
+	serversMap := map[string]pb.Server{}
+	serversMapRes, err := http.Get(mapServerAddr + "/map/get")
+	if err == nil {
+		if serversMapRes.StatusCode != http.StatusOK {
+			fmt.Println("fetching servers map failed")
+		} else {
+			serversMapStr, err2 := io.ReadAll(serversMapRes.Body)
+			if err2 != nil {
+				fmt.Println(err)
+			}
+			fmt.Println("Federation: ", string(serversMapStr))
+			var res ServersOutput
+			err3 := json.Unmarshal(serversMapStr, &res)
+			if (err3 != nil) {
+				fmt.Println(err3)
+			} else {
+				serversMap = res.Map
+			}
+		}
+		serversMapRes.Body.Close()
+	}
 	a := types.App{
 		AppId:       appId,
 		StorageRoot: storageRoot,
 		Services:    map[string]*types.Service{},
+		Federation: serversMap,
 	}
 	types.Keep(a)
 	inst := types.Instance()
