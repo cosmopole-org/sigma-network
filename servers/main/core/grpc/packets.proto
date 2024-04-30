@@ -191,7 +191,7 @@ message TowerGetOutput {
 }
 
 message TowerJoinDto {
-	string towerId = 1;
+	int64 towerId = 1;
 }
 
 message TowerJoinOutput {

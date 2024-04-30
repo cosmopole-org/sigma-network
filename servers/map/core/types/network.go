@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"sigma/map/core/utils"
+	"sigma/admin/core/utils"
 
 	"google.golang.org/grpc"
 )

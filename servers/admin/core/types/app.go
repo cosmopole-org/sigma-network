@@ -6,7 +6,6 @@ type App struct {
 	Network     *Network
 	Database    *Database
 	Memory      *Memory
-	Security    *Security
 	StorageRoot string
 }
 
