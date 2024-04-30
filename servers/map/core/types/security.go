@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"sigma/admin/core/utils"
+	"sigma/map/core/utils"
 	"strconv"
 	"strings"
 

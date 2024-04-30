@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/json"
 	"fmt"
-	"sigma/admin/core/utils"
+	"sigma/map/core/utils"
 	"strings"
 	"sync"
 

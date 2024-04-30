@@ -2,8 +2,8 @@ package types
 
 import (
 	"mime/multipart"
-	"sigma/admin/core/outputs"
-	"sigma/admin/core/utils"
+	"sigma/map/core/outputs"
+	"sigma/map/core/utils"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/valyala/fasthttp"
