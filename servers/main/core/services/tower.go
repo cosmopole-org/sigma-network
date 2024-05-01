@@ -3,14 +3,14 @@ package services
 import (
 	"context"
 	"fmt"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	updates_towers "sigma/main/core/updates/towers"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createTower(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func createTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerCreateDto)
 	var query = `
 		select * from towers_create($1, $2, $3, $4)
@@ -35,7 +35,7 @@ func createTower(app *types.App, dto interface{}, assistant types.Assistant) (an
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
 }
 
-func updateTower(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func updateTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerUpdateDto)
 	var query = `
 		update tower set name = $1, avatar_id = $2, is_public = $3 where id = $4 and creator_id = $5
@@ -52,7 +52,7 @@ func updateTower(app *types.App, dto interface{}, assistant types.Assistant) (an
 	return &pb.TowerUpdateOutput{Tower: &tower}, nil
 }
 
-func deleteTower(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func deleteTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerDeleteDto)
 	var query = ``
 	query = `
@@ -68,7 +68,7 @@ func deleteTower(app *types.App, dto interface{}, assistant types.Assistant) (an
 	return &pb.TowerDeleteOutput{}, nil
 }
 
-func getTower(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func getTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerGetDto)
 	var query = `
 		select * from towers_get($1, $2)
@@ -88,7 +88,7 @@ func getTower(app *types.App, dto interface{}, assistant types.Assistant) (any, 
 	return &pb.TowerGetOutput{Tower: &tower}, nil
 }
 
-func joinTower(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func joinTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerJoinDto)
 	fmt.Println(assistant)
 	var query = `
@@ -107,7 +107,7 @@ func joinTower(app *types.App, dto interface{}, assistant types.Assistant) (any,
 	return &pb.TowerJoinOutput{Member: &member}, nil
 }
 
-func CreateTowerService(app *types.App) *types.Service {
+func CreateTowerService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/tower.sql")
@@ -118,18 +118,18 @@ func CreateTowerService(app *types.App) *types.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/towers/get.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/towers/create.sql")
 
-	var s = types.CreateService(app, "sigma.TowerService")
+	var s = modules.CreateService(app, "sigma.TowerService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedTowerServiceServer
 		}
 		pb.RegisterTowerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("create", createTower, types.CreateCheck(true, false, false), pb.TowerCreateDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("update", updateTower, types.CreateCheck(true, false, false), pb.TowerUpdateDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("delete", deleteTower, types.CreateCheck(true, false, false), pb.TowerDeleteDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("get", getTower, types.CreateCheck(true, false, false), pb.TowerGetDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("join", joinTower, types.CreateCheck(true, false, false), pb.TowerJoinDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("create", createTower, modules.CreateCheck(true, false, false), pb.TowerCreateDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("update", updateTower, modules.CreateCheck(true, false, false), pb.TowerUpdateDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("delete", deleteTower, modules.CreateCheck(true, false, false), pb.TowerDeleteDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("get", getTower, modules.CreateCheck(true, false, false), pb.TowerGetDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("join", joinTower, modules.CreateCheck(true, false, false), pb.TowerJoinDto{}, modules.CreateMethodOptions(true, true)))
 
 	return s
 }

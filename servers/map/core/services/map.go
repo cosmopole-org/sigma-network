@@ -2,12 +2,12 @@ package services
 
 import (
 	"sigma/map/core/dtos"
-	"sigma/map/core/outputs"
-	"sigma/map/core/types"
 	pb "sigma/map/core/grpc"
+	"sigma/map/core/modules"
+	"sigma/map/core/outputs"
 )
 
-func getServersMap(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func getServersMap(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	return &outputs.Servers{
 		Map: map[string]pb.Server{
 			"cosmopole": {
@@ -18,8 +18,8 @@ func getServersMap(app *types.App, dto interface{}, assistant types.Assistant) (
 	}, nil
 }
 
-func CreateMapService(app *types.App) *types.Service {
-	var s = types.CreateService(app, "map")
-	s.AddMethod(types.CreateMethod("get", getServersMap, types.CreateCheck(false, false, false), dtos.ServersDto{}, types.CreateMethodOptions(true, false)))
+func CreateMapService(app *modules.App) *modules.Service {
+	var s = modules.CreateService(app, "map")
+	s.AddMethod(modules.CreateMethod("get", getServersMap, modules.CreateCheck(false, false, false), dtos.ServersDto{}, modules.CreateMethodOptions(true, false)))
 	return s
 }

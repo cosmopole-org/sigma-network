@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 	"sigma/main/core/models"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	updates_rooms "sigma/main/core/updates/rooms"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func createRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomCreateDto)
 	var query = `
 		insert into room
@@ -34,7 +34,7 @@ func createRoom(app *types.App, dto interface{}, assistant types.Assistant) (any
 	return &pb.RoomCreateOutput{Room: &room}, nil
 }
 
-func updateRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func updateRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomUpdateDto)
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
@@ -51,7 +51,7 @@ func updateRoom(app *types.App, dto interface{}, assistant types.Assistant) (any
 	return &pb.RoomUpdateOutput{Room: &room}, nil
 }
 
-func deleteRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func deleteRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomDeleteDto)
 	var query = ``
 	query = `
@@ -70,7 +70,7 @@ func deleteRoom(app *types.App, dto interface{}, assistant types.Assistant) (any
 	return &pb.RoomDeleteOutput{}, nil
 }
 
-func getRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func getRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.RoomGetDto)
 	var query = `
 		select * from rooms_get($1, $2, $3);
@@ -91,7 +91,7 @@ func getRoom(app *types.App, dto interface{}, assistant types.Assistant) (any, e
 	return &pb.RoomGetOutput{Room: &room}, nil
 }
 
-func CreateRoomService(app *types.App) *types.Service {
+func CreateRoomService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/room.sql")
@@ -99,16 +99,16 @@ func CreateRoomService(app *types.App) *types.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
-	var s = types.CreateService(app, "sigma.RoomService")
+	var s = modules.CreateService(app, "sigma.RoomService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedRoomServiceServer
 		}
 		pb.RegisterRoomServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("create", createRoom, types.CreateCheck(true, true, false), pb.RoomCreateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("update", updateRoom, types.CreateCheck(true, true, false), pb.RoomUpdateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("delete", deleteRoom, types.CreateCheck(true, true, false), pb.RoomDeleteDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("get", getRoom, types.CreateCheck(true, true, false), pb.RoomGetDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("create", createRoom, modules.CreateCheck(true, true, false), pb.RoomCreateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("update", updateRoom, modules.CreateCheck(true, true, false), pb.RoomUpdateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("delete", deleteRoom, modules.CreateCheck(true, true, false), pb.RoomDeleteDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("get", getRoom, modules.CreateCheck(true, true, false), pb.RoomGetDto{}, modules.CreateMethodOptions(true, false)))
 	return s
 }

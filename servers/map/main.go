@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	app "sigma/map/core/core"
-	"sigma/map/core/types"
+	"sigma/map/core/modules"
 
 	"github.com/joho/godotenv"
 )
@@ -24,7 +24,7 @@ func main() {
 		os.Getenv("STORAGE_ROOT_PATH"),
 	)
 
-	app.Network.Listen(types.CreateListenOptions(true, 8086, false, 0))
+	app.Network.Listen(modules.CreateListenOptions(true, 8086, false, 0))
 
 	<-quit
 }

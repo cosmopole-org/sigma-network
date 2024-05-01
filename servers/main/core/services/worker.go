@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	updates_workers "sigma/main/core/updates/workers"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createWorker(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func createWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.WorkerCreateDto)
 	var query = `
 		insert into worker (
@@ -36,7 +36,7 @@ func createWorker(app *types.App, dto interface{}, assistant types.Assistant) (a
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
 }
 
-func updateWorker(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func updateWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.WorkerUpdateDto)
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
@@ -59,7 +59,7 @@ func updateWorker(app *types.App, dto interface{}, assistant types.Assistant) (a
 	}
 }
 
-func deleteWorker(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func deleteWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.WorkerDeleteDto)
 	query := `
 		delete from worker where id = $1 and room_id = $2 returning true;
@@ -74,7 +74,7 @@ func deleteWorker(app *types.App, dto interface{}, assistant types.Assistant) (a
 	return &pb.WorkerDeleteOutput{}, nil
 }
 
-func readWorkers(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func readWorkers(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var query = `
 		select id, machine_id, room_id, metadata from worker where room_id = $1;
 	`
@@ -97,7 +97,7 @@ func readWorkers(app *types.App, dto interface{}, assistant types.Assistant) (an
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
 
-func deliver(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func deliver(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.WorkerDeliverDto)
 	var query = `
 		select * from workers_deliver($1, $2, $3, $4, $5);
@@ -133,7 +133,7 @@ func deliver(app *types.App, dto interface{}, assistant types.Assistant) (any, e
 	return &pb.WorkerDeliverOutput{Passed: allowed}, nil
 }
 
-func CreateWorkerService(app *types.App) *types.Service {
+func CreateWorkerService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/worker.sql")
@@ -141,18 +141,18 @@ func CreateWorkerService(app *types.App) *types.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/workers/deliver.sql")
 
-	var s = types.CreateService(app, "sigma.WorkerService")
+	var s = modules.CreateService(app, "sigma.WorkerService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedWorkerServiceServer
 		}
 		pb.RegisterWorkerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("create", createWorker, types.CreateCheck(true, true, true), pb.WorkerCreateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("update", updateWorker, types.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("delete", deleteWorker, types.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("read", readWorkers, types.CreateCheck(true, true, true), pb.WorkerReadDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("deliver", deliver, types.CreateCheck(true, true, true), pb.WorkerDeliverDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("create", createWorker, modules.CreateCheck(true, true, true), pb.WorkerCreateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("update", updateWorker, modules.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("delete", deleteWorker, modules.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("read", readWorkers, modules.CreateCheck(true, true, true), pb.WorkerReadDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("deliver", deliver, modules.CreateCheck(true, true, true), pb.WorkerDeliverDto{}, modules.CreateMethodOptions(true, false)))
 
 	return s
 }

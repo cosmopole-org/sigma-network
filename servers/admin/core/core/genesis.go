@@ -5,30 +5,30 @@ import (
 	"fmt"
 	"runtime"
 	"sigma/admin/core/models"
+	"sigma/admin/core/modules"
 	"sigma/admin/core/services"
-	"sigma/admin/core/types"
 	"sigma/admin/core/utils"
 	"time"
 )
 
-func LoadServices(a *types.App) {
+func LoadServices(a *modules.App) {
 	a.Services["auth"] = services.CreateAuthService(a)
 }
 
-func New(appId string, databaseUri string, redisUri string, storageRoot string, gods []models.Admin) *types.App {
+func New(appId string, databaseUri string, redisUri string, storageRoot string, gods []models.Admin) *modules.App {
 	fmt.Println("Creating app...")
-	a := types.App{
+	a := modules.App{
 		AppId:       appId,
 		StorageRoot: storageRoot,
-		Services:    map[string]*types.Service{},
+		Services:    map[string]*modules.Service{},
 	}
-	types.Keep(a)
-	inst := types.Instance()
-	inst.Database = types.CreateDatabase(databaseUri)
-	inst.Memory = types.CreateMemory(redisUri)
-	inst.Network = types.CreateNetwork()
+	modules.Keep(a)
+	inst := modules.Instance()
+	inst.Database = modules.CreateDatabase(databaseUri)
+	inst.Memory = modules.CreateMemory(redisUri)
+	inst.Network = modules.CreateNetwork()
 	LoadServices(inst)
-	inst.Security = types.CreateSecurity(gods)
+	inst.Security = modules.CreateSecurity(gods)
 	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
 		runtime.GC()
 	})

@@ -4,7 +4,7 @@ import (
 	"os"
 	app "sigma/admin/core/core"
 	"sigma/admin/core/models"
-	"sigma/admin/core/types"
+	"sigma/admin/core/modules"
 
 	"github.com/joho/godotenv"
 )
@@ -31,7 +31,7 @@ func main() {
 		},
 	)
 
-	app.Network.Listen(types.CreateListenOptions(true, 8085, false, 0))
+	app.Network.Listen(modules.CreateListenOptions(true, 8085, false, 0))
 
 	<-quit
 }

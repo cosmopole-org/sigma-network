@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"strconv"
 
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 
 	pb "sigma/main/core/grpc"
 )
 
-func authenticate(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
-	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.UserId)}, &types.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+func authenticate(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
+	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.UserId)}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
 
-func signup(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func signup(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanSignupDto)
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
@@ -50,7 +50,7 @@ func signup(app *types.App, dto interface{}, assistant types.Assistant) (any, er
 	return &pb.HumanSignupOutput{Pending: &pending}, nil
 }
 
-func verify(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func verify(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanVerifyDto)
 	var query = `
 		select humans_verify($1, $2)
@@ -90,7 +90,7 @@ func verify(app *types.App, dto interface{}, assistant types.Assistant) (any, er
 	}
 }
 
-func complete(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func complete(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanCompleteDto)
 	var human pb.Human
 	var session pb.Session
@@ -115,7 +115,7 @@ func complete(app *types.App, dto interface{}, assistant types.Assistant) (any, 
 	return &pb.HumanCompleteOutput{Human: &human, Session: &session}, nil
 }
 
-func update(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func update(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanUpdateDto)
 	var human pb.Human
 	var query = `
@@ -130,7 +130,7 @@ func update(app *types.App, dto interface{}, assistant types.Assistant) (any, er
 	return &pb.HumanUpdateOutput{Human: &human}, nil
 }
 
-func get(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func get(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.HumanGetDto)
 	var human pb.Human
 	var query = `
@@ -149,7 +149,7 @@ func get(app *types.App, dto interface{}, assistant types.Assistant) (any, error
 	return &pb.HumanGetOutput{Human: &human}, nil
 }
 
-func CreateHumanService(app *types.App) *types.Service {
+func CreateHumanService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/session.sql")
@@ -160,18 +160,18 @@ func CreateHumanService(app *types.App) *types.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/humans/complete.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/humans/verify.sql")
 
-	var s = types.CreateService(app, "sigma.HumanService")
+	var s = modules.CreateService(app, "sigma.HumanService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedHumanServiceServer
 		}
 		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("authenticate", authenticate, types.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("signup", signup, types.CreateCheck(false, false, false), pb.HumanSignupDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("verify", verify, types.CreateCheck(false, false, false), pb.HumanVerifyDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("complete", complete, types.CreateCheck(false, false, false), pb.HumanCompleteDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("update", update, types.CreateCheck(true, false, false), pb.HumanUpdateDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("get", get, types.CreateCheck(false, false, false), pb.HumanGetDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("authenticate", authenticate, modules.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("signup", signup, modules.CreateCheck(false, false, false), pb.HumanSignupDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("verify", verify, modules.CreateCheck(false, false, false), pb.HumanVerifyDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("complete", complete, modules.CreateCheck(false, false, false), pb.HumanCompleteDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("update", update, modules.CreateCheck(true, false, false), pb.HumanUpdateDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("get", get, modules.CreateCheck(false, false, false), pb.HumanGetDto{}, modules.CreateMethodOptions(true, true)))
 	return s
 }

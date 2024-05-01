@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sigma/admin/core/types"
+	"sigma/admin/core/modules"
 
 	pb "sigma/admin/core/grpc"
 )
 
-func signin(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func signin(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.AdminSigninDto)
 	var query = `select * from humans_signin($1, $2)`
 	var token string
@@ -22,7 +22,7 @@ func signin(app *types.App, dto interface{}, assistant types.Assistant) (any, er
 	return &pb.AdminSigninOutput{Token: token}, nil
 }
 
-func updatePass(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func updatePass(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.AdminUpdatePassDto)
 	if len(input.Password) == 0 {
 		return &pb.AdminUpdatePassOutput{}, errors.New("error: invalid password")
@@ -38,7 +38,7 @@ func updatePass(app *types.App, dto interface{}, assistant types.Assistant) (any
 	return &pb.AdminUpdatePassOutput{}, nil
 }
 
-func CreateAuthService(app *types.App) *types.Service {
+func CreateAuthService(app *modules.App) *modules.Service {
 
 	// tables
 	app.Database.ExecuteSqlFile("core/database/tables/admin.sql")
@@ -46,14 +46,14 @@ func CreateAuthService(app *types.App) *types.Service {
 	// Functipns
 	app.Database.ExecuteSqlFile("core/database/functions/admins/signin.sql")
 
-	var s = types.CreateService(app, "auth")
+	var s = modules.CreateService(app, "auth")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedHumanServiceServer
 		}
 		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("updatePass", updatePass, types.CreateCheck(true, false, false), pb.AdminUpdatePassDto{}, types.CreateMethodOptions(true, true)))
-	s.AddMethod(types.CreateMethod("signin", signin, types.CreateCheck(false, false, false), pb.AdminSigninDto{}, types.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("updatePass", updatePass, modules.CreateCheck(true, false, false), pb.AdminUpdatePassDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("signin", signin, modules.CreateCheck(false, false, false), pb.AdminSigninDto{}, modules.CreateMethodOptions(true, true)))
 	return s
 }

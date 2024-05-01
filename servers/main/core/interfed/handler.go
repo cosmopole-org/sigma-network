@@ -2,7 +2,7 @@ package interfed
 
 import (
 	"fmt"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -13,13 +13,13 @@ var allowedRoutes = map[string]bool{
 	"towers/join": true,
 }
 
-func HandleInterfedPacket(app *types.App, channelId string, payload types.InterfedPacket) {
+func HandleInterfedPacket(app *modules.App, channelId string, payload modules.InterfedPacket) {
 	fmt.Println("federation message from:", channelId, "payload:", payload)
-	data := types.Decrypt("server_key", payload.Data)
+	data := modules.Decrypt("server_key", payload.Data)
 	if data != "" {
 		if allowedRoutes[payload.Key] {
 			parts := strings.Split(payload.Key, "/")
-			packet := types.CreateWebPacketForSocket("/" + payload.Key, []byte(data), "", func(answer []byte) {
+			packet := modules.CreateWebPacketForSocket("/"+payload.Key, []byte(data), "", func(answer []byte) {
 				app.Memory.IFResChannel <- [2][]byte{[]byte(channelId), answer}
 			})
 			if len(parts) == 2 {
@@ -30,21 +30,21 @@ func HandleInterfedPacket(app *types.App, channelId string, payload types.Interf
 						var temp = method.InTemplate
 						if data, success, err := utils.ValidateWebPacket([]byte(payload.Data), nil, temp, utils.BODY); success {
 							if method.Check.User {
-								var userId, userType, token = types.Authenticate(app, packet)
+								var userId, userType, token = modules.Authenticate(app, packet)
 								if userId > 0 {
 									if method.Check.Tower {
-										var location = types.HandleLocation(app, token, userId, userType, packet)
+										var location = modules.HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
-											types.HandleResult(app, method.Callback, packet, data, types.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										types.HandleResult(app, method.Callback, packet, data, types.CreateAssistant(userId, userType, 0, 0, 0, packet))
+										modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								types.HandleResult(app, method.Callback, packet, data, types.CreateAssistant(0, "", 0, 0, 0, packet))
+								modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						} else {
 							packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson(err.Error()))

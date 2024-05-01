@@ -3,13 +3,13 @@ package services
 import (
 	"context"
 	"fmt"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	updates_invites "sigma/main/core/updates/invites"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func createInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteCreateDto)
 	var query = `
 		insert into invite
@@ -30,7 +30,7 @@ func createInvite(app *types.App, dto interface{}, assistant types.Assistant) (a
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
-func cancelInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func cancelInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteCancelDto)
 	var query = `
 		delete from invite where id = $1 and tower_id = $2
@@ -47,7 +47,7 @@ func cancelInvite(app *types.App, dto interface{}, assistant types.Assistant) (a
 	return &pb.InviteCancelOutput{}, nil
 }
 
-func acceptInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func acceptInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteAcceptDto)
 	var query = `
 		select * from invites_accept($1, $2)
@@ -64,7 +64,7 @@ func acceptInvite(app *types.App, dto interface{}, assistant types.Assistant) (a
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
-func declineInvite(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func declineInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.InviteDeclineDto)
 	var query = `
 		delete from invite where id = $1 and human_id = $2
@@ -81,7 +81,7 @@ func declineInvite(app *types.App, dto interface{}, assistant types.Assistant) (
 	return &pb.InviteDeclineOutput{}, nil
 }
 
-func CreateInviteService(app *types.App) *types.Service {
+func CreateInviteService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/invite.sql")
@@ -89,17 +89,17 @@ func CreateInviteService(app *types.App) *types.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
-	var s = types.CreateService(app, "sigma.InviteService")
+	var s = modules.CreateService(app, "sigma.InviteService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedInviteServiceServer
 		}
 		pb.RegisterInviteServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("create", createInvite, types.CreateCheck(true, true, false), pb.InviteCreateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("cancel", cancelInvite, types.CreateCheck(true, true, false), pb.InviteCancelDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("accept", acceptInvite, types.CreateCheck(true, false, false), pb.InviteAcceptDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("decline", declineInvite, types.CreateCheck(true, false, false), pb.InviteDeclineDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("create", createInvite, modules.CreateCheck(true, true, false), pb.InviteCreateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("cancel", cancelInvite, modules.CreateCheck(true, true, false), pb.InviteCancelDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("accept", acceptInvite, modules.CreateCheck(true, false, false), pb.InviteAcceptDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("decline", declineInvite, modules.CreateCheck(true, false, false), pb.InviteDeclineDto{}, modules.CreateMethodOptions(true, false)))
 
 	return s
 }

@@ -4,13 +4,13 @@ import (
 	"os"
 	app "sigma/main/core/core"
 	"sigma/main/core/dtos"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	"strconv"
 
 	"github.com/joho/godotenv"
 )
 
-func hello(app *types.App, d interface{}, assistant types.Assistant) (any, error) {
+func hello(app *modules.App, d interface{}, assistant modules.Assistant) (any, error) {
 	return `{ "hello": "world" }`, nil
 }
 
@@ -31,25 +31,25 @@ func main() {
 		os.Getenv("MAP_SERVER"),
 	)
 
-	var apiService = types.CreateService(app, "api")
+	var apiService = modules.CreateService(app, "api")
 	apiService.AddMethod(
-		types.CreateMethod(
+		modules.CreateMethod(
 			"hello",
 			hello,
-			types.CreateCheck(false, false, false),
+			modules.CreateCheck(false, false, false),
 			dtos.HelloDto{},
-			types.CreateMethodOptions(true, false),
+			modules.CreateMethodOptions(true, false),
 		),
 	)
 	apiService.AddMethod(
-		types.CreateMethod(
+		modules.CreateMethod(
 			"ping",
-			func (app *types.App, d interface{}, assistant types.Assistant) (any, error) {
+			func(app *modules.App, d interface{}, assistant modules.Assistant) (any, error) {
 				return os.Getenv("PORT"), nil
 			},
-			types.CreateCheck(false, false, false),
+			modules.CreateCheck(false, false, false),
 			dtos.PingDto{},
-			types.CreateMethodOptions(true, false),
+			modules.CreateMethodOptions(true, false),
 		),
 	)
 	app.AddService(apiService)
@@ -60,7 +60,7 @@ func main() {
 		panic(err)
 	}
 
-	app.Network.Listen(types.CreateListenOptions(true, int(port), false, 0))
+	app.Network.Listen(modules.CreateListenOptions(true, int(port), false, 0))
 
 	<-quit
 }

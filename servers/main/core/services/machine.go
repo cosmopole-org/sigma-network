@@ -3,14 +3,14 @@ package services
 import (
 	"context"
 	"fmt"
-	"sigma/main/core/types"
+	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
 )
 
-func createMachine(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func createMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.MachineCreateDto)
 	var token, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
@@ -40,7 +40,7 @@ func createMachine(app *types.App, dto interface{}, assistant types.Assistant) (
 	return &pb.MachineCreateOutput{Machine: &machine, Session: &session}, nil
 }
 
-func updateMachine(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func updateMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.MachineUpdateDto)
 	var query = `
 		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
@@ -56,7 +56,7 @@ func updateMachine(app *types.App, dto interface{}, assistant types.Assistant) (
 	return &pb.MachineUpdateOutput{Machine: &machine}, nil
 }
 
-func deleteMachine(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func deleteMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.MachineDeleteDto)
 	var query = ``
 	query = `
@@ -72,7 +72,7 @@ func deleteMachine(app *types.App, dto interface{}, assistant types.Assistant) (
 	return &pb.MachineDeleteOutput{}, nil
 }
 
-func getMachine(app *types.App, dto interface{}, assistant types.Assistant) (any, error) {
+func getMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.MachineGetDto)
 	machineId, err := strconv.ParseInt(input.MachineId, 10, 64)
 	if err != nil {
@@ -100,7 +100,7 @@ func getMachine(app *types.App, dto interface{}, assistant types.Assistant) (any
 	return &pb.MachineGetOutput{Machine: &machine, Session: &session}, nil
 }
 
-func CreateMachineService(app *types.App) *types.Service {
+func CreateMachineService(app *modules.App) *modules.Service {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/machine.sql")
@@ -110,16 +110,16 @@ func CreateMachineService(app *types.App) *types.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/machines/delete.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/machines/get.sql")
 
-	var s = types.CreateService(app, "sigma.MachineService")
+	var s = modules.CreateService(app, "sigma.MachineService")
 	s.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedMachineServiceServer
 		}
 		pb.RegisterMachineServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(types.CreateMethod("create", createMachine, types.CreateCheck(true, false, false), pb.MachineCreateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("update", updateMachine, types.CreateCheck(true, false, false), pb.MachineUpdateDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("delete", deleteMachine, types.CreateCheck(true, false, false), pb.MachineDeleteDto{}, types.CreateMethodOptions(true, false)))
-	s.AddMethod(types.CreateMethod("get", getMachine, types.CreateCheck(true, false, false), pb.MachineGetDto{}, types.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("create", createMachine, modules.CreateCheck(true, false, false), pb.MachineCreateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("update", updateMachine, modules.CreateCheck(true, false, false), pb.MachineUpdateDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("delete", deleteMachine, modules.CreateCheck(true, false, false), pb.MachineDeleteDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("get", getMachine, modules.CreateCheck(true, false, false), pb.MachineGetDto{}, modules.CreateMethodOptions(true, false)))
 	return s
 }
