@@ -30,7 +30,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan119\"\n}",
+							"raw": "{\n    \"email\": \"keyhan120\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -308,10 +308,11 @@
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"towerId\", jsonData.tower.id);",
+									"postman.setEnvironmentVariable(\"memberId\", jsonData.member.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1456,6 +1457,45 @@
 							"path": [
 								"admins",
 								"updatePass"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "getServerPublicKey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    postman.setEnvironmentVariable(\"token\", jsonData.token);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{server}}/auth/getServerPublicKey",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"auth",
+								"getServerPublicKey"
 							]
 						}
 					},

@@ -66,6 +66,7 @@ message Human {
   	string email = 2;
 	string firstName = 3;
 	string lastName = 4;
+	string origin = 5;
 }
 
 message Pending {
@@ -73,7 +74,7 @@ message Pending {
 	string email = 2;
 	string verifyCode = 3;
 	string clientCode = 4;
-	string state = 5;     
+	string state = 5;
 }
 
 message Session {
@@ -136,6 +137,7 @@ message HumanUpdateOutput {
 
 message HumanGetDto {
 	string userId = 1;
+	string origin = 2;
 }
 
 message HumanGetOutput {
@@ -151,7 +153,7 @@ service TowerService {
 	rpc get (TowerGetDto) returns (TowerGetOutput) {}
 	rpc join (TowerJoinDto) returns (TowerJoinOutput) {}
 }
-  
+
 // models
 
 message Tower {
@@ -160,12 +162,14 @@ message Tower {
 	int64 avatarId = 3;
 	bool isPublic = 4;
 	int64 creatorId = 5;
+	string origin = 6;
 }
 
 message Member {
 	int64 id = 1;
 	int64 humanId = 2;
 	int64 towerId = 3;
+	string origin = 4;
 }
 
 // messages
@@ -200,6 +204,7 @@ message TowerDeleteOutput {}
 
 message TowerGetDto {
 	string towerId = 1;
+	string origin = 2;
 }
 
 message TowerGetOutput {
@@ -208,6 +213,7 @@ message TowerGetOutput {
 
 message TowerJoinDto {
 	int64 towerId = 1;
+	string origin = 2;
 }
 
 message TowerJoinOutput {
@@ -230,6 +236,7 @@ message Room {
   	string name = 2;
 	int64 avatarId = 3;
 	int64 towerId = 4;
+	string origin = 5;
 }
 
 // messages
@@ -261,6 +268,7 @@ message RoomDeleteOutput {}
 
 message RoomGetDto {
 	string roomId = 1;
+	string origin = 2;
 }
 
 message RoomGetOutput {
@@ -282,12 +290,14 @@ message Invite {
 	int64 id = 1;
 	int64 humanId = 2;
 	int64 towerId = 3;
+	string origin = 4;
 }
 
 // messages
 
 message InviteCreateDto {
 	int64 humanId = 1;
+	string origin = 2;
 }
 
 message InviteCreateOutput {
@@ -304,6 +314,7 @@ message InviteCancelOutput {
 
 message InviteAcceptDto {
 	int64 inviteId = 1;
+	string origin = 2;
 }
 
 message InviteAcceptOutput {
@@ -312,6 +323,7 @@ message InviteAcceptOutput {
 
 message InviteDeclineDto {
 	int64 inviteId = 1;
+	string origin = 2;
 }
 
 message InviteDeclineOutput {
@@ -334,6 +346,7 @@ message Machine {
   	string name = 2;
 	int64 avatarId = 3;
 	int64 creatorId = 4;
+	string origin = 5;
 }
 
 // messages
@@ -366,6 +379,7 @@ message MachineDeleteOutput {}
 
 message MachineGetDto {
 	string machineId = 1;
+	string origin = 2;
 }
 
 message MachineGetOutput {
@@ -390,6 +404,7 @@ message Worker {
 	int64 roomId = 2;
 	int64 machineId = 3;
 	string metadata = 4;
+	string origin = 5;
 }
 
 // messages
@@ -419,7 +434,7 @@ message WorkerDeleteDto {
 message WorkerDeleteOutput {}
 
 message WorkerReadDto {
-	
+	string origin = 1;
 }
 
 message WorkerReadOutput {
@@ -430,6 +445,7 @@ message WorkerDeliverDto {
 	int64 workerId = 1;
 	int64 userId = 2;
 	string data = 3;
+	string origin = 4;
 }
 
 message WorkerDeliverOutput {

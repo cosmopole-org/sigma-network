@@ -16,13 +16,14 @@ func createWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 		insert into worker (
 			machine_id,
 			room_id,
-			metadata
-		) values ($1, $2, $3)
+			metadata,
+			origin
+		) values ($1, $2, $3, $4)
 		returning id;
 	`
 	var worker pb.Worker
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata,
+		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId,
 	).Scan(&worker.Id); err != nil {
 		fmt.Println(err)
 		return &pb.WorkerCreateOutput{}, err
@@ -31,6 +32,7 @@ func createWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 		worker.MachineId = input.MachineId
 		worker.RoomId = assistant.RoomId
 		worker.Metadata = input.Metadata
+		worker.Origin = app.AppId
 	}
 	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d", worker.RoomId, worker.MachineId))
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
@@ -40,17 +42,16 @@ func updateWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 	var input = (dto).(*pb.WorkerUpdateDto)
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
-		returning id, machine_id;
+		returning id, machine_id, origin;
 	`
 	var worker pb.Worker
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Metadata, input.WorkerId, assistant.RoomId,
-	).Scan(&worker.Id, &worker.MachineId); err != nil {
+	).Scan(&worker.Id, &worker.MachineId, &worker.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.WorkerUpdateOutput{}, err
 	}
 	if worker.Id > 0 {
-		worker.Id = input.WorkerId
 		worker.RoomId = assistant.RoomId
 		worker.Metadata = input.Metadata
 		return &pb.WorkerUpdateOutput{Worker: &worker}, nil
@@ -76,7 +77,7 @@ func deleteWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 
 func readWorkers(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var query = `
-		select id, machine_id, room_id, metadata from worker where room_id = $1;
+		select id, machine_id, room_id, metadata, origin from worker where room_id = $1;
 	`
 	rows, err := app.Database.Db.Query(context.Background(), query, assistant.RoomId)
 	if err != nil {
@@ -85,7 +86,7 @@ func readWorkers(app *modules.App, dto interface{}, assistant modules.Assistant)
 	var rowSlice []*pb.Worker
 	for rows.Next() {
 		var w pb.Worker
-		err := rows.Scan(&w.Id, &w.MachineId, &w.RoomId, &w.Metadata)
+		err := rows.Scan(&w.Id, &w.MachineId, &w.RoomId, &w.Metadata, &w.Origin)
 		if err != nil {
 			fmt.Println(err)
 		}

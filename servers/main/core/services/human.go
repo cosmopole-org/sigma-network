@@ -79,6 +79,7 @@ func verify(app *modules.App, dto interface{}, assistant modules.Assistant) (any
 			Email:     record[6].(string),
 			FirstName: record[7].(string),
 			LastName:  record[8].(string),
+			Origin:  record[11].(string),
 		}
 		var session = pb.Session{
 			Id:     record[9].(int64),
@@ -100,14 +101,15 @@ func complete(app *modules.App, dto interface{}, assistant modules.Assistant) (a
 		return &pb.HumanCompleteOutput{}, tokenErr
 	}
 	var query = `
-		select * from humans_complete($1, $2, $3, $4, $5)
+		select * from humans_complete($1, $2, $3, $4, $5, $6)
 	`
-	if err := app.Database.Db.QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token).
+	if err := app.Database.Db.QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token, app.AppId).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
 		fmt.Println(err)
 		return &pb.HumanCompleteOutput{}, err
 	}
 	if human.Id > 0 {
+		human.Origin = app.AppId
 		session.UserId = human.Id
 		session.CreatureType = 1
 	}
@@ -120,10 +122,10 @@ func update(app *modules.App, dto interface{}, assistant modules.Assistant) (any
 	var human pb.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
-		returning id, email, first_name, last_name;
+		returning id, email, first_name, last_name, origin;
 	`
 	if err := app.Database.Db.QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.UserId).
-		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName); err != nil {
+		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &human.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.HumanUpdateOutput{}, err
 	}
@@ -134,7 +136,7 @@ func get(app *modules.App, dto interface{}, assistant modules.Assistant) (any, e
 	var input = (dto).(*pb.HumanGetDto)
 	var human pb.Human
 	var query = `
-		select id, first_name, last_name from human where id = $1;
+		select id, first_name, last_name, origin from human where id = $1;
 	`
 	userId, err := strconv.ParseInt(input.UserId, 10, 64)
 	if err != nil {
@@ -142,7 +144,7 @@ func get(app *modules.App, dto interface{}, assistant modules.Assistant) (any, e
 		return &pb.HumanGetOutput{}, err
 	}
 	if err := app.Database.Db.QueryRow(context.Background(), query, userId).
-		Scan(&human.Id, &human.FirstName, &human.LastName); err != nil {
+		Scan(&human.Id, &human.FirstName, &human.LastName, &human.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.HumanGetOutput{}, err
 	}

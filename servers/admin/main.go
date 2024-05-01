@@ -19,7 +19,7 @@ func main() {
 	}
 
 	app := app.New(
-		"sigma-sample",
+		"cosmopole",
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),

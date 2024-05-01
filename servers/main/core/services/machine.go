@@ -18,12 +18,12 @@ func createMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 		return &pb.MachineCreateOutput{}, err1
 	}
 	var query = `
-		select * from machines_create($1, $2, $3, $4);
+		select * from machines_create($1, $2, $3, $4, $5);
 	`
 	var machine pb.Machine
 	var session pb.Session
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, token,
+		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, token, app.AppId,
 	).Scan(&machine.Id, &session.Id); err != nil {
 		fmt.Println(err)
 		return &pb.MachineCreateOutput{}, err
@@ -32,6 +32,7 @@ func createMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 		machine.Name = input.Name
 		machine.AvatarId = input.AvatarId
 		machine.CreatorId = assistant.UserId
+		machine.Origin = app.AppId
 		session.UserId = machine.Id
 		session.Token = token
 		session.CreatureType = 2
@@ -44,12 +45,12 @@ func updateMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 	var input = (dto).(*pb.MachineUpdateDto)
 	var query = `
 		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
-		returning id, name, avatar_id, creator_id;
+		returning id, name, avatar_id, creator_id, origin;
 	`
 	var machine pb.Machine
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.MachineId, assistant.UserId,
-	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId); err != nil {
+	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &machine.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.MachineUpdateOutput{}, err
 	}
@@ -86,7 +87,7 @@ func getMachine(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	var session pb.Session
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, machineId,
-	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &session.Id, &session.Token); err != nil {
+	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &session.Id, &session.Token, &machine.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.MachineGetOutput{}, err
 	}

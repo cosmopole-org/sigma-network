@@ -13,12 +13,12 @@ import (
 func createTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	var input = (dto).(*pb.TowerCreateDto)
 	var query = `
-		select * from towers_create($1, $2, $3, $4)
+		select * from towers_create($1, $2, $3, $4, $5)
 	`
 	var tower pb.Tower
 	var member pb.Member
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, input.IsPublic,
+		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, input.IsPublic, app.AppId,
 	).Scan(&member.Id, &tower.Id); err != nil {
 		fmt.Println(err)
 		return &pb.TowerCreateOutput{}, err
@@ -28,8 +28,10 @@ func createTower(app *modules.App, dto interface{}, assistant modules.Assistant)
 		tower.AvatarId = input.AvatarId
 		tower.CreatorId = assistant.UserId
 		tower.IsPublic = input.IsPublic
+		tower.Origin = app.AppId
 		member.TowerId = tower.Id
 		member.HumanId = assistant.UserId
+		member.Origin = app.AppId
 	}
 	app.Memory.Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
@@ -39,12 +41,12 @@ func updateTower(app *modules.App, dto interface{}, assistant modules.Assistant)
 	var input = (dto).(*pb.TowerUpdateDto)
 	var query = `
 		update tower set name = $1, avatar_id = $2, is_public = $3 where id = $4 and creator_id = $5
-		returning id, name, avatar_id, is_public, creator_id;
+		returning id, name, avatar_id, is_public, creator_id, origin;
 	`
 	var tower pb.Tower
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, input.TowerId, assistant.UserId,
-	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId); err != nil {
+	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId, &tower.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.TowerUpdateOutput{}, err
 	}
@@ -81,7 +83,7 @@ func getTower(app *modules.App, dto interface{}, assistant modules.Assistant) (a
 	}
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, towerId,
-	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic); err != nil {
+	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.TowerGetOutput{}, err
 	}
@@ -92,15 +94,16 @@ func joinTower(app *modules.App, dto interface{}, assistant modules.Assistant) (
 	var input = (dto).(*pb.TowerJoinDto)
 	fmt.Println(assistant)
 	var query = `
-		select * from towers_join($1, $2)
+		select * from towers_join($1, $2, $3)
 	`
 	var member pb.Member
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.TowerId,
+		context.Background(), query, assistant.UserId, input.TowerId, app.AppId,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.TowerJoinOutput{}, err
 	}
+	member.Origin = app.AppId
 	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId)
 	app.Memory.Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
 	go app.Network.PusherServer.PushToGroup(member.TowerId, updates_towers.Join{Member: &member}, []int64{member.HumanId})

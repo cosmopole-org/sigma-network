@@ -1,4 +1,4 @@
-create function invites_accept(humanid bigint, inviteid bigint)
+create function invites_accept(humanid bigint, inviteid bigint, org text)
 		returns table (
 			m_id 	     bigint,
 		    m_human_id   bigint,
@@ -15,8 +15,9 @@ create function invites_accept(humanid bigint, inviteid bigint)
 				insert into member
 				(
 					human_id,
-					tower_id
-				) values (h_id, t_id)
+					tower_id,
+					origin
+				) values (h_id, t_id, org)
 				returning id, human_id, tower_id into m_id, h_id, t_id;
 				return query select m_id, h_id, t_id;
 			else

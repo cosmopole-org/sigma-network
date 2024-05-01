@@ -1,4 +1,4 @@
-create or replace function humans_create_gods(em text, firstname text, lastname text, tok text)
+create or replace function humans_create_gods(em text, firstname text, lastname text, tok text, org text)
 	returns table (
 		h_id 	bigint,
 		t 	    text
@@ -13,8 +13,9 @@ create or replace function humans_create_gods(em text, firstname text, lastname 
 			(
 				email,
 				first_name,
-				last_name
-			) values (em, firstname, lastname)
+				last_name,
+				origin
+			) values (em, firstname, lastname, org)
 			returning id into h_id;
 			insert into session
 			(

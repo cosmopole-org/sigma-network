@@ -43,7 +43,7 @@ func LoadKeys() {
 	}
 }
 
-func New(appId string, databaseUri string, redisUri string, storageRoot string, mapServerAddr string) *modules.App {
+func New(appId string, databaseUri string, dbName string, redisUri string, storageRoot string, mapServerAddr string) *modules.App {
 	fmt.Println("Creating app...")
 	serversMap := map[string]pb.Server{}
 	serversMapRes, err := http.Get(mapServerAddr + "/map/get")
@@ -75,7 +75,7 @@ func New(appId string, databaseUri string, redisUri string, storageRoot string, 
 	modules.Keep(a)
 	inst := modules.Instance()
 	LoadKeys()
-	inst.Database = modules.CreateDatabase(databaseUri)
+	inst.Database = modules.CreateDatabase(databaseUri, dbName)
 	inst.Memory = modules.CreateMemory(redisUri)
 	inst.Network = modules.CreateNetwork()
 	LoadServices(inst)

@@ -1,4 +1,4 @@
-create or replace function humans_complete(cc varchar(100), vc varchar(100), fname varchar(100), lname varchar(100), t varchar(100))
+create or replace function humans_complete(cc varchar(100), vc varchar(100), fname varchar(100), lname varchar(100), t varchar(100), org text)
 		returns table (
 			h_id 	     bigint,
 		    h_email      text,
@@ -24,8 +24,9 @@ create or replace function humans_complete(cc varchar(100), vc varchar(100), fna
 				(
 					email,
 					first_name,
-					last_name
-				) values (res2, fname, lname)
+					last_name,
+					origin
+				) values (res2, fname, lname, org)
 				ON CONFLICT(email) do update set first_name = fname, last_name = lname
 				returning id, email, first_name, last_name into h_id, h_email, h_first_name, h_last_name;
 				insert into session

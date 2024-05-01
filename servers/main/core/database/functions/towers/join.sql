@@ -1,4 +1,4 @@
-create or replace function towers_join(humanid bigint, towerid bigint)
+create or replace function towers_join(humanid bigint, towerid bigint, org text)
 		returns table (
 			m_id 	     bigint,
 		    m_human_id   bigint,
@@ -15,8 +15,9 @@ create or replace function towers_join(humanid bigint, towerid bigint)
 				insert into member
 				(
 					human_id,
-					tower_id
-				) values (humanid, towerid)
+					tower_id,
+					origin
+				) values (humanid, towerid, org)
 				returning id, human_id, tower_id into m_id, h_id, t_id;
 				return query select m_id, h_id, t_id;
 			else

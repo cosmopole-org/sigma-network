@@ -3,5 +3,6 @@ create table tower (
     name varchar(100) not null,
     avatar_id bigint,
     is_public boolean,
-    creator_id bigint not null
+    creator_id bigint not null,
+    origin text not null
 );

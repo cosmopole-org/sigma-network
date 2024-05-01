@@ -18,17 +18,19 @@ func createRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 		(
 			name,
 			avatar_id,
-			tower_id
-		) values ($1, $2, $3)
+			tower_id,
+			origin
+		) values ($1, $2, $3, $4)
 		returning id, name, avatar_id, tower_id;
 	`
 	var room pb.Room
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, assistant.TowerId,
+		context.Background(), query, input.Name, input.AvatarId, assistant.TowerId, app.AppId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomCreateOutput{}, err
 	}
+	room.Origin = app.AppId
 	app.Memory.Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
 	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Create{Room: &room}, []int64{})
 	return &pb.RoomCreateOutput{Room: &room}, nil
@@ -38,12 +40,12 @@ func updateRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	var input = (dto).(*pb.RoomUpdateDto)
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
-		returning id, name, avatar_id, tower_id;
+		returning id, name, avatar_id, tower_id, origin;
 	`
 	var room pb.Room
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.TowerId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
+	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId, &room.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.RoomUpdateOutput{}, err
 	}
@@ -60,7 +62,7 @@ func deleteRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	`
 	var room models.Room
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, query, input.RoomId, assistant.TowerId,
+		context.Background(), query, input.RoomId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.RoomDeleteOutput{}, err
@@ -83,7 +85,7 @@ func getRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (an
 	}
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, assistant.TowerId, roomId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId); err != nil {
+	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.RoomGetOutput{}, err
 	}
