@@ -35,7 +35,7 @@ func DownloadFile(app *modules.App, dto interface{}, assistant modules.Assistant
 
 func CreateStorageService(app *modules.App) *modules.Service {
 	s := modules.CreateService(app, "storage")
-	s.AddMethod(modules.CreateMethod("upload", UploadFile, modules.CreateCheck(true, true, true), dtos_storage.UploadDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("download", DownloadFile, modules.CreateCheck(true, true, true), dtos_storage.DownloadDto{}, modules.CreateMethodOptions(true, false)))
+	// s.AddMethod(modules.CreateMethod("upload", UploadFile, modules.CreateCheck(true, true, true), dtos_storage.UploadDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("download", DownloadFile, modules.CreateCheck(true, true, true), dtos_storage.DownloadDto{}, modules.CreateMethodOptions(true, true, false)))
 	return s
 }

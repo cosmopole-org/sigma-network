@@ -1,12 +1,19 @@
 
 syntax = "proto3";
 
+import "google/protobuf/any.proto";
+
 option go_package = "google.golang.org/grpc/sigma_grpc";
 option java_multiple_files = true;
 option java_package = "io.grpc.sigma";
 option java_outer_classname = "SigmaProto";
 
 package sigma;
+
+message Packet {
+	string origin = 1;
+    google.protobuf.Any data = 2;
+}
 
 // service
 
@@ -90,6 +97,11 @@ message HumanAuthenticateDto {
 	string token = 1;
 }
 
+message HumanAuthenticatePacket {
+	HumanAuthenticateDto data = 1;
+	string origin = 2;
+}
+
 message HumanAuthenticateOutput {
 	bool authenticated = 1;
 	Human me = 2;
@@ -97,6 +109,11 @@ message HumanAuthenticateOutput {
 
 message HumanSignupDto {
 	string email = 1;
+}
+
+message HumanSignupPacket {
+	HumanSignupDto data = 1;
+	string origin = 2;
 }
 
 message HumanSignupOutput {

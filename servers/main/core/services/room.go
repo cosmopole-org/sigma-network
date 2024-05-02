@@ -108,9 +108,9 @@ func CreateRoomService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterRoomServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("create", createRoom, modules.CreateCheck(true, true, false), pb.RoomCreateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("update", updateRoom, modules.CreateCheck(true, true, false), pb.RoomUpdateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("delete", deleteRoom, modules.CreateCheck(true, true, false), pb.RoomDeleteDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("get", getRoom, modules.CreateCheck(true, true, false), pb.RoomGetDto{}, modules.CreateMethodOptions(true, false)))
+	// s.AddMethod(modules.CreateMethod("create", createRoom, modules.CreateCheck(true, true, false), pb.RoomCreateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("update", updateRoom, modules.CreateCheck(true, true, false), pb.RoomUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("delete", deleteRoom, modules.CreateCheck(true, true, false), pb.RoomDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("get", getRoom, modules.CreateCheck(true, true, false), pb.RoomGetDto{}, modules.CreateMethodOptions(true, true, false)))
 	return s
 }

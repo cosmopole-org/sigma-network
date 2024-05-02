@@ -19,6 +19,6 @@ func CreateAuthService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterAuthServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("getServerPublicKey", getServerPublicKey, modules.CreateCheck(false, false, false), pb.AuthGetServerPublicKeyDto{}, modules.CreateMethodOptions(true, true)))
+	//s.AddMethod(modules.CreateMethod("getServerPublicKey", getServerPublicKey, modules.CreateCheck(false, false, false), pb.AuthGetServerPublicKeyDto{}, modules.CreateMethodOptions(true, true, false)))
 	return s
 }

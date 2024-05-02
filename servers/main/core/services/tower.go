@@ -128,11 +128,11 @@ func CreateTowerService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterTowerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("create", createTower, modules.CreateCheck(true, false, false), pb.TowerCreateDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("update", updateTower, modules.CreateCheck(true, false, false), pb.TowerUpdateDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("delete", deleteTower, modules.CreateCheck(true, false, false), pb.TowerDeleteDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("get", getTower, modules.CreateCheck(true, false, false), pb.TowerGetDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("join", joinTower, modules.CreateCheck(true, false, false), pb.TowerJoinDto{}, modules.CreateMethodOptions(true, true)))
+	// s.AddMethod(modules.CreateMethod("create", createTower, modules.CreateCheck(true, false, false), pb.TowerCreateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("update", updateTower, modules.CreateCheck(true, false, false), pb.TowerUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("delete", deleteTower, modules.CreateCheck(true, false, false), pb.TowerDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("get", getTower, modules.CreateCheck(true, false, false), pb.TowerGetDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("join", joinTower, modules.CreateCheck(true, false, false), pb.TowerJoinDto{}, modules.CreateMethodOptions(true, true, false)))
 
 	return s
 }

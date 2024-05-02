@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	app "sigma/main/core/core"
-	"sigma/main/core/dtos"
+	//"sigma/main/core/dtos"
 	"sigma/main/core/modules"
 	"strconv"
 
@@ -33,26 +33,26 @@ func main() {
 	)
 
 	var apiService = modules.CreateService(app, "api")
-	apiService.AddMethod(
-		modules.CreateMethod(
-			"hello",
-			hello,
-			modules.CreateCheck(false, false, false),
-			dtos.HelloDto{},
-			modules.CreateMethodOptions(true, false),
-		),
-	)
-	apiService.AddMethod(
-		modules.CreateMethod(
-			"ping",
-			func(app *modules.App, d interface{}, assistant modules.Assistant) (any, error) {
-				return os.Getenv("PORT"), nil
-			},
-			modules.CreateCheck(false, false, false),
-			dtos.PingDto{},
-			modules.CreateMethodOptions(true, false),
-		),
-	)
+	// apiService.AddMethod(
+	// 	modules.CreateMethod(
+	// 		"hello",
+	// 		hello,
+	// 		modules.CreateCheck(false, false, false),
+	// 		dtos.HelloDto{},
+	// 		modules.CreateMethodOptions(true, true, false),
+	// 	),
+	// )
+	// apiService.AddMethod(
+	// 	modules.CreateMethod(
+	// 		"ping",
+	// 		func(app *modules.App, d interface{}, assistant modules.Assistant) (any, error) {
+	// 			return os.Getenv("PORT"), nil
+	// 		},
+	// 		modules.CreateCheck(false, false, false),
+	// 		dtos.PingDto{},
+	// 		modules.CreateMethodOptions(true, true, false),
+	// 	),
+	// )
 	app.AddService(apiService)
 
 	var portStr = os.Getenv("PORT")

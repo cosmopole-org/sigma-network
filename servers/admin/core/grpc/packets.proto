@@ -90,6 +90,11 @@ message HumanAuthenticateDto {
 	string token = 1;
 }
 
+message HumanAuthenticatePacket {
+	HumanAuthenticateDto data = 1;
+	string origin = 2;
+}
+
 message HumanAuthenticateOutput {
 	bool authenticated = 1;
 	Human me = 2;
@@ -97,6 +102,11 @@ message HumanAuthenticateOutput {
 
 message HumanSignupDto {
 	string email = 1;
+}
+
+message HumanSignupPacket {
+	HumanSignupDto data = 1;
+	string origin = 2;
 }
 
 message HumanSignupOutput {
@@ -136,7 +146,7 @@ message HumanUpdateOutput {
 }
 
 message HumanGetDto {
-	string userId = 1;
+	int64 userId = 1;
 	string origin = 2;
 }
 

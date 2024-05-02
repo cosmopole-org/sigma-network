@@ -35,16 +35,16 @@ func HandleInterfedPacket(app *modules.App, channelId string, payload modules.In
 									if method.Check.Tower {
 										var location = modules.HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
-											modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											modules.HandleResult(app, parts[0] + "/" + parts[1], method, packet, data, modules.CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(userId, userType, 0, 0, 0, packet))
+										modules.HandleResult(app, parts[0] + "/" + parts[1], method, packet, data, modules.CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								modules.HandleResult(app, method.Callback, packet, data, modules.CreateAssistant(0, "", 0, 0, 0, packet))
+								modules.HandleResult(app, parts[0] + "/" + parts[1], method, packet, data, modules.CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						} else {
 							packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson(err.Error()))

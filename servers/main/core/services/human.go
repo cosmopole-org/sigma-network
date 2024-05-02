@@ -11,14 +11,14 @@ import (
 	pb "sigma/main/core/grpc"
 )
 
-func authenticate(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
+func authenticate(app *modules.App, dto pb.HumanAuthenticateDto, assistant modules.Assistant) (any, error) {
 	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.UserId)}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
 
-func signup(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.HumanSignupDto)
+func signup(app *modules.App, dto *pb.HumanSignupDto, assistant modules.Assistant) (any, error) {
+	input := dto
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		fmt.Println(err1)
@@ -169,11 +169,21 @@ func CreateHumanService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("authenticate", authenticate, modules.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("signup", signup, modules.CreateCheck(false, false, false), pb.HumanSignupDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("verify", verify, modules.CreateCheck(false, false, false), pb.HumanVerifyDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("complete", complete, modules.CreateCheck(false, false, false), pb.HumanCompleteDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("update", update, modules.CreateCheck(true, false, false), pb.HumanUpdateDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("get", get, modules.CreateCheck(false, false, false), pb.HumanGetDto{}, modules.CreateMethodOptions(true, true)))
-	return s
+	s.AddMethod(modules.CreateMethod("authenticate",
+	func(args ...interface{}) (any, error) {
+		return authenticate(args[0].(*modules.App), args[1].(pb.HumanAuthenticateDto), args[2].(modules.Assistant))
+	},
+	modules.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, modules.CreateMethodOptions(true, true, false)))
+    
+	s.AddMethod(modules.CreateMethod("signup",
+	func(args ...interface{}) (any, error) {
+		return signup(args[0].(*modules.App), args[1].(*pb.HumanSignupDto), args[2].(modules.Assistant))
+	},
+	modules.CreateCheck(false, false, false), pb.HumanSignupDto{}, modules.CreateMethodOptions(true, true, false)))
+	
+	// s.AddMethod(modules.CreateMethod("verify", verify, modules.CreateCheck(false, false, false), pb.HumanVerifyDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("complete", complete, modules.CreateCheck(false, false, false), pb.HumanCompleteDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("update", update, modules.CreateCheck(true, false, false), pb.HumanUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("get", get, modules.CreateCheck(false, false, false), pb.HumanGetDto{}, modules.CreateMethodOptions(true, true, true)))
+    return s
 }

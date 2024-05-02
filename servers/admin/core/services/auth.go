@@ -53,7 +53,7 @@ func CreateAuthService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("updatePass", updatePass, modules.CreateCheck(true, false, false), pb.AdminUpdatePassDto{}, modules.CreateMethodOptions(true, true)))
-	s.AddMethod(modules.CreateMethod("signin", signin, modules.CreateCheck(false, false, false), pb.AdminSigninDto{}, modules.CreateMethodOptions(true, true)))
+	s.AddMethod(modules.CreateMethod("updatePass", updatePass, modules.CreateCheck(true, false, false), pb.AdminUpdatePassDto{}, modules.CreateMethodOptions(true, true, false) true)))
+	s.AddMethod(modules.CreateMethod("signin", signin, modules.CreateCheck(false, false, false), pb.AdminSigninDto{}, modules.CreateMethodOptions(true, true, false) true)))
 	return s
 }

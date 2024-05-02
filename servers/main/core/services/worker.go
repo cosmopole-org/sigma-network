@@ -149,11 +149,11 @@ func CreateWorkerService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterWorkerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("create", createWorker, modules.CreateCheck(true, true, true), pb.WorkerCreateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("update", updateWorker, modules.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("delete", deleteWorker, modules.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("read", readWorkers, modules.CreateCheck(true, true, true), pb.WorkerReadDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("deliver", deliver, modules.CreateCheck(true, true, true), pb.WorkerDeliverDto{}, modules.CreateMethodOptions(true, false)))
+	// s.AddMethod(modules.CreateMethod("create", createWorker, modules.CreateCheck(true, true, true), pb.WorkerCreateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("update", updateWorker, modules.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("delete", deleteWorker, modules.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("read", readWorkers, modules.CreateCheck(true, true, true), pb.WorkerReadDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("deliver", deliver, modules.CreateCheck(true, true, true), pb.WorkerDeliverDto{}, modules.CreateMethodOptions(true, true, false)))
 
 	return s
 }

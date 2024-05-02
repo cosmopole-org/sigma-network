@@ -61,22 +61,23 @@ func HandleWebsocket(app *App, ctx *fasthttp.RequestCtx) {
 						)
 						var d = temp
 						if data, success, err := utils.ValidateWebPacket(packet.Body, nil, d, utils.BODY); success {
+							dv := data.(*any)
 							if method.Check.User {
 								var userId, userType, token = Authenticate(app, packet)
 								if userId > 0 {
 									if method.Check.Tower {
 										var location = HandleLocation(app, token, userId, userType, packet)
 										if location.TowerId > 0 {
-											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
+											HandleResult(app, parts[1] + "/" + parts[2], method, packet, *dv, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
 										} else {
 											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
 										}
 									} else {
-										HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, 0, 0, 0, packet))
+										HandleResult(app, parts[1] + "/" + parts[2], method, packet, *dv, CreateAssistant(userId, userType, 0, 0, 0, packet))
 									}
 								}
 							} else {
-								HandleResult(app, method.Callback, packet, data, CreateAssistant(0, "", 0, 0, 0, packet))
+								HandleResult(app, parts[1] + "/" + parts[2], method, packet, *dv, CreateAssistant(0, "", 0, 0, 0, packet))
 							}
 						} else {
 							packet.AnswerWithJson(fasthttp.StatusBadRequest, map[string]string{}, utils.BuildErrorJson(err.Error()))

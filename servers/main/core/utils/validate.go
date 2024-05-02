@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/mitchellh/mapstructure"
 )
 
 func NotBlank(fl validator.FieldLevel) bool {
@@ -41,23 +42,16 @@ func LoadValidationSystem() {
 	LoadValidator(Validate)
 }
 
-func ValidateWebPacket(body []byte, query map[string]string, dto any, targetType int) (interface{}, bool, error) {
+func ValidateWebPacket(body []byte, query map[string]string, dto any, targetType int) (any, bool, error) {
+	var frame = map[string]interface{}{}
 	if targetType == BODY {
 		if body == nil {
 			return nil, false, errors.New("body can't be empty")
 		}
-		nptr := reflect.New(reflect.TypeOf(dto))
-		err1 := json.Unmarshal(body, nptr.Interface())
+		err1 := json.Unmarshal(body, &frame)
 		if err1 != nil {
 			fmt.Println(err1)
 			return nil, false, err1
-		}
-		err2 := Validate.Struct(nptr.Interface())
-		if err2 != nil {
-			fmt.Println(err2)
-			return nil, false, err2
-		} else {
-			return nptr.Interface(), true, nil
 		}
 	} else {
 		var data, err = json.Marshal(query)
@@ -65,17 +59,18 @@ func ValidateWebPacket(body []byte, query map[string]string, dto any, targetType
 			fmt.Println(err)
 			return nil, false, err
 		}
-		var nptr = reflect.New(reflect.TypeOf(dto))
-		err1 := json.Unmarshal(data, nptr.Interface())
+		err1 := json.Unmarshal(data, &frame)
 		if err1 != nil {
 			fmt.Println(err1)
-			return nil, false, err1		}
-		err2 := Validate.Struct(nptr.Interface())
-		if err2 != nil {
-			fmt.Println(err2)
-		   return nil, false, err2
-		} else {
-			return nptr.Interface(), true, nil
+			return nil, false, err1
 		}
+	}
+	mapstructure.Decode(frame, &dto)
+	err2 := Validate.Struct(dto)
+	if err2 != nil {
+		fmt.Println(err2)
+		return nil, false, err2
+	} else {
+		return dto, true, nil
 	}
 }

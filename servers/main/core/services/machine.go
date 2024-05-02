@@ -118,9 +118,9 @@ func CreateMachineService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterMachineServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("create", createMachine, modules.CreateCheck(true, false, false), pb.MachineCreateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("update", updateMachine, modules.CreateCheck(true, false, false), pb.MachineUpdateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("delete", deleteMachine, modules.CreateCheck(true, false, false), pb.MachineDeleteDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("get", getMachine, modules.CreateCheck(true, false, false), pb.MachineGetDto{}, modules.CreateMethodOptions(true, false)))
+	// s.AddMethod(modules.CreateMethod("create", createMachine, modules.CreateCheck(true, false, false), pb.MachineCreateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("update", updateMachine, modules.CreateCheck(true, false, false), pb.MachineUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("delete", deleteMachine, modules.CreateCheck(true, false, false), pb.MachineDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("get", getMachine, modules.CreateCheck(true, false, false), pb.MachineGetDto{}, modules.CreateMethodOptions(true, true, false)))
 	return s
 }

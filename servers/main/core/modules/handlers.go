@@ -1,7 +1,10 @@
 package modules
 
 import (
+	"encoding/json"
+	"fmt"
 	"mime/multipart"
+	"reflect"
 	"sigma/main/core/outputs"
 	"sigma/main/core/utils"
 
@@ -11,20 +14,40 @@ import (
 
 func HandleResult(
 	app *App,
-	callback func(app *App, input interface{}, assistant Assistant) (any, error),
+	key string,
+	method *Method,
 	packet *WebPacket,
-	temp interface{},
-	assistant Assistant) {
-	result, err := callback(app, temp, assistant)
-	if err != nil {
-		packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+	temp any,
+	assistant Assistant,
+) {
+	tempValue := reflect.ValueOf(temp)
+	originField := tempValue.FieldByName("Origin")
+	if originField.Kind() != 0 && len(originField.String()) > 0 && originField.String() != app.AppId {
+		if method.MethodOptions.InFederation {
+			data, err := json.Marshal(temp)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			reqId, err2 := utils.SecureUniqueString(16)
+			if err2 != nil {
+				fmt.Println(err2)
+				return
+			}
+			app.Memory.RequestInFederation(originField.String(), InterfedPacket{Key: method.Key, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
+		}
 	} else {
-		switch v := result.(type) {
-		default:
-			packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, result)
-		case outputs.Command:
-			if v.Value == "sendFile" {
-				packet.AnswerWithFile(fasthttp.StatusOK, map[string]string{}, v.Data)
+		result, err := method.Callback(app, temp, assistant)
+		if err != nil {
+			packet.AnswerWithJson(fasthttp.StatusInternalServerError, map[string]string{}, utils.BuildErrorJson(err.Error()))
+		} else {
+			switch v := result.(type) {
+			default:
+				packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, result)
+			case outputs.Command:
+				if v.Value == "sendFile" {
+					packet.AnswerWithFile(fasthttp.StatusOK, map[string]string{}, v.Data)
+				}
 			}
 		}
 	}

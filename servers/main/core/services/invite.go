@@ -99,10 +99,10 @@ func CreateInviteService(app *modules.App) *modules.Service {
 		}
 		pb.RegisterInviteServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("create", createInvite, modules.CreateCheck(true, true, false), pb.InviteCreateDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("cancel", cancelInvite, modules.CreateCheck(true, true, false), pb.InviteCancelDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("accept", acceptInvite, modules.CreateCheck(true, false, false), pb.InviteAcceptDto{}, modules.CreateMethodOptions(true, false)))
-	s.AddMethod(modules.CreateMethod("decline", declineInvite, modules.CreateCheck(true, false, false), pb.InviteDeclineDto{}, modules.CreateMethodOptions(true, false)))
+	// s.AddMethod(modules.CreateMethod("create", createInvite, modules.CreateCheck(true, true, false), pb.InviteCreateDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("cancel", cancelInvite, modules.CreateCheck(true, true, false), pb.InviteCancelDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("accept", acceptInvite, modules.CreateCheck(true, false, false), pb.InviteAcceptDto{}, modules.CreateMethodOptions(true, true, false)))
+	// s.AddMethod(modules.CreateMethod("decline", declineInvite, modules.CreateCheck(true, false, false), pb.InviteDeclineDto{}, modules.CreateMethodOptions(true, true, false)))
 
 	return s
 }

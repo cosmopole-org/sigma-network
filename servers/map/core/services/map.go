@@ -20,6 +20,6 @@ func getServersMap(app *modules.App, dto interface{}, assistant modules.Assistan
 
 func CreateMapService(app *modules.App) *modules.Service {
 	var s = modules.CreateService(app, "map")
-	s.AddMethod(modules.CreateMethod("get", getServersMap, modules.CreateCheck(false, false, false), dtos.ServersDto{}, modules.CreateMethodOptions(true, false)))
+	s.AddMethod(modules.CreateMethod("get", getServersMap, modules.CreateCheck(false, false, false), dtos.ServersDto{}, modules.CreateMethodOptions(true, true, false) false)))
 	return s
 }
