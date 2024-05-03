@@ -24,7 +24,7 @@ func main() {
 	}
 
 	app := app.New(
-		"cosmopole",
+	    os.Getenv("PORT"),
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("POSTGRES_DB") + "_" + os.Getenv("PORT"),
 		os.Getenv("REDIS_URI"),
@@ -61,7 +61,7 @@ func main() {
 		panic(err)
 	}
 
-	app.Network.Listen(modules.CreateListenOptions(true, int(port), false, 0))
+	app.Network.Listen(modules.CreateListenOptions(true, int(port), true, int(port + 2)))
 
 	<-quit
 }

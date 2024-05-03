@@ -86,14 +86,7 @@ message Session {
 
 // messages
 
-message HumanAuthenticateDto {
-	string token = 1;
-}
-
-message HumanAuthenticatePacket {
-	HumanAuthenticateDto data = 1;
-	string origin = 2;
-}
+message HumanAuthenticateDto {}
 
 message HumanAuthenticateOutput {
 	bool authenticated = 1;
@@ -102,11 +95,6 @@ message HumanAuthenticateOutput {
 
 message HumanSignupDto {
 	string email = 1;
-}
-
-message HumanSignupPacket {
-	HumanSignupDto data = 1;
-	string origin = 2;
 }
 
 message HumanSignupOutput {

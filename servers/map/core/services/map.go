@@ -10,9 +10,13 @@ import (
 func getServersMap(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
 	return &outputs.Servers{
 		Map: map[string]pb.Server{
-			"cosmopole": {
+			"8081": {
 				Host: "localhost",
-				Port: 8080,
+				Port: 8081,
+			},
+			"8082": {
+				Host: "localhost",
+				Port: 8082,
 			},
 		},
 	}, nil
@@ -20,6 +24,6 @@ func getServersMap(app *modules.App, dto interface{}, assistant modules.Assistan
 
 func CreateMapService(app *modules.App) *modules.Service {
 	var s = modules.CreateService(app, "map")
-	s.AddMethod(modules.CreateMethod("get", getServersMap, modules.CreateCheck(false, false, false), dtos.ServersDto{}, modules.CreateMethodOptions(true, true, false) false)))
+	s.AddMethod(modules.CreateMethod("get", getServersMap, modules.CreateCheck(false, false, false), dtos.ServersDto{}, modules.CreateMethodOptions(true, true)))
 	return s
 }
