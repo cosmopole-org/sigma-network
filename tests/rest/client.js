@@ -98,11 +98,19 @@ setGlobalDispatcher(
 
     let requestDict = {};
 
+    const authenticate = (token) => {
+        return new Promise(resolve => {
+            let requestId = Math.random().toString().substring(2)
+            requestDict[requestId] = resolve
+            socket.send(`authenticate ${token ?? "EMPTY_TOKEN"} ${requestId}`);
+        })
+    }
+
     const request = (path, data, token) => {
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} 0 0 8081 ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} 0 0 8082 ${requestId} ${JSON.stringify(data)}`);
         })
     }
 
@@ -110,6 +118,8 @@ setGlobalDispatcher(
     socket.onmessage = function (event) {
         let data = event.data.split(" ");
         if (data[0] === "update") {
+            console.log(JSON.parse(event.data.substring(data[0].length)))
+        } else if (data[0] === "federation") {
             console.log(JSON.parse(event.data.substring(data[0].length)))
         } else {
             let resolve = requestDict[data[0]];
@@ -130,12 +140,16 @@ setGlobalDispatcher(
         console.log(result2);
         let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
         console.log(result3);
-        let result4 = await request(`/humans/get`, { userId: result3.human.id });
-        console.log(result4);
-        let result5 = await request(`/humans/update`, { firstName: "Keyhan", lastName: "Of Helloverse" }, result3.session.token);
+        
+        let result5 = await authenticate(result3.session.token);
         console.log(result5);
-        let result6 = await request(`/humans/get`, { userId: result3.human.id });
+        
+        let result6 = await request(`/humans/get`, { userId: result3.human.id }, result3.session.token);
         console.log(result6);
+        let result7 = await request(`/humans/update`, { firstName: "Keyhan", lastName: "Of Helloverse" }, result3.session.token);
+        console.log(result7);
+        let result8 = await request(`/humans/get`, { userId: 1 }, result3.session.token);
+        console.log(result8);
 
     };
     socket.onclose = function (event) {

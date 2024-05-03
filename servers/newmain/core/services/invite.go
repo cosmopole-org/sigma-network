@@ -28,7 +28,7 @@ func createInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 		return &pb.InviteCreateOutput{}, err
 	}
 	invite.Origin = app.AppId
-	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite}, false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
@@ -45,7 +45,7 @@ func cancelInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 		fmt.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite}, false)
 	return &pb.InviteCancelOutput{}, nil
 }
 
@@ -63,7 +63,7 @@ func acceptInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 	}
 	member.Origin = app.AppId
 	var invite = pb.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite}, false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
@@ -80,7 +80,7 @@ func declineInvite(app *modules.App, dto interface{}, assistant modules.Assistan
 		fmt.Println(err)
 		return &pb.InviteDeclineOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite}, false)
 	return &pb.InviteDeclineOutput{}, nil
 }
 

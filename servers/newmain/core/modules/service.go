@@ -72,7 +72,7 @@ func ProcessData[T any, V any](c *fiber.Ctx, m *Method[T, V], assistant Assistan
 				c.Status(fiber.ErrInternalServerError.Code).JSON(err2.Error())
 				return nil
 			}
-			Instance().Memory.RequestInFederation(origin, InterfedPacket{Key: m.Key, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
+			Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
 			c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request to federation queued successfully"})
 			return nil
 		}

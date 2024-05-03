@@ -40,7 +40,7 @@ func HandleFederationOrNot(action string, c Check, md metadata.MD, mo MethodOpti
 			if err2 != nil {
 				return nil, status.Errorf(codes.Unauthenticated, err2.Error())
 			}
-			Instance().Memory.RequestInFederation(origin, InterfedPacket{Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
+			Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
 			return ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
 		}
 	} else {

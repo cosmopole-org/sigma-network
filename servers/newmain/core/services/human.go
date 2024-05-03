@@ -217,7 +217,7 @@ func CreateHumanService(app *modules.App) {
 			"/humans/get",
 			get,
 			dtos_humans.GetDto{},
-			modules.CreateCheck(false, false, false),
+			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
 		),
 	)

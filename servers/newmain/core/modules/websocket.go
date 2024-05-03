@@ -18,8 +18,6 @@ type WebsocketAnswer struct {
 	Data      any
 }
 
-var clients = map[int64]*websocket.Conn{}
-
 func AnswerSocket(conn *websocket.Conn, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
@@ -50,7 +48,7 @@ func HandleFederationOrNotForSocket(action string, origin string, c Check, mo Me
 			if err2 != nil {
 				return nil, err
 			}
-			Instance().Memory.RequestInFederation(origin, InterfedPacket{Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
+			Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
 			return ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
 		}
 	} else {
@@ -62,8 +60,9 @@ func HandleFederationOrNotForSocket(action string, origin string, c Check, mo Me
 	}
 }
 
-func LoadWebsocket(app *App) {
+func (pusher *Pusher) LoadWebsocket(app *App) {
 	app.Network.RestServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
+		var uid int64 = 0
 		for {
 			_, p, err := conn.ReadMessage()
 			if err != nil {
@@ -72,94 +71,109 @@ func LoadWebsocket(app *App) {
 			var dataStr = string(p[:])
 			var splittedMsg = strings.Split(dataStr, " ")
 			var uri = splittedMsg[0]
-			var token = splittedMsg[1]
-			var towerId = splittedMsg[2]
-			var roomId = splittedMsg[3]
-			var origin = splittedMsg[4]
-			var requestId = splittedMsg[5]
-			var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(towerId) + 1 + len(roomId) + 1 + len(origin) + 1 + len(requestId)):]
-			fn := Handlers[uri]
-			f := Frames[uri]
-			c := Checks[uri]
-			mo := MethodOptionsMap[uri]
-			var req any
-			err2 := json.Unmarshal([]byte(body), &req)
-			if err2 != nil {
-				AnswerSocket(conn, requestId, utils.BuildErrorJson("invalid input format"))
-				continue
-			}
-			err3 := mapstructure.Decode(req, &f)
-			if err3 != nil {
-				AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
-				continue
-			}
-			if mo.AsEndpoint {
-				if c.User {
-					var userId, userType = AuthWithToken(app, token)
-					if userId > 0 {
-						if c.Tower {
-							var towerId = ""
-							var roomId = ""
-							var location Location
-							if userType == 1 {
-								location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
-							} else if userType == 2 {
-								location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
-							}
-							if location.TowerId > 0 {
+			if uri == "authenticate" {
+				var token = splittedMsg[1]
+				var requestId = splittedMsg[2]
+				userId, _ := AuthWithToken(app, token)
+				uid = userId
+				pusher.clients[userId] = conn
+				AnswerSocket(conn, requestId, ResponseSimpleMessage{Message: "authenticated"})
+			} else {
+				var token = splittedMsg[1]
+				var towerId = splittedMsg[2]
+				var roomId = splittedMsg[3]
+				var origin = splittedMsg[4]
+				var requestId = splittedMsg[5]
+				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(towerId) + 1 + len(roomId) + 1 + len(origin) + 1 + len(requestId)):]
+				fn := Handlers[uri]
+				f := Frames[uri]
+				c := Checks[uri]
+				mo := MethodOptionsMap[uri]
+				var req any
+				err2 := json.Unmarshal([]byte(body), &req)
+				if err2 != nil {
+					AnswerSocket(conn, requestId, utils.BuildErrorJson("invalid input format"))
+					continue
+				}
+				err3 := mapstructure.Decode(req, &f)
+				if err3 != nil {
+					AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
+					continue
+				}
+				if mo.AsEndpoint {
+					if c.User {
+						var userId, userType = AuthWithToken(app, token)
+						if userId > 0 {
+							if c.Tower {
+								var towerId = ""
+								var roomId = ""
+								var location Location
+								if userType == 1 {
+									location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
+								} else if userType == 2 {
+									location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
+								}
+								if location.TowerId > 0 {
+									res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+									if err != nil {
+										AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+									} else {
+										AnswerSocket(conn, requestId, res)
+									}
+								} else {
+									AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
+								}
+							} else {
 								res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
 								if err != nil {
 									AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 								} else {
 									AnswerSocket(conn, requestId, res)
 								}
-							} else {
-								AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
 							}
+						}
+					} else {
+						res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "human", 0, 0, 0, nil))
+						if err != nil {
+							AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 						} else {
-							res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
-							if err != nil {
-								AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
-							} else {
-								AnswerSocket(conn, requestId, res)
-							}
+							AnswerSocket(conn, requestId, res)
 						}
 					}
 				} else {
-					res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "human", 0, 0, 0, nil))
+					res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
 					if err != nil {
 						AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 					} else {
 						AnswerSocket(conn, requestId, res)
 					}
 				}
-			} else {
-				res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
-				if err != nil {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
-				} else {
-					AnswerSocket(conn, requestId, res)
-				}
 			}
+		}
+		if uid > 0 {
+			delete(pusher.clients, uid)
 		}
 		fmt.Println("socket broken")
 	}))
 }
 
-var groups = sync.Map{}
-
 type Pusher struct {
+	clients map[int64]*websocket.Conn
+	groups  sync.Map
 }
 
-func (p *Pusher) PushToUser(userId int64, data any) {
-	conn := clients[userId]
+func (p *Pusher) PushToUser(userId int64, data any, isFedMsg bool) {
+	conn := p.clients[userId]
 	if conn != nil {
-		message, err := json.Marshal(data)
-		if err != nil {
-			fmt.Println(err)
+		if isFedMsg {
+			conn.WriteMessage(websocket.TextMessage, []byte("federation "+data.(string)))
 		} else {
-			var p = "update " + string(message)
-			conn.WriteMessage(websocket.TextMessage, []byte(p))
+			message, err := json.Marshal(data)
+			if err != nil {
+				fmt.Println(err)
+			} else {
+				conn.WriteMessage(websocket.TextMessage, []byte("update "+string(message)))
+			}
 		}
 	}
 }
@@ -169,7 +183,7 @@ func (p *Pusher) PushToGroup(groupId int64, data any, exceptions []int64) {
 	for _, exc := range exceptions {
 		excepDict[exc] = true
 	}
-	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+	g, _ := p.groups.LoadOrStore(groupId, &sync.Map{})
 	group := g.(*sync.Map)
 	message, err := json.Marshal(data)
 	if err != nil {
@@ -179,7 +193,7 @@ func (p *Pusher) PushToGroup(groupId int64, data any, exceptions []int64) {
 		group.Range(func(key, value any) bool {
 			var userId = key.(int64)
 			if !excepDict[userId] {
-				var conn = clients[userId]
+				var conn = p.clients[userId]
 				if conn != nil {
 					conn.WriteMessage(websocket.TextMessage, packet)
 				}
@@ -190,17 +204,20 @@ func (p *Pusher) PushToGroup(groupId int64, data any, exceptions []int64) {
 }
 
 func (p *Pusher) JoinGroup(groupId int64, userId int64) {
-	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+	g, _ := p.groups.LoadOrStore(groupId, &sync.Map{})
 	group := g.(*sync.Map)
 	group.Store(userId, true)
 }
 
 func (p *Pusher) LeaveGroup(groupId int64, userId int64) {
-	g, _ := groups.LoadOrStore(groupId, &sync.Map{})
+	g, _ := p.groups.LoadOrStore(groupId, &sync.Map{})
 	group := g.(*sync.Map)
 	group.Delete(userId)
 }
 
 func LoadPusher() *Pusher {
-	return &Pusher{}
+	return &Pusher{
+		clients: map[int64]*websocket.Conn{},
+		groups:  sync.Map{},
+	}
 }

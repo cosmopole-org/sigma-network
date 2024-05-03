@@ -20,8 +20,8 @@ func CreateListenOptions(https bool, httpsPort int, grpc bool, grpcPort int) Lis
 func (n *Network) Listen(options ListenOptions) {
 	if options.Https {
 		n.RestServer.ListenForHttps(Instance(), options.HttpsPort)
+		n.PusherServer.LoadWebsocket(Instance())
 	}
-	LoadWebsocket(Instance())
 	if options.Grpc {
 		ListenForGrpc(n.GrpcServer, options.GrpcPort)
 	}
