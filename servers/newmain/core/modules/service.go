@@ -108,18 +108,29 @@ func AddMethod[T any, V any](app *App, m *Method[T, V]) {
 				if m.Check.User {
 					tokenHeader := c.GetReqHeaders()["Token"]
 					if tokenHeader == nil {
-						err := errors.New("authorization token is not supplied")
-						c.Status(fiber.ErrInternalServerError.Code).JSON(err)
-						return err
+						return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson("authorization token is not supplied"))
 					}
 					token := tokenHeader[0]
-					var userId, _ = AuthWithToken(app, token)
+					var userId, userType = AuthWithToken(app, token)
 					if userId > 0 {
-						return ProcessData[T, V](c, m, CreateAssistant(userId, "human", 0, 0, 0, nil))
+						if m.Check.Tower {
+							var location Location
+							if (userType == 1) {
+								location = HandleLocation(app, token, userId, "human", c.GetReqHeaders())
+							} else if (userType == 2) {
+								location = HandleLocation(app, token, userId, "machine", c.GetReqHeaders())
+							}
+							if location.TowerId > 0 {
+								return ProcessData[T, V](c, m, CreateAssistant(userId, "human", location.TowerId, location.RoomId, location.WorkerId, nil))
+							} else {
+								return c.Status(fiber.ErrForbidden.Code).JSON(utils.BuildErrorJson("access denied"))
+							}
+						} else {
+							return ProcessData[T, V](c, m, CreateAssistant(userId, "human", 0, 0, userId, nil))
+						}
 					} else {
 						err := errors.New("access denied")
-						c.Status(fiber.StatusForbidden).JSON(err)
-						return err
+						return c.Status(fiber.StatusForbidden).JSON(err)
 					}
 				} else {
 					return ProcessData[T, V](c, m, CreateAssistant(0, "", 0, 0, 0, nil))

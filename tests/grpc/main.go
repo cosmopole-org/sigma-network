@@ -20,17 +20,28 @@ func main() {
 	}
 	defer conn.Close()
 	c := pb.NewHumanServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 60)
 	defer cancel()
 	md := metadata.New(map[string]string{
-		"origin": "8082",
+		"origin": "8081",
+		"token": "OwLK6S4KA8kuXduseAq3akHjHzjegxSW",
 	})
-    ctxWithMetadata := metadata.NewOutgoingContext(ctx, md)
-	r, err := c.Get(ctxWithMetadata, &pb.HumanGetDto{
-		UserId: 3,
-	})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+	for i := 0; i < 1; i++ {
+		ctxWithMetadata := metadata.NewOutgoingContext(ctx, md)
+		r, err := c.Get(ctxWithMetadata, &pb.HumanGetDto{
+			UserId: 3,
+		})
+		if err != nil {
+			log.Fatalf("could not greet: %v", err)
+		}
+		fmt.Println(r)
+		r2, err2 := c.Update(ctxWithMetadata, &pb.HumanUpdateDto{
+			FirstName: "keyhan",
+			LastName: "mohammadi",
+		})
+		if err2 != nil {
+			log.Fatalf("could not greet: %v", err2)
+		}
+		fmt.Println(r2)
 	}
-	fmt.Println(r)
 }

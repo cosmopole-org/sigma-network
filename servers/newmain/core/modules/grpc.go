@@ -17,7 +17,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func HandleFederationOrNot(action string, c Check, md metadata.MD, mo MethodOptions, fn func(*App, interface{}, Assistant) (any, error), f interface{}, assistant Assistant ) (any, error) {
+func HandleFederationOrNot(action string, c Check, md metadata.MD, mo MethodOptions, fn func(*App, interface{}, Assistant) (any, error), f interface{}, assistant Assistant) (any, error) {
 	if mo.InFederation {
 		originHeader, ok := md["origin"]
 		if !ok {
@@ -27,7 +27,7 @@ func HandleFederationOrNot(action string, c Check, md metadata.MD, mo MethodOpti
 		if origin == Instance().AppId {
 			result, err := fn(Instance(), f, assistant)
 			if err != nil {
-			    return nil, status.Errorf(codes.Unauthenticated, (err.Error()))
+				return nil, status.Errorf(codes.Unauthenticated, (err.Error()))
 			}
 			return result, nil
 		} else {
@@ -86,10 +86,37 @@ func serverInterceptor(
 			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
 		}
 		token := tokenHeader[0]
-		var userId, _ = AuthWithToken(app, token)
+		var userId, userType = AuthWithToken(app, token)
 		if userId > 0 {
-			h, err := HandleFederationOrNot(action, c, md, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
-			return h, err
+			if c.Tower {
+				var towerId = ""
+				var roomId = ""
+				var location Location
+				towerIdHeader, ok := md["tower_id"]
+				if ok {
+					towerId = towerIdHeader[0]
+				} else {
+					towerId = ""
+				}
+				roomIdHeader, ok := md["room_id"]
+				if ok {
+					roomId = roomIdHeader[0]
+				} else {
+					roomId = ""
+				}
+				if userType == 1 {
+					location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
+				} else if userType == 2 {
+					location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
+				}
+				if location.TowerId > 0 {
+					return HandleFederationOrNot(action, c, md, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+				} else {
+					return nil, status.Errorf(codes.Unauthenticated, "Access denied")
+				}
+			} else {
+				return HandleFederationOrNot(action, c, md, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+			}
 		} else {
 			return nil, status.Errorf(codes.Unauthenticated, "Authenticatio failed")
 		}
