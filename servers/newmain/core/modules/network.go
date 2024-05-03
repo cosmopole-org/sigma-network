@@ -21,6 +21,7 @@ func (n *Network) Listen(options ListenOptions) {
 	if options.Https {
 		n.RestServer.ListenForHttps(Instance(), options.HttpsPort)
 	}
+	LoadWebsocket(Instance())
 	if options.Grpc {
 		ListenForGrpc(n.GrpcServer, options.GrpcPort)
 	}

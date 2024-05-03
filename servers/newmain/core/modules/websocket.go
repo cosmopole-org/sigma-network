@@ -6,27 +6,16 @@ import (
 	"sigma/main/core/utils"
 	"strings"
 
-	//"sigma/main/core/utils"
-	//"strings"
 	"sync"
 
-	"github.com/fasthttp/websocket"
+	"github.com/gofiber/contrib/websocket"
 	"github.com/mitchellh/mapstructure"
-	"github.com/valyala/fasthttp"
 )
 
 type WebsocketAnswer struct {
 	Status    int
 	RequestId string
 	Data      any
-}
-
-var upgrader = websocket.FastHTTPUpgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *fasthttp.RequestCtx) bool {
-		return true
-	},
 }
 
 var clients = map[int64]*websocket.Conn{}
@@ -73,90 +62,88 @@ func HandleFederationOrNotForSocket(action string, origin string, c Check, mo Me
 	}
 }
 
-func HandleWebsocket(app *App, ctx *fasthttp.RequestCtx) {
-	err := upgrader.Upgrade(ctx, func(conn *websocket.Conn) {
-		go func() {
-			for {
-				_, p, err := conn.ReadMessage()
-				if err != nil {
-					conn.CloseHandler()(1, "connection closed")
-					fmt.Println(err)
-					continue
-				}
-				var dataStr = string(p[:])
-				var splittedMsg = strings.Split(dataStr, " ")
-				var uri = splittedMsg[0]
-				var token = splittedMsg[1]
-				var towerId = splittedMsg[2]
-				var roomId = splittedMsg[3]
-				var origin = splittedMsg[4]
-				var requestId = splittedMsg[5]
-				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(towerId) + 1 + len(roomId) + 1 + len(origin) + 1 + len(requestId)):]
-				fn := Handlers[uri]
-				f := Frames[uri]
-				c := Checks[uri]
-				mo := MethodOptionsMap[uri]
-				var req any
-				err2 := json.Unmarshal([]byte(body), &req)
-				if err2 != nil {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson("invalid input format"))
-					continue
-				}
-				err3 := mapstructure.Decode(req, &f)
-				if err3 != nil {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
-					continue
-				}
-				if mo.AsEndpoint {
-					if c.User {
-						var userId, userType = AuthWithToken(app, token)
-						if userId > 0 {
-							if c.Tower {
-								var towerId = ""
-								var roomId = ""
-								var location Location
-								if userType == 1 {
-									location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
-								} else if userType == 2 {
-									location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
-								}
-								if location.TowerId > 0 {
-									res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
-									if err != nil {
-										AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
-									} else {
-										AnswerSocket(conn, requestId, res)
-									}
-								} else {
-									AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
-								}
-							} else {
+func LoadWebsocket(app *App) {
+	app.Network.RestServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
+		for {
+			_, p, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+			var dataStr = string(p[:])
+			var splittedMsg = strings.Split(dataStr, " ")
+			var uri = splittedMsg[0]
+			var token = splittedMsg[1]
+			var towerId = splittedMsg[2]
+			var roomId = splittedMsg[3]
+			var origin = splittedMsg[4]
+			var requestId = splittedMsg[5]
+			var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(towerId) + 1 + len(roomId) + 1 + len(origin) + 1 + len(requestId)):]
+			fn := Handlers[uri]
+			f := Frames[uri]
+			c := Checks[uri]
+			mo := MethodOptionsMap[uri]
+			var req any
+			err2 := json.Unmarshal([]byte(body), &req)
+			if err2 != nil {
+				AnswerSocket(conn, requestId, utils.BuildErrorJson("invalid input format"))
+				continue
+			}
+			err3 := mapstructure.Decode(req, &f)
+			if err3 != nil {
+				AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
+				continue
+			}
+			if mo.AsEndpoint {
+				if c.User {
+					var userId, userType = AuthWithToken(app, token)
+					if userId > 0 {
+						if c.Tower {
+							var towerId = ""
+							var roomId = ""
+							var location Location
+							if userType == 1 {
+								location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
+							} else if userType == 2 {
+								location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
+							}
+							if location.TowerId > 0 {
 								res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
 								if err != nil {
 									AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 								} else {
 									AnswerSocket(conn, requestId, res)
 								}
+							} else {
+								AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
+							}
+						} else {
+							res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+							if err != nil {
+								AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+							} else {
+								AnswerSocket(conn, requestId, res)
 							}
 						}
-					} else {
-						AnswerSocket(conn, requestId, utils.BuildErrorJson("authentication failed"))
 					}
 				} else {
-					res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
+					res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "human", 0, 0, 0, nil))
 					if err != nil {
 						AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 					} else {
 						AnswerSocket(conn, requestId, res)
 					}
 				}
+			} else {
+				res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
+				if err != nil {
+					AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+				} else {
+					AnswerSocket(conn, requestId, res)
+				}
 			}
-		}()
-	})
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+		}
+		fmt.Println("socket broken")
+	}))
 }
 
 var groups = sync.Map{}
