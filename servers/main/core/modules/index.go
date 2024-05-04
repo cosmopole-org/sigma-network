@@ -20,3 +20,7 @@ type Meta struct {
 type IDto interface {
 	GetData() any
 }
+
+type ResponseSimpleMessage struct {
+	Message string `json:"message"`
+}

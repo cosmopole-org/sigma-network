@@ -3,16 +3,18 @@ package services
 import (
 	"context"
 	"fmt"
+	dtos_rooms "sigma/main/core/dtos/rooms"
 	"sigma/main/core/models"
 	"sigma/main/core/modules"
 	updates_rooms "sigma/main/core/updates/rooms"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func createRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.RoomCreateDto)
+func createRoom(app *modules.App, input dtos_rooms.CreateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		insert into room
 		(
@@ -36,8 +38,7 @@ func createRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	return &pb.RoomCreateOutput{Room: &room}, nil
 }
 
-func updateRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.RoomUpdateDto)
+func updateRoom(app *modules.App, input dtos_rooms.UpdateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
 		returning id, name, avatar_id, tower_id, origin;
@@ -53,8 +54,7 @@ func updateRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	return &pb.RoomUpdateOutput{Room: &room}, nil
 }
 
-func deleteRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.RoomDeleteDto)
+func deleteRoom(app *modules.App, input dtos_rooms.DeleteDto, assistant modules.Assistant) (any, error) {
 	var query = ``
 	query = `
 		delete from room where id = $1 and tower_id = $2
@@ -72,8 +72,7 @@ func deleteRoom(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	return &pb.RoomDeleteOutput{}, nil
 }
 
-func getRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.RoomGetDto)
+func getRoom(app *modules.App, input dtos_rooms.GetDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from rooms_get($1, $2, $3);
 	`
@@ -93,7 +92,7 @@ func getRoom(app *modules.App, dto interface{}, assistant modules.Assistant) (an
 	return &pb.RoomGetOutput{Room: &room}, nil
 }
 
-func CreateRoomService(app *modules.App) *modules.Service {
+func CreateRoomService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/room.sql")
@@ -101,16 +100,51 @@ func CreateRoomService(app *modules.App) *modules.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
-	var s = modules.CreateService(app, "sigma.RoomService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedRoomServiceServer
 		}
 		pb.RegisterRoomServiceServer(app.Network.GrpcServer, &server{})
 	})
-	// s.AddMethod(modules.CreateMethod("create", createRoom, modules.CreateCheck(true, true, false), pb.RoomCreateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("update", updateRoom, modules.CreateCheck(true, true, false), pb.RoomUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("delete", deleteRoom, modules.CreateCheck(true, true, false), pb.RoomDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("get", getRoom, modules.CreateCheck(true, true, false), pb.RoomGetDto{}, modules.CreateMethodOptions(true, true, false)))
-	return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_rooms.CreateDto, dtos_rooms.CreateDto](
+			"/rooms/create",
+			createRoom,
+			dtos_rooms.CreateDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_rooms.UpdateDto, dtos_rooms.UpdateDto](
+			"/rooms/update",
+			updateRoom,
+			dtos_rooms.UpdateDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_rooms.DeleteDto, dtos_rooms.DeleteDto](
+			"/rooms/delete",
+			deleteRoom,
+			dtos_rooms.DeleteDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_rooms.GetDto, dtos_rooms.GetDto](
+			"/rooms/get",
+			getRoom,
+			dtos_rooms.GetDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+		),
+	)
 }

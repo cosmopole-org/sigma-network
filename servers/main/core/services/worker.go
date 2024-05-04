@@ -4,14 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	dtos_workers "sigma/main/core/dtos/workers"
 	"sigma/main/core/modules"
 	updates_workers "sigma/main/core/updates/workers"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func createWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.WorkerCreateDto)
+func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		insert into worker (
 			machine_id,
@@ -38,8 +40,7 @@ func createWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
 }
 
-func updateWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.WorkerUpdateDto)
+func updateWorker(app *modules.App, input dtos_workers.UpdateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
 		returning id, machine_id, origin;
@@ -60,8 +61,7 @@ func updateWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 	}
 }
 
-func deleteWorker(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.WorkerDeleteDto)
+func deleteWorker(app *modules.App, input dtos_workers.DeleteDto, assistant modules.Assistant) (any, error) {
 	query := `
 		delete from worker where id = $1 and room_id = $2 returning true;
 	`
@@ -75,7 +75,7 @@ func deleteWorker(app *modules.App, dto interface{}, assistant modules.Assistant
 	return &pb.WorkerDeleteOutput{}, nil
 }
 
-func readWorkers(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
+func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select id, machine_id, room_id, metadata, origin from worker where room_id = $1;
 	`
@@ -98,8 +98,7 @@ func readWorkers(app *modules.App, dto interface{}, assistant modules.Assistant)
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
 
-func deliver(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.WorkerDeliverDto)
+func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from workers_deliver($1, $2, $3, $4, $5);
 	`
@@ -120,11 +119,11 @@ func deliver(app *modules.App, dto interface{}, assistant modules.Assistant) (an
 	if allowed {
 		if assistant.UserType == "human" {
 			var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.UserId, Data: input.Data}
-			app.Network.PusherServer.PushToUser(machineId, p)
+			app.Network.PusherServer.PushToUser(machineId, p, false)
 		} else if assistant.UserType == "machine" {
 			if input.UserId > 0 {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, UserId: input.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToUser(input.UserId, p)
+				app.Network.PusherServer.PushToUser(input.UserId, p, false)
 			} else {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
 				app.Network.PusherServer.PushToGroup(assistant.TowerId, p, []int64{})
@@ -134,7 +133,7 @@ func deliver(app *modules.App, dto interface{}, assistant modules.Assistant) (an
 	return &pb.WorkerDeliverOutput{Passed: allowed}, nil
 }
 
-func CreateWorkerService(app *modules.App) *modules.Service {
+func CreateWorkerService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/worker.sql")
@@ -142,18 +141,61 @@ func CreateWorkerService(app *modules.App) *modules.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/workers/deliver.sql")
 
-	var s = modules.CreateService(app, "sigma.WorkerService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedWorkerServiceServer
 		}
 		pb.RegisterWorkerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	// s.AddMethod(modules.CreateMethod("create", createWorker, modules.CreateCheck(true, true, true), pb.WorkerCreateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("update", updateWorker, modules.CreateCheck(true, true, true), pb.WorkerUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("delete", deleteWorker, modules.CreateCheck(true, true, true), pb.WorkerDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("read", readWorkers, modules.CreateCheck(true, true, true), pb.WorkerReadDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("deliver", deliver, modules.CreateCheck(true, true, true), pb.WorkerDeliverDto{}, modules.CreateMethodOptions(true, true, false)))
-
-	return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_workers.CreateDto, dtos_workers.CreateDto](
+			"/workers/create",
+			createWorker,
+			dtos_workers.CreateDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_workers.UpdateDto, dtos_workers.UpdateDto](
+			"/workers/update",
+			updateWorker,
+			dtos_workers.UpdateDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_workers.DeleteDto, dtos_workers.DeleteDto](
+			"/workers/delete",
+			deleteWorker,
+			dtos_workers.DeleteDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_workers.ReadDto, dtos_workers.ReadDto](
+			"/workers/read",
+			readWorkers,
+			dtos_workers.ReadDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_workers.DeliverDto, dtos_workers.DeliverDto](
+			"/workers/deliver",
+			deliver,
+			dtos_workers.DeliverDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
 }

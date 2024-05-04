@@ -10,6 +10,7 @@ import (
 type Network struct {
 	GrpcServer   *grpc.Server
 	PusherServer *Pusher
+	RestServer   *HttpServer
 }
 
 func CreateListenOptions(https bool, httpsPort int, grpc bool, grpcPort int) ListenOptions {
@@ -18,7 +19,8 @@ func CreateListenOptions(https bool, httpsPort int, grpc bool, grpcPort int) Lis
 
 func (n *Network) Listen(options ListenOptions) {
 	if options.Https {
-		ListenForHttps(Instance(), options.HttpsPort)
+		n.RestServer.ListenForHttps(Instance(), options.HttpsPort)
+		n.PusherServer.LoadWebsocket(Instance())
 	}
 	if options.Grpc {
 		ListenForGrpc(n.GrpcServer, options.GrpcPort)
@@ -29,6 +31,7 @@ func CreateNetwork() *Network {
 	fmt.Println("running network...")
 	netInstance := &Network{}
 	utils.LoadValidationSystem()
+	netInstance.RestServer = LoadHttpServer()
 	netInstance.GrpcServer = LoadGrpcServer()
 	netInstance.PusherServer = LoadPusher()
 	return netInstance

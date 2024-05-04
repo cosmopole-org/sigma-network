@@ -3,22 +3,23 @@ package services
 import (
 	"context"
 	"fmt"
-	"strconv"
 
+	dtos_humans "sigma/main/core/dtos/humans"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func authenticate(app *modules.App, dto pb.HumanAuthenticateDto, assistant modules.Assistant) (any, error) {
-	res, _ := app.GetService("humans").CallMethod("get", &pb.HumanGetDto{UserId: fmt.Sprintf("%d", assistant.UserId)}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant modules.Assistant) (any, error) {
+	res, _ := modules.CallMethod[dtos_humans.GetDto, pb.HumanGetDto]("/humans/get", &pb.HumanGetDto{UserId: assistant.UserId}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
 
-func signup(app *modules.App, dto *pb.HumanSignupDto, assistant modules.Assistant) (any, error) {
-	input := dto
+func signup(app *modules.App, input dtos_humans.SignupDto, assistant modules.Assistant) (any, error) {
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		fmt.Println(err1)
@@ -50,8 +51,7 @@ func signup(app *modules.App, dto *pb.HumanSignupDto, assistant modules.Assistan
 	return &pb.HumanSignupOutput{Pending: &pending}, nil
 }
 
-func verify(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.HumanVerifyDto)
+func verify(app *modules.App, input dtos_humans.VerifyDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select humans_verify($1, $2)
 	`
@@ -79,7 +79,7 @@ func verify(app *modules.App, dto interface{}, assistant modules.Assistant) (any
 			Email:     record[6].(string),
 			FirstName: record[7].(string),
 			LastName:  record[8].(string),
-			Origin:  record[11].(string),
+			Origin:    record[11].(string),
 		}
 		var session = pb.Session{
 			Id:     record[9].(int64),
@@ -91,8 +91,7 @@ func verify(app *modules.App, dto interface{}, assistant modules.Assistant) (any
 	}
 }
 
-func complete(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.HumanCompleteDto)
+func complete(app *modules.App, input dtos_humans.CompleteDto, assistant modules.Assistant) (any, error) {
 	var human pb.Human
 	var session pb.Session
 	var token, tokenErr = utils.SecureUniqueString(32)
@@ -117,8 +116,7 @@ func complete(app *modules.App, dto interface{}, assistant modules.Assistant) (a
 	return &pb.HumanCompleteOutput{Human: &human, Session: &session}, nil
 }
 
-func update(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.HumanUpdateDto)
+func update(app *modules.App, input dtos_humans.UpdateDto, assistant modules.Assistant) (any, error) {
 	var human pb.Human
 	var query = `
 		update human set first_name = $1, last_name = $2 where id = $3
@@ -132,18 +130,12 @@ func update(app *modules.App, dto interface{}, assistant modules.Assistant) (any
 	return &pb.HumanUpdateOutput{Human: &human}, nil
 }
 
-func get(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.HumanGetDto)
+func get(app *modules.App, input dtos_humans.GetDto, assistant modules.Assistant) (any, error) {
 	var human pb.Human
 	var query = `
 		select id, first_name, last_name, origin from human where id = $1;
 	`
-	userId, err := strconv.ParseInt(input.UserId, 10, 64)
-	if err != nil {
-		fmt.Println(err)
-		return &pb.HumanGetOutput{}, err
-	}
-	if err := app.Database.Db.QueryRow(context.Background(), query, userId).
+	if err := app.Database.Db.QueryRow(context.Background(), query, input.UserId).
 		Scan(&human.Id, &human.FirstName, &human.LastName, &human.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.HumanGetOutput{}, err
@@ -151,7 +143,7 @@ func get(app *modules.App, dto interface{}, assistant modules.Assistant) (any, e
 	return &pb.HumanGetOutput{Human: &human}, nil
 }
 
-func CreateHumanService(app *modules.App) *modules.Service {
+func CreateHumanService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/session.sql")
@@ -162,28 +154,71 @@ func CreateHumanService(app *modules.App) *modules.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/humans/complete.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/humans/verify.sql")
 
-	var s = modules.CreateService(app, "sigma.HumanService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedHumanServiceServer
 		}
 		pb.RegisterHumanServiceServer(app.Network.GrpcServer, &server{})
 	})
-	s.AddMethod(modules.CreateMethod("authenticate",
-	func(args ...interface{}) (any, error) {
-		return authenticate(args[0].(*modules.App), args[1].(pb.HumanAuthenticateDto), args[2].(modules.Assistant))
-	},
-	modules.CreateCheck(true, false, false), pb.HumanAuthenticateDto{}, modules.CreateMethodOptions(true, true, false)))
-    
-	s.AddMethod(modules.CreateMethod("signup",
-	func(args ...interface{}) (any, error) {
-		return signup(args[0].(*modules.App), args[1].(*pb.HumanSignupDto), args[2].(modules.Assistant))
-	},
-	modules.CreateCheck(false, false, false), pb.HumanSignupDto{}, modules.CreateMethodOptions(true, true, false)))
-	
-	// s.AddMethod(modules.CreateMethod("verify", verify, modules.CreateCheck(false, false, false), pb.HumanVerifyDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("complete", complete, modules.CreateCheck(false, false, false), pb.HumanCompleteDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("update", update, modules.CreateCheck(true, false, false), pb.HumanUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("get", get, modules.CreateCheck(false, false, false), pb.HumanGetDto{}, modules.CreateMethodOptions(true, true, true)))
-    return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.AuthenticateDto, pb.HumanAuthenticateDto](
+			"/humans/authenticate",
+			authenticate,
+			dtos_humans.AuthenticateDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.SignupDto, pb.HumanSignupDto](
+			"/humans/signup",
+			signup,
+			dtos_humans.SignupDto{},
+			modules.CreateCheck(false, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.VerifyDto, pb.HumanVerifyDto](
+			"/humans/verify",
+			verify,
+			dtos_humans.VerifyDto{},
+			modules.CreateCheck(false, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.CompleteDto, pb.HumanCompleteDto](
+			"/humans/complete",
+			complete,
+			dtos_humans.CompleteDto{},
+			modules.CreateCheck(false, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.UpdateDto, pb.HumanUpdateDto](
+			"/humans/update",
+			update,
+			dtos_humans.UpdateDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_humans.GetDto, pb.HumanGetDto](
+			"/humans/get",
+			get,
+			dtos_humans.GetDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+		),
+	)
 }

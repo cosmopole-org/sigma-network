@@ -19,21 +19,14 @@ type ServersOutput struct {
 }
 
 func LoadServices(a *modules.App) {
-	a.Services["sigma.AuthService"] = services.CreateAuthService(a)
-	a.Services["auth"] = a.Services["sigma.AuthService"]
-	a.Services["sigma.HumanService"] = services.CreateHumanService(a)
-	a.Services["humans"] = a.Services["sigma.HumanService"]
-	a.Services["sigma.TowerService"] = services.CreateTowerService(a)
-	a.Services["towers"] = a.Services["sigma.TowerService"]
-	a.Services["sigma.RoomService"] = services.CreateRoomService(a)
-	a.Services["rooms"] = a.Services["sigma.RoomService"]
-	a.Services["sigma.InviteService"] = services.CreateInviteService(a)
-	a.Services["invites"] = a.Services["sigma.InviteService"]
-	a.Services["sigma.MachineService"] = services.CreateMachineService(a)
-	a.Services["machines"] = a.Services["sigma.MachineService"]
-	a.Services["sigma.WorkerService"] = services.CreateWorkerService(a)
-	a.Services["workers"] = a.Services["sigma.WorkerService"]
-	a.Services["storage"] = services.CreateStorageService(a)
+	services.CreateAuthService(a)
+	services.CreateHumanService(a)
+	services.CreateInviteService(a)
+	services.CreateTowerService(a)
+	services.CreateRoomService(a)
+	services.CreateMachineService(a)
+	services.CreateWorkerService(a)
+	services.CreateStorageService(a)
 }
 
 func LoadKeys() {
@@ -69,7 +62,6 @@ func New(appId string, databaseUri string, dbName string, redisUri string, stora
 	a := modules.App{
 		AppId:       appId,
 		StorageRoot: storageRoot,
-		Services:    map[string]*modules.Service{},
 		Federation:  serversMap,
 	}
 	modules.Keep(a)

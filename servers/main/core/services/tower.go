@@ -3,15 +3,17 @@ package services
 import (
 	"context"
 	"fmt"
+	dtos_towers "sigma/main/core/dtos/towers"
 	"sigma/main/core/modules"
 	updates_towers "sigma/main/core/updates/towers"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func createTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.TowerCreateDto)
+func createTower(app *modules.App, input dtos_towers.CreateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from towers_create($1, $2, $3, $4, $5)
 	`
@@ -37,8 +39,7 @@ func createTower(app *modules.App, dto interface{}, assistant modules.Assistant)
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
 }
 
-func updateTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.TowerUpdateDto)
+func updateTower(app *modules.App, input dtos_towers.UpdateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		update tower set name = $1, avatar_id = $2, is_public = $3 where id = $4 and creator_id = $5
 		returning id, name, avatar_id, is_public, creator_id, origin;
@@ -54,8 +55,7 @@ func updateTower(app *modules.App, dto interface{}, assistant modules.Assistant)
 	return &pb.TowerUpdateOutput{Tower: &tower}, nil
 }
 
-func deleteTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.TowerDeleteDto)
+func deleteTower(app *modules.App, input dtos_towers.DeleteDto, assistant modules.Assistant) (any, error) {
 	var query = ``
 	query = `
 		delete from tower where id = $1 and creator_id = $2
@@ -70,8 +70,7 @@ func deleteTower(app *modules.App, dto interface{}, assistant modules.Assistant)
 	return &pb.TowerDeleteOutput{}, nil
 }
 
-func getTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.TowerGetDto)
+func getTower(app *modules.App, input dtos_towers.GetDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from towers_get($1, $2)
 	`
@@ -90,8 +89,7 @@ func getTower(app *modules.App, dto interface{}, assistant modules.Assistant) (a
 	return &pb.TowerGetOutput{Tower: &tower}, nil
 }
 
-func joinTower(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.TowerJoinDto)
+func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.Assistant) (any, error) {
 	fmt.Println(assistant)
 	var query = `
 		select * from towers_join($1, $2, $3)
@@ -110,7 +108,7 @@ func joinTower(app *modules.App, dto interface{}, assistant modules.Assistant) (
 	return &pb.TowerJoinOutput{Member: &member}, nil
 }
 
-func CreateTowerService(app *modules.App) *modules.Service {
+func CreateTowerService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/tower.sql")
@@ -121,18 +119,61 @@ func CreateTowerService(app *modules.App) *modules.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/towers/get.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/towers/create.sql")
 
-	var s = modules.CreateService(app, "sigma.TowerService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedTowerServiceServer
 		}
 		pb.RegisterTowerServiceServer(app.Network.GrpcServer, &server{})
 	})
-	// s.AddMethod(modules.CreateMethod("create", createTower, modules.CreateCheck(true, false, false), pb.TowerCreateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("update", updateTower, modules.CreateCheck(true, false, false), pb.TowerUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("delete", deleteTower, modules.CreateCheck(true, false, false), pb.TowerDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("get", getTower, modules.CreateCheck(true, false, false), pb.TowerGetDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("join", joinTower, modules.CreateCheck(true, false, false), pb.TowerJoinDto{}, modules.CreateMethodOptions(true, true, false)))
-
-	return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_towers.CreateDto, dtos_towers.CreateDto](
+			"/towers/create",
+			createTower,
+			dtos_towers.CreateDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_towers.UpdateDto, dtos_towers.UpdateDto](
+			"/towers/update",
+			updateTower,
+			dtos_towers.UpdateDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_towers.DeleteDto, dtos_towers.DeleteDto](
+			"/towers/delete",
+			deleteTower,
+			dtos_towers.DeleteDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_towers.GetDto, dtos_towers.GetDto](
+			"/towers/get",
+			getTower,
+			dtos_towers.GetDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_towers.JoinDto, dtos_towers.JoinDto](
+			"/towers/join",
+			joinTower,
+			dtos_towers.JoinDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
 }

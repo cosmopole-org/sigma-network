@@ -3,14 +3,16 @@ package services
 import (
 	"context"
 	"fmt"
+	dtos_invites "sigma/main/core/dtos/invites"
 	"sigma/main/core/modules"
 	updates_invites "sigma/main/core/updates/invites"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func createInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.InviteCreateDto)
+func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		insert into invite
 		(
@@ -28,12 +30,11 @@ func createInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 		return &pb.InviteCreateOutput{}, err
 	}
 	invite.Origin = app.AppId
-	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite}, false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
-func cancelInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.InviteCancelDto)
+func cancelInvite(app *modules.App, input dtos_invites.CancelDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		delete from invite where id = $1 and tower_id = $2
 		returning id, human_id, tower_id;
@@ -45,12 +46,11 @@ func cancelInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 		fmt.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite}, false)
 	return &pb.InviteCancelOutput{}, nil
 }
 
-func acceptInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.InviteAcceptDto)
+func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from invites_accept($1, $2, $3);
 	`
@@ -63,12 +63,11 @@ func acceptInvite(app *modules.App, dto interface{}, assistant modules.Assistant
 	}
 	member.Origin = app.AppId
 	var invite = pb.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite}, false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
-func declineInvite(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.InviteDeclineDto)
+func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		delete from invite where id = $1 and human_id = $2
 		returning id, human_id, tower_id
@@ -80,11 +79,11 @@ func declineInvite(app *modules.App, dto interface{}, assistant modules.Assistan
 		fmt.Println(err)
 		return &pb.InviteDeclineOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite})
+	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite}, false)
 	return &pb.InviteDeclineOutput{}, nil
 }
 
-func CreateInviteService(app *modules.App) *modules.Service {
+func CreateInviteService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/invite.sql")
@@ -92,17 +91,51 @@ func CreateInviteService(app *modules.App) *modules.Service {
 	// Functions
 	app.Database.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
-	var s = modules.CreateService(app, "sigma.InviteService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedInviteServiceServer
 		}
 		pb.RegisterInviteServiceServer(app.Network.GrpcServer, &server{})
 	})
-	// s.AddMethod(modules.CreateMethod("create", createInvite, modules.CreateCheck(true, true, false), pb.InviteCreateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("cancel", cancelInvite, modules.CreateCheck(true, true, false), pb.InviteCancelDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("accept", acceptInvite, modules.CreateCheck(true, false, false), pb.InviteAcceptDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("decline", declineInvite, modules.CreateCheck(true, false, false), pb.InviteDeclineDto{}, modules.CreateMethodOptions(true, true, false)))
-
-	return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_invites.CreateDto, dtos_invites.CreateDto](
+			"/invites/create",
+			createInvite,
+			dtos_invites.CreateDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_invites.CancelDto, dtos_invites.CancelDto](
+			"/invites/cancel",
+			cancelInvite,
+			dtos_invites.CancelDto{},
+			modules.CreateCheck(true, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_invites.AcceptDto, dtos_invites.AcceptDto](
+			"/invites/accept",
+			acceptInvite,
+			dtos_invites.AcceptDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_invites.DeclineDto, dtos_invites.DeclineDto](
+			"/invites/decline",
+			declineInvite,
+			dtos_invites.DeclineDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
 }

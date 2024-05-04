@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sigma/main/core/outputs"
 	"sigma/main/core/utils"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 type IError struct {
@@ -19,7 +21,7 @@ type IError struct {
 func ValidateInput[T any](c *fiber.Ctx, actionType string) error {
 	var errors []*IError
 	body := new(T)
-	if actionType == "POST" {
+	if actionType == "POST" || actionType == "PUT" || actionType == "DELETE" {
 		c.BodyParser(body)
 	} else if actionType == "GET" {
 		c.QueryParser(body)
@@ -40,6 +42,25 @@ func ValidateInput[T any](c *fiber.Ctx, actionType string) error {
 
 func ProcessData[T any, V any](c *fiber.Ctx, m *Method[T, V], assistant Assistant) error {
 	body := new(T)
+	form, err := c.MultipartForm()
+	if err == nil {
+		var formData = map[string]any{}
+		for k, v := range form.Value {
+			formData[k] = v
+		}
+		for k, v := range form.File {
+			formData[k] = v
+		}
+		err2 := mapstructure.Decode(formData, body)
+		if err2 != nil {
+			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err2.Error()))
+		}
+		result, err3 := m.Callback(Instance(), *body, assistant)
+		if err3 != nil {
+			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err3.Error()))
+		}
+		return HandleResutOfFunc(c, result)
+	}
 	if m.MethodOptions.RestAction == "POST" {
 		c.BodyParser(body)
 	} else if m.MethodOptions.RestAction == "GET" {
@@ -48,42 +69,47 @@ func ProcessData[T any, V any](c *fiber.Ctx, m *Method[T, V], assistant Assistan
 	if m.MethodOptions.InFederation {
 		originHeader := c.GetReqHeaders()["Origin"]
 		if originHeader == nil {
-			c.Status(fiber.ErrBadRequest.Code).JSON(utils.BuildErrorJson(("origin not specified")))
-			return nil
+			return c.Status(fiber.ErrBadRequest.Code).JSON(utils.BuildErrorJson(("origin not specified")))
 		}
 		origin := originHeader[0]
 		if origin == Instance().AppId {
 			result, err := m.Callback(Instance(), *body, assistant)
 			if err != nil {
-				c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
-				return nil
+				return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 			}
-			c.Status(fiber.StatusOK).JSON(result)
-			return nil
+			return HandleResutOfFunc(c, result)
 		} else {
 			data, err := json.Marshal(body)
 			if err != nil {
 				fmt.Println(err)
-				c.Status(fiber.ErrInternalServerError.Code).JSON(err.Error())
-				return nil
+				return c.Status(fiber.ErrInternalServerError.Code).JSON(err.Error())
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
 			if err2 != nil {
-				c.Status(fiber.ErrInternalServerError.Code).JSON(err2.Error())
-				return nil
+				return c.Status(fiber.ErrInternalServerError.Code).JSON(err2.Error())
 			}
 			Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
-			c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request to federation queued successfully"})
-			return nil
+			return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request to federation queued successfully"})
 		}
 	} else {
 		result, err := m.Callback(Instance(), *body, assistant)
 		if err != nil {
-			c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
-			return nil
+			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 		}
-		c.Status(fiber.StatusOK).JSON(result)
-		return nil
+		return HandleResutOfFunc(c, result)
+	}
+}
+
+func HandleResutOfFunc(c *fiber.Ctx, result any) error {
+	switch result := result.(type) {
+	case outputs.Command:
+		if result.Value == "sendFile" {
+			return c.Status(fiber.StatusOK).SendFile(result.Data)
+		} else {
+			return c.Status(fiber.StatusOK).JSON(result)
+		}
+	default:
+		return c.Status(fiber.StatusOK).JSON(result)
 	}
 }
 
@@ -102,9 +128,6 @@ func AddMethod[T any, V any](app *App, m *Method[T, V]) {
 	if m.MethodOptions.AsEndpoint {
 		app.Network.RestServer.Server.Add(m.MethodOptions.RestAction, m.Key, []fiber.Handler{
 			func(c *fiber.Ctx) error {
-				return ValidateInput[T](c, m.MethodOptions.RestAction)
-			},
-			func(c *fiber.Ctx) error {
 				if m.Check.User {
 					tokenHeader := c.GetReqHeaders()["Token"]
 					if tokenHeader == nil {
@@ -112,21 +135,22 @@ func AddMethod[T any, V any](app *App, m *Method[T, V]) {
 					}
 					token := tokenHeader[0]
 					var userId, userType = AuthWithToken(app, token)
+					var creature = ""
+					if userType == 1 {
+						creature = "human"
+					} else if userType == 2 {
+						creature = "machine"
+					}
 					if userId > 0 {
 						if m.Check.Tower {
-							var location Location
-							if (userType == 1) {
-								location = HandleLocation(app, token, userId, "human", c.GetReqHeaders())
-							} else if (userType == 2) {
-								location = HandleLocation(app, token, userId, "machine", c.GetReqHeaders())
-							}
+							var location = HandleLocation(app, token, userId, creature, c.GetReqHeaders())
 							if location.TowerId > 0 {
-								return ProcessData[T, V](c, m, CreateAssistant(userId, "human", location.TowerId, location.RoomId, location.WorkerId, nil))
+								return ProcessData[T, V](c, m, CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
 							} else {
 								return c.Status(fiber.ErrForbidden.Code).JSON(utils.BuildErrorJson("access denied"))
 							}
 						} else {
-							return ProcessData[T, V](c, m, CreateAssistant(userId, "human", 0, 0, userId, nil))
+							return ProcessData[T, V](c, m, CreateAssistant(userId, creature, 0, 0, userId, nil))
 						}
 					} else {
 						err := errors.New("access denied")

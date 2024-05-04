@@ -7,8 +7,9 @@ import (
 	"reflect"
 	"strings"
 
+	"sigma/main/core/models"
+
 	"github.com/go-playground/validator/v10"
-	"github.com/mitchellh/mapstructure"
 )
 
 func NotBlank(fl validator.FieldLevel) bool {
@@ -42,35 +43,58 @@ func LoadValidationSystem() {
 	LoadValidator(Validate)
 }
 
-func ValidateWebPacket(body []byte, query map[string]string, dto any, targetType int) (any, bool, error) {
-	var frame = map[string]interface{}{}
+func ValidateWebPacket(body []byte, query map[string]string, dto *models.Packet, frame any, targetType int) (any, bool, error) {
 	if targetType == BODY {
 		if body == nil {
 			return nil, false, errors.New("body can't be empty")
 		}
-		err1 := json.Unmarshal(body, &frame)
+		err1 := json.Unmarshal(body, dto)
 		if err1 != nil {
 			fmt.Println(err1)
 			return nil, false, err1
 		}
+		err2 := Validate.Struct(*dto)
+		if err2 != nil {
+			fmt.Println(err2)
+			return nil, false, err2
+		}
+		err3 := json.Unmarshal([]byte(dto.Data), frame)
+		if err3 != nil {
+			fmt.Println(err3)
+			return nil, false, err3
+		}
+		return frame, true, nil
+		// nptr := reflect.New(reflect.TypeOf(dto))
+		// err1 := json.Unmarshal(body, nptr.Interface())
+		// if err1 != nil {
+		// 	fmt.Println(err1)
+		// 	return nil, false, err1
+		// }
+		// err2 := Validate.Struct(nptr.Interface())
+		// if err2 != nil {
+		// 	fmt.Println(err2)
+		// 	return nil, false, err2
+		// } else {
+		// 	return nptr.Interface(), true, nil
+		// }
 	} else {
 		var data, err = json.Marshal(query)
 		if err != nil {
 			fmt.Println(err)
 			return nil, false, err
 		}
-		err1 := json.Unmarshal(data, &frame)
+		var nptr = reflect.New(reflect.TypeOf(dto))
+		err1 := json.Unmarshal(data, nptr.Interface())
 		if err1 != nil {
 			fmt.Println(err1)
 			return nil, false, err1
 		}
-	}
-	mapstructure.Decode(frame, &dto)
-	err2 := Validate.Struct(dto)
-	if err2 != nil {
-		fmt.Println(err2)
-		return nil, false, err2
-	} else {
-		return dto, true, nil
+		err2 := Validate.Struct(nptr.Interface())
+		if err2 != nil {
+			fmt.Println(err2)
+			return nil, false, err2
+		} else {
+			return nptr.Interface(), true, nil
+		}
 	}
 }

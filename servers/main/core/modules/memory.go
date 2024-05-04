@@ -4,17 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sigma/main/core/utils"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/redis/go-redis/v9"
 )
 
 type InterfedPacket struct {
-	Key       string
-	UserId    int64
-	TowerId   int64
-	RoomId    int64
-	RequestId string
-	Data      string
+	Key        string
+	UserId     int64
+	TowerId    int64
+	RoomId     int64
+	RequestId  string
+	Data       string
+	IsResponse bool
 }
 
 type Memory struct {
@@ -36,14 +39,42 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 	db := redis.NewClient(opts)
 	m.Storage = db
-	ctx := context.Background()
-	pubsub := db.PSubscribe(ctx, channelPrefix+"*")
-	go func() {
-		for {
-			res := <-m.IFResChannel
-			db.Publish(ctx, string(res[0]), res[1])
+	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
+		if payload.IsResponse {
+			app.Network.PusherServer.PushToUser(payload.UserId, payload.Data, true)
+		} else {
+			var input any
+			err2 := json.Unmarshal([]byte(payload.Data), &input)
+			if err2 != nil {
+				fmt.Println(err2)
+				return
+			}
+			fn := Handlers[payload.Key]
+			f := Frames[payload.Key]
+			mapstructure.Decode(input, &f)
+			result, err := fn(app, f, CreateAssistant(payload.UserId, "human", payload.TowerId, payload.RoomId, 0, nil))
+			if err != nil {
+				fmt.Println(err)
+				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
+				if err2 == nil {
+					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+				}
+				return
+			}
+			packet, err3 := json.Marshal(result)
+			if err3 != nil {
+				fmt.Println(err3)
+				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
+				if err2 == nil {
+					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+				}
+				return
+			}
+			m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
 		}
-	}()
+	}
+	ctx := context.Background()
+	pubsub := db.PSubscribe(ctx, channelPrefix+app.AppId+"."+"*")
 	go func() {
 		for {
 			msg, err := pubsub.ReceiveMessage(ctx)
@@ -56,18 +87,18 @@ func (m *Memory) CreateClient(redisUri string) {
 				fmt.Println(err2)
 				continue
 			}
-			m.FedHandler(Instance(), msg.Channel[len(channelPrefix):], interfedPacket)
+			m.FedHandler(Instance(), msg.Channel[len(channelPrefix+app.AppId+"."):], interfedPacket)
 		}
 	}()
 }
 
-func (m *Memory) RequestInFederation(destOrg string, packet InterfedPacket) {
+func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 	var output, err = json.Marshal(packet)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	m.Storage.Publish(context.Background(), destOrg, output)
+	m.Storage.Publish(context.Background(), channelPrefix+destOrg+"."+app.AppId, output)
 }
 
 func (m *Memory) Put(key string, value string) {

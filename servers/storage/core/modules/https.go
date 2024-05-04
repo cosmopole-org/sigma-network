@@ -21,6 +21,8 @@ func (h *HttpServer) ListenForHttps(app *App, port int) {
 
 func LoadHttpServer() *HttpServer {
 	hs := &HttpServer{}
-	hs.Server = fiber.New()
+	hs.Server = fiber.New(fiber.Config{
+		BodyLimit: 100 * 1024 * 1024,
+	})
 	return hs
 }

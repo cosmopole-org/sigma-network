@@ -3,15 +3,17 @@ package services
 import (
 	"context"
 	"fmt"
+	dtos_machines "sigma/main/core/dtos/machines"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strconv"
 
 	pb "sigma/main/core/grpc"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func createMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.MachineCreateDto)
+func createMachine(app *modules.App, input dtos_machines.CreateDto, assistant modules.Assistant) (any, error) {
 	var token, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		fmt.Println(err1)
@@ -41,8 +43,7 @@ func createMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 	return &pb.MachineCreateOutput{Machine: &machine, Session: &session}, nil
 }
 
-func updateMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.MachineUpdateDto)
+func updateMachine(app *modules.App, input dtos_machines.UpdateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
 		returning id, name, avatar_id, creator_id, origin;
@@ -57,8 +58,7 @@ func updateMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 	return &pb.MachineUpdateOutput{Machine: &machine}, nil
 }
 
-func deleteMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.MachineDeleteDto)
+func deleteMachine(app *modules.App, input dtos_machines.DeleteDto, assistant modules.Assistant) (any, error) {
 	var query = ``
 	query = `
 		select * from machines_delete($1, $2);
@@ -73,8 +73,7 @@ func deleteMachine(app *modules.App, dto interface{}, assistant modules.Assistan
 	return &pb.MachineDeleteOutput{}, nil
 }
 
-func getMachine(app *modules.App, dto interface{}, assistant modules.Assistant) (any, error) {
-	var input = (dto).(*pb.MachineGetDto)
+func getMachine(app *modules.App, input dtos_machines.GetDto, assistant modules.Assistant) (any, error) {
 	machineId, err := strconv.ParseInt(input.MachineId, 10, 64)
 	if err != nil {
 		fmt.Println(err)
@@ -101,7 +100,7 @@ func getMachine(app *modules.App, dto interface{}, assistant modules.Assistant) 
 	return &pb.MachineGetOutput{Machine: &machine, Session: &session}, nil
 }
 
-func CreateMachineService(app *modules.App) *modules.Service {
+func CreateMachineService(app *modules.App) {
 
 	// Tables
 	app.Database.ExecuteSqlFile("core/database/tables/machine.sql")
@@ -111,16 +110,51 @@ func CreateMachineService(app *modules.App) *modules.Service {
 	app.Database.ExecuteSqlFile("core/database/functions/machines/delete.sql")
 	app.Database.ExecuteSqlFile("core/database/functions/machines/get.sql")
 
-	var s = modules.CreateService(app, "sigma.MachineService")
-	s.AddGrpcLoader(func() {
+	// Methods
+	modules.AddGrpcLoader(func() {
 		type server struct {
 			pb.UnimplementedMachineServiceServer
 		}
 		pb.RegisterMachineServiceServer(app.Network.GrpcServer, &server{})
 	})
-	// s.AddMethod(modules.CreateMethod("create", createMachine, modules.CreateCheck(true, false, false), pb.MachineCreateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("update", updateMachine, modules.CreateCheck(true, false, false), pb.MachineUpdateDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("delete", deleteMachine, modules.CreateCheck(true, false, false), pb.MachineDeleteDto{}, modules.CreateMethodOptions(true, true, false)))
-	// s.AddMethod(modules.CreateMethod("get", getMachine, modules.CreateCheck(true, false, false), pb.MachineGetDto{}, modules.CreateMethodOptions(true, true, false)))
-	return s
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_machines.CreateDto, dtos_machines.CreateDto](
+			"/machines/create",
+			createMachine,
+			dtos_machines.CreateDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_machines.UpdateDto, dtos_machines.UpdateDto](
+			"/machines/update",
+			updateMachine,
+			dtos_machines.UpdateDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_machines.DeleteDto, dtos_machines.DeleteDto](
+			"/machines/delete",
+			deleteMachine,
+			dtos_machines.DeleteDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_machines.GetDto, dtos_machines.GetDto](
+			"/machines/get",
+			getMachine,
+			dtos_machines.GetDto{},
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+		),
+	)
 }

@@ -1,8 +1,0 @@
-{
-    "app": "midopia-test",
-    "port": "8080",
-    "platform": "docker",
-    "build": {
-        "dockerfile": "Dockerfile"
-    }
-}
