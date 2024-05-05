@@ -19,6 +19,8 @@ type Meta struct {
 
 type IDto interface {
 	GetData() any
+	GetTowerId() int64
+	GetRoomId() int64
 }
 
 type ResponseSimpleMessage struct {

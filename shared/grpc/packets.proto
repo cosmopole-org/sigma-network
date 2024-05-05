@@ -242,6 +242,7 @@ message Room {
 message RoomCreateDto {
 	string name = 1;
 	int64 avatarId = 2;
+	int64 towerId = 3;
 }
 
 message RoomCreateOutput {
@@ -252,6 +253,7 @@ message RoomUpdateDto {
 	int64 roomId = 1;
 	string name = 2;
 	int64 avatarId = 3;
+	int64 towerId = 4;
 }
 
 message RoomUpdateOutput {
@@ -260,13 +262,15 @@ message RoomUpdateOutput {
 
 message RoomDeleteDto {
 	int64 roomId = 1;
+	int64 towerId = 2;
 }
 
 message RoomDeleteOutput {}
 
 message RoomGetDto {
 	string roomId = 1;
-	string origin = 2;
+	int64 towerId = 2;
+	string origin = 3;
 }
 
 message RoomGetOutput {
@@ -296,6 +300,7 @@ message Invite {
 message InviteCreateDto {
 	int64 humanId = 1;
 	string origin = 2;
+	int64 towerId = 3;
 }
 
 message InviteCreateOutput {
@@ -304,6 +309,7 @@ message InviteCreateOutput {
 
 message InviteCancelDto {
 	int64 inviteId = 1;
+	int64 towerId = 2;
 }
 
 message InviteCancelOutput {
@@ -410,6 +416,8 @@ message Worker {
 message WorkerCreateDto {
 	int64 machineId = 1;
 	string metadata = 2;
+	int64 towerId = 3;
+	int64 roomId = 4;
 }
 
 message WorkerCreateOutput {
@@ -419,6 +427,8 @@ message WorkerCreateOutput {
 message WorkerUpdateDto {
 	int64 workerId = 1;
 	string metadata = 2;
+	int64 towerId = 3;
+	int64 roomId = 4;
 }
 
 message WorkerUpdateOutput {
@@ -427,12 +437,16 @@ message WorkerUpdateOutput {
 
 message WorkerDeleteDto {
 	int64 workerId = 1;
+	int64 towerId = 2;
+	int64 roomId = 3;
 }
 
 message WorkerDeleteOutput {}
 
 message WorkerReadDto {
 	string origin = 1;
+	int64 towerId = 2;
+	int64 roomId = 3;
 }
 
 message WorkerReadOutput {
@@ -444,6 +458,8 @@ message WorkerDeliverDto {
 	int64 userId = 2;
 	string data = 3;
 	string origin = 4;
+	int64 towerId = 5;
+	int64 roomId = 6;
 }
 
 message WorkerDeliverOutput {

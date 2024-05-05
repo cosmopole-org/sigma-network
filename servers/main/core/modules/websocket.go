@@ -80,11 +80,9 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 				AnswerSocket(conn, requestId, ResponseSimpleMessage{Message: "authenticated"})
 			} else {
 				var token = splittedMsg[1]
-				var towerId = splittedMsg[2]
-				var roomId = splittedMsg[3]
-				var origin = splittedMsg[4]
-				var requestId = splittedMsg[5]
-				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(towerId) + 1 + len(roomId) + 1 + len(origin) + 1 + len(requestId)):]
+				var origin = splittedMsg[2]
+				var requestId = splittedMsg[3]
+				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(origin) + 1 + len(requestId)):]
 				fn := Handlers[uri]
 				f := Frames[uri]
 				c := Checks[uri]
@@ -100,13 +98,19 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 					AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
 					continue
 				}
+				towerId := f.(IDto).GetTowerId()
+				roomId := f.(IDto).GetRoomId()
 				if mo.AsEndpoint {
 					if c.User {
 						var userId, userType = AuthWithToken(app, token)
+						var creature = ""
+						if userType == 1 {
+							creature = "human"
+						} else if userType == 2 {
+							creature = "machine"
+						}
 						if userId > 0 {
 							if c.Tower {
-								var towerId = ""
-								var roomId = ""
 								var location Location
 								if userType == 1 {
 									location = HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
@@ -114,7 +118,7 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 									location = HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
 								}
 								if location.TowerId > 0 {
-									res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+									res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
 									if err != nil {
 										AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 									} else {
@@ -124,7 +128,7 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 									AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
 								}
 							} else {
-								res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, "human", 0, 0, 0, nil))
+								res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(userId, creature, 0, 0, 0, nil))
 								if err != nil {
 									AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 								} else {
@@ -133,7 +137,7 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 							}
 						}
 					} else {
-						res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "human", 0, 0, 0, nil))
+						res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
 						if err != nil {
 							AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
 						} else {
@@ -141,12 +145,7 @@ func (pusher *Pusher) LoadWebsocket(app *App) {
 						}
 					}
 				} else {
-					res, err := HandleFederationOrNotForSocket(uri, origin, c, mo, fn, f, CreateAssistant(0, "", 0, 0, 0, nil))
-					if err != nil {
-						AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
-					} else {
-						AnswerSocket(conn, requestId, res)
-					}
+					AnswerSocket(conn, requestId, utils.BuildErrorJson("access to service denied"))
 				}
 			}
 		}

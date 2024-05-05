@@ -8,3 +8,11 @@ type CreateDto struct {
 func (d CreateDto) GetData() any {
 	return "dummy"
 }
+
+func (d CreateDto) GetTowerId() int64 {
+	return 0
+}
+
+func (d CreateDto) GetRoomId() int64 {
+	return 0
+}

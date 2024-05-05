@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	dtos_towers "sigma/main/core/dtos/towers"
 	"sigma/main/core/modules"
@@ -86,7 +87,15 @@ func getTower(app *modules.App, input dtos_towers.GetDto, assistant modules.Assi
 		fmt.Println(err)
 		return &pb.TowerGetOutput{}, err
 	}
-	return &pb.TowerGetOutput{Tower: &tower}, nil
+	if tower.IsPublic {
+		return &pb.TowerGetOutput{Tower: &tower}, nil
+	} else {
+		if app.Memory.Get(fmt.Sprintf("member::%d::%d", towerId, assistant.UserId)) == "true" {
+			return &pb.TowerGetOutput{Tower: &tower}, nil
+		} else {
+			return &pb.TowerGetOutput{}, errors.New("access denied")
+		}
+	}
 }
 
 func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.Assistant) (any, error) {
@@ -162,8 +171,8 @@ func CreateTowerService(app *modules.App) {
 			"/towers/get",
 			getTower,
 			dtos_towers.GetDto{},
-			modules.CreateCheck(true, true, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateCheck(true, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
 		),
 	)
 	modules.AddMethod(
@@ -173,7 +182,7 @@ func CreateTowerService(app *modules.App) {
 			joinTower,
 			dtos_towers.JoinDto{},
 			modules.CreateCheck(true, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
 		),
 	)
 }

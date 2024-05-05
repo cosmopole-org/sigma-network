@@ -7,3 +7,11 @@ type DeleteDto struct {
 func (d DeleteDto) GetData() any {
 	return "dummy"
 }
+
+func (d DeleteDto) GetTowerId() int64 {
+	return 0
+}
+
+func (d DeleteDto) GetRoomId() int64 {
+	return 0
+}

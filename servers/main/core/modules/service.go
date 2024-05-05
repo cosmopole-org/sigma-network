@@ -2,14 +2,12 @@ package modules
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sigma/main/core/outputs"
 	"sigma/main/core/utils"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 )
 
 type IError struct {
@@ -21,7 +19,7 @@ type IError struct {
 func ValidateInput[T any](c *fiber.Ctx, actionType string) error {
 	var errors []*IError
 	body := new(T)
-	if actionType == "POST" {
+	if actionType == "POST" || actionType == "PUT" || actionType == "DELETE" {
 		c.BodyParser(body)
 	} else if actionType == "GET" {
 		c.QueryParser(body)
@@ -40,63 +38,73 @@ func ValidateInput[T any](c *fiber.Ctx, actionType string) error {
 	return c.Next()
 }
 
-func ProcessData[T any, V any](c *fiber.Ctx, m *Method[T, V], assistant Assistant) error {
-	body := new(T)
-	form, err := c.MultipartForm()
-	if err == nil {
-		var formData = map[string]any{}
-		for k, v := range form.Value {
-			formData[k] = v
+func HandleLocalRequest[T IDto, V any](app *App, token string, m *Method[T, V], data T) (int, any) {
+	if m.Check.User {
+		var userId, userType = AuthWithToken(app, token)
+		var creature = ""
+		if userType == 1 {
+			creature = "human"
+		} else if userType == 2 {
+			creature = "machine"
 		}
-		for k, v := range form.File {
-			formData[k] = v
-		}
-		err2 := mapstructure.Decode(formData, body)
-		if err2 != nil {
-			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err2.Error()))
-		}
-		result, err3 := m.Callback(Instance(), *body, assistant)
-		if err3 != nil {
-			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err3.Error()))
-		}
-		return HandleResutOfFunc(c, result)
-	}
-	if m.MethodOptions.RestAction == "POST" {
-		c.BodyParser(body)
-	} else if m.MethodOptions.RestAction == "GET" {
-		c.QueryParser(body)
-	}
-	if m.MethodOptions.InFederation {
-		originHeader := c.GetReqHeaders()["Origin"]
-		if originHeader == nil {
-			return c.Status(fiber.ErrBadRequest.Code).JSON(utils.BuildErrorJson(("origin not specified")))
-		}
-		origin := originHeader[0]
-		if origin == Instance().AppId {
-			result, err := m.Callback(Instance(), *body, assistant)
-			if err != nil {
-				return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
+		if userId > 0 {
+			if m.Check.Tower {
+				var location = HandleLocationWithProcessed(app, token, userId, creature, data.GetTowerId(), data.GetRoomId(), userId)
+				if location.TowerId > 0 {
+					result, err := m.Callback(Instance(), data, CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
+					if err != nil {
+						return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
+					}
+					return fiber.StatusOK, result
+				} else {
+					return fiber.StatusForbidden, utils.BuildErrorJson("access denied")
+				}
+			} else {
+				result, err := m.Callback(Instance(), data, CreateAssistant(userId, creature, 0, 0, userId, nil))
+				if err != nil {
+					return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
+				}
+				return fiber.StatusOK, result
 			}
-			return HandleResutOfFunc(c, result)
+		} else {
+			return fiber.StatusForbidden, utils.BuildErrorJson("access denied")
+		}
+	} else {
+		result, err := m.Callback(Instance(), data, CreateAssistant(0, "", 0, 0, 0, nil))
+		if err != nil {
+			return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
+		}
+		return fiber.StatusOK, result
+	}
+}
+
+func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T, V]) (int, any) {
+	if m.MethodOptions.InFederation {
+		if origin == Instance().AppId {
+			return HandleLocalRequest[T, V](Instance(), token, m, body)
 		} else {
 			data, err := json.Marshal(body)
 			if err != nil {
 				fmt.Println(err)
-				return c.Status(fiber.ErrInternalServerError.Code).JSON(err.Error())
+				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err.Error()))
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
 			if err2 != nil {
-				return c.Status(fiber.ErrInternalServerError.Code).JSON(err2.Error())
+				fmt.Println(err2)
+				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err2.Error()))
 			}
-			Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
-			return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request to federation queued successfully"})
+			if m.Check.User {
+				var userId, _ = AuthWithToken(Instance(), token)
+				if userId > 0 {
+					Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: userId, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+				}
+			} else {
+				Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: 0, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+			}
+			return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 		}
 	} else {
-		result, err := m.Callback(Instance(), *body, assistant)
-		if err != nil {
-			return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
-		}
-		return HandleResutOfFunc(c, result)
+		return HandleLocalRequest[T, V](Instance(), token, m, body)
 	}
 }
 
@@ -123,7 +131,7 @@ func AddGrpcLoader(fn func()) {
 	fn()
 }
 
-func AddMethod[T any, V any](app *App, m *Method[T, V]) {
+func AddMethod[T IDto, V any](app *App, m *Method[T, V]) {
 	Methods[m.Key] = m
 	if m.MethodOptions.AsEndpoint {
 		app.Network.RestServer.Server.Add(m.MethodOptions.RestAction, m.Key, []fiber.Handler{
@@ -131,37 +139,28 @@ func AddMethod[T any, V any](app *App, m *Method[T, V]) {
 				return ValidateInput[T](c, m.MethodOptions.RestAction)
 			},
 			func(c *fiber.Ctx) error {
-				if m.Check.User {
-					tokenHeader := c.GetReqHeaders()["Token"]
-					if tokenHeader == nil {
-						return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson("authorization token is not supplied"))
-					}
-					token := tokenHeader[0]
-					var userId, userType = AuthWithToken(app, token)
-					var creature = ""
-					if userType == 1 {
-						creature = "human"
-					} else if userType == 2 {
-						creature = "machine"
-					}
-					if userId > 0 {
-						if m.Check.Tower {
-							var location = HandleLocation(app, token, userId, creature, c.GetReqHeaders())
-							if location.TowerId > 0 {
-								return ProcessData[T, V](c, m, CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
-							} else {
-								return c.Status(fiber.ErrForbidden.Code).JSON(utils.BuildErrorJson("access denied"))
-							}
-						} else {
-							return ProcessData[T, V](c, m, CreateAssistant(userId, creature, 0, 0, userId, nil))
-						}
-					} else {
-						err := errors.New("access denied")
-						return c.Status(fiber.StatusForbidden).JSON(err)
-					}
-				} else {
-					return ProcessData[T, V](c, m, CreateAssistant(0, "", 0, 0, 0, nil))
+				body := new(T)
+				if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
+					c.BodyParser(body)
+				} else if m.MethodOptions.RestAction == "GET" {
+					c.QueryParser(body)
 				}
+				fmt.Println(body)
+				originHeader := c.GetReqHeaders()["Origin"]
+				var origin = ""
+				if originHeader != nil {
+					origin = originHeader[0]
+				}
+				var token = ""
+				tokenHeader := c.GetReqHeaders()["Token"]
+				if tokenHeader != nil {
+					token = tokenHeader[0]
+				}
+				statusCode, result := ProcessData[T, V](origin, token, *body, m)
+				if statusCode == fiber.StatusOK {
+					return HandleResutOfFunc(c, result)
+				}
+				return c.Status(statusCode).JSON(result)
 			},
 		}...)
 	}

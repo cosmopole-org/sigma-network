@@ -7,7 +7,6 @@ import (
 	"sigma/main/core/models"
 	"sigma/main/core/modules"
 	updates_rooms "sigma/main/core/updates/rooms"
-	"strconv"
 
 	pb "sigma/main/core/grpc"
 
@@ -77,13 +76,8 @@ func getRoom(app *modules.App, input dtos_rooms.GetDto, assistant modules.Assist
 		select * from rooms_get($1, $2, $3);
 	`
 	var room pb.Room
-	roomId, err := strconv.ParseInt(input.RoomId, 10, 64)
-	if err != nil {
-		fmt.Println(err)
-		return &pb.RoomGetOutput{}, err
-	}
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, assistant.TowerId, roomId,
+		context.Background(), query, assistant.UserId, assistant.TowerId, input.RoomId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.RoomGetOutput{}, err

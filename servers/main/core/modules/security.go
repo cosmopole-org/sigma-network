@@ -74,37 +74,25 @@ type Location struct {
 	WorkerId int64
 }
 
-func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId string, roomId string) Location {
-	if (towerId == "") {
+func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId int64, roomId int64) Location {
+	if (towerId == 0) {
 		return Location{TowerId: 0, RoomId: 0}	
 	}
-	tid, err1 := strconv.ParseInt(towerId, 10, 64)
-	if err1 != nil {
-		fmt.Println(err1)
-		return Location{TowerId: 0, RoomId: 0}
-	}
-	var roid int64 = 0
-	if roomId == "" {
-		rid, err1 := strconv.ParseInt(roomId, 10, 64)
-		if err1 != nil {
-			fmt.Println(err1)
-		}
-		roid = rid
-	}
 	var ac = authCache[token]
-	if ac != nil && ac.TowerId == tid && ac.RoomId == roid {
-		return Location{TowerId: tid, RoomId: roid}
+	if ac != nil && ac.TowerId == towerId && ac.RoomId == roomId {
+		return Location{TowerId: towerId, RoomId: roomId}
 	}
-	var memberData = app.Memory.Get(fmt.Sprintf("member::%d::%d", tid, humanId))
-	var cityData = app.Memory.Get(fmt.Sprintf("city::%d", roid))
+	var towerIdStr = fmt.Sprintf("%d", towerId)
+	var memberData = app.Memory.Get(fmt.Sprintf("member::%d::%d", towerId, humanId))
+	var cityData = app.Memory.Get(fmt.Sprintf("city::%d", roomId))
 	if memberData != "" {
-		if cityData != "" && cityData == towerId {
-			authCache[token].TowerId = tid
-			authCache[token].RoomId = roid
-			return Location{TowerId: tid, RoomId: roid}
+		if cityData != "" && cityData == towerIdStr {
+			authCache[token].TowerId = towerId
+			authCache[token].RoomId = roomId
+			return Location{TowerId: towerId, RoomId: roomId}
 		} else {
-			authCache[token].TowerId = tid
-			return Location{TowerId: tid, RoomId: 0}
+			authCache[token].TowerId = towerId
+			return Location{TowerId: towerId, RoomId: 0}
 		}
 	} else {
 		return Location{TowerId: 0, RoomId: 0}
@@ -250,7 +238,7 @@ func HandleLocation(app *App, token string, userId int64, userType string, heade
 	return location
 }
 
-func HandleLocationWithProcessed(app *App, token string, userId int64, userType string, towerId string, roomId string, workerId int64) Location {
+func HandleLocationWithProcessed(app *App, token string, userId int64, userType string, towerId int64, roomId int64, workerId int64) Location {
 	var location Location
 	if userType == "human" {
 		location = AuthorizeHumanWithProcessed(app, token, userId, towerId, roomId)

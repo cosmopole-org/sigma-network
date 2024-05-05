@@ -10,3 +10,11 @@ type CompleteDto struct {
 func (d CompleteDto) GetData() any {
 	return "dummy"
 }
+
+func (d CompleteDto) GetTowerId() int64 {
+	return 0
+}
+
+func (d CompleteDto) GetRoomId() int64 {
+	return 0
+}
