@@ -65,7 +65,7 @@ func CreateAuthService(app *modules.App) {
 	modules.AddMethod(
 		app,
 		modules.CreateMethod[dtos_admins.UpdatePassDto, dtos_admins.UpdatePassDto](
-			"/admins/updatePass",
+			"/auths/updatePass",
 			updatePass,
 			dtos_admins.UpdatePassDto{},
 			modules.CreateCheck(false, false, false),

@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const memberTemplate = "member::%d::%d"
+
 func createTower(app *modules.App, input dtos_towers.CreateDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		select * from towers_create($1, $2, $3, $4, $5)
@@ -36,7 +38,7 @@ func createTower(app *modules.App, input dtos_towers.CreateDto, assistant module
 		member.HumanId = assistant.UserId
 		member.Origin = app.AppId
 	}
-	app.Memory.Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
+	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId), "true")
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
 }
 
@@ -85,7 +87,7 @@ func getTower(app *modules.App, input dtos_towers.GetDto, assistant modules.Assi
 	if tower.IsPublic {
 		return &pb.TowerGetOutput{Tower: &tower}, nil
 	} else {
-		if app.Memory.Get(fmt.Sprintf("member::%d::%d", input.TowerId, assistant.UserId)) == "true" {
+		if app.Memory.Get(fmt.Sprintf(memberTemplate, input.TowerId, assistant.UserId)) == "true" {
 			return &pb.TowerGetOutput{Tower: &tower}, nil
 		} else {
 			return &pb.TowerGetOutput{}, errors.New("access denied")
@@ -107,7 +109,7 @@ func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.As
 	}
 	member.Origin = app.AppId
 	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId)
-	app.Memory.Put(fmt.Sprintf("member::%d::%d", member.TowerId, member.HumanId), "true")
+	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId), "true")
 	go app.Network.PusherServer.PushToGroup(member.TowerId, updates_towers.Join{Member: &member}, []int64{member.HumanId})
 	return &pb.TowerJoinOutput{Member: &member}, nil
 }
