@@ -103,6 +103,7 @@ func CreateRoomService(app *modules.App) {
 			dtos_rooms.CreateDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -113,6 +114,7 @@ func CreateRoomService(app *modules.App) {
 			dtos_rooms.UpdateDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -123,6 +125,7 @@ func CreateRoomService(app *modules.App) {
 			dtos_rooms.DeleteDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -133,6 +136,7 @@ func CreateRoomService(app *modules.App) {
 			dtos_rooms.GetDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 }

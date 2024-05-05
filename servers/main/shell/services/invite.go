@@ -100,7 +100,8 @@ func CreateInviteService(app *modules.App) {
 			createInvite,
 			dtos_invites.CreateDto{},
 			modules.CreateCheck(true, true, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -110,7 +111,8 @@ func CreateInviteService(app *modules.App) {
 			cancelInvite,
 			dtos_invites.CancelDto{},
 			modules.CreateCheck(true, true, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -120,7 +122,8 @@ func CreateInviteService(app *modules.App) {
 			acceptInvite,
 			dtos_invites.AcceptDto{},
 			modules.CreateCheck(true, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
+			modules.CreateInterFedOptions(true, false),
 		),
 	)
 	modules.AddMethod(
@@ -130,7 +133,8 @@ func CreateInviteService(app *modules.App) {
 			declineInvite,
 			dtos_invites.DeclineDto{},
 			modules.CreateCheck(true, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
+			modules.CreateInterFedOptions(true, false),
 		),
 	)
 }

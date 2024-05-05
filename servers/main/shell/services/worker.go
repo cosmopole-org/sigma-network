@@ -151,6 +151,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.CreateDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 	modules.AddMethod(
@@ -161,6 +162,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.UpdateDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 	modules.AddMethod(
@@ -171,6 +173,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.DeleteDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 	modules.AddMethod(
@@ -181,7 +184,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.ReadDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
-		),
+			modules.CreateInterFedOptions(false, false),),
 	)
 	modules.AddMethod(
 		app,
@@ -191,6 +194,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.DeliverDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 }

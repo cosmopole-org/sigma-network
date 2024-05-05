@@ -23,6 +23,7 @@ func CreateAuthService(app *modules.App) {
 			dtos_auth.GetServerKey{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 }

@@ -164,6 +164,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.AuthenticateDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -174,6 +175,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.SignupDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -184,6 +186,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.VerifyDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -194,6 +197,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.CompleteDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -204,6 +208,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.UpdateDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -214,6 +219,7 @@ func CreateHumanService(app *modules.App) {
 			dtos_humans.GetDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 }

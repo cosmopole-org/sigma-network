@@ -19,6 +19,7 @@ func CreateDummyService(app *modules.App) {
 			dtos.HelloDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 
@@ -32,6 +33,7 @@ func CreateDummyService(app *modules.App) {
 			dtos.PingDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 }

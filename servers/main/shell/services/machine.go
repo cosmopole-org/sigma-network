@@ -120,6 +120,7 @@ func CreateMachineService(app *modules.App) {
 			dtos_machines.CreateDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -130,6 +131,7 @@ func CreateMachineService(app *modules.App) {
 			dtos_machines.UpdateDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -140,6 +142,7 @@ func CreateMachineService(app *modules.App) {
 			dtos_machines.DeleteDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -150,6 +153,7 @@ func CreateMachineService(app *modules.App) {
 			dtos_machines.GetDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 }

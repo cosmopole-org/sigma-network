@@ -134,6 +134,7 @@ func CreateTowerService(app *modules.App) {
 			dtos_towers.CreateDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -144,6 +145,7 @@ func CreateTowerService(app *modules.App) {
 			dtos_towers.UpdateDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -154,6 +156,7 @@ func CreateTowerService(app *modules.App) {
 			dtos_towers.DeleteDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -164,6 +167,7 @@ func CreateTowerService(app *modules.App) {
 			dtos_towers.GetDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 	modules.AddMethod(
@@ -174,6 +178,7 @@ func CreateTowerService(app *modules.App) {
 			dtos_towers.JoinDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
+			modules.CreateInterFedOptions(false, false),
 		),
 	)
 }

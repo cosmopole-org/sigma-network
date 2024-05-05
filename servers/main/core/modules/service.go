@@ -126,6 +126,7 @@ var Handlers = map[string]func(*App, interface{}, Assistant) (any, error){}
 var Frames = map[string]interface{}{}
 var Checks = map[string]Check{}
 var MethodOptionsMap = map[string]MethodOptions{}
+var InterFedOptionsMap = map[string]InterFedOptions{}
 
 func AddGrpcLoader(fn func()) {
 	fn()
@@ -163,19 +164,25 @@ type MethodOptions struct {
 	InFederation bool
 }
 
+type InterFedOptions struct {
+	ValidateUserAtHome  bool
+	ValidateTowerAtHome bool
+}
+
 type Check struct {
 	User  bool
 	Tower bool
 	Room  bool
 }
 
-func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions) *Method[T, V] {
+func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
 	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
 		return callback(app, dto.(T), a)
 	}
 	Frames[key] = inputFrame
 	Checks[key] = check
 	MethodOptionsMap[key] = mOptions
+	InterFedOptionsMap[key] = ifOptions
 	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame}
 }
 
@@ -185,4 +192,11 @@ func CreateCheck(user bool, tower bool, room bool) Check {
 
 func CreateMethodOptions(asEndpoint bool, restAction string, asGrpc bool, inFederation bool) MethodOptions {
 	return MethodOptions{AsEndpoint: asEndpoint, RestAction: restAction, AsGrpc: asGrpc, InFederation: inFederation}
+}
+
+func CreateInterFedOptions(user bool, tower bool) InterFedOptions {
+	return InterFedOptions{
+		ValidateUserAtHome: user,
+		ValidateTowerAtHome: tower,
+	}
 }

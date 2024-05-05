@@ -114,7 +114,7 @@ setGlobalDispatcher(
         })
     }
 
-    let socket = new WebSocket("ws://localhost:8081/ws");
+    let socket = new WebSocket("ws://localhost:8082/ws");
     socket.onmessage = function (event) {
         let data = event.data.split(" ");
         if (data[0] === "update") {
@@ -140,11 +140,13 @@ setGlobalDispatcher(
         console.log(result2);
         let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
         console.log(result3);
+        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
+        console.log(result4);
         
         let result5 = await authenticate(result3.session.token);
         console.log(result5);
         
-        let result8 = await request(`/towers/join`, { towerId: 2 }, result3.session.token, "8082");
+        let result8 = await request(`/invites/create`, { userId: 67, towerId: result4.tower.id }, result3.session.token, "8081");
         console.log(result8);
 
     };

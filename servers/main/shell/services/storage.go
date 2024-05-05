@@ -43,6 +43,7 @@ func CreateStorageService(app *modules.App) {
 			dtos_storage.UploadDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -53,6 +54,7 @@ func CreateStorageService(app *modules.App) {
 			dtos_storage.DownloadDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 }
