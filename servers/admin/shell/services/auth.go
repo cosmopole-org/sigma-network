@@ -80,3 +80,4 @@ func LoadAuthGrpcService(gs *grpc.Server) {
 	}
 	pb.RegisterHumanServiceServer(gs, &server{})
 }
+
