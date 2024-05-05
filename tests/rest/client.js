@@ -106,15 +106,15 @@ setGlobalDispatcher(
         })
     }
 
-    const request = (path, data, token) => {
+    const request = (path, data, token, origin) => {
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} 0 0 8081 ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? ""} ${requestId} ${JSON.stringify(data)}`);
         })
     }
 
-    let socket = new WebSocket("ws://localhost:8082/ws");
+    let socket = new WebSocket("ws://localhost:8081/ws");
     socket.onmessage = function (event) {
         let data = event.data.split(" ");
         if (data[0] === "update") {
@@ -144,7 +144,7 @@ setGlobalDispatcher(
         let result5 = await authenticate(result3.session.token);
         console.log(result5);
         
-        let result8 = await request(`/towers/join`, { towerId: 8 }, result3.session.token);
+        let result8 = await request(`/towers/join`, { towerId: 2 }, result3.session.token, "8082");
         console.log(result8);
 
     };
