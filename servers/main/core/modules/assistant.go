@@ -9,12 +9,13 @@ import (
 )
 
 type Assistant struct {
-	UserId   int64
-	UserType string
-	WorkerId int64
-	TowerId  int64
-	RoomId   int64
-	Packet   IPacket
+	UserId     int64
+	UserType   string
+	WorkerId   int64
+	TowerId    int64
+	RoomId     int64
+	UserOrigin string
+	Packet     IPacket
 }
 
 func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {

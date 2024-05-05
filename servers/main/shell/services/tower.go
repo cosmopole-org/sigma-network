@@ -96,13 +96,16 @@ func getTower(app *modules.App, input dtos_towers.GetDto, assistant modules.Assi
 }
 
 func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.Assistant) (any, error) {
-	fmt.Println(assistant)
+	userOrigin := assistant.UserOrigin
+	if userOrigin == "" {
+		userOrigin = app.AppId
+	}
 	var query = `
-		select * from towers_join($1, $2, $3)
+		select * from towers_join($1, $2, $3, $4)
 	`
 	var member pb.Member
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.TowerId, app.AppId,
+		context.Background(), query, assistant.UserId, input.TowerId, app.AppId, userOrigin,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.TowerJoinOutput{}, err

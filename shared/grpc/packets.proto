@@ -168,6 +168,7 @@ message Member {
 	int64 humanId = 2;
 	int64 towerId = 3;
 	string origin = 4;
+	string userOrigin = 5;
 }
 
 // messages
@@ -293,6 +294,7 @@ message Invite {
 	int64 humanId = 2;
 	int64 towerId = 3;
 	string origin = 4;
+	string userOrigin = 5;
 }
 
 // messages

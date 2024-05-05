@@ -3,5 +3,6 @@ create table invite (
     human_id bigint not null,
     tower_id bigint not null,
     origin text not null,
-    unique (human_id, tower_id)
+    user_origin text not null,
+    unique (human_id, tower_id, user_origin)
 );

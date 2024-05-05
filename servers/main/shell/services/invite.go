@@ -14,23 +14,29 @@ import (
 )
 
 func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modules.Assistant) (any, error) {
+	userOrigin := assistant.UserOrigin
+	if userOrigin == "" {
+		userOrigin = app.AppId
+	}
 	var query = `
 		insert into invite
 		(
 			human_id,
 			tower_id,
-			origin
-		) values ($1, $2, $3)
+			origin,
+			user_origin
+		) values ($1, $2, $3, $4)
 		returning id, human_id, tower_id;
 	`
 	var invite pb.Invite
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, input.HumanId, assistant.TowerId, app.AppId,
+		context.Background(), query, input.HumanId, assistant.TowerId, app.AppId, userOrigin,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteCreateOutput{}, err
 	}
 	invite.Origin = app.AppId
+	invite.UserOrigin = userOrigin
 	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite}, false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
@@ -58,7 +64,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 	var member pb.Member
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.InviteId, app.AppId,
-	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
+	).Scan(&member.Id, &member.HumanId, &member.TowerId, &member.UserOrigin); err != nil {
 		fmt.Println(err)
 		return &pb.InviteAcceptOutput{}, err
 	}

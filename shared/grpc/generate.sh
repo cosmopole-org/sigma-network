@@ -7,17 +7,13 @@ protoc --go_out=. --go_opt=paths=source_relative \
     --go-grpc_out=. --go-grpc_opt=paths=source_relative \
     packets.proto
 
-cp packets.proto ../../servers/admin/core/grpc/packets.proto
-cp packets_grpc.pb.go ../../servers/admin/core/grpc/packets_grpc.pb.go
-cp packets.pb.go ../../servers/admin/core/grpc/packets.pb.go
+cp packets.proto ../../servers/admin/shell/grpc/packets.proto
+cp packets_grpc.pb.go ../../servers/admin/shell/grpc/packets_grpc.pb.go
+cp packets.pb.go ../../servers/admin/shell/grpc/packets.pb.go
 
-cp packets.proto ../../servers/newmain/core/grpc/packets.proto
-cp packets_grpc.pb.go ../../servers/newmain/core/grpc/packets_grpc.pb.go
-cp packets.pb.go ../../servers/newmain/core/grpc/packets.pb.go
-
-cp packets.proto ../../servers/map/core/grpc/packets.proto
-cp packets_grpc.pb.go ../../servers/map/core/grpc/packets_grpc.pb.go
-cp packets.pb.go ../../servers/map/core/grpc/packets.pb.go
+cp packets.proto ../../servers/main/shell/grpc/packets.proto
+cp packets_grpc.pb.go ../../servers/main/shell/grpc/packets_grpc.pb.go
+cp packets.pb.go ../../servers/main/shell/grpc/packets.pb.go
 
 cp packets.proto ../../tests/grpc/packets/packets.proto
 cp packets_grpc.pb.go ../../tests/grpc/packets/packets_grpc.pb.go
