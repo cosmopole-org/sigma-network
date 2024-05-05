@@ -97,7 +97,7 @@ func serverInterceptor(
 			if c.Tower {
 				location := HandleLocationWithProcessed(app, token, userId, creature, f.(IDto).GetTowerId(), f.(IDto).GetRoomId(), 0)
 				if location.TowerId > 0 {
-					return HandleFederationOrNot(action, c, md, mo, fn, f, CreateAssistant(userId, creature, 0, 0, 0, nil))
+					return HandleFederationOrNot(action, c, md, mo, fn, f, CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
 				} else {
 					return nil, status.Errorf(codes.Unauthenticated, "Access denied")
 				}
