@@ -2,9 +2,9 @@ package main
 
 import (
 	"os"
-	app "sigma/admin/core/core"
-	"sigma/admin/core/models"
-	"sigma/admin/core/modules"
+	app "sigma/admin/shell"
+	"sigma/admin/shell/models"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -18,11 +18,18 @@ func main() {
 		panic(err)
 	}
 
-	app := app.New(
+	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 64)
+	if (err != nil) {
+		panic(err.Error())
+	}
+
+	app.New(
 		"cosmopole",
 		os.Getenv("POSTGRES_URI"),
+		"postgres_admin",
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
+		int(port),
 		[]models.Admin{
 			{Email: "mani@midopia.com", FirstName: "mani", LastName: "shabanzadeh"},
 			{Email: "aras@midopia.com", FirstName: "aras", LastName: "mehranfar"},
@@ -30,8 +37,6 @@ func main() {
 			{Email: "amir@midopia.com", FirstName: "amir", LastName: "ebadi"},
 		},
 	)
-
-	app.Network.Listen(modules.CreateListenOptions(true, 8085, false, 0))
 
 	<-quit
 }

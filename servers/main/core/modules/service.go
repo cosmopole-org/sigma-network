@@ -134,35 +134,7 @@ func AddGrpcLoader(fn func()) {
 func AddMethod[T IDto, V any](app *App, m *Method[T, V]) {
 	Methods[m.Key] = m
 	if m.MethodOptions.AsEndpoint {
-		app.Network.RestServer.Server.Add(m.MethodOptions.RestAction, m.Key, []fiber.Handler{
-			func(c *fiber.Ctx) error {
-				return ValidateInput[T](c, m.MethodOptions.RestAction)
-			},
-			func(c *fiber.Ctx) error {
-				body := new(T)
-				if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
-					c.BodyParser(body)
-				} else if m.MethodOptions.RestAction == "GET" {
-					c.QueryParser(body)
-				}
-				fmt.Println(body)
-				originHeader := c.GetReqHeaders()["Origin"]
-				var origin = ""
-				if originHeader != nil {
-					origin = originHeader[0]
-				}
-				var token = ""
-				tokenHeader := c.GetReqHeaders()["Token"]
-				if tokenHeader != nil {
-					token = tokenHeader[0]
-				}
-				statusCode, result := ProcessData[T, V](origin, token, *body, m)
-				if statusCode == fiber.StatusOK {
-					return HandleResutOfFunc(c, result)
-				}
-				return c.Status(statusCode).JSON(result)
-			},
-		}...)
+		AddEndpoint[T, V](m)
 	}
 }
 

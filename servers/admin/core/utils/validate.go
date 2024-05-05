@@ -1,9 +1,6 @@
 package utils
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"reflect"
 	"strings"
 
@@ -41,41 +38,3 @@ func LoadValidationSystem() {
 	LoadValidator(Validate)
 }
 
-func ValidateWebPacket(body []byte, query map[string]string, dto any, targetType int) (interface{}, bool, error) {
-	if targetType == BODY {
-		if body == nil {
-			return nil, false, errors.New("body can't be empty")
-		}
-		nptr := reflect.New(reflect.TypeOf(dto))
-		err1 := json.Unmarshal(body, nptr.Interface())
-		if err1 != nil {
-			fmt.Println(err1)
-			return nil, false, err1
-		}
-		err2 := Validate.Struct(nptr.Interface())
-		if err2 != nil {
-			fmt.Println(err2)
-			return nil, false, err2
-		} else {
-			return nptr.Interface(), true, nil
-		}
-	} else {
-		var data, err = json.Marshal(query)
-		if err != nil {
-			fmt.Println(err)
-			return nil, false, err
-		}
-		var nptr = reflect.New(reflect.TypeOf(dto))
-		err1 := json.Unmarshal(data, nptr.Interface())
-		if err1 != nil {
-			fmt.Println(err1)
-			return nil, false, err1		}
-		err2 := Validate.Struct(nptr.Interface())
-		if err2 != nil {
-			fmt.Println(err2)
-		   return nil, false, err2
-		} else {
-			return nptr.Interface(), true, nil
-		}
-	}
-}

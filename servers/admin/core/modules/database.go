@@ -10,11 +10,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Database struct {
+	Db *pgxpool.Pool
+}
+
 func (d Database) GetDb() *pgxpool.Pool {
 	return d.Db
 }
 
-func CreateDatabase(uri string) *Database {
+func CreateDatabase(uri string, dbName string) *Database {
 	fmt.Println("connecting to database...")
 	dbInstance := &Database{}
 	config, err := pgxpool.ParseConfig(uri)
@@ -34,7 +38,24 @@ func CreateDatabase(uri string) *Database {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 	}
-	dbInstance.Db = conn
+	var cdbQuery = fmt.Sprintf(`
+	    CREATE DATABASE %s;
+	`, dbName)
+	_, err2 := conn.Exec(context.Background(), cdbQuery)
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+	conn.Close()
+	config2, err3 := pgxpool.ParseConfig(uri + "/" + dbName)
+	if err3 != nil {
+		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err3)
+	}
+	config.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
+	conn2, err4 := pgxpool.ConnectConfig(context.Background(), config2)
+	if err4 != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err4)
+	}
+	dbInstance.Db = conn2
 	return dbInstance
 }
 

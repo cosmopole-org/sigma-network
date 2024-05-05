@@ -1,9 +1,9 @@
 package utils
 
-import (
-	"sigma/admin/core/models"
-)
+type Error struct {
+	Message string `json:"message"`
+}
 
-func BuildErrorJson(message string) models.Error {
-	return models.Error{Message: message}
+func BuildErrorJson(message string) Error {
+	return Error{Message: message}
 }

@@ -2,98 +2,54 @@ package modules
 
 import (
 	"fmt"
-	"sigma/admin/core/utils"
-	"strings"
 
-	"github.com/valyala/fasthttp"
+	"github.com/gofiber/fiber/v2"
 )
+
+type HttpServer struct {
+	Server *fiber.App
+}
 
 type EmptySuccessResponse struct {
 	Success bool `json:"success"`
 }
 
-func HttpHandler(app *App, ctx *fasthttp.RequestCtx) {
-	if string(ctx.Request.Header.Peek("Upgrade")) == "websocket" {
-		HandleWebsocket(app, ctx)
-	} else {
-		var uri = strings.Split(string(ctx.RequestURI()[:]), "?")[0]
-		parts := strings.Split(uri, "/")
-		var packet = CreateWebPacket(ctx).(WebPacket)
-		if len(parts) == 3 {
-			service := app.GetService(parts[1])
-			if service != nil {
-				var method = service.GetMethod(parts[2])
-				if method != nil && method.MethodOptions.AsEndpoint {
-					var temp = method.InTemplate
-					if ctx.IsOptions() {
-						packet.AnswerWithJson(fasthttp.StatusOK, map[string]string{}, EmptySuccessResponse{Success: true})
-					} else if ctx.IsPost() || ctx.IsPut() || ctx.IsDelete() {
-						form, err := ctx.MultipartForm()
-						var d = temp
-						if err == nil {
-							HandleRawMethod(app, method, packet, form)
-						} else if data, success, err := utils.ValidateWebPacket(packet.GetBody(), nil, d, utils.BODY); success {
-							if method.Check.User {
-								var userId, userType, token = Authenticate(app, &packet)
-								if userId > 0 {
-									if method.Check.Tower {
-										var location = HandleLocation(app, token, userId, userType, &packet)
-										if location.TowerId > 0 {
-											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
-										} else {
-											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
-										}
-									} else {
-										HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, 0, 0, 0, packet))
-									}
-								}
-							} else {
-								HandleResult(app, method.Callback, packet, data, CreateAssistant(0, "", 0, 0, 0, packet))
-							}
-						} else {
-							packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson(err.Error()))
-						}
-					} else if ctx.IsGet() {
-						var d = temp
-						if data, success, err := utils.ValidateWebPacket(nil, packet.GetQuery(), d, utils.QUERY); success {
-							if method.Check.User {
-								var userId, userType, token = Authenticate(app, &packet)
-								if userId > 0 {
-									if method.Check.Tower {
-										var location = HandleLocation(app, token, userId, userType, &packet)
-										if location.TowerId > 0 {
-											HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, location.TowerId, location.RoomId, location.WorkerId, packet))
-										} else {
-											packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("access denied"))
-										}
-									} else {
-										HandleResult(app, method.Callback, packet, data, CreateAssistant(userId, userType, 0, 0, 0, packet))
-									}
-								}
-							} else {
-								HandleResult(app, method.Callback, packet, data, CreateAssistant(0, "", 0, 0, 0, packet))
-							}
-						} else {
-							packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson(err.Error()))
-						}
-					}
-				} else {
-					packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("endpoint not found"))
-				}
-			} else {
-				packet.AnswerWithJson(fasthttp.StatusNotFound, map[string]string{}, utils.BuildErrorJson("controller not found"))
-			}
-		}
-	}
+func (h *HttpServer) ListenForHttps(app *App, port int) {
+	fmt.Println("Listening to rest port ", port, "...")
+	go h.Server.Listen(fmt.Sprintf(":%d", port))
 }
 
-func ListenForHttps(app *App, port int) {
-	fmt.Println("Listening to rest port ", port, "...")
-	s := &fasthttp.Server{
-		ReduceMemoryUsage: true,
-		Handler: func(ctx *fasthttp.RequestCtx) {
-			HttpHandler(app, ctx)
+func AddEndpoint[T IDto, V any](m *Method[T, V]) {
+	Instance().Network.HttpServer.Server.Add(m.MethodOptions.RestAction, m.Key, []fiber.Handler{
+		func(c *fiber.Ctx) error {
+			return ValidateInput[T](c, m.MethodOptions.RestAction)
 		},
-	}
-	go s.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port))
+		func(c *fiber.Ctx) error {
+			body := new(T)
+			if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
+				c.BodyParser(body)
+			} else if m.MethodOptions.RestAction == "GET" {
+				c.QueryParser(body)
+			}
+			originHeader := c.GetReqHeaders()["Origin"]
+			var origin = ""
+			if originHeader != nil {
+				origin = originHeader[0]
+			}
+			var token = ""
+			tokenHeader := c.GetReqHeaders()["Token"]
+			if tokenHeader != nil {
+				token = tokenHeader[0]
+			}
+			statusCode, result := ProcessData[T, V](origin, token, *body, m)
+			if statusCode == fiber.StatusOK {
+				return HandleResutOfFunc(c, result)
+			}
+			return c.Status(statusCode).JSON(result)
+		},
+	}...)
+}
+
+func LoadHttpServer() *HttpServer {
+	return &HttpServer{Server: fiber.New()}
 }

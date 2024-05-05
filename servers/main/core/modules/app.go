@@ -1,6 +1,6 @@
 package modules
 
-import pb "sigma/main/core/grpc"
+import pb "sigma/main/shell/grpc"
 
 type App struct {
 	AppId       string

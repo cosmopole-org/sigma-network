@@ -2,8 +2,8 @@ package main
 
 import (
 	"os"
-	app "sigma/main/core/core"
-	"sigma/main/core/dtos"
+	"sigma/main/shell/dtos"
+	app "sigma/main/shell"
 
 	"sigma/main/core/modules"
 	"strconv"
@@ -25,13 +25,18 @@ func main() {
 		panic(err)
 	}
 
+	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 32)
+	if (err != nil) {
+		panic("invalid port number")
+	}
+
 	app := app.New(
 		os.Getenv("PORT"),
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("POSTGRES_DB")+"_"+os.Getenv("PORT"),
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
-		os.Getenv("MAP_SERVER"),
+		int(port),
 	)
 
 	modules.AddMethod[dtos.HelloDto, dtos.HelloDto](
@@ -57,14 +62,6 @@ func main() {
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
 		),
 	)
-
-	var portStr = os.Getenv("PORT")
-	port, err := strconv.ParseInt(portStr, 10, 32)
-	if err != nil {
-		panic(err)
-	}
-
-	app.Network.Listen(modules.CreateListenOptions(true, int(port), true, int(port+2)))
 
 	<-quit
 }
