@@ -1,14 +1,17 @@
 package main
 
 import (
-	"os"
-	app "sigma/map/core/core"
-	"sigma/map/core/modules"
+	"fmt"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
+
+	pb "sigma/map/grpc"
 )
 
-var quit = make(chan struct{})
+type ServersOutput struct {
+	Map map[string]pb.Server `json:"map"`
+}
 
 func main() {
 
@@ -17,14 +20,21 @@ func main() {
 		panic(err)
 	}
 
-	app := app.New(
-		"sigma-sample",
-		os.Getenv("POSTGRES_URI"),
-		os.Getenv("REDIS_URI"),
-		os.Getenv("STORAGE_ROOT_PATH"),
-	)
-
-	app.Network.Listen(modules.CreateListenOptions(true, 8086, false, 0))
-
-	<-quit
+	app := fiber.New()
+	app.Get("map/get", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).JSON(
+			ServersOutput{
+				Map: map[string]pb.Server{
+					"8081": {
+						Host: "localhost",
+						Port: 8081,
+					},
+					"8082": {
+						Host: "localhost",
+						Port: 8082,
+					},
+				},
+			})
+	})
+	app.Listen(fmt.Sprintf(":%d", 8086))
 }

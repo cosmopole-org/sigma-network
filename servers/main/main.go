@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	app "sigma/main/shell"
+	"strconv"
 
 	"github.com/joho/godotenv"
 )
@@ -18,6 +19,11 @@ func main() {
 		panic(err)
 	}
 
+	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
 	app.New(
 		os.Getenv("PORT"),
 		os.Getenv("POSTGRES_URI"),
@@ -25,8 +31,7 @@ func main() {
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
 		map[string]int{
-			"http": 8081,
-			"grpc": 8082,
+			"http": int(port),
 		},
 		os.Getenv("MAP_SERVER"),
 	)
