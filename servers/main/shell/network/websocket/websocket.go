@@ -138,7 +138,7 @@ func LoadWebsocket(app *modules.App) {
 									AnswerSocket(conn, requestId, utils.BuildErrorJson("authentication failed"))
 								}
 							} else {
-								modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: 0, TowerId: towerId, RoomId: roomId, Data: body, RequestId: requestId})
+								modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: 0, TowerId: 0, RoomId: 0, Data: body, RequestId: requestId})
 								AnswerSocket(conn, requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 							}
 						}

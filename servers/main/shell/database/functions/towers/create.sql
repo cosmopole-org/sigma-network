@@ -1,4 +1,4 @@
-create function towers_create(humanid bigint, tname varchar(100), tavatarid bigint, ispublic boolean, org text)
+create or replace function towers_create(humanid bigint, tname varchar(100), tavatarid bigint, ispublic boolean, org text)
 		returns table (
 			m_id 	     bigint,
 			t_id	     bigint
@@ -20,8 +20,9 @@ create function towers_create(humanid bigint, tname varchar(100), tavatarid bigi
 			(
 				human_id,
 				tower_id,
-				origin
-			) values (humanid, t_id, org)
+				origin,
+				user_origin
+			) values (humanid, t_id, org, org)
 			returning id into m_id;
 			return query select m_id, t_id;
 		end $$

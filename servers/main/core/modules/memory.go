@@ -52,7 +52,14 @@ func (m *Memory) CreateClient(redisUri string) {
 			fn := Handlers[payload.Key]
 			f := Frames[payload.Key]
 			mapstructure.Decode(input, &f)
-			result, err := fn(app, f, CreateAssistant(payload.UserId, "human", payload.TowerId, payload.RoomId, 0, nil))
+			result, err := fn(app, f, Assistant{
+				UserId: payload.UserId,
+				UserType: "human",
+				TowerId: payload.TowerId,
+				RoomId: payload.RoomId,
+				WorkerId: 0,
+				UserOrigin: channelId,
+			})
 			if err != nil {
 				fmt.Println(err)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))

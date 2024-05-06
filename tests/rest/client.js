@@ -65,25 +65,25 @@ const submitScore = async () => {
 //const WebSocket = require('ws');
 
 setGlobalDispatcher(
-  new Agent({ factory: (origin) => new Pool(origin, { connections: 128 }) })
+    new Agent({ factory: (origin) => new Pool(origin, { connections: 128 }) })
 );
 
 (async () => {
-//     console.log(await hello());
-//     let tasks = [];
-//     for (let i = 0; i < 1000; i++) {
-//         tasks.push(
-//             new Promise((resolve, reject) => {
-//                 readLeaderboard().then(resolve).catch(reject);
-//             })
-//         );
-//         tasks.push(
-//             new Promise((resolve, reject) => {
-//                 submitScore().then(resolve).catch(reject);
-//             })
-//         );
-//     }
-//     await Promise.all(tasks);
+    //     console.log(await hello());
+    //     let tasks = [];
+    //     for (let i = 0; i < 1000; i++) {
+    //         tasks.push(
+    //             new Promise((resolve, reject) => {
+    //                 readLeaderboard().then(resolve).catch(reject);
+    //             })
+    //         );
+    //         tasks.push(
+    //             new Promise((resolve, reject) => {
+    //                 submitScore().then(resolve).catch(reject);
+    //             })
+    //         );
+    //     }
+    //     await Promise.all(tasks);
 
     // const { pending } = await signup("keyhan 6");
     // console.log({ pending });
@@ -110,7 +110,7 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? ""} ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "8082"} ${requestId} ${JSON.stringify(data)}`);
         })
     }
 
@@ -134,19 +134,25 @@ setGlobalDispatcher(
         console.log("Sending to server");
         //let resultHello = await request(`/api/hello`, {});
         //console.log(resultHello);
-        let result = await request(`/humans/signup`, { email: Date.now().toString() });
-        console.log(result);
-        let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        console.log(result2);
-        let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        console.log(result3);
-        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
-        console.log(result4);
-        
-        let result5 = await authenticate(result3.session.token);
+        // let result = await request(`/humans/signup`, { email: Date.now().toString() });
+        // console.log(result);
+        // let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
+        // console.log(result2);
+        // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
+        // console.log(result3);
+        // let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
+        // console.log(result4);
+
+        // let result5 = await authenticate(result3.session.token);
+        // console.log(result5);
+
+        let result5 = await authenticate("aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m");
         console.log(result5);
-        
-        let result8 = await request(`/invites/create`, { userId: 67, towerId: result4.tower.id }, result3.session.token, "8081");
+
+        // let result8 = await request(`/invites/create`, { humanId: 2, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
+        // console.log(result8);
+
+        let result8 = await request(`/invites/accept`, { inviteId: 11 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
         console.log(result8);
 
     };

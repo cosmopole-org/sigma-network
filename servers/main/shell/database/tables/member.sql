@@ -3,5 +3,5 @@ create table member (
     human_id bigint not null,
     tower_id bigint not null,
     origin text not null,
-    user_origin text not null,
+    user_origin text not null
 );

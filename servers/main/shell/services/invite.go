@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sigma/main/core/modules"
 	dtos_invites "sigma/main/shell/dtos/invites"
@@ -14,9 +15,19 @@ import (
 )
 
 func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modules.Assistant) (any, error) {
-	userOrigin := assistant.UserOrigin
-	if userOrigin == "" {
-		userOrigin = app.AppId
+	var query0 = `
+		select id from tower where id = $1;
+	`
+	var towerId int64
+	if err0 := app.Database.Db.QueryRow(
+		context.Background(), query0, assistant.TowerId,
+	).Scan(&towerId); err0 != nil {
+		fmt.Println(err0)
+		return &pb.InviteCreateOutput{}, errors.New("tower not found")
+	}
+	ro := input.RecepientOrigin
+	if ro == "" {
+		ro = app.AppId
 	}
 	var query = `
 		insert into invite
@@ -30,13 +41,13 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	`
 	var invite pb.Invite
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, input.HumanId, assistant.TowerId, app.AppId, userOrigin,
+		context.Background(), query, input.HumanId, assistant.TowerId, app.AppId, ro,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
 		fmt.Println(err)
 		return &pb.InviteCreateOutput{}, err
 	}
 	invite.Origin = app.AppId
-	invite.UserOrigin = userOrigin
+	invite.UserOrigin = ro
 	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite}, false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
@@ -69,8 +80,18 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 		return &pb.InviteAcceptOutput{}, err
 	}
 	member.Origin = app.AppId
+	var query2 = `
+		select creator_id from tower where id = $1;
+	`
+	var creatorId int64
+	if err2 := app.Database.Db.QueryRow(
+		context.Background(), query2, member.TowerId,
+	).Scan(&creatorId); err2 != nil {
+		fmt.Println(err2)
+		return &pb.InviteAcceptOutput{}, err2
+	}
 	var invite = pb.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Accept{Invite: &invite}, false)
+	go app.Network.PusherServer.PushToUser(creatorId, updates_invites.Accept{Invite: &invite}, false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 

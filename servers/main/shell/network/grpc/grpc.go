@@ -47,7 +47,7 @@ func HandleFederationReq(app *modules.App, origin string, action string, req int
 			return nil, status.Errorf(codes.Unauthenticated, "authentication failed")
 		}
 	} else {
-		modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: 0, TowerId: f.(modules.IDto).GetTowerId(), RoomId: f.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
+		modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: 0, TowerId: 0, RoomId: 0, Data: string(data), RequestId: requestId})
 		return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
 	}
 }
