@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"sigma/main/core/utils"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/redis/go-redis/v9"
@@ -41,43 +42,48 @@ func (m *Memory) CreateClient(redisUri string) {
 	m.Storage = db
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
 		if payload.IsResponse {
-			app.Network.PusherServer.PushToUser(payload.UserId, payload.Data, true)
+			app.Network.PusherServer.PushToUser("", payload.UserId, app.AppId, payload.Data, true, true)
 		} else {
-			var input any
-			err2 := json.Unmarshal([]byte(payload.Data), &input)
-			if err2 != nil {
-				fmt.Println(err2)
-				return
-			}
-			fn := Handlers[payload.Key]
-			f := Frames[payload.Key]
-			mapstructure.Decode(input, &f)
-			result, err := fn(app, f, Assistant{
-				UserId: payload.UserId,
-				UserType: "human",
-				TowerId: payload.TowerId,
-				RoomId: payload.RoomId,
-				WorkerId: 0,
-				UserOrigin: channelId,
-			})
-			if err != nil {
-				fmt.Println(err)
-				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
-				if err2 == nil {
-					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+			dataArr := strings.Split(payload.Key, " ")
+			if len(dataArr) > 0 && (dataArr[0] == "update") {
+				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, false, true)
+			} else {
+				var input any
+				err2 := json.Unmarshal([]byte(payload.Data), &input)
+				if err2 != nil {
+					fmt.Println(err2)
+					return
 				}
-				return
-			}
-			packet, err3 := json.Marshal(result)
-			if err3 != nil {
-				fmt.Println(err3)
-				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
-				if err2 == nil {
-					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+				fn := Handlers[payload.Key]
+				f := Frames[payload.Key]
+				mapstructure.Decode(input, &f)
+				result, err := fn(app, f, Assistant{
+					UserId:     payload.UserId,
+					UserType:   "human",
+					TowerId:    payload.TowerId,
+					RoomId:     payload.RoomId,
+					WorkerId:   0,
+					UserOrigin: channelId,
+				})
+				if err != nil {
+					fmt.Println(err)
+					errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
+					if err2 == nil {
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					}
+					return
 				}
-				return
+				packet, err3 := json.Marshal(result)
+				if err3 != nil {
+					fmt.Println(err3)
+					errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
+					if err2 == nil {
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					}
+					return
+				}
+				m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
 			}
-			m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
 		}
 	}
 	ctx := context.Background()

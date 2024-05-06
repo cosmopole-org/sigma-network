@@ -20,13 +20,14 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 			machine_id,
 			room_id,
 			metadata,
-			origin
-		) values ($1, $2, $3, $4)
+			origin,
+			user_origin
+		) values ($1, $2, $3, $4, $5)
 		returning id;
 	`
 	var worker pb.Worker
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId,
+		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId, input.WorkerOrigin,
 	).Scan(&worker.Id); err != nil {
 		fmt.Println(err)
 		return &pb.WorkerCreateOutput{}, err
@@ -36,6 +37,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		worker.RoomId = assistant.RoomId
 		worker.Metadata = input.Metadata
 		worker.Origin = app.AppId
+		worker.UserOrigin = input.WorkerOrigin
 	}
 	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d", worker.RoomId, worker.MachineId))
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
@@ -105,6 +107,7 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 	`
 	var allowed = false
 	var machineId int64 = 0
+	var targetOrigin = ""
 	var workerId int64 = 0
 	if assistant.UserType == "human" {
 		workerId = input.WorkerId
@@ -112,19 +115,19 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 		workerId = assistant.WorkerId
 	}
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, assistant.UserType, workerId, assistant.TowerId, assistant.RoomId,
-	).Scan(&allowed, &machineId); err != nil {
+		context.Background(), query, assistant.UserId, assistant.UserType, workerId, assistant.TowerId, assistant.RoomId, input.UserId,
+	).Scan(&allowed, &machineId, &targetOrigin); err != nil {
 		fmt.Println(err)
 		return &pb.WorkerDeliverOutput{}, err
 	}
 	if allowed {
 		if assistant.UserType == "human" {
 			var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.UserId, Data: input.Data}
-			app.Network.PusherServer.PushToUser(machineId, p, false)
+			app.Network.PusherServer.PushToUser("workers_delivery", machineId, targetOrigin, p, false, false)
 		} else if assistant.UserType == "machine" {
 			if input.UserId > 0 {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, UserId: input.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToUser(input.UserId, p, false)
+				app.Network.PusherServer.PushToUser("workers_delivery", input.UserId, targetOrigin, p, false, false)
 			} else {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
 				app.Network.PusherServer.PushToGroup(assistant.TowerId, p, []int64{})

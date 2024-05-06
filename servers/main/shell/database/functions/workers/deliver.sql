@@ -1,28 +1,31 @@
-create or replace function workers_deliver(userid bigint, usertype varchar(100), workerid bigint, towerid bigint, roomid bigint)
+create or replace function workers_deliver(userid bigint, usertype varchar(100), workerid bigint, towerid bigint, roomid bigint, humanid bigint)
 		returns table (
 			allowed     boolean,
-			mach_id     bigint
+			mach_id     bigint,
+			u_o         text
 		) as $$
 		declare
 			m_id    	bigint;
 			h_id 		bigint;
 			allowed     boolean;
 			mem_id      bigint;
+			u_o         text
 		begin
-			select machine_id into m_id from worker where id = workerid and room_id = roomid;
+			select machine_id, user_origin into m_id, u_o from worker where id = workerid and room_id = roomid;
 			if found then
 				if usertype = 'human' then
 					select id into mem_id from member where human_id = userid and tower_id = towerid;
 					if mem_id > 0 then
 						select TRUE, m_id into allowed, mach_id;
-						return query select allowed, mach_id;
+						return query select allowed, mach_id, u_0;
 					else
 						raise exception 'member not found';
 					end if;
 				else
+					select user_origin into u_o from human where id = humanid;
 					if m_id = userid then
 						select TRUE, m_id into allowed, mach_id;
-						return query select allowed, mach_id;
+						return query select allowed, mach_id, u_o;
 					else
 						raise exception 'access denied';
 					end if;
@@ -30,7 +33,7 @@ create or replace function workers_deliver(userid bigint, usertype varchar(100),
 			else
 				raise exception 'worker not found';
 			end if;
-		    select FALSE, 0 into allowed, mach_id;
-			return query select allowed, mach_id;
+		    select FALSE, 0, '' into allowed, mach_id, u_o;
+			return query select allowed, mach_id, u_o;
 		end $$
 	    language plpgsql;

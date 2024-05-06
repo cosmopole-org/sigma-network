@@ -411,6 +411,7 @@ message Worker {
 	int64 machineId = 3;
 	string metadata = 4;
 	string origin = 5;
+	string userOrigin = 6;
 }
 
 // messages

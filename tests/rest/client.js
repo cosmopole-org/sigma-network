@@ -116,9 +116,10 @@ setGlobalDispatcher(
 
     let socket = new WebSocket("ws://localhost:8082/ws");
     socket.onmessage = function (event) {
+        console.log(event.data)
         let data = event.data.split(" ");
         if (data[0] === "update") {
-            console.log(JSON.parse(event.data.substring(data[0].length)))
+            console.log(data[1], JSON.parse(event.data.substring(data[0].length + data[1].length)))
         } else if (data[0] === "federation") {
             console.log(JSON.parse(event.data.substring(data[0].length)))
         } else {
@@ -132,28 +133,28 @@ setGlobalDispatcher(
     socket.onopen = async function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
-        //let resultHello = await request(`/api/hello`, {});
-        //console.log(resultHello);
-        // let result = await request(`/humans/signup`, { email: Date.now().toString() });
-        // console.log(result);
-        // let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        // console.log(result2);
-        // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        // console.log(result3);
-        // let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
-        // console.log(result4);
+        // let resultHello = await request(`/api/hello`, {});
+        // console.log(resultHello);
+        let result = await request(`/humans/signup`, { email: Date.now().toString() });
+        console.log(result);
+        let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
+        console.log(result2);
+        let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
+        console.log(result3);
+        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
+        console.log(result4);
 
-        // let result5 = await authenticate(result3.session.token);
-        // console.log(result5);
-
-        let result5 = await authenticate("aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m");
+        let result5 = await authenticate(result3.session.token);
         console.log(result5);
 
-        // let result8 = await request(`/invites/create`, { humanId: 2, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
-        // console.log(result8);
+        // let result5 = await authenticate("aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m");
+        // console.log(result5);
 
-        let result8 = await request(`/invites/accept`, { inviteId: 11 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
+        let result8 = await request(`/invites/create`, { humanId: 3, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
         console.log(result8);
+
+        // let result8 = await request(`/invites/accept`, { inviteId: 11 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
+        // console.log(result8);
 
     };
     socket.onclose = function (event) {

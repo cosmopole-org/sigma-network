@@ -3,5 +3,6 @@ create table worker (
     room_id bigint not null,
     machine_id bigint not null,
     metadata text not null,
-    origin text not null
+    origin text not null,
+    user_origin text not null
 );

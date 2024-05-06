@@ -48,23 +48,23 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	}
 	invite.Origin = app.AppId
 	invite.UserOrigin = ro
-	go app.Network.PusherServer.PushToUser(input.HumanId, updates_invites.Create{Invite: &invite}, false)
+	go app.Network.PusherServer.PushToUser("invites/create", input.HumanId, ro, updates_invites.Create{Invite: &invite}, false, false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
 func cancelInvite(app *modules.App, input dtos_invites.CancelDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		delete from invite where id = $1 and tower_id = $2
-		returning id, human_id, tower_id;
+		returning id, human_id, tower_id, user_origin;
 	`
 	var invite pb.Invite
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.InviteId, assistant.TowerId,
-	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
+	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId, &invite.UserOrigin); err != nil {
 		fmt.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Cancel{Invite: &invite}, false)
+	go app.Network.PusherServer.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, false, false)
 	return &pb.InviteCancelOutput{}, nil
 }
 
@@ -90,24 +90,34 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 		fmt.Println(err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
-	var invite = pb.Invite{Id: input.InviteId, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser(creatorId, updates_invites.Accept{Invite: &invite}, false)
+	var invite = pb.Invite{Id: input.InviteId, Origin: member.Origin, UserOrigin: member.UserOrigin, HumanId: member.HumanId, TowerId: member.TowerId}
+	go app.Network.PusherServer.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, false, false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
 func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant modules.Assistant) (any, error) {
 	var query = `
 		delete from invite where id = $1 and human_id = $2
-		returning id, human_id, tower_id
+		returning id, human_id, tower_id, user_origin, origin
 	`
 	var invite pb.Invite
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.InviteId, assistant.UserId,
-	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
+	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId, &invite.UserOrigin, &invite.Origin); err != nil {
 		fmt.Println(err)
 		return &pb.InviteDeclineOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser(invite.HumanId, updates_invites.Decline{Invite: &invite}, false)
+	var query2 = `
+		select creator_id from tower where id = $1;
+	`
+	var creatorId int64
+	if err2 := app.Database.Db.QueryRow(
+		context.Background(), query2, invite.TowerId,
+	).Scan(&creatorId); err2 != nil {
+		fmt.Println(err2)
+		return &pb.InviteAcceptOutput{}, err2
+	}
+	go app.Network.PusherServer.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, false, false)
 	return &pb.InviteDeclineOutput{}, nil
 }
 

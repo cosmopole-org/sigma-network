@@ -10,7 +10,7 @@ import (
 )
 
 type Network struct {
-	HttpServer *HttpServer
+	HttpServer   *HttpServer
 	PusherServer *Pusher
 }
 
@@ -27,17 +27,34 @@ type Pusher struct {
 	Groups  sync.Map
 }
 
-func (p *Pusher) PushToUser(userId int64, data any, isFedMsg bool) {
-	conn := p.Clients[userId]
-	if conn != nil {
-		if isFedMsg {
-			conn.WriteMessage(websocket.TextMessage, []byte("federation "+data.(string)))
+func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, isFedMsg bool, alreadySerialized bool) {
+	if userOrigin == app.AppId {
+		conn := p.Clients[userId]
+		if conn != nil {
+			if isFedMsg {
+				conn.WriteMessage(websocket.TextMessage, []byte("federation "+data.(string)))
+			} else {
+				if alreadySerialized {
+					conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+data.(string)))
+				} else {
+					message, err := json.Marshal(data)
+					if err != nil {
+						fmt.Println(err)
+					} else {
+						conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+string(message)))
+					}
+				}
+			}
+		}
+	} else {
+		if alreadySerialized {
+			app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: data.(string)})
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				conn.WriteMessage(websocket.TextMessage, []byte("update "+string(message)))
+				app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
 			}
 		}
 	}
