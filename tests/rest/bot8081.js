@@ -54,51 +54,19 @@ setGlobalDispatcher(
         console.log("[open] Connection established");
         console.log("Sending to server");
 
-        // let result = await request(`/humans/signup`, { email: Date.now().toString() });
-        // console.log(result);
-        // let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        // console.log(result2);
-        // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        // console.log(result3);
-
-        let myId = 8;
-        let token = "KWekCaSQI65RNqwt6PGsEE3-8YVfKvgE"
+        let token = "iX57SHIkmH8hBXX_2zIQty1Tm4uozocj"
 
         let result5 = await authenticate(token);
         console.log(result5);
 
-        // let result0 = await request(`/invites/create`, { recepientOrigin: "8082", humanId: 71, towerId: 12 }, token, "8081");
-        // console.log(result0);
-
-        // let result0 = await request(`/invites/cancel`, { inviteId: 65 }, token, "8082");
-        // console.log(result0);
-
         // let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "8082");
         // console.log(result8);
 
-        // let result4 = await request(`/towers/create`, { name: "welcome from 8081", avatarId: 123, isPublic: false }, token);
-        // console.log(result4);
-
-        let towerId = 12
-
-        // let result10 = await request(`/rooms/create`, { towerId: towerId, name: "welcomer...", avatarId: 125 }, token, "8081");
+        // let result10 = await request(`/rooms/create`, { towerId: 70, name: "welcomer...", avatarId: 125 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "8082");
         // console.log(result10);
 
-        let roomId = 3;
-
-        // let result7 = await request(`/machines/create`, { name: "testMachine", avatarId: 12374 }, token, "8081");
-        // console.log(result7);
-
-        let machineToken = "iX57SHIkmH8hBXX_2zIQty1Tm4uozocj";
-        let machineId = 2;
-
-        // let result8 = await request(`/workers/create`, { machineId: machineId, metadata: "{}", towerId: towerId, roomId: roomId, workerOrigin: '8081' }, token, "8081");
+        // let result8 = await request(`/workers/create`, { machineId: 1, metadata: "{}", towerId: 70, roomId: 51, workerOrigin: '8082' }, token, "8082");
         // console.log(result8);
-
-        let workerId = 2;
-
-        let result8 = await request(`/workers/deliver`, { workerId: workerId, data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "8081");
-        console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

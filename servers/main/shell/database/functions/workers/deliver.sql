@@ -9,7 +9,7 @@ create or replace function workers_deliver(userid bigint, usertype varchar(100),
 			h_id 		bigint;
 			allowed     boolean;
 			mem_id      bigint;
-			u_o         text
+			u_o         text;
 		begin
 			select machine_id, user_origin into m_id, u_o from worker where id = workerid and room_id = roomid;
 			if found then

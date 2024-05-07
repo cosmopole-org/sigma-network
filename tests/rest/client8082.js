@@ -47,23 +47,37 @@ setGlobalDispatcher(
     socket.onopen = async function (e) {
         console.log("[open] Connection established");
         console.log("Sending to server");
-        let result = await request(`/humans/signup`, { email: Date.now().toString() });
-        console.log(result);
-        let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        console.log(result2);
-        let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        console.log(result3);
+        // let result = await request(`/humans/signup`, { email: Date.now().toString() });
+        // console.log(result);
+        // let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
+        // console.log(result2);
+        // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
+        // console.log(result3);
 
-        let result5 = await authenticate(result3.session.token);
+        let token = "H9x_1PHl3oR7Mc7d8t6LKYoVDSh0mAyn"
+
+        let result5 = await authenticate(token);
         console.log(result5);
 
+        // let result8 = await request(`/invites/accept`, { inviteId: 1 }, token, "8081");
+        // console.log(result8);
 
-        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
-        console.log(result4);
-        let result10 = await request(`/rooms/create`, { towerId: result4.tower.id, name: "welcomer...", avatarId: 125 }, result3.session.token, "8082");
-        console.log(result10);
+        // let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
+        // console.log(result4);
+        // let result10 = await request(`/rooms/create`, { towerId: result4.tower.id, name: "welcomer...", avatarId: 125 }, result3.session.token, "8082");
+        // console.log(result10);
 
-        let result8 = await request(`/invites/create`, { humanId: 7, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
+        // let result8 = await request(`/invites/create`, { humanId: 7, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
+        // console.log(result8);
+
+        // let result8 = await request(`/machines/create`, { name: "testMachine", avatarId: 123 }, token, "8082");
+        // console.log(result8);
+
+        let towerId = 12;
+        let roomId = 3;
+        let workerId = 2;
+
+        let result8 = await request(`/workers/deliver`, { workerId: workerId, data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "8081");
         console.log(result8);
     };
     socket.onclose = function (event) {
