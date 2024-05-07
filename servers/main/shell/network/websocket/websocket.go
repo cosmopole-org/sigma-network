@@ -17,13 +17,17 @@ type WebsocketAnswer struct {
 	Data      any
 }
 
-func AnswerSocket(conn *websocket.Conn, requestId string, answer any) {
+func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
 		fmt.Println(err0)
 		return
 	}
-	if err := conn.WriteMessage(websocket.TextMessage, []byte(requestId+" "+string(answerBytes))); err != nil {
+	var preKey = ""
+	if t != "" {
+		preKey = t + " "
+	}
+	if err := conn.WriteMessage(websocket.TextMessage, []byte(preKey+requestId+" "+string(answerBytes))); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -54,7 +58,7 @@ func LoadWebsocket(app *modules.App) {
 				userId, _ := modules.AuthWithToken(app, token)
 				uid = userId
 				app.Network.PusherServer.Clients[userId] = conn
-				AnswerSocket(conn, requestId, modules.ResponseSimpleMessage{Message: "authenticated"})
+				AnswerSocket(conn, "", requestId, modules.ResponseSimpleMessage{Message: "authenticated"})
 			} else {
 				var token = splittedMsg[1]
 				var origin = splittedMsg[2]
@@ -67,12 +71,12 @@ func LoadWebsocket(app *modules.App) {
 				var req any
 				err2 := json.Unmarshal([]byte(body), &req)
 				if err2 != nil {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson("invalid input format"))
+					AnswerSocket(conn, "", requestId, utils.BuildErrorJson("invalid input format"))
 					continue
 				}
 				err3 := mapstructure.Decode(req, &f)
 				if err3 != nil {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson("bad request"))
+					AnswerSocket(conn, "", requestId, utils.BuildErrorJson("bad request"))
 					continue
 				}
 				towerId := f.(modules.IDto).GetTowerId()
@@ -98,30 +102,30 @@ func LoadWebsocket(app *modules.App) {
 									if location.TowerId > 0 {
 										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
 										if err != nil {
-											AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+											AnswerSocket(conn, "", requestId, utils.BuildErrorJson(err.Error()))
 										} else {
-											AnswerSocket(conn, requestId, res)
+											AnswerSocket(conn, "", requestId, res)
 										}
 									} else {
-										AnswerSocket(conn, requestId, utils.BuildErrorJson("access denied"))
+										AnswerSocket(conn, "", requestId, utils.BuildErrorJson("access denied"))
 									}
 								} else {
 									res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
 									if err != nil {
-										AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+										AnswerSocket(conn, "", requestId, utils.BuildErrorJson(err.Error()))
 									} else {
-										AnswerSocket(conn, requestId, res)
+										AnswerSocket(conn, "", requestId, res)
 									}
 								}
 							} else {
-								AnswerSocket(conn, requestId, utils.BuildErrorJson("authentication failed"))
+								AnswerSocket(conn, "", requestId, utils.BuildErrorJson("authentication failed"))
 							}
 						} else {
 							res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
 							if err != nil {
-								AnswerSocket(conn, requestId, utils.BuildErrorJson(err.Error()))
+								AnswerSocket(conn, "", requestId, utils.BuildErrorJson(err.Error()))
 							} else {
-								AnswerSocket(conn, requestId, res)
+								AnswerSocket(conn, "", requestId, res)
 							}
 						}
 					}
@@ -133,20 +137,20 @@ func LoadWebsocket(app *modules.App) {
 								var userId, _ = modules.AuthWithToken(app, token)
 								if userId > 0 {
 									modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: userId, TowerId: towerId, RoomId: roomId, Data: body, RequestId: requestId})
-									AnswerSocket(conn, requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
+									AnswerSocket(conn, "federation", requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 								} else {
-									AnswerSocket(conn, requestId, utils.BuildErrorJson("authentication failed"))
+									AnswerSocket(conn, "", requestId, utils.BuildErrorJson("authentication failed"))
 								}
 							} else {
 								modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: 0, TowerId: 0, RoomId: 0, Data: body, RequestId: requestId})
-								AnswerSocket(conn, requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
+								AnswerSocket(conn, "federation", requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 							}
 						}
 					} else {
 						doLocal()
 					}
 				} else {
-					AnswerSocket(conn, requestId, utils.BuildErrorJson("access to service denied"))
+					AnswerSocket(conn, "", requestId, utils.BuildErrorJson("access to service denied"))
 				}
 			}
 		}

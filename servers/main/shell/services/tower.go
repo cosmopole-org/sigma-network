@@ -37,7 +37,9 @@ func createTower(app *modules.App, input dtos_towers.CreateDto, assistant module
 		member.TowerId = tower.Id
 		member.HumanId = assistant.UserId
 		member.Origin = app.AppId
+		member.UserOrigin = app.AppId
 	}
+	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId), "true")
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
 }
@@ -54,7 +56,7 @@ func updateTower(app *modules.App, input dtos_towers.UpdateDto, assistant module
 		fmt.Println(err)
 		return &pb.TowerUpdateOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup(tower.Id, updates_towers.Update{Tower: &tower}, []int64{})
+	go app.Network.PusherServer.PushToGroup("towers/update", tower.Id, updates_towers.Update{Tower: &tower}, []int64{})
 	return &pb.TowerUpdateOutput{Tower: &tower}, nil
 }
 
@@ -69,7 +71,7 @@ func deleteTower(app *modules.App, input dtos_towers.DeleteDto, assistant module
 		fmt.Println(err)
 		return &pb.TowerDeleteOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup(tower.Id, updates_towers.Delete{Tower: &tower}, []int64{})
+	go app.Network.PusherServer.PushToGroup("towers/delete", tower.Id, updates_towers.Delete{Tower: &tower}, []int64{})
 	return &pb.TowerDeleteOutput{}, nil
 }
 
@@ -111,9 +113,9 @@ func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.As
 		return &pb.TowerJoinOutput{}, err
 	}
 	member.Origin = app.AppId
-	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId)
+	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId), "true")
-	go app.Network.PusherServer.PushToGroup(member.TowerId, updates_towers.Join{Member: &member}, []int64{member.HumanId})
+	go app.Network.PusherServer.PushToGroup("towers/join", member.TowerId, updates_towers.Join{Member: &member}, []int64{member.HumanId})
 	return &pb.TowerJoinOutput{Member: &member}, nil
 }
 

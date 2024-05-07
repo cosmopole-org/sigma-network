@@ -33,7 +33,7 @@ func createRoom(app *modules.App, input dtos_rooms.CreateDto, assistant modules.
 	}
 	room.Origin = app.AppId
 	app.Memory.Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
-	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Create{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room}, []int64{assistant.UserId})
 	return &pb.RoomCreateOutput{Room: &room}, nil
 }
 
@@ -49,7 +49,7 @@ func updateRoom(app *modules.App, input dtos_rooms.UpdateDto, assistant modules.
 		fmt.Println(err)
 		return &pb.RoomUpdateOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
 	return &pb.RoomUpdateOutput{Room: &room}, nil
 }
 
@@ -67,7 +67,7 @@ func deleteRoom(app *modules.App, input dtos_rooms.DeleteDto, assistant modules.
 		return &pb.RoomDeleteOutput{}, err
 	}
 	app.Memory.Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
-	go app.Network.PusherServer.PushToGroup(room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
 	return &pb.RoomDeleteOutput{}, nil
 }
 
@@ -102,7 +102,7 @@ func CreateRoomService(app *modules.App) {
 			createRoom,
 			dtos_rooms.CreateDto{},
 			modules.CreateCheck(true, true, false),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
 			modules.CreateInterFedOptions(true, true),
 		),
 	)

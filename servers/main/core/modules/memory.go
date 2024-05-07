@@ -9,6 +9,8 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/redis/go-redis/v9"
+
+	pb "sigma/main/shell/grpc"
 )
 
 type InterfedPacket struct {
@@ -19,6 +21,7 @@ type InterfedPacket struct {
 	RequestId  string
 	Data       string
 	IsResponse bool
+	GroupId    int64
 }
 
 type Memory struct {
@@ -42,11 +45,54 @@ func (m *Memory) CreateClient(redisUri string) {
 	m.Storage = db
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
 		if payload.IsResponse {
-			app.Network.PusherServer.PushToUser("", payload.UserId, app.AppId, payload.Data, true, true)
+			dataArr := strings.Split(payload.Key, " ")
+			if dataArr[0] == "/invites/accept" || dataArr[0] == "/towers/join" {
+				var member *pb.Member
+				if dataArr[0] == "/invites/accept" {
+					var memberRes pb.InviteAcceptOutput
+					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
+					if err2 != nil {
+						fmt.Println(err2)
+						return
+					}
+					member = memberRes.Member
+				} else if dataArr[0] == "/towers/join" {
+					var memberRes pb.TowerJoinOutput
+					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
+					if err2 != nil {
+						fmt.Println(err2)
+						return
+					}
+					member = memberRes.Member
+				}
+				if member != nil {
+					var query = `
+					insert into member
+					(
+						human_id,
+						tower_id,
+						origin,
+						user_origin
+					) values ($1, $2, $3, $4)
+					returning id;
+				`
+					var memberId int64
+					if err := app.Database.Db.QueryRow(
+						context.Background(), query, member.HumanId, member.TowerId, member.Origin, member.UserOrigin,
+					).Scan(&memberId); err != nil {
+						fmt.Println(err)
+						return
+					}
+					app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+				}
+			}
+			app.Network.PusherServer.PushToUser(payload.Key, payload.UserId, app.AppId, payload.Data, true, true)
 		} else {
 			dataArr := strings.Split(payload.Key, " ")
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
 				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, false, true)
+			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
+				app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, []int64{})
 			} else {
 				var input any
 				err2 := json.Unmarshal([]byte(payload.Data), &input)
@@ -69,7 +115,7 @@ func (m *Memory) CreateClient(redisUri string) {
 					fmt.Println(err)
 					errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
 					if err2 == nil {
-						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 					}
 					return
 				}
@@ -78,11 +124,11 @@ func (m *Memory) CreateClient(redisUri string) {
 					fmt.Println(err3)
 					errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
 					if err2 == nil {
-						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 					}
 					return
 				}
-				m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
+				m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
 			}
 		}
 	}

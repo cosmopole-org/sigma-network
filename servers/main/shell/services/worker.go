@@ -130,7 +130,7 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 				app.Network.PusherServer.PushToUser("workers_delivery", input.UserId, targetOrigin, p, false, false)
 			} else {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToGroup(assistant.TowerId, p, []int64{})
+				app.Network.PusherServer.PushToGroup("workers/deliver", assistant.TowerId, p, []int64{})
 			}
 		}
 	}
