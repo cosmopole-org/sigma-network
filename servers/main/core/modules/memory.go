@@ -102,12 +102,21 @@ func (m *Memory) CreateClient(redisUri string) {
 				}
 				fn := Handlers[payload.Key]
 				f := Frames[payload.Key]
+				check := Checks[payload.Key]
+				location := AuthorizeFedHumanWithProcessed(app, payload.UserId, channelId, payload.TowerId, payload.RoomId)
+				if check.Tower && location.TowerId == 0 {
+					errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
+					if err2 == nil {
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					}
+					return
+				}
 				mapstructure.Decode(input, &f)
 				result, err := fn(app, f, Assistant{
 					UserId:     payload.UserId,
 					UserType:   "human",
-					TowerId:    payload.TowerId,
-					RoomId:     payload.RoomId,
+					TowerId:    location.TowerId,
+					RoomId:     location.RoomId,
 					WorkerId:   0,
 					UserOrigin: channelId,
 				})

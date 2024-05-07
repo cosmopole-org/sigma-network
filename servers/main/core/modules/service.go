@@ -38,7 +38,7 @@ func ValidateInput[T any](c *fiber.Ctx, actionType string) error {
 	return c.Next()
 }
 
-func HandleLocalRequest[T IDto, V any](app *App, token string, m *Method[T, V], data T) (int, any) {
+func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string, m *Method[T, V], data T) (int, any) {
 	if m.Check.User {
 		var userId, userType = AuthWithToken(app, token)
 		var creature = ""
@@ -49,7 +49,7 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, m *Method[T, V], 
 		}
 		if userId > 0 {
 			if m.Check.Tower {
-				var location = HandleLocationWithProcessed(app, token, userId, creature, data.GetTowerId(), data.GetRoomId(), userId)
+				var location = HandleLocationWithProcessed(app, token, userId, creature, userOrigin, data.GetTowerId(), data.GetRoomId(), userId)
 				if location.TowerId > 0 {
 					result, err := m.Callback(Instance(), data, CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
 					if err != nil {
@@ -81,7 +81,7 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, m *Method[T, V], 
 func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T, V]) (int, any) {
 	if m.MethodOptions.InFederation {
 		if origin == Instance().AppId {
-			return HandleLocalRequest[T, V](Instance(), token, m, body)
+			return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body)
 		} else {
 			data, err := json.Marshal(body)
 			if err != nil {
@@ -104,7 +104,7 @@ func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T
 			return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 		}
 	} else {
-		return HandleLocalRequest[T, V](Instance(), token, m, body)
+		return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body)
 	}
 }
 

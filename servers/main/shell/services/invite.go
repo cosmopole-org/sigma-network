@@ -74,7 +74,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 	`
 	var member pb.Member
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.InviteId, app.AppId,
+		context.Background(), query, assistant.UserId, input.InviteId, assistant.UserOrigin,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId, &member.UserOrigin); err != nil {
 		fmt.Println(err)
 		return &pb.InviteAcceptOutput{}, err
@@ -91,6 +91,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 		return &pb.InviteAcceptOutput{}, err2
 	}
 	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId, member.UserOrigin), "true")
 	var invite = pb.Invite{Id: input.InviteId, Origin: member.Origin, UserOrigin: member.UserOrigin, HumanId: member.HumanId, TowerId: member.TowerId}
 	go app.Network.PusherServer.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, "", false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil

@@ -54,14 +54,14 @@ setGlobalDispatcher(
         console.log("[open] Connection established");
         console.log("Sending to server");
 
-        let result5 = await authenticate("aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m");
+        let result5 = await authenticate("hEq-J0RrK5ERaab255cIpNrFgnmIqXaD");
         console.log(result5);
 
-        // let result8 = await request(`/invites/accept`, { inviteId: 58 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
-        // console.log(result8);
+        let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "8082");
+        console.log(result8);
 
-        let result9 = await request(`/rooms/create`, { towerId: 63, name: "welcomer...", avatarId: 125 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
-        console.log(result9);
+        let result10 = await request(`/rooms/create`, { towerId: 70, name: "welcomer...", avatarId: 125 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "8082");
+        console.log(result10);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

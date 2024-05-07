@@ -101,9 +101,11 @@ func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
 
+var workersDeliverTemplate = "workers/deliver"
+
 func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.Assistant) (any, error) {
 	var query = `
-		select * from workers_deliver($1, $2, $3, $4, $5);
+		select * from workers_deliver($1, $2, $3, $4, $5, $6);
 	`
 	var allowed = false
 	var machineId int64 = 0
@@ -115,7 +117,7 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 		workerId = assistant.WorkerId
 	}
 	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, assistant.UserType, workerId, assistant.TowerId, assistant.RoomId, input.UserId,
+		context.Background(), query, assistant.UserId, assistant.UserType, workerId, assistant.TowerId, assistant.RoomId, input.UserId, assistant.UserOrigin,
 	).Scan(&allowed, &machineId, &targetOrigin); err != nil {
 		fmt.Println(err)
 		return &pb.WorkerDeliverOutput{}, err
@@ -123,14 +125,14 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 	if allowed {
 		if assistant.UserType == "human" {
 			var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.UserId, Data: input.Data}
-			app.Network.PusherServer.PushToUser("workers_delivery", machineId, targetOrigin, p, "", false)
+			app.Network.PusherServer.PushToUser(workersDeliverTemplate, machineId, targetOrigin, p, "", false)
 		} else if assistant.UserType == "machine" {
 			if input.UserId > 0 {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, UserId: input.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToUser("workers_delivery", input.UserId, targetOrigin, p, "", false)
+				app.Network.PusherServer.PushToUser(workersDeliverTemplate, input.UserId, targetOrigin, p, "", false)
 			} else {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToGroup("workers/deliver", assistant.TowerId, p, []int64{})
+				app.Network.PusherServer.PushToGroup(workersDeliverTemplate, assistant.TowerId, p, []int64{})
 			}
 		}
 	}
@@ -153,7 +155,7 @@ func CreateWorkerService(app *modules.App) {
 			createWorker,
 			dtos_workers.CreateDto{},
 			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
@@ -164,7 +166,7 @@ func CreateWorkerService(app *modules.App) {
 			updateWorker,
 			dtos_workers.UpdateDto{},
 			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodPut, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPut, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
@@ -175,7 +177,7 @@ func CreateWorkerService(app *modules.App) {
 			deleteWorker,
 			dtos_workers.DeleteDto{},
 			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodDelete, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodDelete, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
@@ -186,7 +188,7 @@ func CreateWorkerService(app *modules.App) {
 			readWorkers,
 			dtos_workers.ReadDto{},
 			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
 			modules.CreateInterFedOptions(false, false),),
 	)
 	modules.AddMethod(
@@ -196,7 +198,7 @@ func CreateWorkerService(app *modules.App) {
 			deliver,
 			dtos_workers.DeliverDto{},
 			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)

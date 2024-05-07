@@ -1,4 +1,4 @@
-create or replace function workers_deliver(userid bigint, usertype varchar(100), workerid bigint, towerid bigint, roomid bigint, humanid bigint)
+create or replace function workers_deliver(userid bigint, usertype varchar(100), workerid bigint, towerid bigint, roomid bigint, humanid bigint, uo text)
 		returns table (
 			allowed     boolean,
 			mach_id     bigint,
@@ -14,10 +14,10 @@ create or replace function workers_deliver(userid bigint, usertype varchar(100),
 			select machine_id, user_origin into m_id, u_o from worker where id = workerid and room_id = roomid;
 			if found then
 				if usertype = 'human' then
-					select id into mem_id from member where human_id = userid and tower_id = towerid;
+					select id into mem_id from member where human_id = userid and tower_id = towerid and user_origin = uo;
 					if mem_id > 0 then
 						select TRUE, m_id into allowed, mach_id;
-						return query select allowed, mach_id, u_0;
+						return query select allowed, mach_id, u_o;
 					else
 						raise exception 'member not found';
 					end if;

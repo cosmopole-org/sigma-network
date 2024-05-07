@@ -31,7 +31,6 @@ func LoadServices(a *modules.App) {
 	services.CreateRoomService(a)
 	services.CreateMachineService(a)
 	services.CreateWorkerService(a)
-	services.CreateStorageService(a)
 }
 
 func LoadGrpcServices(gs *grpc.Server) {

@@ -75,7 +75,7 @@ func HandleNonFederationReq(app *modules.App, action string, req interface{}, md
 		}
 		if userId > 0 {
 			if c.Tower {
-				location := modules.HandleLocationWithProcessed(app, token, userId, creature, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), userId)
+				location := modules.HandleLocationWithProcessed(app, token, userId, creature, app.AppId, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), userId)
 				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
 				if err != nil {
 					return nil, status.Errorf(codes.Unauthenticated, err.Error())

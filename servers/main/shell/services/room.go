@@ -135,7 +135,7 @@ func CreateRoomService(app *modules.App) {
 			getRoom,
 			dtos_rooms.GetDto{},
 			modules.CreateCheck(true, true, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)

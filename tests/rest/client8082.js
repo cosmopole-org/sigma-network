@@ -53,13 +53,17 @@ setGlobalDispatcher(
         console.log(result2);
         let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
         console.log(result3);
-        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
-        console.log(result4);
 
         let result5 = await authenticate(result3.session.token);
         console.log(result5);
 
-        let result8 = await request(`/invites/create`, { humanId: 3, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
+
+        let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
+        console.log(result4);
+        let result10 = await request(`/rooms/create`, { towerId: result4.tower.id, name: "welcomer...", avatarId: 125 }, result3.session.token, "8082");
+        console.log(result10);
+
+        let result8 = await request(`/invites/create`, { humanId: 7, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
         console.log(result8);
     };
     socket.onclose = function (event) {

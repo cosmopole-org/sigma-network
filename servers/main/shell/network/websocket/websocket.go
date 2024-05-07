@@ -91,9 +91,9 @@ func LoadWebsocket(app *modules.App) {
 								if c.Tower {
 									var location modules.Location
 									if userType == 1 {
-										location = modules.HandleLocationWithProcessed(app, token, userId, "human", towerId, roomId, 0)
+										location = modules.HandleLocationWithProcessed(app, token, userId, "human", app.AppId, towerId, roomId, 0)
 									} else if userType == 2 {
-										location = modules.HandleLocationWithProcessed(app, token, 0, "machine", towerId, roomId, userId)
+										location = modules.HandleLocationWithProcessed(app, token, 0, "machine", app.AppId, towerId, roomId, userId)
 									}
 									if location.TowerId > 0 {
 										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))

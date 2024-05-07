@@ -152,7 +152,7 @@ func CreateMachineService(app *modules.App) {
 			getMachine,
 			dtos_machines.GetDto{},
 			modules.CreateCheck(true, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
