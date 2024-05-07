@@ -7,7 +7,6 @@ import (
 	"log"
 	"net"
 	"sigma/admin/core/modules"
-	"sigma/admin/core/utils"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -22,34 +21,78 @@ type GrpcServer struct {
 	Server *grpc.Server
 }
 
-func HandleFederationOrNot(action string, c modules.Check, md metadata.MD, mo modules.MethodOptions, fn func(*modules.App, interface{}, modules.Assistant) (any, error), f interface{}, assistant modules.Assistant) (any, error) {
-	if mo.InFederation {
-		originHeader, ok := md["origin"]
+func HandleFederationReq(app *modules.App, origin string, action string, req interface{}, md metadata.MD, requestId string) (any, error) {
+	data, err0 := json.Marshal(req)
+	if err0 != nil {
+		fmt.Println(err0)
+		return nil, status.Errorf(codes.Unauthenticated, err0.Error())
+	}
+	f := modules.Frames[action]
+	c := modules.Checks[action]
+	err := mapstructure.Decode(req, &f)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
+	}
+	if c.User {
+		tokenHeader, ok := md["token"]
 		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Origin is not supplied")
+			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
 		}
-		origin := originHeader[0]
-		if origin == modules.Instance().AppId {
-			result, err := fn(modules.Instance(), f, assistant)
-			if err != nil {
-				return nil, status.Errorf(codes.Unauthenticated, (err.Error()))
-			}
-			return result, nil
-		} else {
-			data, err := json.Marshal(f)
-			if err != nil {
-				fmt.Println(err)
-				return nil, status.Errorf(codes.Unauthenticated, err.Error())
-			}
-			reqId, err2 := utils.SecureUniqueString(16)
-			if err2 != nil {
-				return nil, status.Errorf(codes.Unauthenticated, err2.Error())
-			}
-			modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
+		token := tokenHeader[0]
+		var userId, _ = modules.AuthWithToken(app, token)
+		if userId > 0 {
+			modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: userId, TowerId: f.(modules.IDto).GetTowerId(), RoomId: f.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
 			return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
+		} else {
+			return nil, status.Errorf(codes.Unauthenticated, "authentication failed")
 		}
 	} else {
-		result, err := fn(modules.Instance(), f, assistant)
+		modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: 0, TowerId: 0, RoomId: 0, Data: string(data), RequestId: requestId})
+		return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
+	}
+}
+
+func HandleNonFederationReq(app *modules.App, action string, req interface{}, md metadata.MD) (any, error) {
+	fn := modules.Handlers[action]
+	f := modules.Frames[action]
+	c := modules.Checks[action]
+	err := mapstructure.Decode(req, &f)
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
+	}
+	if c.User {
+		tokenHeader, ok := md["token"]
+		if !ok {
+			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
+		}
+		token := tokenHeader[0]
+		var userId, userType = modules.AuthWithToken(app, token)
+		var creature = ""
+		if userType == 1 {
+			creature = "human"
+		} else if userType == 2 {
+			creature = "machine"
+		}
+		if userId > 0 {
+			if c.Tower {
+				location := modules.HandleLocationWithProcessed(app, token, userId, creature, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), userId)
+				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
+				if err != nil {
+					return nil, status.Errorf(codes.Unauthenticated, err.Error())
+				}
+				return result, nil
+			} else {
+				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
+				if err != nil {
+					return nil, status.Errorf(codes.Unauthenticated, err.Error())
+				}
+				return result, nil
+			}
+		} else {
+			return nil, status.Errorf(codes.Unauthenticated, "Authentication failed")
+		}
+	} else {
+		result, err := fn(modules.Instance(), f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, err.Error())
 		}
@@ -73,48 +116,29 @@ func serverInterceptor(
 		return nil, status.Errorf(codes.InvalidArgument, "Wrong path format")
 	}
 	action := "/" + strings.ToLower(fmArr[1][0:len(fmArr[1])-len("Service")]) + "s" + "/" + keyArr[2]
-	fn := modules.Handlers[action]
-	f := modules.Frames[action]
-	c := modules.Checks[action]
 	mo := modules.MethodOptionsMap[action]
-	err := mapstructure.Decode(req, &f)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
-	}
 	md, ok := metadata.FromIncomingContext(ctx)
-	if c.User {
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "metadata missing")
+	}
+	if mo.InFederation {
+		originHeader, ok := md["origin"]
 		if !ok {
-			return nil, status.Errorf(codes.InvalidArgument, "Retrieving metadata is failed")
+			return nil, status.Errorf(codes.Unauthenticated, "Origin is not supplied")
 		}
-		tokenHeader, ok := md["token"]
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
-		}
-		token := tokenHeader[0]
-		var userId, userType = modules.AuthWithToken(app, token)
-		var creature = ""
-		if userType == 1 {
-			creature = "human"
-		} else if userType == 2 {
-			creature = "machine"
-		}
-		if userId > 0 {
-			if c.Tower {
-				location := modules.HandleLocationWithProcessed(app, token, userId, creature, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), 0)
-				if location.TowerId > 0 {
-					return HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
-				} else {
-					return nil, status.Errorf(codes.Unauthenticated, "Access denied")
-				}
-			} else {
-				return HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
-			}
+		origin := originHeader[0]
+		if origin == app.AppId {
+			return HandleNonFederationReq(app, action, req, md)
 		} else {
-			return nil, status.Errorf(codes.Unauthenticated, "Authenticatio failed")
+			reqIdHeader, ok := md["requestId"]
+			if !ok {
+				return nil, status.Errorf(codes.Unauthenticated, "RequestId is not supplied")
+			}
+			reqId := reqIdHeader[0]
+			return HandleFederationReq(app, origin, action, req, md, reqId)
 		}
 	} else {
-		h, err := HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
-		return h, err
+		return HandleNonFederationReq(app, action, req, md)
 	}
 }
 

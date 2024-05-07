@@ -36,24 +36,17 @@ setGlobalDispatcher(
     socket.onmessage = function (event) {
         console.log(event.data)
         let data = event.data.split(" ");
-        if (data[0] === "update") {
+        if (data[0] === "noaction") {
             console.log(data[1], JSON.parse(event.data.substring(data[0].length + data[1].length + 1)))
-        } else if (data[0] === "federation") {
+        } else if (data[0] === "error") {
             console.log(data[1], JSON.parse(event.data.substring(data[0].length + data[1].length + 1)))
-            if (requestOrigins[data[0]] == myOrigin) {
-                let resolve = requestDict[data[1]];
-                if (resolve) {
-                    delete requestDict[data[1]]
-                    resolve(JSON.parse(event.data.substring(data[0].length + data[1].length)))
-                }
-            }
-        } else {
-            if (requestOrigins[data[0]] == myOrigin) {
-                let resolve = requestDict[data[0]];
-                if (resolve) {
-                    delete requestDict[data[0]]
-                    resolve(JSON.parse(event.data.substring(data[0].length)))
-                }
+        } else if (data[0] === "update") {
+            console.log(data[1], JSON.parse(event.data.substring(data[0].length + data[1].length + 1)))
+        } else if (data[0] == "response") {
+            let resolve = requestDict[data[1]];
+            if (resolve) {
+                delete requestDict[data[1]]
+                resolve(JSON.parse(event.data.substring(data[0].length + data[1].length + 1)))
             }
         }
     };
@@ -64,10 +57,10 @@ setGlobalDispatcher(
         let result5 = await authenticate("aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m");
         console.log(result5);
 
-        // let result8 = await request(`/invites/accept`, { inviteId: 53 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
+        // let result8 = await request(`/invites/accept`, { inviteId: 58 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
         // console.log(result8);
 
-        let result9 = await request(`/rooms/create`, { towerId: 58, name: "welcomer room", avatarId: 123 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
+        let result9 = await request(`/rooms/create`, { towerId: 63, name: "welcomer...", avatarId: 125 }, "aIIpWGD_f6wrilXhnR9FD2Wop_pxLP7m", "8082");
         console.log(result9);
     };
     socket.onclose = function (event) {

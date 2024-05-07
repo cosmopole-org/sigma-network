@@ -123,11 +123,11 @@ func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.
 	if allowed {
 		if assistant.UserType == "human" {
 			var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.UserId, Data: input.Data}
-			app.Network.PusherServer.PushToUser("workers_delivery", machineId, targetOrigin, p, false, false)
+			app.Network.PusherServer.PushToUser("workers_delivery", machineId, targetOrigin, p, "", false)
 		} else if assistant.UserType == "machine" {
 			if input.UserId > 0 {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, UserId: input.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToUser("workers_delivery", input.UserId, targetOrigin, p, false, false)
+				app.Network.PusherServer.PushToUser("workers_delivery", input.UserId, targetOrigin, p, "", false)
 			} else {
 				var p = updates_workers.Delivery{TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
 				app.Network.PusherServer.PushToGroup("workers/deliver", assistant.TowerId, p, []int64{})

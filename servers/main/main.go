@@ -8,8 +8,6 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
-
 var quit = make(chan struct{})
 
 func main() {

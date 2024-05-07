@@ -49,6 +49,7 @@ func New(appId string, databaseUri string, dbName string, redisUri string, stora
 	LoadServices(inst)
 	inst.Network.Listen(port)
 	shell_websocket.LoadWebsocket(inst)
+	inst.Security = modules.CreateSecurity(gods)
 	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
 		runtime.GC()
 	})

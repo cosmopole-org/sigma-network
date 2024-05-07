@@ -86,11 +86,11 @@ func (m *Memory) CreateClient(redisUri string) {
 					app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 				}
 			}
-			app.Network.PusherServer.PushToUser(payload.Key, payload.UserId, app.AppId, payload.Data, true, true)
+			app.Network.PusherServer.PushToUser(payload.Key, payload.UserId, app.AppId, payload.Data, payload.RequestId, true)
 		} else {
 			dataArr := strings.Split(payload.Key, " ")
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
-				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, false, true)
+				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, "", true)
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
 				app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, []int64{})
 			} else {

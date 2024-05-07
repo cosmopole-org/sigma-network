@@ -19,14 +19,14 @@ func main() {
 	}
 
 	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 64)
-	if (err != nil) {
+	if err != nil {
 		panic(err.Error())
 	}
 
 	app.New(
-		"cosmopole",
+		"8081",
 		os.Getenv("POSTGRES_URI"),
-		"postgres_admin",
+		os.Getenv("POSTGRES_DB")+"_8081",
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
 		int(port),

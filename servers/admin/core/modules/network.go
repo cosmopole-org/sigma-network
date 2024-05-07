@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"sigma/admin/core/utils"
-	"sync"
 
 	"github.com/gofiber/contrib/websocket"
+
+	"github.com/orcaman/concurrent-map/v2"
 )
 
 type Network struct {
@@ -24,66 +25,117 @@ func (n *Network) Listen(port int) {
 
 type Pusher struct {
 	Clients map[int64]*websocket.Conn
-	Groups  sync.Map
+	Groups  *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
 }
 
-func (p *Pusher) PushToUser(userId int64, data any, isFedMsg bool) {
-	conn := p.Clients[userId]
-	if conn != nil {
-		if isFedMsg {
-			conn.WriteMessage(websocket.TextMessage, []byte("federation "+data.(string)))
+func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
+	if userOrigin == app.AppId {
+		conn := p.Clients[userId]
+		if conn != nil {
+			if len(requestId) > 0 {
+				conn.WriteMessage(websocket.TextMessage, []byte("response "+requestId+" "+data.(string)))
+			} else {
+				if alreadySerialized {
+					conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+data.(string)))
+				} else {
+					message, err := json.Marshal(data)
+					if err != nil {
+						fmt.Println(err)
+					} else {
+						conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+string(message)))
+					}
+				}
+			}
+		}
+	} else {
+		if alreadySerialized {
+			app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: data.(string)})
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
 				fmt.Println(err)
 			} else {
-				conn.WriteMessage(websocket.TextMessage, []byte("update "+string(message)))
+				app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
 			}
 		}
 	}
 }
 
-func (p *Pusher) PushToGroup(groupId int64, data any, exceptions []int64) {
+func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []int64) {
 	var excepDict = map[int64]bool{}
 	for _, exc := range exceptions {
 		excepDict[exc] = true
 	}
-	g, _ := p.Groups.LoadOrStore(groupId, &sync.Map{})
-	group := g.(*sync.Map)
-	message, err := json.Marshal(data)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		var packet = []byte("update " + string(message))
-		group.Range(func(key, value any) bool {
-			var userId = key.(int64)
+	group, ok := p.RetriveGroup(groupId)
+	if ok {
+		var message []byte
+		switch d := data.(type) {
+		case string:
+			message = []byte(d)
+		default:
+			msg, err := json.Marshal(d)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			message = msg
+		}
+		var packet = []byte("update " + key + " " + string(message))
+		var foreignersMap = map[string]bool{}
+		for t := range group.IterBuffered() {
+			userId := t.Val.UserId
 			if !excepDict[userId] {
-				var conn = p.Clients[userId]
-				if conn != nil {
-					conn.WriteMessage(websocket.TextMessage, packet)
+				if t.Val.UserOrigin == app.AppId {
+					var conn = p.Clients[userId]
+					if conn != nil {
+						conn.WriteMessage(websocket.TextMessage, packet)
+					}
+				} else {
+					if !foreignersMap[t.Val.UserOrigin] {
+						foreignersMap[t.Val.UserOrigin] = true
+					}
 				}
 			}
-			return true
-		})
+		}
+		for k := range foreignersMap {
+			app.Memory.SendInFederation(k, InterfedPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Data: string(message)})
+		}
 	}
 }
 
-func (p *Pusher) JoinGroup(groupId int64, userId int64) {
-	g, _ := p.Groups.LoadOrStore(groupId, &sync.Map{})
-	group := g.(*sync.Map)
-	group.Store(userId, true)
+type GroupMember struct {
+	UserId     int64
+	UserOrigin string
+}
+
+func (p *Pusher) JoinGroup(groupId int64, userId int64, userOrigin string) {
+	g, ok := p.RetriveGroup(groupId)
+	if ok {
+		g.Set(fmt.Sprintf("%d", userId), GroupMember{UserId: userId, UserOrigin: userOrigin})
+	}
 }
 
 func (p *Pusher) LeaveGroup(groupId int64, userId int64) {
-	g, _ := p.Groups.LoadOrStore(groupId, &sync.Map{})
-	group := g.(*sync.Map)
-	group.Delete(userId)
+	g, ok := p.RetriveGroup(groupId)
+	if ok {
+		g.Remove(fmt.Sprintf("%d", userId))
+	}
+}
+
+func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupMember], bool) {
+	ok := p.Groups.Has(fmt.Sprintf("%d", groupId))
+	if !ok {
+		newMap := cmap.New[GroupMember]()
+		p.Groups.SetIfAbsent(fmt.Sprintf("%d", groupId), &newMap)
+	}
+	return p.Groups.Get(fmt.Sprintf("%d", groupId))
 }
 
 func LoadPusher() *Pusher {
+	newMap := cmap.New[*cmap.ConcurrentMap[string, GroupMember]]()
 	return &Pusher{
 		Clients: map[int64]*websocket.Conn{},
-		Groups:  sync.Map{},
+		Groups:  &newMap,
 	}
 }
 

@@ -48,7 +48,7 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	}
 	invite.Origin = app.AppId
 	invite.UserOrigin = ro
-	go app.Network.PusherServer.PushToUser("invites/create", input.HumanId, ro, updates_invites.Create{Invite: &invite}, false, false)
+	go app.Network.PusherServer.PushToUser("invites/create", input.HumanId, ro, updates_invites.Create{Invite: &invite}, "", false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
@@ -64,7 +64,7 @@ func cancelInvite(app *modules.App, input dtos_invites.CancelDto, assistant modu
 		fmt.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, false, false)
+	go app.Network.PusherServer.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, "", false)
 	return &pb.InviteCancelOutput{}, nil
 }
 
@@ -92,7 +92,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 	}
 	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	var invite = pb.Invite{Id: input.InviteId, Origin: member.Origin, UserOrigin: member.UserOrigin, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, false, false)
+	go app.Network.PusherServer.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, "", false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
@@ -118,7 +118,7 @@ func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant mo
 		fmt.Println(err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
-	go app.Network.PusherServer.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, false, false)
+	go app.Network.PusherServer.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, "", false)
 	return &pb.InviteDeclineOutput{}, nil
 }
 

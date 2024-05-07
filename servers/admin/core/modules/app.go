@@ -7,6 +7,7 @@ type App struct {
 	Network     *Network
 	Database    *Database
 	Memory      *Memory
+	Security    *Security
 	StorageRoot string
 	Federation  map[string]pb.Server
 }
@@ -19,3 +20,4 @@ func Instance() *App {
 func Keep(a App) {
 	app = a
 }
+

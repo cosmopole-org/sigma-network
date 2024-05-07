@@ -28,12 +28,12 @@ type Pusher struct {
 	Groups  *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
 }
 
-func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, isFedMsg bool, alreadySerialized bool) {
+func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
 	if userOrigin == app.AppId {
 		conn := p.Clients[userId]
 		if conn != nil {
-			if isFedMsg {
-				conn.WriteMessage(websocket.TextMessage, []byte("federation "+key+" "+data.(string)))
+			if len(requestId) > 0 {
+				conn.WriteMessage(websocket.TextMessage, []byte("response "+requestId+" "+data.(string)))
 			} else {
 				if alreadySerialized {
 					conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+data.(string)))
@@ -80,9 +80,8 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []i
 			}
 			message = msg
 		}
-		var packet = []byte("update " + string(message))
+		var packet = []byte("update " + key + " " + string(message))
 		var foreignersMap = map[string]bool{}
-		fmt.Println(group.Items())
 		for t := range group.IterBuffered() {
 			userId := t.Val.UserId
 			if !excepDict[userId] {
@@ -98,7 +97,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []i
 				}
 			}
 		}
-		for k, _ := range foreignersMap {
+		for k := range foreignersMap {
 			app.Memory.SendInFederation(k, InterfedPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Data: string(message)})
 		}
 	}
@@ -112,20 +111,18 @@ type GroupMember struct {
 func (p *Pusher) JoinGroup(groupId int64, userId int64, userOrigin string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Set(fmt.Sprintf("%d", userId), GroupMember{UserId: userId, UserOrigin: userOrigin})
+		g.Set(fmt.Sprintf("%d", userId) + "@" + userOrigin, GroupMember{UserId: userId, UserOrigin: userOrigin})
 	}
 }
 
-func (p *Pusher) LeaveGroup(groupId int64, userId int64) {
+func (p *Pusher) LeaveGroup(groupId int64, userId int64, userOrigin string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Remove(fmt.Sprintf("%d", userId))
+		g.Remove(fmt.Sprintf("%d", userId) + "@" + userOrigin)
 	}
 }
 
 func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupMember], bool) {
-	a, b := p.Groups.Get(fmt.Sprintf("%d", groupId))
-	fmt.Println(a, groupId, b)
 	ok := p.Groups.Has(fmt.Sprintf("%d", groupId))
 	if !ok {
 		newMap := cmap.New[GroupMember]()

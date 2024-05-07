@@ -60,6 +60,7 @@ func CreateAuthService(app *modules.App) {
 			dtos_admins.SigninDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 	modules.AddMethod(
@@ -70,6 +71,7 @@ func CreateAuthService(app *modules.App) {
 			dtos_admins.UpdatePassDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
+			modules.CreateInterFedOptions(true, true),
 		),
 	)
 }

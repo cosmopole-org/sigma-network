@@ -44,6 +44,27 @@ func LoadGrpcServices(gs *grpc.Server) {
 	services.LoadWorkerGrpcService(gs)
 }
 
+func LoadAccess(app *modules.App) {
+	var query = `
+		select user_origin, origin, tower_id, human_id from member;
+	`
+	rows, err := app.Database.Db.Query(context.Background(), query)
+	if err != nil {
+		fmt.Println(err)
+	}
+	for rows.Next() {
+		var m pb.Member
+		err := rows.Scan(&m.UserOrigin, &m.Origin, &m.TowerId, &m.HumanId)
+		if err != nil {
+			fmt.Println(err)
+		}
+		app.Network.PusherServer.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Println(err)
+	}
+}
+
 func LoadKeys() {
 	modules.LoadKeys()
 	if modules.FetchKeyPair("server_key") == nil {
@@ -95,6 +116,7 @@ func New(appId string, databaseUri string, dbName string, redisUri string, stora
 		LoadGrpcServices(gs.Server)
 		gs.ListenForGrpc(ports["grpc"])
 	}
+	LoadAccess(inst)
 	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
 		runtime.GC()
 	})

@@ -75,8 +75,8 @@ type Location struct {
 }
 
 func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId int64, roomId int64) Location {
-	if towerId == 0 {
-		return Location{TowerId: 0, RoomId: 0}
+	if (towerId == 0) {
+		return Location{TowerId: 0, RoomId: 0}	
 	}
 	var ac = authCache[token]
 	if ac != nil && ac.TowerId == towerId && ac.RoomId == roomId {
@@ -100,8 +100,8 @@ func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId 
 }
 
 func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]string) Location {
-	if headers["Tower_id"] == nil {
-		return Location{TowerId: 0, RoomId: 0}
+	if (headers["Tower_id"] == nil) {
+		return Location{TowerId: 0, RoomId: 0}	
 	}
 	var towerId = string(headers["Tower_id"][0])
 	tid, err1 := strconv.ParseInt(towerId, 10, 64)
