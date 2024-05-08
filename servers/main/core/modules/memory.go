@@ -22,12 +22,14 @@ type InterfedPacket struct {
 	Data       string
 	IsResponse bool
 	GroupId    int64
+	Exceptions []GroupMember
 }
 
 type Memory struct {
-	Storage      *redis.Client
-	FedHandler   func(app *App, channelId string, payload InterfedPacket)
-	IFResChannel chan [2][]byte
+	Storage       *redis.Client
+	OtherStorages map[string]*redis.Client
+	FedHandler    func(app *App, channelId string, payload InterfedPacket)
+	IFResChannel  chan [2][]byte
 }
 
 func (m *Memory) GetClient() *redis.Client {
@@ -43,6 +45,14 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 	db := redis.NewClient(opts)
 	m.Storage = db
+	for org := range app.Federation {
+		host := strings.Split(org, "->")[0] + ":6379"
+		orgsOpts, orgErr := redis.ParseURL("redis://" + host + "/0")
+		if orgErr != nil {
+			panic(orgErr)
+		}
+		m.OtherStorages[org] = redis.NewClient(orgsOpts)
+	}
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
 		if payload.IsResponse {
 			dataArr := strings.Split(payload.Key, " ")
@@ -92,8 +102,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
 				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, "", true)
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-				fmt.Println(payload.GroupId, payload.Data)
-				app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, []int64{})
+				app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
 			} else {
 				var input any
 				err2 := json.Unmarshal([]byte(payload.Data), &input)
@@ -167,7 +176,8 @@ func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 		fmt.Println(err)
 		return
 	}
-	m.Storage.Publish(context.Background(), channelPrefix+destOrg+"."+app.AppId, output)
+	fmt.Println(destOrg)
+	m.OtherStorages[destOrg].Publish(context.Background(), channelPrefix+destOrg+"."+app.AppId, output)
 }
 
 func (m *Memory) Put(key string, value string) {
@@ -197,7 +207,9 @@ func (m *Memory) Del(key string) {
 }
 
 func CreateMemory(redisUri string) *Memory {
-	memory := &Memory{}
+	memory := &Memory{
+		OtherStorages: map[string]*redis.Client{},
+	}
 	fmt.Println("connecting to redis...")
 	memory.CreateClient(redisUri)
 	return memory

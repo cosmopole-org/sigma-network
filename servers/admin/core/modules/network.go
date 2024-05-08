@@ -61,10 +61,10 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 	}
 }
 
-func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []int64) {
-	var excepDict = map[int64]bool{}
+func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []GroupMember) {
+	var excepDict = map[string]bool{}
 	for _, exc := range exceptions {
-		excepDict[exc] = true
+		excepDict[fmt.Sprintf("%d@%s", exc.UserId, exc.UserOrigin)] = true
 	}
 	group, ok := p.RetriveGroup(groupId)
 	if ok {
@@ -81,24 +81,27 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []i
 			message = msg
 		}
 		var packet = []byte("update " + key + " " + string(message))
-		var foreignersMap = map[string]bool{}
+		var foreignersMap = map[string][]GroupMember{}
 		for t := range group.IterBuffered() {
 			userId := t.Val.UserId
-			if !excepDict[userId] {
-				if t.Val.UserOrigin == app.AppId {
+			if t.Val.UserOrigin == app.AppId {
+				if !excepDict[t.Key] {
 					var conn = p.Clients[userId]
 					if conn != nil {
 						conn.WriteMessage(websocket.TextMessage, packet)
 					}
-				} else {
-					if !foreignersMap[t.Val.UserOrigin] {
-						foreignersMap[t.Val.UserOrigin] = true
-					}
+				}
+			} else {
+				if foreignersMap[t.Val.UserOrigin] == nil {
+					foreignersMap[t.Val.UserOrigin] = []GroupMember{}
+				}
+				if excepDict[t.Key] {
+					foreignersMap[t.Val.UserOrigin] = append(foreignersMap[t.Val.UserOrigin], t.Val)
 				}
 			}
 		}
-		for k := range foreignersMap {
-			app.Memory.SendInFederation(k, InterfedPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Data: string(message)})
+		for k, v := range foreignersMap {
+			app.Memory.SendInFederation(k, InterfedPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Exceptions: v, Data: string(message)})
 		}
 	}
 }
@@ -111,14 +114,14 @@ type GroupMember struct {
 func (p *Pusher) JoinGroup(groupId int64, userId int64, userOrigin string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Set(fmt.Sprintf("%d", userId), GroupMember{UserId: userId, UserOrigin: userOrigin})
+		g.Set(fmt.Sprintf("%d", userId)+"@"+userOrigin, GroupMember{UserId: userId, UserOrigin: userOrigin})
 	}
 }
 
-func (p *Pusher) LeaveGroup(groupId int64, userId int64) {
+func (p *Pusher) LeaveGroup(groupId int64, userId int64, userOrigin string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Remove(fmt.Sprintf("%d", userId))
+		g.Remove(fmt.Sprintf("%d", userId) + "@" + userOrigin)
 	}
 }
 

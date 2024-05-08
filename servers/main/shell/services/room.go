@@ -35,7 +35,10 @@ func createRoom(app *modules.App, input dtos_rooms.CreateDto, assistant modules.
 	}
 	room.Origin = app.AppId
 	app.Memory.Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
-	go app.Network.PusherServer.PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room}, []int64{assistant.UserId})
+	go app.Network.PusherServer.PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room},
+		[]modules.GroupMember{
+			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+		})
 	return &pb.RoomCreateOutput{Room: &room}, nil
 }
 
@@ -51,7 +54,10 @@ func updateRoom(app *modules.App, input dtos_rooms.UpdateDto, assistant modules.
 		fmt.Println(err)
 		return &pb.RoomUpdateOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room},
+		[]modules.GroupMember{
+			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+		})
 	return &pb.RoomUpdateOutput{Room: &room}, nil
 }
 
@@ -69,7 +75,10 @@ func deleteRoom(app *modules.App, input dtos_rooms.DeleteDto, assistant modules.
 		return &pb.RoomDeleteOutput{}, err
 	}
 	app.Memory.Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
-	go app.Network.PusherServer.PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room}, []int64{})
+	go app.Network.PusherServer.PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room},
+		[]modules.GroupMember{
+			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+		})
 	return &pb.RoomDeleteOutput{}, nil
 }
 
@@ -97,7 +106,11 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 	}
 	if input.Type == "broadcast" {
 		var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
-		app.Network.PusherServer.PushToGroup(sendTemplate, assistant.TowerId, p, []int64{assistant.UserId})
+		fmt.Println(assistant.TowerId, p, assistant.UserId)
+		app.Network.PusherServer.PushToGroup(sendTemplate, assistant.TowerId, p,
+			[]modules.GroupMember{
+				{UserId: assistant.UserId, UserOrigin: userOrigin},
+			})
 		return &pb.RoomSendOutput{Passed: true}, nil
 	} else if input.Type == "single" {
 		if input.RecvType == "human" {
@@ -109,7 +122,6 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 			}
 		} else if input.RecvType == "machine" {
 			workerData := app.Memory.Get(fmt.Sprintf("worker::%d", input.WorkerId))
-			fmt.Println(workerData)
 			arr := strings.Split(workerData, "/")
 			if len(arr) == 3 {
 				roomId, _ := strconv.ParseInt(arr[0], 10, 64)

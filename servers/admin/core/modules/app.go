@@ -1,7 +1,5 @@
 package modules
 
-import pb "sigma/admin/shell/grpc"
-
 type App struct {
 	AppId       string
 	Network     *Network
@@ -9,7 +7,7 @@ type App struct {
 	Memory      *Memory
 	Security    *Security
 	StorageRoot string
-	Federation  map[string]pb.Server
+	Federation  map[string]bool
 }
 
 var app App

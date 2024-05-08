@@ -40,7 +40,10 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		worker.UserOrigin = input.WorkerOrigin
 	}
 	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d/%s", worker.RoomId, worker.MachineId, input.WorkerOrigin))
-	go app.Network.PusherServer.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker}, []int64{assistant.UserId})
+	go app.Network.PusherServer.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker},
+		[]modules.GroupMember{
+			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+		})
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
 }
 

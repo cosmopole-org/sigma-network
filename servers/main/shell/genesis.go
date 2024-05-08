@@ -19,7 +19,7 @@ import (
 )
 
 type ServersOutput struct {
-	Map map[string]pb.Server `json:"map"`
+	Map map[string]bool `json:"map"`
 }
 
 func LoadServices(a *modules.App) {
@@ -123,7 +123,7 @@ func LoadKeys() {
 
 func New(appId string, databaseUri string, dbName string, redisUri string, storageRoot string, ports map[string]int, mapServerAddr string) *modules.App {
 	fmt.Println("Creating app...")
-	serversMap := map[string]pb.Server{}
+	serversMap := map[string]bool{}
 	serversMapRes, err := http.Get(mapServerAddr + "/map/get")
 	if err == nil {
 		if serversMapRes.StatusCode != http.StatusOK {

@@ -24,7 +24,7 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "8082"} ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "localhost->8082"} ${requestId} ${JSON.stringify(data)}`);
         })
     }
     socket.onmessage = function (event) {
@@ -54,31 +54,32 @@ setGlobalDispatcher(
         // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
         // console.log(result3);
 
-        let token = "H9x_1PHl3oR7Mc7d8t6LKYoVDSh0mAyn"
+        let token = "M_UpzlkKDuUNyg5xCuesJisoCoYTSydJ";
+        let humanId = 1;
 
         let result5 = await authenticate(token);
         console.log(result5);
 
-        // let result8 = await request(`/invites/accept`, { inviteId: 1 }, token, "8081");
-        // console.log(result8);
+        let result8 = await request(`/invites/accept`, { inviteId: 2 }, token, "localhost->8081");
+        console.log(result8);
 
         // let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
         // console.log(result4);
-        // let result10 = await request(`/rooms/create`, { towerId: result4.tower.id, name: "welcomer...", avatarId: 125 }, result3.session.token, "8082");
+        // let result10 = await request(`/rooms/create`, { towerId: result4.tower.id, name: "welcomer...", avatarId: 125 }, result3.session.token, "localhost->8082");
         // console.log(result10);
 
-        // let result8 = await request(`/invites/create`, { humanId: 7, towerId: result4.tower.id, recepientOrigin: "8081" }, result3.session.token, "8082");
+        // let result8 = await request(`/invites/create`, { humanId: 7, towerId: result4.tower.id, recepientOrigin: "localhost->8082" }, result3.session.token, "localhost->8082");
         // console.log(result8);
 
-        // let result8 = await request(`/machines/create`, { name: "testMachine", avatarId: 123 }, token, "8082");
+        // let result8 = await request(`/machines/create`, { name: "testMachine", avatarId: 123 }, token, "localhost->8082");
         // console.log(result8);
 
-        let towerId = 12;
-        let roomId = 3;
-        let workerId = 5;
+        // let towerId = 12;
+        // let roomId = 3;
+        // let workerId = 5;
 
-        let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "8081");
-        console.log(result8);
+        // let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "localhost->8081");
+        // console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

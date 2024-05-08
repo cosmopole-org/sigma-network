@@ -4,6 +4,7 @@ import (
 	"os"
 	app "sigma/main/shell"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -17,15 +18,16 @@ func main() {
 		panic(err)
 	}
 
-	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 64)
+	portStr := strings.Split(os.Getenv("ORIGIN"), "->")[1]
+	port, err := strconv.ParseInt(portStr, 10, 64)
 	if err != nil {
 		panic(err)
 	}
 
 	app.New(
-		os.Getenv("PORT"),
+		os.Getenv("ORIGIN"),
 		os.Getenv("POSTGRES_URI"),
-		os.Getenv("POSTGRES_DB")+"_"+os.Getenv("PORT"),
+		os.Getenv("POSTGRES_DB")+"_"+portStr,
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
 		map[string]int{
