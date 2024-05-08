@@ -39,7 +39,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		worker.Origin = app.AppId
 		worker.UserOrigin = input.WorkerOrigin
 	}
-	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d", worker.RoomId, worker.MachineId))
+	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d/%s", worker.RoomId, worker.MachineId, input.WorkerOrigin))
 	go app.Network.PusherServer.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker}, []int64{assistant.UserId})
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
 }
@@ -102,48 +102,6 @@ func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
 
-var workersDeliverTemplate = "workers/deliver"
-
-func deliver(app *modules.App, input dtos_workers.DeliverDto, assistant modules.Assistant) (any, error) {
-	userOrigin := assistant.UserOrigin
-	if userOrigin == "" {
-		userOrigin = app.AppId
-	}
-	var query = `
-		select * from workers_deliver($1, $2, $3, $4, $5, $6, $7);
-	`
-	var allowed = false
-	var machineId int64 = 0
-	var targetOrigin = ""
-	var workerId int64 = 0
-	if assistant.UserType == "human" {
-		workerId = input.WorkerId
-	} else if assistant.UserType == "machine" {
-		workerId = assistant.WorkerId
-	}
-	if err := app.Database.Db.QueryRow(
-		context.Background(), query, assistant.UserId, assistant.UserType, workerId, assistant.TowerId, assistant.RoomId, input.UserId, userOrigin,
-	).Scan(&allowed, &machineId, &targetOrigin); err != nil {
-		fmt.Println(err)
-		return &pb.WorkerDeliverOutput{}, err
-	}
-	if allowed {
-		if assistant.UserType == "human" {
-			var p = updates_workers.Delivery{UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: machineId, UserId: assistant.UserId, Data: input.Data}
-			app.Network.PusherServer.PushToUser(workersDeliverTemplate, machineId, targetOrigin, p, "", false)
-		} else if assistant.UserType == "machine" {
-			if input.UserId > 0 {
-				var p = updates_workers.Delivery{UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, UserId: input.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToUser(workersDeliverTemplate, input.UserId, targetOrigin, p, "", false)
-			} else {
-				var p = updates_workers.Delivery{UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, WorkerId: input.WorkerId, MachineId: assistant.UserId, Data: input.Data}
-				app.Network.PusherServer.PushToGroup(workersDeliverTemplate, assistant.TowerId, p, []int64{})
-			}
-		}
-	}
-	return &pb.WorkerDeliverOutput{Passed: allowed}, nil
-}
-
 func CreateWorkerService(app *modules.App) {
 
 	// Tables
@@ -194,18 +152,7 @@ func CreateWorkerService(app *modules.App) {
 			dtos_workers.ReadDto{},
 			modules.CreateCheck(true, true, true),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
-			modules.CreateInterFedOptions(false, false),),
-	)
-	modules.AddMethod(
-		app,
-		modules.CreateMethod[dtos_workers.DeliverDto, dtos_workers.DeliverDto](
-			"/workers/deliver",
-			deliver,
-			dtos_workers.DeliverDto{},
-			modules.CreateCheck(true, true, true),
-			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
-			modules.CreateInterFedOptions(false, false),
-		),
+			modules.CreateInterFedOptions(false, false)),
 	)
 }
 

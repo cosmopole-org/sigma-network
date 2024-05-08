@@ -16,3 +16,7 @@ func (d CancelDto) GetTowerId() int64 {
 func (d CancelDto) GetRoomId() int64 {
 	return 0
 }
+
+func (d CancelDto) GetWorkerId() int64 {
+	return 0
+}

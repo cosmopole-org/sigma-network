@@ -6,6 +6,8 @@ import (
 	"sigma/main/core/modules"
 	dtos_rooms "sigma/main/shell/dtos/rooms"
 	updates_rooms "sigma/main/shell/updates/rooms"
+	"strconv"
+	"strings"
 
 	pb "sigma/main/shell/grpc"
 
@@ -86,6 +88,44 @@ func getRoom(app *modules.App, input dtos_rooms.GetDto, assistant modules.Assist
 	return &pb.RoomGetOutput{Room: &room}, nil
 }
 
+var sendTemplate = "rooms/send"
+
+func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistant) (any, error) {
+	userOrigin := assistant.UserOrigin
+	if userOrigin == "" {
+		userOrigin = app.AppId
+	}
+	if input.Type == "broadcast" {
+		var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
+		app.Network.PusherServer.PushToGroup(sendTemplate, assistant.TowerId, p, []int64{assistant.UserId})
+		return &pb.RoomSendOutput{Passed: true}, nil
+	} else if input.Type == "single" {
+		if input.RecvType == "human" {
+			memberData := app.Memory.Get(fmt.Sprintf("member::%d::%d::%s", assistant.TowerId, input.RecvId, input.RecvOrigin))
+			if memberData == "true" {
+				var p = updates_rooms.Send{Action: "single", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
+				app.Network.PusherServer.PushToUser(sendTemplate, input.RecvId, input.RecvOrigin, p, "", false)
+				return &pb.RoomSendOutput{Passed: true}, nil
+			}
+		} else if input.RecvType == "machine" {
+			workerData := app.Memory.Get(fmt.Sprintf("worker::%d", input.WorkerId))
+			fmt.Println(workerData)
+			arr := strings.Split(workerData, "/")
+			if len(arr) == 3 {
+				roomId, _ := strconv.ParseInt(arr[0], 10, 64)
+				machineId, _ := strconv.ParseInt(arr[1], 10, 64)
+				machineOrigin := arr[2]
+				if roomId == assistant.RoomId {
+					var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
+					app.Network.PusherServer.PushToUser(sendTemplate, machineId, machineOrigin, p, "", false)
+					return &pb.RoomSendOutput{Passed: true}, nil
+				}
+			}
+		}
+	}
+	return &pb.RoomSendOutput{Passed: false}, nil
+}
+
 func CreateRoomService(app *modules.App) {
 
 	// Tables
@@ -136,6 +176,17 @@ func CreateRoomService(app *modules.App) {
 			dtos_rooms.GetDto{},
 			modules.CreateCheck(true, true, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+			modules.CreateInterFedOptions(false, false),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_rooms.SendDto, dtos_rooms.SendDto](
+			"/rooms/send",
+			send,
+			dtos_rooms.SendDto{},
+			modules.CreateCheck(true, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodPost, true, true),
 			modules.CreateInterFedOptions(false, false),
 		),
 	)

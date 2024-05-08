@@ -74,17 +74,38 @@ type Location struct {
 	WorkerId int64
 }
 
-func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId int64, roomId int64) Location {
-	if (towerId == 0) {
-		return Location{TowerId: 0, RoomId: 0}	
+var memberTemplate = "member::%d::%d::%s"
+var cityTemplate = "city::%d"
+
+func AuthorizeFedHumanWithProcessed(app *App, humanId int64, userOrigin string, towerId int64, roomId int64) Location {
+	if towerId == 0 {
+		return Location{TowerId: 0, RoomId: 0}
+	}
+	var towerIdStr = fmt.Sprintf("%d", towerId)
+	var memberData = app.Memory.Get(fmt.Sprintf(memberTemplate, towerId, humanId, userOrigin))
+	var cityData = app.Memory.Get(fmt.Sprintf(cityTemplate, roomId))
+	if memberData != "" {
+		if cityData != "" && cityData == towerIdStr {
+			return Location{TowerId: towerId, RoomId: roomId}
+		} else {
+			return Location{TowerId: towerId, RoomId: 0}
+		}
+	} else {
+		return Location{TowerId: 0, RoomId: 0}
+	}
+}
+
+func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, userOrigin string, towerId int64, roomId int64) Location {
+	if towerId == 0 {
+		return Location{TowerId: 0, RoomId: 0}
 	}
 	var ac = authCache[token]
 	if ac != nil && ac.TowerId == towerId && ac.RoomId == roomId {
 		return Location{TowerId: towerId, RoomId: roomId}
 	}
 	var towerIdStr = fmt.Sprintf("%d", towerId)
-	var memberData = app.Memory.Get(fmt.Sprintf("member::%d::%d", towerId, humanId))
-	var cityData = app.Memory.Get(fmt.Sprintf("city::%d", roomId))
+	var memberData = app.Memory.Get(fmt.Sprintf(memberTemplate, towerId, humanId, userOrigin))
+	var cityData = app.Memory.Get(fmt.Sprintf(cityTemplate, roomId))
 	if memberData != "" {
 		if cityData != "" && cityData == towerIdStr {
 			authCache[token].TowerId = towerId
@@ -100,8 +121,8 @@ func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId 
 }
 
 func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]string) Location {
-	if (headers["Tower_id"] == nil) {
-		return Location{TowerId: 0, RoomId: 0}	
+	if headers["Tower_id"] == nil {
+		return Location{TowerId: 0, RoomId: 0}
 	}
 	var towerId = string(headers["Tower_id"][0])
 	tid, err1 := strconv.ParseInt(towerId, 10, 64)
@@ -121,7 +142,8 @@ func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]
 	if ac != nil && ac.TowerId == tid && ac.RoomId == roid {
 		return Location{TowerId: tid, RoomId: roid}
 	}
-	var memberData = app.Memory.Get(fmt.Sprintf("member::%d::%d", tid, humanId))
+	var uo = headers["Room_id"]
+	var memberData = app.Memory.Get(fmt.Sprintf("member::%d::%d::%s", tid, humanId, uo))
 	var cityData = app.Memory.Get(fmt.Sprintf("city::%d", roid))
 	if memberData != "" {
 		if cityData != "" && cityData == towerId {
@@ -138,7 +160,7 @@ func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]
 }
 
 func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid int64) Location {
-	if wid > 0 {
+	if wid == 0 {
 		fmt.Println(utils.BuildErrorJson("worker id is empty"))
 		return Location{TowerId: 0, RoomId: 0}
 	}
@@ -238,10 +260,10 @@ func HandleLocation(app *App, token string, userId int64, userType string, heade
 	return location
 }
 
-func HandleLocationWithProcessed(app *App, token string, userId int64, userType string, towerId int64, roomId int64, workerId int64) Location {
+func HandleLocationWithProcessed(app *App, token string, userId int64, userType string, userOrigin string, towerId int64, roomId int64, workerId int64) Location {
 	var location Location
 	if userType == "human" {
-		location = AuthorizeHumanWithProcessed(app, token, userId, towerId, roomId)
+		location = AuthorizeHumanWithProcessed(app, token, userId, userOrigin, towerId, roomId)
 	} else {
 		location = AuthorizeMachineWithProcessed(app, token, userId, workerId)
 	}

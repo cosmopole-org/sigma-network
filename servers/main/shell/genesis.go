@@ -7,9 +7,9 @@ import (
 	"io"
 	"net/http"
 	"runtime"
-	pb "sigma/main/shell/grpc"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
+	pb "sigma/main/shell/grpc"
 	shell_grpc "sigma/main/shell/network/grpc"
 	shell_websocket "sigma/main/shell/network/websocket"
 	"sigma/main/shell/services"
@@ -61,6 +61,56 @@ func LoadAccess(app *modules.App) {
 	}
 	if err := rows.Err(); err != nil {
 		fmt.Println(err)
+	}
+
+	var query2 = `
+		select user_origin, origin, room_id, machine_id from worker;
+	`
+	rows2, err2 := app.Database.Db.Query(context.Background(), query2)
+	if err2 != nil {
+		fmt.Println(err2)
+	}
+	workers := []*pb.Worker{}
+	roomSet := map[int64]int64{}
+	for rows2.Next() {
+		var w pb.Worker
+		err := rows2.Scan(&w.UserOrigin, &w.Origin, &w.RoomId, &w.MachineId)
+		if err != nil {
+			fmt.Println(err)
+		}
+		roomSet[w.RoomId] = -1
+		workers = append(workers, &w)
+	}
+	if err2 := rows2.Err(); err2 != nil {
+		fmt.Println(err2)
+	}
+	roomsArr := []int64{}
+	for rid := range roomSet {
+		roomsArr = append(roomsArr, rid)
+	}
+
+	var query3 = `
+		select tower_id, id from room where id = any($1);
+	`
+	rows3, err3 := app.Database.Db.Query(context.Background(), query3, roomsArr)
+	if err3 != nil {
+		fmt.Println(err3)
+	}
+	for rows3.Next() {
+		var roomId int64 = 0
+		var towerId int64 = 0
+		err := rows3.Scan(&towerId, &roomId)
+		if err != nil {
+			fmt.Println(err)
+		}
+		roomSet[roomId] = towerId
+	}
+	if err3 := rows3.Err(); err3 != nil {
+		fmt.Println(err2)
+	}
+
+	for _, w := range workers {
+		app.Network.PusherServer.JoinGroup(roomSet[w.RoomId], w.MachineId, w.UserOrigin)
 	}
 }
 

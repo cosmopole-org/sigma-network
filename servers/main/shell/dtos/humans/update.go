@@ -16,3 +16,7 @@ func (d UpdateDto) GetTowerId() int64 {
 func (d UpdateDto) GetRoomId() int64 {
 	return 0
 }
+
+func (d UpdateDto) GetWorkerId() int64 {
+	return 0
+}

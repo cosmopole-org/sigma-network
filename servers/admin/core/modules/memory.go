@@ -3,6 +3,7 @@ package modules
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sigma/admin/core/utils"
 	"strings"
@@ -102,6 +103,15 @@ func (m *Memory) CreateClient(redisUri string) {
 				}
 				fn := Handlers[payload.Key]
 				f := Frames[payload.Key]
+				if fn == nil {
+					err := errors.New("endpoint not found")
+					fmt.Println(err)
+					errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
+					if err2 == nil {
+						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					}
+					return
+				}
 				mapstructure.Decode(input, &f)
 				result, err := fn(app, f, Assistant{
 					UserId:     payload.UserId,

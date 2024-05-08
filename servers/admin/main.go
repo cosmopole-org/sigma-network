@@ -24,7 +24,7 @@ func main() {
 	}
 
 	app.New(
-		"8081",
+		"8081_admin",
 		os.Getenv("POSTGRES_URI"),
 		os.Getenv("POSTGRES_DB")+"_8081",
 		os.Getenv("REDIS_URI"),

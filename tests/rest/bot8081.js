@@ -67,6 +67,13 @@ setGlobalDispatcher(
 
         // let result8 = await request(`/workers/create`, { machineId: 1, metadata: "{}", towerId: 70, roomId: 51, workerOrigin: '8082' }, token, "8082");
         // console.log(result8);
+        
+        let towerId = 12
+        let roomId = 3;
+        let workerId = 5;
+
+        let result8 = await request(`/rooms/send`, { type: "single", recvId: 8, recvType: "human", recvOrigin: "8081", data: `{ "hello": "hehe hoohoo hihi" }`, workerId: workerId, towerId: towerId, roomId: roomId }, token, "8081");
+        console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

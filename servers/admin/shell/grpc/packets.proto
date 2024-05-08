@@ -226,6 +226,7 @@ service RoomService {
 	rpc update (RoomUpdateDto) returns (RoomUpdateOutput) {}
 	rpc delete (RoomDeleteDto) returns (RoomDeleteOutput) {}
 	rpc get (RoomGetDto) returns (RoomGetOutput) {}
+	rpc send (RoomSendDto) returns (RoomSendOutput) {}
 }
   
 // models
@@ -276,6 +277,19 @@ message RoomGetDto {
 
 message RoomGetOutput {
 	Room room = 1;
+}
+
+message RoomSendDto {
+	int64 workerId = 1;
+	int64 userId = 2;
+	string data = 3;
+	string origin = 4;
+	int64 towerId = 5;
+	int64 roomId = 6;
+}
+
+message RoomSendOutput {
+	bool passed = 1;
 }
 
 // service
@@ -400,7 +414,6 @@ service WorkerService {
 	rpc update (WorkerUpdateDto) returns (WorkerUpdateOutput) {}
 	rpc delete (WorkerDeleteDto) returns (WorkerDeleteOutput) {}
 	rpc read (WorkerReadDto) returns (WorkerReadOutput) {}
-	rpc deliver (WorkerDeliverDto) returns (WorkerDeliverOutput) {}
 }
   
 // models
@@ -454,19 +467,6 @@ message WorkerReadDto {
 
 message WorkerReadOutput {
 	repeated Worker workers = 1;
-}
-
-message WorkerDeliverDto {
-	int64 workerId = 1;
-	int64 userId = 2;
-	string data = 3;
-	string origin = 4;
-	int64 towerId = 5;
-	int64 roomId = 6;
-}
-
-message WorkerDeliverOutput {
-	bool passed = 1;
 }
 
 // other models

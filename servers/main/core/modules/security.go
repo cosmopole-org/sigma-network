@@ -160,7 +160,7 @@ func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]
 }
 
 func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid int64) Location {
-	if wid > 0 {
+	if wid == 0 {
 		fmt.Println(utils.BuildErrorJson("worker id is empty"))
 		return Location{TowerId: 0, RoomId: 0}
 	}

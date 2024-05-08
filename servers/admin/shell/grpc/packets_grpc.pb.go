@@ -730,6 +730,7 @@ type RoomServiceClient interface {
 	Update(ctx context.Context, in *RoomUpdateDto, opts ...grpc.CallOption) (*RoomUpdateOutput, error)
 	Delete(ctx context.Context, in *RoomDeleteDto, opts ...grpc.CallOption) (*RoomDeleteOutput, error)
 	Get(ctx context.Context, in *RoomGetDto, opts ...grpc.CallOption) (*RoomGetOutput, error)
+	Send(ctx context.Context, in *RoomSendDto, opts ...grpc.CallOption) (*RoomSendOutput, error)
 }
 
 type roomServiceClient struct {
@@ -776,6 +777,15 @@ func (c *roomServiceClient) Get(ctx context.Context, in *RoomGetDto, opts ...grp
 	return out, nil
 }
 
+func (c *roomServiceClient) Send(ctx context.Context, in *RoomSendDto, opts ...grpc.CallOption) (*RoomSendOutput, error) {
+	out := new(RoomSendOutput)
+	err := c.cc.Invoke(ctx, "/sigma.RoomService/send", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // RoomServiceServer is the server API for RoomService service.
 // All implementations must embed UnimplementedRoomServiceServer
 // for forward compatibility
@@ -784,6 +794,7 @@ type RoomServiceServer interface {
 	Update(context.Context, *RoomUpdateDto) (*RoomUpdateOutput, error)
 	Delete(context.Context, *RoomDeleteDto) (*RoomDeleteOutput, error)
 	Get(context.Context, *RoomGetDto) (*RoomGetOutput, error)
+	Send(context.Context, *RoomSendDto) (*RoomSendOutput, error)
 	mustEmbedUnimplementedRoomServiceServer()
 }
 
@@ -802,6 +813,9 @@ func (UnimplementedRoomServiceServer) Delete(context.Context, *RoomDeleteDto) (*
 }
 func (UnimplementedRoomServiceServer) Get(context.Context, *RoomGetDto) (*RoomGetOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedRoomServiceServer) Send(context.Context, *RoomSendDto) (*RoomSendOutput, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
 }
 func (UnimplementedRoomServiceServer) mustEmbedUnimplementedRoomServiceServer() {}
 
@@ -888,6 +902,24 @@ func _RoomService_Get_Handler(srv interface{}, ctx context.Context, dec func(int
 	return interceptor(ctx, in, info, handler)
 }
 
+func _RoomService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RoomSendDto)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoomServiceServer).Send(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.RoomService/send",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoomServiceServer).Send(ctx, req.(*RoomSendDto))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // RoomService_ServiceDesc is the grpc.ServiceDesc for RoomService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -910,6 +942,10 @@ var RoomService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "get",
 			Handler:    _RoomService_Get_Handler,
+		},
+		{
+			MethodName: "send",
+			Handler:    _RoomService_Send_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
@@ -1312,7 +1348,6 @@ type WorkerServiceClient interface {
 	Update(ctx context.Context, in *WorkerUpdateDto, opts ...grpc.CallOption) (*WorkerUpdateOutput, error)
 	Delete(ctx context.Context, in *WorkerDeleteDto, opts ...grpc.CallOption) (*WorkerDeleteOutput, error)
 	Read(ctx context.Context, in *WorkerReadDto, opts ...grpc.CallOption) (*WorkerReadOutput, error)
-	Deliver(ctx context.Context, in *WorkerDeliverDto, opts ...grpc.CallOption) (*WorkerDeliverOutput, error)
 }
 
 type workerServiceClient struct {
@@ -1359,15 +1394,6 @@ func (c *workerServiceClient) Read(ctx context.Context, in *WorkerReadDto, opts 
 	return out, nil
 }
 
-func (c *workerServiceClient) Deliver(ctx context.Context, in *WorkerDeliverDto, opts ...grpc.CallOption) (*WorkerDeliverOutput, error) {
-	out := new(WorkerDeliverOutput)
-	err := c.cc.Invoke(ctx, "/sigma.WorkerService/deliver", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // WorkerServiceServer is the server API for WorkerService service.
 // All implementations must embed UnimplementedWorkerServiceServer
 // for forward compatibility
@@ -1376,7 +1402,6 @@ type WorkerServiceServer interface {
 	Update(context.Context, *WorkerUpdateDto) (*WorkerUpdateOutput, error)
 	Delete(context.Context, *WorkerDeleteDto) (*WorkerDeleteOutput, error)
 	Read(context.Context, *WorkerReadDto) (*WorkerReadOutput, error)
-	Deliver(context.Context, *WorkerDeliverDto) (*WorkerDeliverOutput, error)
 	mustEmbedUnimplementedWorkerServiceServer()
 }
 
@@ -1395,9 +1420,6 @@ func (UnimplementedWorkerServiceServer) Delete(context.Context, *WorkerDeleteDto
 }
 func (UnimplementedWorkerServiceServer) Read(context.Context, *WorkerReadDto) (*WorkerReadOutput, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Read not implemented")
-}
-func (UnimplementedWorkerServiceServer) Deliver(context.Context, *WorkerDeliverDto) (*WorkerDeliverOutput, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Deliver not implemented")
 }
 func (UnimplementedWorkerServiceServer) mustEmbedUnimplementedWorkerServiceServer() {}
 
@@ -1484,24 +1506,6 @@ func _WorkerService_Read_Handler(srv interface{}, ctx context.Context, dec func(
 	return interceptor(ctx, in, info, handler)
 }
 
-func _WorkerService_Deliver_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WorkerDeliverDto)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(WorkerServiceServer).Deliver(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/sigma.WorkerService/deliver",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(WorkerServiceServer).Deliver(ctx, req.(*WorkerDeliverDto))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // WorkerService_ServiceDesc is the grpc.ServiceDesc for WorkerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1524,10 +1528,6 @@ var WorkerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "read",
 			Handler:    _WorkerService_Read_Handler,
-		},
-		{
-			MethodName: "deliver",
-			Handler:    _WorkerService_Deliver_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

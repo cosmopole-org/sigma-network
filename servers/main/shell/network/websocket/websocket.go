@@ -77,6 +77,7 @@ func LoadWebsocket(app *modules.App) {
 				}
 				towerId := f.(modules.IDto).GetTowerId()
 				roomId := f.(modules.IDto).GetRoomId()
+				workerId := f.(modules.IDto).GetWorkerId()
 				if mo.AsEndpoint {
 					var doLocal = func() {
 						if c.User {
@@ -93,7 +94,7 @@ func LoadWebsocket(app *modules.App) {
 									if userType == 1 {
 										location = modules.HandleLocationWithProcessed(app, token, userId, "human", app.AppId, towerId, roomId, 0)
 									} else if userType == 2 {
-										location = modules.HandleLocationWithProcessed(app, token, 0, "machine", app.AppId, towerId, roomId, userId)
+										location = modules.HandleLocationWithProcessed(app, token, userId, "machine", app.AppId, towerId, roomId, workerId)
 									}
 									if location.TowerId > 0 {
 										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))

@@ -75,9 +75,9 @@ setGlobalDispatcher(
 
         let towerId = 12;
         let roomId = 3;
-        let workerId = 2;
+        let workerId = 5;
 
-        let result8 = await request(`/workers/deliver`, { workerId: workerId, data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "8081");
+        let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "8081");
         console.log(result8);
     };
     socket.onclose = function (event) {

@@ -17,3 +17,7 @@ func (d DeleteDto) GetTowerId() int64 {
 func (d DeleteDto) GetRoomId() int64 {
 	return d.RoomId
 }
+
+func (d DeleteDto) GetWorkerId() int64 {
+	return 0
+}

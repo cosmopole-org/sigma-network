@@ -15,3 +15,7 @@ func (d JoinDto) GetTowerId() int64 {
 func (d JoinDto) GetRoomId() int64 {
 	return 0
 }
+
+func (d JoinDto) GetWorkerId() int64 {
+	return 0
+}

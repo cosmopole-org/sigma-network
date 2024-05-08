@@ -19,3 +19,7 @@ func (d CreateDto) GetTowerId() int64 {
 func (d CreateDto) GetRoomId() int64 {
 	return d.RoomId
 }
+
+func (d CreateDto) GetWorkerId() int64 {
+	return 0
+}

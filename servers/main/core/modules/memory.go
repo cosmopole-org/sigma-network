@@ -92,6 +92,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
 				app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, "", true)
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
+				fmt.Println(payload.GroupId, payload.Data)
 				app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, []int64{})
 			} else {
 				var input any
