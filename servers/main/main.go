@@ -26,14 +26,17 @@ func main() {
 
 	app.New(
 		os.Getenv("ORIGIN"),
-		os.Getenv("POSTGRES_URI"),
-		os.Getenv("POSTGRES_DB")+"_"+portStr,
-		os.Getenv("REDIS_URI"),
-		os.Getenv("STORAGE_ROOT_PATH"),
-		map[string]int{
-			"http": int(port),
+		app.AppConfig{
+			DatabaseUri: os.Getenv("POSTGRES_URI"),
+			DatabaseName: os.Getenv("POSTGRES_DB") + "_" + portStr,
+			MemoryUri: os.Getenv("REDIS_URI"),
+			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
+			Ports: map[string]int{
+				"http": int(port),
+			},
+			MapServerAddress: os.Getenv("MAP_SERVER"),
+			EnableFederation: false,
 		},
-		os.Getenv("MAP_SERVER"),
 	)
 
 	<-quit

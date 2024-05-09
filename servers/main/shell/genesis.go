@@ -121,49 +121,61 @@ func LoadKeys() {
 	}
 }
 
-func New(appId string, databaseUri string, dbName string, redisUri string, storageRoot string, ports map[string]int, mapServerAddr string) *modules.App {
+type AppConfig struct {
+	DatabaseUri string
+	DatabaseName string
+	MemoryUri string
+	StorageRoot string
+	Ports map[string]int
+	MapServerAddress string
+	EnableFederation bool
+}
+
+func New(appId string, config AppConfig) *modules.App {
 	fmt.Println("Creating app...")
 	serversMap := map[string]bool{}
-	serversMapRes, err := http.Get(mapServerAddr + "/map/get")
-	if err == nil {
-		if serversMapRes.StatusCode != http.StatusOK {
-			fmt.Println("fetching servers map failed")
-		} else {
-			serversMapStr, err2 := io.ReadAll(serversMapRes.Body)
-			if err2 != nil {
-				fmt.Println(err)
-			}
-			fmt.Println("Federation: ", string(serversMapStr))
-			var res ServersOutput
-			err3 := json.Unmarshal(serversMapStr, &res)
-			if err3 != nil {
-				fmt.Println(err3)
+	if config.EnableFederation {
+		serversMapRes, err := http.Get(config.MapServerAddress + "/map/get")
+		if err == nil {
+			if serversMapRes.StatusCode != http.StatusOK {
+				fmt.Println("fetching servers map failed")
 			} else {
-				serversMap = res.Map
+				serversMapStr, err2 := io.ReadAll(serversMapRes.Body)
+				if err2 != nil {
+					fmt.Println(err)
+				}
+				fmt.Println("Federation: ", string(serversMapStr))
+				var res ServersOutput
+				err3 := json.Unmarshal(serversMapStr, &res)
+				if err3 != nil {
+					fmt.Println(err3)
+				} else {
+					serversMap = res.Map
+				}
 			}
+			serversMapRes.Body.Close()
 		}
-		serversMapRes.Body.Close()
 	}
 	a := modules.App{
 		AppId:       appId,
-		StorageRoot: storageRoot,
+		StorageRoot: config.StorageRoot,
 		Federation:  serversMap,
 	}
 	modules.Keep(a)
 	inst := modules.Instance()
 	LoadKeys()
-	inst.Database = modules.CreateDatabase(databaseUri, dbName)
-	inst.Memory = modules.CreateMemory(redisUri)
+	inst.Database = modules.CreateDatabase(config.DatabaseUri, config.DatabaseName)
+	inst.Memory = modules.CreateMemory(config.MemoryUri)
 	inst.Network = modules.CreateNetwork()
 	LoadServices(inst)
-	if ports["http"] > 0 {
-		inst.Network.Listen(ports["http"])
+	if config.Ports["http"] > 0 {
+		inst.Network.Listen(config.Ports["http"])
 		shell_websocket.LoadWebsocket(inst)
 	}
-	if ports["grpc"] > 0 {
+	if config.Ports["grpc"] > 0 {
 		gs := shell_grpc.LoadGrpcServer()
 		LoadGrpcServices(gs.Server)
-		gs.ListenForGrpc(ports["grpc"])
+		gs.ListenForGrpc(config.Ports["grpc"])
 	}
 	LoadAccess(inst)
 	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
