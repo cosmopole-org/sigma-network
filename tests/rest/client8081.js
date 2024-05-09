@@ -75,8 +75,8 @@ setGlobalDispatcher(
 
         let roomId = 3;
 
-        // let result0 = await request(`/invites/create`, { recepientOrigin: "localhost->8082", humanId: 1, towerId: towerId }, token, "localhost->8081");
-        // console.log(result0);
+        let result0 = await request(`/invites/create`, { recepientOrigin: "localhost->8082", humanId: 1, towerId: towerId }, token, "localhost->8081");
+        console.log(result0);
 
         // let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "localhost->8082");
         // console.log(result8);

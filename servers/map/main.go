@@ -24,9 +24,9 @@ func main() {
 			ServersOutput{
 				Map: map[string]bool{
 					"localhost->8081": true,
-					"localhost->8082": true,
+					"localhost->8084": true,
 				},
 			})
 	})
-	app.Listen(fmt.Sprintf(":%d", 8086))
+	app.Listen(fmt.Sprintf(":%d", 9000))
 }

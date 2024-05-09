@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"sigma/main/core/utils"
+	"strconv"
 	"strings"
 
 	"github.com/mitchellh/mapstructure"
@@ -40,8 +41,6 @@ func (m *Memory) GetClient() *redis.Client {
 	return m.Storage
 }
 
-const channelPrefix = "inbox."
-
 func (m *Memory) CreateClient(redisUri string) {
 	opts, err := redis.ParseURL(redisUri)
 	if err != nil {
@@ -49,9 +48,15 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 	db := redis.NewClient(opts)
 	m.Storage = db
-	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", 5757))
+	myAddParts := strings.Split(app.AppId, "->")
+	myPort, err := strconv.ParseInt(myAddParts[1], 10, 32)
 	if err != nil {
-		fmt.Printf("failed to listen: %v", err)
+		fmt.Printf("failed to parse port: %v", err)
+		fmt.Println()
+	}
+	lis, err1 := net.Listen("tcp", fmt.Sprintf("localhost:%d", myPort+1))
+	if err1 != nil {
+		fmt.Printf("failed to listen: %v", err1)
 		fmt.Println()
 	}
 	var opts2 []grpc.ServerOption
@@ -59,14 +64,19 @@ func (m *Memory) CreateClient(redisUri string) {
 	pb.RegisterFederationServiceServer(grpcServer, &FederationServiceClient{})
 	go grpcServer.Serve(lis)
 	for org := range app.Federation {
-		host := strings.Split(org, "->")[0] + ":5757"
+		orgParts := strings.Split(org, "->")
+		port, err := strconv.ParseInt(orgParts[1], 10, 32)
+		if err != nil {
+			panic(err.Error())
+		}
+		host := fmt.Sprintf("%s:%d", orgParts[0], port+1)
 		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
 		c := pb.NewFederationServiceClient(conn)
 		if err != nil {
 			fmt.Printf("did not connect: %v", err)
 			fmt.Println()
 		}
-		m.OtherStorages[strings.Split(org, "->")[0]] = c
+		m.OtherStorages[orgParts[0]] = c
 	}
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
 		if payload.IsResponse {
@@ -166,26 +176,9 @@ func (m *Memory) CreateClient(redisUri string) {
 			}
 		}
 	}
-	ctx := context.Background()
-	pubsub := db.PSubscribe(ctx, channelPrefix+app.AppId+"."+"*")
-	go func() {
-		for {
-			msg, err := pubsub.ReceiveMessage(ctx)
-			if err != nil {
-				panic(err)
-			}
-			var interfedPacket InterfedPacket
-			err2 := json.Unmarshal([]byte(msg.Payload), &interfedPacket)
-			if err2 != nil {
-				fmt.Println(err2)
-				continue
-			}
-			m.FedHandler(Instance(), msg.Channel[len(channelPrefix+app.AppId+"."):], interfedPacket)
-		}
-	}()
 }
 
-type FederationServiceClient struct{
+type FederationServiceClient struct {
 	pb.UnimplementedFederationServiceServer
 }
 
@@ -198,18 +191,26 @@ func (fsc *FederationServiceClient) Send(ctx context.Context, p *pb.InterfedPack
 	if ipAddr == "127.0.0.1" {
 		ipAddr = "localhost"
 	}
-	app.Memory.FedHandler(Instance(), ipAddr, pack)
+	hostName := ""
+	for address := range app.Federation {
+		if strings.Split(address, "->")[0] == ipAddr {
+			hostName = address
+			break
+		}
+	}
+	if hostName != "" {
+		app.Memory.FedHandler(Instance(), hostName, pack)
+	}
 	return &pb.InterfedDummy{}, nil
 }
 
 func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 	var p pb.InterfedPacket
 	mapstructure.Decode(packet, &p)
-	preparedDestOrg := strings.Split(destOrg, "->")[0]
-	if m.OtherStorages[preparedDestOrg] != nil {
+	if m.OtherStorages[strings.Split(destOrg, "->")[0]] != nil {
 		var pack pb.InterfedPacket
 		mapstructure.Decode(packet, &pack)
-		_, err2 := m.OtherStorages[preparedDestOrg].Send(context.Background(), &pack)
+		_, err2 := m.OtherStorages[strings.Split(destOrg, "->")[0]].Send(context.Background(), &pack)
 		if err2 != nil {
 			fmt.Printf("could not send: %v", err2)
 			fmt.Println()
