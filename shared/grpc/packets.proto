@@ -10,6 +10,35 @@ package sigma;
 
 // service
 
+service FederationService {
+  rpc send (InterfedPacket) returns (InterfedDummy) {}
+}
+  
+// models
+
+message GroupMember {
+	int64 userId = 1;
+	string userOrigin = 2;
+}
+
+// messages
+
+message InterfedPacket {
+	string key = 1;
+	int64 userId = 2;
+	int64 towerId = 3;    
+	int64 roomId = 4;
+	string requestId = 5;
+	string data = 6;
+	bool isResponse = 7;
+	int64 groupId = 8;
+	repeated GroupMember exceptions = 9;
+}
+
+message InterfedDummy {}
+
+// service
+
 service AdminService {
   rpc updatePass (AdminUpdatePassDto) returns (AdminUpdatePassOutput) {}
   rpc signin (AdminSigninDto) returns (AdminSigninOutput) {}

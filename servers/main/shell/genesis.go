@@ -169,5 +169,6 @@ func New(appId string, databaseUri string, dbName string, redisUri string, stora
 	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
 		runtime.GC()
 	})
+
 	return inst
 }

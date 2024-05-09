@@ -18,6 +18,92 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
+// FederationServiceClient is the client API for FederationService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type FederationServiceClient interface {
+	Send(ctx context.Context, in *InterfedPacket, opts ...grpc.CallOption) (*InterfedDummy, error)
+}
+
+type federationServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewFederationServiceClient(cc grpc.ClientConnInterface) FederationServiceClient {
+	return &federationServiceClient{cc}
+}
+
+func (c *federationServiceClient) Send(ctx context.Context, in *InterfedPacket, opts ...grpc.CallOption) (*InterfedDummy, error) {
+	out := new(InterfedDummy)
+	err := c.cc.Invoke(ctx, "/sigma.FederationService/send", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// FederationServiceServer is the server API for FederationService service.
+// All implementations must embed UnimplementedFederationServiceServer
+// for forward compatibility
+type FederationServiceServer interface {
+	Send(context.Context, *InterfedPacket) (*InterfedDummy, error)
+	mustEmbedUnimplementedFederationServiceServer()
+}
+
+// UnimplementedFederationServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedFederationServiceServer struct {
+}
+
+func (UnimplementedFederationServiceServer) Send(context.Context, *InterfedPacket) (*InterfedDummy, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Send not implemented")
+}
+func (UnimplementedFederationServiceServer) mustEmbedUnimplementedFederationServiceServer() {}
+
+// UnsafeFederationServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FederationServiceServer will
+// result in compilation errors.
+type UnsafeFederationServiceServer interface {
+	mustEmbedUnimplementedFederationServiceServer()
+}
+
+func RegisterFederationServiceServer(s grpc.ServiceRegistrar, srv FederationServiceServer) {
+	s.RegisterService(&FederationService_ServiceDesc, srv)
+}
+
+func _FederationService_Send_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InterfedPacket)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FederationServiceServer).Send(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/sigma.FederationService/send",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FederationServiceServer).Send(ctx, req.(*InterfedPacket))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// FederationService_ServiceDesc is the grpc.ServiceDesc for FederationService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var FederationService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "sigma.FederationService",
+	HandlerType: (*FederationServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "send",
+			Handler:    _FederationService_Send_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "packets.proto",
+}
+
 // AdminServiceClient is the client API for AdminService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
