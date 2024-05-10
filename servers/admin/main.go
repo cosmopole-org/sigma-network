@@ -18,15 +18,15 @@ func main() {
 		panic(err)
 	}
 
-	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 64)
+	port, err := strconv.ParseInt(os.Getenv("MAIN_PORT"), 10, 64)
 	if err != nil {
 		panic(err.Error())
 	}
 
 	app.New(
-		"8081_admin",
+		"localhost",
 		os.Getenv("POSTGRES_URI"),
-		os.Getenv("POSTGRES_DB")+"_8081",
+		os.Getenv("POSTGRES_DB"),
 		os.Getenv("REDIS_URI"),
 		os.Getenv("STORAGE_ROOT_PATH"),
 		int(port),

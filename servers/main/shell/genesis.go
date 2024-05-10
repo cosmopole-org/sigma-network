@@ -2,10 +2,7 @@ package genesis
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
 	"runtime"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
@@ -133,40 +130,17 @@ type AppConfig struct {
 
 func New(appId string, config AppConfig) *modules.App {
 	fmt.Println("Creating app...")
-	serversMap := map[string]bool{}
-	if config.EnableFederation {
-		serversMapRes, err := http.Get(config.MapServerAddress + "/map/get")
-		if err == nil {
-			if serversMapRes.StatusCode != http.StatusOK {
-				fmt.Println("fetching servers map failed")
-			} else {
-				serversMapStr, err2 := io.ReadAll(serversMapRes.Body)
-				if err2 != nil {
-					fmt.Println(err)
-				}
-				fmt.Println("Federation: ", string(serversMapStr))
-				var res ServersOutput
-				err3 := json.Unmarshal(serversMapStr, &res)
-				if err3 != nil {
-					fmt.Println(err3)
-				} else {
-					serversMap = res.Map
-				}
-			}
-			serversMapRes.Body.Close()
-		}
-	}
 	a := modules.App{
 		AppId:       appId,
 		StorageRoot: config.StorageRoot,
-		Federation:  serversMap,
+		Federative: config.EnableFederation,
 	}
 	modules.Keep(a)
 	inst := modules.Instance()
 	LoadKeys()
 	inst.Database = modules.CreateDatabase(config.DatabaseUri, config.DatabaseName)
-	inst.Memory = modules.CreateMemory(config.MemoryUri)
 	inst.Network = modules.CreateNetwork()
+	inst.Memory = modules.CreateMemory(config.MemoryUri)
 	LoadServices(inst)
 	if config.Ports["http"] > 0 {
 		inst.Network.Listen(config.Ports["http"])

@@ -21,10 +21,10 @@ func (d Database) GetDb() *pgxpool.Pool {
 func CreateDatabase(uri string, dbName string) *Database {
 	fmt.Println("connecting to database...")
 	dbInstance := &Database{}
-	config, err := pgxpool.ParseConfig(uri)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err)
-	}
+	// config, err := pgxpool.ParseConfig(uri)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err)
+	// }
 	logrusLogger := &logrus.Logger{
 		Out:          os.Stderr,
 		Formatter:    new(logrus.JSONFormatter),
@@ -33,19 +33,19 @@ func CreateDatabase(uri string, dbName string) *Database {
 		ExitFunc:     os.Exit,
 		ReportCaller: false,
 	}
-	config.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
-	conn, err := pgxpool.ConnectConfig(context.Background(), config)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-	}
-	var cdbQuery = fmt.Sprintf(`
-	    CREATE DATABASE %s;
-	`, dbName)
-	_, err2 := conn.Exec(context.Background(), cdbQuery)
-	if err2 != nil {
-		fmt.Println(err2)
-	}
-	conn.Close()
+	// config.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
+	// conn, err := pgxpool.ConnectConfig(context.Background(), config)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+	// }
+	// var cdbQuery = fmt.Sprintf(`
+	//     CREATE DATABASE %s;
+	// `, dbName)
+	// _, err2 := conn.Exec(context.Background(), cdbQuery)
+	// if err2 != nil {
+	// 	fmt.Println(err2)
+	// }
+	// conn.Close()
 	config2, err3 := pgxpool.ParseConfig(uri + "/" + dbName)
 	if err3 != nil {
 		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err3)

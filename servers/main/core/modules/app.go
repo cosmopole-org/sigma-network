@@ -6,7 +6,7 @@ type App struct {
 	Database    *Database
 	Memory      *Memory
 	StorageRoot string
-	Federation  map[string]bool
+	Federative  bool
 }
 
 var app App
@@ -17,4 +17,3 @@ func Instance() *App {
 func Keep(a App) {
 	app = a
 }
-

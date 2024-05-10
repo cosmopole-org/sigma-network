@@ -4,16 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
 	"sigma/main/core/utils"
-	"strconv"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"github.com/redis/go-redis/v9"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/peer"
 
 	pb "sigma/main/shell/grpc"
 )
@@ -31,10 +27,9 @@ type InterfedPacket struct {
 }
 
 type Memory struct {
-	Storage       *redis.Client
-	OtherStorages map[string]pb.FederationServiceClient
-	FedHandler    func(app *App, channelId string, payload InterfedPacket)
-	IFResChannel  chan [2][]byte
+	Storage      *redis.Client
+	FedHandler   func(app *App, channelId string, payload InterfedPacket)
+	IFResChannel chan [2][]byte
 }
 
 func (m *Memory) GetClient() *redis.Client {
@@ -48,35 +43,21 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 	db := redis.NewClient(opts)
 	m.Storage = db
-	myAddParts := strings.Split(app.AppId, "->")
-	myPort, err := strconv.ParseInt(myAddParts[1], 10, 32)
-	if err != nil {
-		fmt.Printf("failed to parse port: %v", err)
-		fmt.Println()
-	}
-	lis, err1 := net.Listen("tcp", fmt.Sprintf("localhost:%d", myPort+1))
-	if err1 != nil {
-		fmt.Printf("failed to listen: %v", err1)
-		fmt.Println()
-	}
-	var opts2 []grpc.ServerOption
-	grpcServer := grpc.NewServer(opts2...)
-	pb.RegisterFederationServiceServer(grpcServer, &FederationServiceClient{})
-	go grpcServer.Serve(lis)
-	for org := range app.Federation {
-		orgParts := strings.Split(org, "->")
-		port, err := strconv.ParseInt(orgParts[1], 10, 32)
-		if err != nil {
-			panic(err.Error())
-		}
-		host := fmt.Sprintf("%s:%d", orgParts[0], port+1)
-		conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
-		c := pb.NewFederationServiceClient(conn)
-		if err != nil {
-			fmt.Printf("did not connect: %v", err)
-			fmt.Println()
-		}
-		m.OtherStorages[orgParts[0]] = c
+	if app.Federative {
+		app.Network.HttpServer.Server.Post("/api/federation", func(c *fiber.Ctx) error {
+			var pack InterfedPacket
+			err := c.BodyParser(&pack)
+			if err != nil {
+				return c.Status(fiber.ErrBadRequest.Code).JSON(utils.BuildErrorJson(err.Error()))
+			}
+			var ip = utils.FromRequest(c.Context())
+			fmt.Println("packet from : ", ip)
+			if ip == "127.0.0.1" {
+				ip = "localhost"
+			}
+			app.Memory.FedHandler(Instance(), ip, pack)
+			return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request sent in federation successfully"})
+		})
 	}
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
 		if payload.IsResponse {
@@ -178,42 +159,13 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 }
 
-type FederationServiceClient struct {
-	pb.UnimplementedFederationServiceServer
-}
-
-func (fsc *FederationServiceClient) Send(ctx context.Context, p *pb.InterfedPacket) (*pb.InterfedDummy, error) {
-	var pack InterfedPacket
-	mapstructure.Decode(p, &pack)
-	clientCtx, _ := peer.FromContext(ctx)
-	fmt.Println("packet from : ", clientCtx.Addr.String())
-	ipAddr := strings.Split(clientCtx.Addr.String(), ":")[0]
-	if ipAddr == "127.0.0.1" {
-		ipAddr = "localhost"
-	}
-	hostName := ""
-	for address := range app.Federation {
-		if strings.Split(address, "->")[0] == ipAddr {
-			hostName = address
-			break
-		}
-	}
-	if hostName != "" {
-		app.Memory.FedHandler(Instance(), hostName, pack)
-	}
-	return &pb.InterfedDummy{}, nil
-}
-
 func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
-	var p pb.InterfedPacket
-	mapstructure.Decode(packet, &p)
-	if m.OtherStorages[strings.Split(destOrg, "->")[0]] != nil {
-		var pack pb.InterfedPacket
-		mapstructure.Decode(packet, &pack)
-		_, err2 := m.OtherStorages[strings.Split(destOrg, "->")[0]].Send(context.Background(), &pack)
-		if err2 != nil {
-			fmt.Printf("could not send: %v", err2)
-			fmt.Println()
+	if app.Federative {
+		statusCode, _, errs := fiber.Post(destOrg + ":8081").JSON(packet).Bytes()
+		if len(errs) > 0 {
+			fmt.Println("federation packet status", statusCode, errs)
+		} else {
+			fmt.Println("federation packet status", statusCode)
 		}
 	}
 }
@@ -245,9 +197,7 @@ func (m *Memory) Del(key string) {
 }
 
 func CreateMemory(redisUri string) *Memory {
-	memory := &Memory{
-		OtherStorages: map[string]pb.FederationServiceClient{},
-	}
+	memory := &Memory{}
 	fmt.Println("connecting to redis...")
 	memory.CreateClient(redisUri)
 	return memory
