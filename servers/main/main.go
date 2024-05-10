@@ -32,7 +32,6 @@ func main() {
 			Ports: map[string]int{
 				"http": int(port),
 			},
-			MapServerAddress: os.Getenv("MAP_SERVER"),
 			EnableFederation: true,
 		},
 	)

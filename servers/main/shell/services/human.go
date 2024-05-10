@@ -15,7 +15,7 @@ import (
 )
 
 func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant modules.Assistant) (any, error) {
-	res, _ := modules.CallMethod[dtos_humans.GetDto, pb.HumanGetDto]("/humans/get", &pb.HumanGetDto{UserId: assistant.UserId}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+	res, _ := modules.CallMethod[dtos_humans.GetDto, dtos_humans.GetDto]("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
@@ -158,7 +158,7 @@ func CreateHumanService(app *modules.App) {
 	// Methods
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.AuthenticateDto, pb.HumanAuthenticateDto](
+		modules.CreateMethod[dtos_humans.AuthenticateDto, dtos_humans.AuthenticateDto](
 			"/humans/authenticate",
 			authenticate,
 			dtos_humans.AuthenticateDto{},

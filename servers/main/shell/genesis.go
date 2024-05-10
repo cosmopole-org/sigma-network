@@ -124,7 +124,6 @@ type AppConfig struct {
 	MemoryUri string
 	StorageRoot string
 	Ports map[string]int
-	MapServerAddress string
 	EnableFederation bool
 }
 
