@@ -30,7 +30,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan120\"\n}",
+							"raw": "{\n    \"email\": \"keyhan1153\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -75,7 +75,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{}",
+							"raw": "{\n    \"email\": \"keyhan1153\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -229,7 +229,13 @@
 					"name": "get",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{server}}/humans/get?userId={{humanId}}",
 							"host": [
@@ -444,6 +450,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "origin",
+								"value": "8081",
+								"type": "text"
 							}
 						],
 						"url": {
@@ -481,7 +492,8 @@
 									"postman.setEnvironmentVariable(\"inviteId\", jsonData.invite.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -492,16 +504,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"humanId\": {{humanId}}\n}",
+							"raw": "{\n    \"humanId\": {{humanId}},\n    \"towerId\": {{towerId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -530,7 +537,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -545,7 +553,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"inviteId\": {{inviteId}}\n}",
+							"raw": "{\n    \"inviteId\": 8\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -618,7 +626,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -629,16 +638,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"inviteId\": {{inviteId}}\n}",
+							"raw": "{\n    \"inviteId\": {{inviteId}},\n    \"towerId\": {{towerId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -674,7 +678,8 @@
 									"postman.setEnvironmentVariable(\"roomId\", jsonData.room.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -685,16 +690,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"test room\",\n    \"avatarId\": 123\n}",
+							"raw": "{\n    \"name\": \"test room\",\n    \"avatarId\": 123,\n    \"towerId\": {{towerId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -723,7 +723,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -743,7 +744,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"roomId\": {{roomId}},\n    \"name\": \"test room updated\",\n    \"avatarId\": 12\n}",
+							"raw": "{\n    \"roomId\": {{roomId}},\n    \"name\": \"test room updated\",\n    \"avatarId\": 12,\n    \"towerId\": {{towerId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -772,7 +773,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -792,7 +794,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"roomId\": {{roomId}}\n}",
+							"raw": "{\n    \"roomId\": {{roomId}},\n    \"towerId\": {{towerId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -821,15 +823,10 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{server}}/rooms/get?roomId={{roomId}}",
+							"raw": "{{server}}/rooms/get?roomId={{roomId}}&towerId={{towerId}}",
 							"host": [
 								"{{server}}"
 							],
@@ -841,6 +838,10 @@
 								{
 									"key": "roomId",
 									"value": "{{roomId}}"
+								},
+								{
+									"key": "towerId",
+									"value": "{{towerId}}"
 								}
 							]
 						}
@@ -1033,7 +1034,8 @@
 									"postman.setEnvironmentVariable(\"workerId\", jsonData.worker.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1044,21 +1046,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"machineId\": {{machineId}},\n    \"metadata\": \"{}\"\n}",
+							"raw": "{\n    \"machineId\": {{machineId}},\n    \"metadata\": \"{}\",\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1087,7 +1079,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1098,21 +1091,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61\n}",
+							"raw": "{\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61,\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1141,7 +1124,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -1152,21 +1136,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"metadata\": \"{ \\\"hello\\\": \\\"world 2\\\" }\"\n}",
+							"raw": "{\n    \"workerId\": {{workerId}},\n    \"metadata\": \"{ \\\"hello\\\": \\\"world 2\\\" }\",\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1207,21 +1181,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}}\n}",
+							"raw": "{\n    \"workerId\": {{workerId}},\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1250,26 +1214,26 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{server}}/workers/read",
+							"raw": "{{server}}/workers/read?towerId={{towerId}}&roomId={{roomId}}",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
 								"workers",
 								"read"
+							],
+							"query": [
+								{
+									"key": "towerId",
+									"value": "{{towerId}}"
+								},
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								}
 							]
 						}
 					},
@@ -1289,16 +1253,6 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"body": {
@@ -1307,22 +1261,32 @@
 								{
 									"key": "data",
 									"type": "file",
-									"src": "/home/keyhan/Desktop/cosmo-client/resources.js"
+									"src": "/home/keyhan/Pictures/wallpapers/material-wallpaper-1.jpg"
 								},
 								{
 									"key": "dataKey",
-									"value": "hoohoo",
+									"value": "hihi7",
+									"type": "text"
+								},
+								{
+									"key": "towerId",
+									"value": "{{towerId}}",
+									"type": "text"
+								},
+								{
+									"key": "roomId",
+									"value": "{{roomId}}",
 									"type": "text"
 								}
 							]
 						},
 						"url": {
-							"raw": "{{server}}/storage/upload",
+							"raw": "{{storage}}/storages/upload",
 							"host": [
-								"{{server}}"
+								"{{storage}}"
 							],
 							"path": [
-								"storage",
+								"storages",
 								"upload"
 							]
 						}
@@ -1338,31 +1302,29 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							},
-							{
-								"key": "room_id",
-								"value": "{{roomId}}",
-								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{server}}/storage/download?fileKey=hoohoo",
+							"raw": "{{storage}}/storages/download?towerId={{towerId}}&roomId={{roomId}}&fileKey=hihi7",
 							"host": [
-								"{{server}}"
+								"{{storage}}"
 							],
 							"path": [
-								"storage",
+								"storages",
 								"download"
 							],
 							"query": [
 								{
+									"key": "towerId",
+									"value": "{{towerId}}"
+								},
+								{
+									"key": "roomId",
+									"value": "{{roomId}}"
+								},
+								{
 									"key": "fileKey",
-									"value": "hoohoo"
+									"value": "hihi7"
 								}
 							]
 						}
@@ -1405,12 +1367,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{admin}}/auth/signin",
+							"raw": "{{admin}}/auths/signin",
 							"host": [
 								"{{admin}}"
 							],
 							"path": [
-								"auth",
+								"auths",
 								"signin"
 							]
 						}
@@ -1450,12 +1412,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{admin}}/admins/updatePass",
+							"raw": "{{admin}}/auths/updatePass",
 							"host": [
 								"{{admin}}"
 							],
 							"path": [
-								"admins",
+								"auths",
 								"updatePass"
 							]
 						}
@@ -1465,7 +1427,7 @@
 			]
 		},
 		{
-			"name": "auth",
+			"name": "auths",
 			"item": [
 				{
 					"name": "getServerPublicKey",
@@ -1489,12 +1451,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{server}}/auth/getServerPublicKey",
+							"raw": "{{server}}/auths/getServerPublicKey",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"auth",
+								"auths",
 								"getServerPublicKey"
 							]
 						}
