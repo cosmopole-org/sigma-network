@@ -76,13 +76,13 @@ func HandleNonFederationReq(app *modules.App, action string, req interface{}, md
 		if userId > 0 {
 			if c.Tower {
 				location := modules.HandleLocationWithProcessed(app, token, userId, creature, app.AppId, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), f.(modules.IDto).GetWorkerId())
-				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
+				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, ""))
 				if err != nil {
 					return nil, status.Errorf(codes.Unauthenticated, err.Error())
 				}
 				return result, nil
 			} else {
-				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
+				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, 0, 0, 0, ""))
 				if err != nil {
 					return nil, status.Errorf(codes.Unauthenticated, err.Error())
 				}
@@ -92,7 +92,7 @@ func HandleNonFederationReq(app *modules.App, action string, req interface{}, md
 			return nil, status.Errorf(codes.Unauthenticated, "Authentication failed")
 		}
 	} else {
-		result, err := fn(modules.Instance(), f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
+		result, err := fn(modules.Instance(), f, modules.CreateAssistant(0, "", 0, 0, 0, ""))
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, err.Error())
 		}

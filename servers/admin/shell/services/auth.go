@@ -69,7 +69,7 @@ func CreateAuthService(app *modules.App) {
 			"/auths/updatePass",
 			updatePass,
 			dtos_admins.UpdatePassDto{},
-			modules.CreateCheck(false, false, false),
+			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
 			modules.CreateInterFedOptions(true, true),
 		),

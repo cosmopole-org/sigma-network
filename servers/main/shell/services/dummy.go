@@ -2,8 +2,9 @@ package services
 
 import (
 	"os"
-	"sigma/main/shell/dtos"
 	"sigma/main/core/modules"
+	"sigma/main/shell/dtos"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -18,7 +19,7 @@ func CreateDummyService(app *modules.App) {
 			},
 			dtos.HelloDto{},
 			modules.CreateCheck(false, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
@@ -28,11 +29,11 @@ func CreateDummyService(app *modules.App) {
 		modules.CreateMethod[dtos.PingDto, dtos.PingDto](
 			"/api/ping",
 			func(app *modules.App, d dtos.PingDto, assistant modules.Assistant) (any, error) {
-				return os.Getenv("PORT"), nil
+				return strings.Split(os.Getenv("ORIGIN"), "->")[1], nil
 			},
 			dtos.PingDto{},
 			modules.CreateCheck(false, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, true),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
 			modules.CreateInterFedOptions(true, true),
 		),
 	)

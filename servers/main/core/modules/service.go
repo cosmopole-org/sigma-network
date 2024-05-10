@@ -3,7 +3,7 @@ package modules
 import (
 	"encoding/json"
 	"fmt"
-	"sigma/main/core/outputs"
+	"sigma/main/shell/outputs"
 	"sigma/main/core/utils"
 
 	"github.com/go-playground/validator/v10"
@@ -97,11 +97,14 @@ func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T
 				var userId, _ = AuthWithToken(Instance(), token)
 				if userId > 0 {
 					Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: userId, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+					return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
+				} else {
+					return fiber.ErrInternalServerError.Code, utils.BuildErrorJson("access denied")
 				}
 			} else {
 				Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: 0, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+				return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 			}
-			return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 		}
 	} else {
 		return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body)
@@ -196,7 +199,7 @@ func CreateMethodOptions(asEndpoint bool, restAction string, asGrpc bool, inFede
 
 func CreateInterFedOptions(user bool, tower bool) InterFedOptions {
 	return InterFedOptions{
-		ValidateUserAtHome: user,
+		ValidateUserAtHome:  user,
 		ValidateTowerAtHome: tower,
 	}
 }

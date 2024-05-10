@@ -50,7 +50,7 @@ func CreateDatabase(uri string, dbName string) *Database {
 	if err3 != nil {
 		fmt.Fprintf(os.Stderr, "Unable to parse config: %v\n", err3)
 	}
-	config.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
+	config2.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
 	conn2, err4 := pgxpool.ConnectConfig(context.Background(), config2)
 	if err4 != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err4)

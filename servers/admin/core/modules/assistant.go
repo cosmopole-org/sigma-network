@@ -15,7 +15,7 @@ type Assistant struct {
 	TowerId    int64
 	RoomId     int64
 	UserOrigin string
-	Packet     IPacket
+	Ip         string
 }
 
 func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
@@ -41,6 +41,6 @@ func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHead
 	return nil
 }
 
-func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64, packet IPacket) Assistant {
-	return Assistant{UserId: userId, UserType: userType, TowerId: towerId, RoomId: roomId, WorkerId: workerId, Packet: packet}
+func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64, ip string) Assistant {
+	return Assistant{UserId: userId, UserType: userType, TowerId: towerId, RoomId: roomId, WorkerId: workerId, Ip: ip}
 }

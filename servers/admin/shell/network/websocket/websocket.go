@@ -97,7 +97,7 @@ func LoadWebsocket(app *modules.App) {
 										location = modules.HandleLocationWithProcessed(app, token, userId, "machine", app.AppId, towerId, roomId, workerId)
 									}
 									if location.TowerId > 0 {
-										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
+										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, ""))
 										if err != nil {
 											AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
 										} else {
@@ -107,7 +107,7 @@ func LoadWebsocket(app *modules.App) {
 										AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("access denied"))
 									}
 								} else {
-									res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
+									res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, ""))
 									if err != nil {
 										AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
 									} else {
@@ -118,7 +118,7 @@ func LoadWebsocket(app *modules.App) {
 								AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("authentication failed"))
 							}
 						} else {
-							res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
+							res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, ""))
 							if err != nil {
 								AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
 							} else {

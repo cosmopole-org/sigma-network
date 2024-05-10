@@ -169,7 +169,7 @@ func CreateHumanService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.SignupDto, pb.HumanSignupDto](
+		modules.CreateMethod[dtos_humans.SignupDto, dtos_humans.SignupDto](
 			"/humans/signup",
 			signup,
 			dtos_humans.SignupDto{},
@@ -180,7 +180,7 @@ func CreateHumanService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.VerifyDto, pb.HumanVerifyDto](
+		modules.CreateMethod[dtos_humans.VerifyDto, dtos_humans.VerifyDto](
 			"/humans/verify",
 			verify,
 			dtos_humans.VerifyDto{},
@@ -191,7 +191,7 @@ func CreateHumanService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.CompleteDto, pb.HumanCompleteDto](
+		modules.CreateMethod[dtos_humans.CompleteDto, dtos_humans.CompleteDto](
 			"/humans/complete",
 			complete,
 			dtos_humans.CompleteDto{},
@@ -202,7 +202,7 @@ func CreateHumanService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.UpdateDto, pb.HumanUpdateDto](
+		modules.CreateMethod[dtos_humans.UpdateDto, dtos_humans.UpdateDto](
 			"/humans/update",
 			update,
 			dtos_humans.UpdateDto{},
@@ -213,7 +213,7 @@ func CreateHumanService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_humans.GetDto, pb.HumanGetDto](
+		modules.CreateMethod[dtos_humans.GetDto, dtos_humans.GetDto](
 			"/humans/get",
 			get,
 			dtos_humans.GetDto{},
