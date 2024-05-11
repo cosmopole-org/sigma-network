@@ -12,7 +12,7 @@ var quit = make(chan struct{})
 
 func main() {
 
-	var origin = "cosmopole.liara.run"
+	var origin = "cosmopole"
 
 	err := godotenv.Load(origin + ".env")
 	if err != nil {
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	app.New(
-		origin,
+		origin + ".liara.run",
 		app.AppConfig{
 			DatabaseUri:  os.Getenv("POSTGRES_URI"),
 			DatabaseName: os.Getenv("POSTGRES_DB"),
