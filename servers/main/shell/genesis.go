@@ -3,17 +3,19 @@ package genesis
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"sigma/main/core/modules"
-	"sigma/main/core/utils"
 	pb "sigma/main/shell/grpc"
 	shell_grpc "sigma/main/shell/network/grpc"
 	shell_websocket "sigma/main/shell/network/websocket"
 	"sigma/main/shell/services"
-	"time"
 
 	"google.golang.org/grpc"
 )
+
+var wellKnownServers = map[string]string{
+	"cosmopole.liara.run": "185.208.181.151",
+	"monopole.liara.run":  "185.142.159.126",
+}
 
 type ServersOutput struct {
 	Map map[string]bool `json:"map"`
@@ -119,20 +121,26 @@ func LoadKeys() {
 }
 
 type AppConfig struct {
-	DatabaseUri string
-	DatabaseName string
-	MemoryUri string
-	StorageRoot string
-	Ports map[string]int
+	DatabaseUri      string
+	DatabaseName     string
+	MemoryUri        string
+	StorageRoot      string
+	Ports            map[string]int
 	EnableFederation bool
 }
 
 func New(appId string, config AppConfig) *modules.App {
 	fmt.Println("Creating app...")
+	ipToHostMap := map[string]string{}
+	for k, v := range wellKnownServers {
+		ipToHostMap[v] = k
+	}
 	a := modules.App{
 		AppId:       appId,
 		StorageRoot: config.StorageRoot,
-		Federative: config.EnableFederation,
+		Federative:  config.EnableFederation,
+		HostToIp:    wellKnownServers,
+		IpToHost:    ipToHostMap,
 	}
 	modules.Keep(a)
 	inst := modules.Instance()
@@ -151,9 +159,6 @@ func New(appId string, config AppConfig) *modules.App {
 		gs.ListenForGrpc(config.Ports["grpc"])
 	}
 	LoadAccess(inst)
-	go utils.Schedule(context.Background(), time.Second, time.Second, func(t time.Time) {
-		runtime.GC()
-	})
 
 	return inst
 }

@@ -1,0 +1,14 @@
+{
+    "app": "cosmopole",
+    "port": "8081",
+    "platform": "docker",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "disks": [
+        {
+            "name": "data",
+            "mountTo": "/app/data"
+        }
+    ]
+}

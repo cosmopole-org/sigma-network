@@ -1,8 +1,9 @@
 package services
 
 import (
-	dtos_auth "sigma/main/shell/dtos/auth"
 	"sigma/main/core/modules"
+	dtos_auth "sigma/main/shell/dtos/auth"
+	outputs_auth "sigma/main/shell/outputs/auth"
 
 	pb "sigma/main/shell/grpc"
 
@@ -14,6 +15,12 @@ func getServerPublicKey(app *modules.App, dto dtos_auth.GetServerKey, assistant 
 	return &pb.AuthGetServerPublicKeyOutput{PublicKey: string(modules.FetchKeyPair("server_key")[1])}, nil
 }
 
+func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant modules.Assistant) (any, error) {
+	return outputs_auth.GetServersMapOutput{
+		Servers: app.HostToIp,
+	}, nil
+}
+
 func CreateAuthService(app *modules.App) {
 	modules.AddMethod(
 		app,
@@ -21,6 +28,17 @@ func CreateAuthService(app *modules.App) {
 			"/auths/getServerPublicKey",
 			getServerPublicKey,
 			dtos_auth.GetServerKey{},
+			modules.CreateCheck(false, false, false),
+			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
+			modules.CreateInterFedOptions(true, true),
+		),
+	)
+	modules.AddMethod(
+		app,
+		modules.CreateMethod[dtos_auth.GetServersMapDto, dtos_auth.GetServersMapDto](
+			"/auths/getServerPublicKey",
+			getServersMap,
+			dtos_auth.GetServersMapDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
 			modules.CreateInterFedOptions(true, true),

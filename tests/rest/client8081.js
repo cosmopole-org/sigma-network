@@ -8,7 +8,7 @@ setGlobalDispatcher(
 
 (async () => {
 
-    let socket = new WebSocket(`ws://localhost:8081/ws`);
+    let socket = new WebSocket(`wss://cosmopole.liara.run/ws`);
 
     let requestDict = {};
     let requestOrigins = {}
@@ -17,7 +17,6 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            requestOrigins[requestId] = "localhost->8081"
             socket.send(`authenticate ${token ?? "EMPTY_TOKEN"} ${requestId}`);
         })
     }
@@ -26,8 +25,7 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            requestOrigins[requestId] = origin ?? "localhost->8081"
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "localhost->8081"} ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "185.208.181.151"} ${requestId} ${JSON.stringify(data)}`);
         })
     }
 
@@ -60,10 +58,13 @@ setGlobalDispatcher(
         // console.log(result3);
 
         let myId = 1;
-        let token = "2wNPKVFj4wxld2A7APNzZMkrttYft8KU"
+        let token = "EjXb2xngEttYV9vl-s5v_JuP65JJRWKT"
 
         let result5 = await authenticate(token);
         console.log(result5);
+
+        let result8 = await request(`/humans/get`, { userId: 1 }, token, "185.142.159.126");
+        console.log(result8);
 
         // let result4 = await request(`/towers/create`, { name: "welcome from localhost->8081", avatarId: 123, isPublic: false }, token);
         // console.log(result4);
@@ -75,8 +76,8 @@ setGlobalDispatcher(
 
         let roomId = 3;
 
-        let result0 = await request(`/invites/create`, { recepientOrigin: "localhost->8082", humanId: 1, towerId: towerId }, token, "localhost->8081");
-        console.log(result0);
+        // let result0 = await request(`/invites/create`, { recepientOrigin: "localhost->8082", humanId: 1, towerId: towerId }, token, "localhost->8081");
+        // console.log(result0);
 
         // let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "localhost->8082");
         // console.log(result8);
@@ -92,8 +93,8 @@ setGlobalDispatcher(
 
         let workerId = 5;
 
-        let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "localhost->8081");
-        console.log(result8);
+        // let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "localhost->8081");
+        // console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

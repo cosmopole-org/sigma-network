@@ -8,7 +8,7 @@ setGlobalDispatcher(
 
 (async () => {
 
-    let socket = new WebSocket(`ws://localhost:8081/ws`);
+    let socket = new WebSocket(`ws://cosmopole.liara.run/ws`);
 
     let requestDict = {};
     let requestOrigins = {}
@@ -52,10 +52,13 @@ setGlobalDispatcher(
         console.log("[open] Connection established");
         console.log("Sending to server");
 
-        let token = "l4_Us3Am64gRY5AhZz-ZQNO5beNODFnk"
+        let token = "EjXb2xngEttYV9vl-s5v_JuP65JJRWKT"
 
         let result5 = await authenticate(token);
         console.log(result5);
+
+        let result8 = await request(`/humans/get`, { userId: 1 }, "EjXb2xngEttYV9vl-s5v_JuP65JJRWKT", "monopole.liara.run");
+        console.log(result8);
 
         // let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "localhost->8082");
         // console.log(result8);

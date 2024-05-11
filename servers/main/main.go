@@ -12,7 +12,9 @@ var quit = make(chan struct{})
 
 func main() {
 
-	err := godotenv.Load()
+	var origin = "cosmopole.liara.run"
+
+	err := godotenv.Load(origin + ".env")
 	if err != nil {
 		panic(err)
 	}
@@ -23,12 +25,12 @@ func main() {
 	}
 
 	app.New(
-		"localhost",
+		origin,
 		app.AppConfig{
-			DatabaseUri: os.Getenv("POSTGRES_URI"),
+			DatabaseUri:  os.Getenv("POSTGRES_URI"),
 			DatabaseName: os.Getenv("POSTGRES_DB"),
-			MemoryUri: os.Getenv("REDIS_URI"),
-			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
+			MemoryUri:    os.Getenv("REDIS_URI"),
+			StorageRoot:  os.Getenv("STORAGE_ROOT_PATH"),
 			Ports: map[string]int{
 				"http": int(port),
 			},

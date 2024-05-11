@@ -28,12 +28,22 @@ type InterfedPacket struct {
 
 type Memory struct {
 	Storage      *redis.Client
+	Servers      map[string]pb.FederationServiceClient
 	FedHandler   func(app *App, channelId string, payload InterfedPacket)
 	IFResChannel chan [2][]byte
 }
 
 func (m *Memory) GetClient() *redis.Client {
 	return m.Storage
+}
+
+type FederationServer struct {
+	pb.UnimplementedFederationServiceServer
+}
+
+func (fsc *FederationServer) Send(ctx context.Context, p *pb.InterfedPacket) (*pb.InterfedDummy, error) {
+
+	return &pb.InterfedDummy{}, nil
 }
 
 func (m *Memory) CreateClient(redisUri string) {
@@ -46,17 +56,17 @@ func (m *Memory) CreateClient(redisUri string) {
 	if app.Federative {
 		app.Network.HttpServer.Server.Post("/api/federation", func(c *fiber.Ctx) error {
 			var pack InterfedPacket
-			err := c.BodyParser(&pack)
-			if err != nil {
-				return c.Status(fiber.ErrBadRequest.Code).JSON(utils.BuildErrorJson(err.Error()))
+			c.BodyParser(&pack)
+			ip := utils.FromRequest(c.Context())
+			hostName, ok := app.IpToHost[ip]
+			fmt.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
+			if ok {
+				app.Memory.FedHandler(Instance(), hostName, pack)
+				return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "federation packet received"})
+			} else {
+				fmt.Println("hostname not known")
+				return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "hostname not known"})
 			}
-			var ip = utils.FromRequest(c.Context())
-			fmt.Println("packet from : ", ip)
-			if ip == "127.0.0.1" {
-				ip = "localhost"
-			}
-			app.Memory.FedHandler(Instance(), ip, pack)
-			return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "request sent in federation successfully"})
 		})
 	}
 	m.FedHandler = func(app *App, channelId string, payload InterfedPacket) {
@@ -161,11 +171,15 @@ func (m *Memory) CreateClient(redisUri string) {
 
 func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 	if app.Federative {
-		statusCode, _, errs := fiber.Post(destOrg + ":8081").JSON(packet).Bytes()
-		if len(errs) > 0 {
-			fmt.Println("federation packet status", statusCode, errs)
+		_, ok := app.HostToIp[destOrg]
+		if ok {
+			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
+			if err != nil {
+				fmt.Printf("could not send: status: %d error: %v", statusCode, err)
+				fmt.Println()
+			}
 		} else {
-			fmt.Println("federation packet status", statusCode)
+			fmt.Println("state org not found")
 		}
 	}
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PORT=8080 ./main &
+./main &
 
 # Wait for any process to exit
 wait -n

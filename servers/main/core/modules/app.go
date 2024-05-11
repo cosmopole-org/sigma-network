@@ -7,6 +7,8 @@ type App struct {
 	Memory      *Memory
 	StorageRoot string
 	Federative  bool
+	HostToIp     map[string]string
+	IpToHost     map[string]string
 }
 
 var app App

@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sync"
-	"time"
 )
 
 const serverUrl = "https://midopia-football.liara.run"
@@ -71,38 +70,37 @@ func hello2(i int, client *http.Client, wg *sync.WaitGroup) {
 }
 
 func main() {
+	// body := []byte(`{
+	// 	"leagueLevel": 2
+	// }`)
 
-	body := []byte(`{
-		"leagueLevel": 2
-	}`)
+	// body2 := []byte(`{
+	// 	"result": "win",
+	// 	"goalP": 10,
+	// 	"goalN": 0,
+	// 	"leagueLevel": 2
+	// }`)
 
-	body2 := []byte(`{
-		"result": "win",
-		"goalP": 10,
-		"goalN": 0,
-		"leagueLevel": 2
-	}`)
+	// client := &http.Client{
+	// 	Timeout:   500 * time.Second,
+	// 	Transport: &http.Transport{},
+	// }
 
-	client := &http.Client{
-		Timeout:   500 * time.Second,
-		Transport: &http.Transport{},
-	}
+	// var wg sync.WaitGroup
 
-	var wg sync.WaitGroup
+	// println("started test.")
 
-	println("started test.")
+	// start := time.Now()
 
-	start := time.Now()
-
-	for i := 0; i < 1000; i++ {
-		wg.Add(1)
-		go hello2(i, client, &wg)
-		wg.Add(1)
-		go hello(i, serverUrl+"/players/readLeaderBoard", client, "SbZrFS4nnXWwYHX5y9mKiKTvvZuhoUan", body, &wg)
-		wg.Add(1)
-		go hello(i, serverUrl+"/players/submitScore", client, "SbZrFS4nnXWwYHX5y9mKiKTvvZuhoUan", body2, &wg)
-	}
-	wg.Wait()
-	elapsed := time.Since(start)
-	fmt.Println("Binomial took ", elapsed)
+	// for i := 0; i < 1000; i++ {
+	// 	wg.Add(1)
+	// 	go hello2(i, client, &wg)
+	// 	wg.Add(1)
+	// 	go hello(i, serverUrl+"/players/readLeaderBoard", client, "SbZrFS4nnXWwYHX5y9mKiKTvvZuhoUan", body, &wg)
+	// 	wg.Add(1)
+	// 	go hello(i, serverUrl+"/players/submitScore", client, "SbZrFS4nnXWwYHX5y9mKiKTvvZuhoUan", body2, &wg)
+	// }
+	// wg.Wait()
+	// elapsed := time.Since(start)
+	// fmt.Println("Binomial took ", elapsed)
 }
