@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
-	"sigma/admin/shell/models"
 	"sigma/admin/core/utils"
+	"sigma/admin/shell/models"
 )
 
 type Security struct {
@@ -23,7 +24,7 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 		var humanId int64
 		token, err := utils.SecureUniqueString(32)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 			continue
 		}
 		if err2 := Instance().Database.GetDb().QueryRow(
@@ -31,7 +32,7 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 		).Scan(
 			&humanId, &t,
 		); err2 != nil {
-			fmt.Println(err2)
+			log.Println(err2)
 			continue
 		}
 		Instance().Memory.Put("auth::"+t, fmt.Sprintf("human/%d", humanId))
@@ -39,15 +40,15 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 	}
 	str, err := json.Marshal(auth)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(string(str))
+	log.Println(string(str))
 	os.MkdirAll(Instance().StorageRoot, os.ModePerm)
 	var filePath = fmt.Sprintf("%s/gods.txt", Instance().StorageRoot)
 	err2 := os.WriteFile(filePath, str, 0644)
 	if err2 != nil {
-		fmt.Println(err2)
+		log.Println(err2)
 	}
 }
 func (a *Security) IsGodEmail(email string) bool {
@@ -69,7 +70,7 @@ func (a *Security) GetGodByEmail(email string) *models.Admin {
 
 func CreateSecurity(gods []models.Admin) *Security {
 	s := &Security{}
-	fmt.Println("creating security...")
+	log.Println("creating security...")
 	s.SetGodEmails(gods)
 	return s
 }

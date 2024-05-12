@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sync"
 )
@@ -19,7 +19,7 @@ func hello(i int, url string, client *http.Client, token string, body []byte, wg
 	defer wg.Done()
 	r, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	r.Close = true
@@ -27,18 +27,18 @@ func hello(i int, url string, client *http.Client, token string, body []byte, wg
 	r.Header.Add("token", token)
 	res, err := client.Do(r)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer res.Body.Close()
 	result, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(string(result))
+	log.Println(string(result))
 	if res.StatusCode != http.StatusOK {
-		fmt.Println(errors.New("request failed"))
+		log.Println(errors.New("request failed"))
 	}
 }
 
@@ -48,24 +48,24 @@ func hello2(i int, client *http.Client, wg *sync.WaitGroup) {
 	defer wg.Done()
 	r, err := http.NewRequest("GET", serverUrl+"/api/hello", bytes.NewBuffer(body3))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	r.Close = true
 	res, err := client.Do(r)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	defer res.Body.Close()
 	result, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
-	fmt.Println(string(result))
+	log.Println(string(result))
 	if res.StatusCode != http.StatusOK {
-		fmt.Println(errors.New("request failed"))
+		log.Println(errors.New("request failed"))
 	}
 }
 
@@ -102,5 +102,5 @@ func main() {
 	// }
 	// wg.Wait()
 	// elapsed := time.Since(start)
-	// fmt.Println("Binomial took ", elapsed)
+	// log.Println("Binomial took ", elapsed)
 }

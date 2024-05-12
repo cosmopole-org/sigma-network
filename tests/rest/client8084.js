@@ -8,7 +8,7 @@ setGlobalDispatcher(
 
 (async () => {
 
-    let socket = new WebSocket("ws://localhost:8084/ws");
+    let socket = new WebSocket("wss://monopole.liara.run/ws");
 
     let requestDict = {};
 
@@ -24,7 +24,7 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "localhost->8084"} ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "monopole.liara.run"} ${requestId} ${JSON.stringify(data)}`);
         })
     }
     socket.onmessage = function (event) {
@@ -54,14 +54,14 @@ setGlobalDispatcher(
         // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
         // console.log(result3);
 
-        let token = "82-PBLzfUAm0nqK9wlH8AaOBkmtL7dqL";
-        let humanId = 1;
+        let token = "9NoLy8F8MlTkzMWWOFtF0_6-nIE-2Wgn";
+        let humanId = 2;
 
         let result5 = await authenticate(token);
         console.log(result5);
 
-        let result8 = await request(`/invites/accept`, { inviteId: 3 }, token, "localhost->8081");
-        console.log(result8);
+        // let result8 = await request(`/invites/accept`, { inviteId: 1 }, token, "cosmopole.liara.run");
+        // console.log(result8);
 
         // let result4 = await request(`/towers/create`, { name: "welcome", avatarId: 123, isPublic: false }, result3.session.token);
         // console.log(result4);
@@ -74,12 +74,12 @@ setGlobalDispatcher(
         // let result8 = await request(`/machines/create`, { name: "testMachine", avatarId: 123 }, token, "localhost->8082");
         // console.log(result8);
 
-        // let towerId = 12;
-        // let roomId = 3;
+        let towerId = 1;
+        let roomId = 2;
         // let workerId = 5;
 
-        // let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "localhost->8081");
-        // console.log(result8);
+        let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "cosmopole.liara.run");
+        console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

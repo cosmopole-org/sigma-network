@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"time"
 
@@ -20,11 +19,11 @@ func main() {
 	}
 	defer conn.Close()
 	c := pb.NewHumanServiceClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 60)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*60)
 	defer cancel()
 	md := metadata.New(map[string]string{
 		"origin": "8081",
-		"token": "OwLK6S4KA8kuXduseAq3akHjHzjegxSW",
+		"token":  "OwLK6S4KA8kuXduseAq3akHjHzjegxSW",
 	})
 	for i := 0; i < 1; i++ {
 		ctxWithMetadata := metadata.NewOutgoingContext(ctx, md)
@@ -34,14 +33,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("could not greet: %v", err)
 		}
-		fmt.Println(r)
+		log.Println(r)
 		r2, err2 := c.Update(ctxWithMetadata, &pb.HumanUpdateDto{
 			FirstName: "keyhan",
-			LastName: "mohammadi",
+			LastName:  "mohammadi",
 		})
 		if err2 != nil {
 			log.Fatalf("could not greet: %v", err2)
 		}
-		fmt.Println(r2)
+		log.Println(r2)
 	}
 }

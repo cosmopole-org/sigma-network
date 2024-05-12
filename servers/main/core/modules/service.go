@@ -2,9 +2,9 @@ package modules
 
 import (
 	"encoding/json"
-	"fmt"
-	"sigma/main/shell/outputs"
+	"log"
 	"sigma/main/core/utils"
+	"sigma/main/shell/outputs"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -85,12 +85,12 @@ func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T
 		} else {
 			data, err := json.Marshal(body)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err.Error()))
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
 			if err2 != nil {
-				fmt.Println(err2)
+				log.Println(err2)
 				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err2.Error()))
 			}
 			if m.Check.User {

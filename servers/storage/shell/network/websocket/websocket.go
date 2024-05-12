@@ -2,7 +2,7 @@ package shell_websocket
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strings"
@@ -20,11 +20,11 @@ type WebsocketAnswer struct {
 func AnswerSocket(conn *websocket.Conn, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
-		fmt.Println(err0)
+		log.Println(err0)
 		return
 	}
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(requestId+" "+string(answerBytes))); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 }
@@ -40,7 +40,7 @@ func HandleFederationOrNotForSocket(action string, origin string, c modules.Chec
 		} else {
 			data, err := json.Marshal(f)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return nil, err
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
@@ -151,6 +151,6 @@ func LoadWebsocket(app *modules.App) {
 		if uid > 0 {
 			delete(app.Network.PusherServer.Clients, uid)
 		}
-		fmt.Println("socket broken")
+		log.Println("socket broken")
 	}))
 }

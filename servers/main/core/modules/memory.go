@@ -3,7 +3,7 @@ package modules
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -59,12 +59,12 @@ func (m *Memory) CreateClient(redisUri string) {
 			c.BodyParser(&pack)
 			ip := utils.FromRequest(c.Context())
 			hostName, ok := app.IpToHost[ip]
-			fmt.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
+			log.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
 			if ok {
 				app.Memory.FedHandler(Instance(), hostName, pack)
 				return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "federation packet received"})
 			} else {
-				fmt.Println("hostname not known")
+				log.Println("hostname not known")
 				return c.Status(fiber.StatusOK).JSON(ResponseSimpleMessage{Message: "hostname not known"})
 			}
 		})
@@ -78,7 +78,7 @@ func (m *Memory) CreateClient(redisUri string) {
 					var memberRes pb.InviteAcceptOutput
 					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 					if err2 != nil {
-						fmt.Println(err2)
+						log.Println(err2)
 						return
 					}
 					member = memberRes.Member
@@ -86,7 +86,7 @@ func (m *Memory) CreateClient(redisUri string) {
 					var memberRes pb.TowerJoinOutput
 					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 					if err2 != nil {
-						fmt.Println(err2)
+						log.Println(err2)
 						return
 					}
 					member = memberRes.Member
@@ -106,7 +106,7 @@ func (m *Memory) CreateClient(redisUri string) {
 					if err := app.Database.Db.QueryRow(
 						context.Background(), query, member.HumanId, member.TowerId, member.Origin, member.UserOrigin,
 					).Scan(&memberId); err != nil {
-						fmt.Println(err)
+						log.Println(err)
 						return
 					}
 					app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
@@ -123,7 +123,7 @@ func (m *Memory) CreateClient(redisUri string) {
 				var input any
 				err2 := json.Unmarshal([]byte(payload.Data), &input)
 				if err2 != nil {
-					fmt.Println(err2)
+					log.Println(err2)
 					return
 				}
 				fn := Handlers[payload.Key]
@@ -147,7 +147,7 @@ func (m *Memory) CreateClient(redisUri string) {
 					UserOrigin: channelId,
 				})
 				if err != nil {
-					fmt.Println(err)
+					log.Println(err)
 					errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
 					if err2 == nil {
 						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -156,7 +156,7 @@ func (m *Memory) CreateClient(redisUri string) {
 				}
 				packet, err3 := json.Marshal(result)
 				if err3 != nil {
-					fmt.Println(err3)
+					log.Println(err3)
 					errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
 					if err2 == nil {
 						m.SendInFederation(channelId, InterfedPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -175,11 +175,13 @@ func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 		if ok {
 			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
 			if err != nil {
-				fmt.Printf("could not send: status: %d error: %v", statusCode, err)
-				fmt.Println()
+				log.Printf("could not send: status: %d error: %v", statusCode, err)
+				log.Println()
+			} else {
+				log.Println("packet sent successfully. status: ", statusCode)
 			}
 		} else {
-			fmt.Println("state org not found")
+			log.Println("state org not found")
 		}
 	}
 }
@@ -187,17 +189,17 @@ func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 func (m *Memory) Put(key string, value string) {
 	err := m.Storage.Set(context.Background(), key, value, 0).Err()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
 func (m *Memory) Get(key string) string {
 	val, err := m.Storage.Get(context.Background(), key).Result()
 	if err == redis.Nil {
-		fmt.Println("key: " + key + " does not exist")
+		log.Println("key: " + key + " does not exist")
 		return ""
 	} else if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	return val
@@ -206,13 +208,13 @@ func (m *Memory) Get(key string) string {
 func (m *Memory) Del(key string) {
 	err := m.Storage.Del(context.Background(), key).Err()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
 func CreateMemory(redisUri string) *Memory {
 	memory := &Memory{}
-	fmt.Println("connecting to redis...")
+	log.Println("connecting to redis...")
 	memory.CreateClient(redisUri)
 	return memory
 }

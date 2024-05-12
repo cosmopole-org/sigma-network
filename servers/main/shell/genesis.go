@@ -2,7 +2,8 @@ package genesis
 
 import (
 	"context"
-	"fmt"
+	"log"
+	"net"
 	"sigma/main/core/modules"
 	pb "sigma/main/shell/grpc"
 	shell_grpc "sigma/main/shell/network/grpc"
@@ -12,9 +13,9 @@ import (
 	"google.golang.org/grpc"
 )
 
-var wellKnownServers = map[string]string{
-	"cosmopole.liara.run": "185.208.181.151",
-	"monopole.liara.run":  "185.142.159.126",
+var wellKnownServers = []string{
+	"cosmopole.liara.run",
+	"monopole.liara.run",
 }
 
 type ServersOutput struct {
@@ -48,18 +49,18 @@ func LoadAccess(app *modules.App) {
 	`
 	rows, err := app.Database.Db.Query(context.Background(), query)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	for rows.Next() {
 		var m pb.Member
 		err := rows.Scan(&m.UserOrigin, &m.Origin, &m.TowerId, &m.HumanId)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		app.Network.PusherServer.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
 	}
 	if err := rows.Err(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
 	var query2 = `
@@ -67,7 +68,7 @@ func LoadAccess(app *modules.App) {
 	`
 	rows2, err2 := app.Database.Db.Query(context.Background(), query2)
 	if err2 != nil {
-		fmt.Println(err2)
+		log.Println(err2)
 	}
 	workers := []*pb.Worker{}
 	roomSet := map[int64]int64{}
@@ -75,13 +76,13 @@ func LoadAccess(app *modules.App) {
 		var w pb.Worker
 		err := rows2.Scan(&w.UserOrigin, &w.Origin, &w.RoomId, &w.MachineId)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		roomSet[w.RoomId] = -1
 		workers = append(workers, &w)
 	}
 	if err2 := rows2.Err(); err2 != nil {
-		fmt.Println(err2)
+		log.Println(err2)
 	}
 	roomsArr := []int64{}
 	for rid := range roomSet {
@@ -93,19 +94,19 @@ func LoadAccess(app *modules.App) {
 	`
 	rows3, err3 := app.Database.Db.Query(context.Background(), query3, roomsArr)
 	if err3 != nil {
-		fmt.Println(err3)
+		log.Println(err3)
 	}
 	for rows3.Next() {
 		var roomId int64 = 0
 		var towerId int64 = 0
 		err := rows3.Scan(&towerId, &roomId)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		roomSet[roomId] = towerId
 	}
 	if err3 := rows3.Err(); err3 != nil {
-		fmt.Println(err2)
+		log.Println(err2)
 	}
 
 	for _, w := range workers {
@@ -130,16 +131,29 @@ type AppConfig struct {
 }
 
 func New(appId string, config AppConfig) *modules.App {
-	fmt.Println("Creating app...")
+	log.Println("Creating app...")
 	ipToHostMap := map[string]string{}
-	for k, v := range wellKnownServers {
-		ipToHostMap[v] = k
+	hostToIpMap := map[string]string{}
+	for _, domain := range wellKnownServers {
+		ipAddr := ""
+		ips, _ := net.LookupIP(domain)
+		for _, ip := range ips {
+			if ipv4 := ip.To4(); ipv4 != nil {
+				ipAddr = ipv4.String()
+				break
+			}
+		}
+		ipToHostMap[ipAddr] = domain
+		hostToIpMap[domain] = ipAddr
 	}
+	log.Println()
+	log.Println(hostToIpMap)
+	log.Println()
 	a := modules.App{
 		AppId:       appId,
 		StorageRoot: config.StorageRoot,
 		Federative:  config.EnableFederation,
-		HostToIp:    wellKnownServers,
+		HostToIp:    hostToIpMap,
 		IpToHost:    ipToHostMap,
 	}
 	modules.Keep(a)

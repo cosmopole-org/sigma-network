@@ -3,11 +3,12 @@ package modules
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sigma/admin/core/utils"
 
 	"github.com/gofiber/contrib/websocket"
 
-	"github.com/orcaman/concurrent-map/v2"
+	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Network struct {
@@ -40,7 +41,7 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 				} else {
 					message, err := json.Marshal(data)
 					if err != nil {
-						fmt.Println(err)
+						log.Println(err)
 					} else {
 						conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+string(message)))
 					}
@@ -53,7 +54,7 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			} else {
 				app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
 			}
@@ -75,7 +76,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 		default:
 			msg, err := json.Marshal(d)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return
 			}
 			message = msg
@@ -143,7 +144,7 @@ func LoadPusher() *Pusher {
 }
 
 func CreateNetwork() *Network {
-	fmt.Println("running network...")
+	log.Println("running network...")
 	netInstance := &Network{}
 	utils.LoadValidationSystem()
 	LoadHttpServer()

@@ -2,7 +2,7 @@ package modules
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"sigma/main/core/outputs"
 	"sigma/main/core/utils"
 
@@ -85,12 +85,12 @@ func ProcessData[T IDto, V any](origin string, token string, body T, m *Method[T
 		} else {
 			data, err := json.Marshal(body)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err.Error()))
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
 			if err2 != nil {
-				fmt.Println(err2)
+				log.Println(err2)
 				return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err2.Error()))
 			}
 			if m.Check.User {

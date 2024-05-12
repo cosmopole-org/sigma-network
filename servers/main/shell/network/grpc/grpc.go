@@ -24,7 +24,7 @@ type GrpcServer struct {
 func HandleFederationReq(app *modules.App, origin string, action string, req interface{}, md metadata.MD, requestId string) (any, error) {
 	data, err0 := json.Marshal(req)
 	if err0 != nil {
-		fmt.Println(err0)
+		log.Println(err0)
 		return nil, status.Errorf(codes.Unauthenticated, err0.Error())
 	}
 	f := modules.Frames[action]

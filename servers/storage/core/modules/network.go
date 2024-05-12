@@ -2,7 +2,7 @@ package modules
 
 import (
 	"encoding/json"
-	"fmt"
+	"log"
 	"sigma/main/core/utils"
 	"sync"
 
@@ -10,7 +10,7 @@ import (
 )
 
 type Network struct {
-	HttpServer *HttpServer
+	HttpServer   *HttpServer
 	PusherServer *Pusher
 }
 
@@ -35,7 +35,7 @@ func (p *Pusher) PushToUser(userId int64, data any, isFedMsg bool) {
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 			} else {
 				conn.WriteMessage(websocket.TextMessage, []byte("update "+string(message)))
 			}
@@ -52,7 +52,7 @@ func (p *Pusher) PushToGroup(groupId int64, data any, exceptions []int64) {
 	group := g.(*sync.Map)
 	message, err := json.Marshal(data)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	} else {
 		var packet = []byte("update " + string(message))
 		group.Range(func(key, value any) bool {
@@ -88,7 +88,7 @@ func LoadPusher() *Pusher {
 }
 
 func CreateNetwork() *Network {
-	fmt.Println("running network...")
+	log.Println("running network...")
 	netInstance := &Network{}
 	utils.LoadValidationSystem()
 	LoadHttpServer()

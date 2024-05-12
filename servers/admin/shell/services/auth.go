@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"sigma/admin/core/modules"
 
 	dtos_admins "sigma/admin/shell/dtos/admins"
@@ -20,7 +20,7 @@ func signin(app *modules.App, input dtos_admins.SigninDto, assistant modules.Ass
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Email, input.Password,
 	).Scan(&token); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.AdminSigninOutput{}, err
 	}
 	return &pb.AdminSigninOutput{Token: token}, nil
@@ -35,7 +35,7 @@ func updatePass(app *modules.App, input dtos_admins.UpdatePassDto, assistant mod
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Password, assistant.UserId,
 	).Scan(&result); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.AdminUpdatePassOutput{}, err
 	}
 	return &pb.AdminUpdatePassOutput{}, nil
@@ -82,4 +82,3 @@ func LoadAuthGrpcService(gs *grpc.Server) {
 	}
 	pb.RegisterHumanServiceServer(gs, &server{})
 }
-

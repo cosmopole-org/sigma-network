@@ -25,7 +25,7 @@ setGlobalDispatcher(
         return new Promise(resolve => {
             let requestId = Math.random().toString().substring(2)
             requestDict[requestId] = resolve
-            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "185.208.181.151"} ${requestId} ${JSON.stringify(data)}`);
+            socket.send(`${path} ${token ?? "EMPTY_TOKEN"} ${origin ?? "cosmopole.liara.run"} ${requestId} ${JSON.stringify(data)}`);
         })
     }
 
@@ -58,25 +58,25 @@ setGlobalDispatcher(
         // console.log(result3);
 
         let myId = 1;
-        let token = "EjXb2xngEttYV9vl-s5v_JuP65JJRWKT"
+        let token = "XTWYj4fyDXKpVRHTywjneAP3krM2lo1a"
 
         let result5 = await authenticate(token);
         console.log(result5);
 
-        let result8 = await request(`/humans/get`, { userId: 1 }, token, "185.142.159.126");
-        console.log(result8);
+        // let result8 = await request(`/humans/get`, { userId: 2 }, token, "monopole.liara.run");
+        // console.log(result8);
 
         // let result4 = await request(`/towers/create`, { name: "welcome from localhost->8081", avatarId: 123, isPublic: false }, token);
         // console.log(result4);
 
-        let towerId = 2
+        let towerId = 1
 
-        // let result10 = await request(`/rooms/create`, { towerId: towerId, name: "welcomer...", avatarId: 125 }, token, "localhost->8081");
+        // let result10 = await request(`/rooms/create`, { towerId: towerId, name: "welcomer...", avatarId: 125 }, token);
         // console.log(result10);
 
-        let roomId = 3;
+        let roomId = 2;
 
-        // let result0 = await request(`/invites/create`, { recepientOrigin: "localhost->8082", humanId: 1, towerId: towerId }, token, "localhost->8081");
+        // let result0 = await request(`/invites/create`, { recepientOrigin: "monopole.liara.run", humanId: 2, towerId: towerId }, token);
         // console.log(result0);
 
         // let result8 = await request(`/invites/accept`, { inviteId: 64 }, "hEq-J0RrK5ERaab255cIpNrFgnmIqXaD", "localhost->8082");
@@ -93,8 +93,8 @@ setGlobalDispatcher(
 
         let workerId = 5;
 
-        // let result8 = await request(`/rooms/send`, { type: "broadcast", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId }, token, "localhost->8081");
-        // console.log(result8);
+        let result8 = await request(`/rooms/send`, { type: "single", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId, recvId: 2, recvOrigin: "monopole.liara.run", recvType: "human" }, token);
+        console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

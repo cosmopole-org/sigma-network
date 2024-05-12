@@ -1,11 +1,10 @@
 package interfed
 
 import (
-	"fmt"
+	"log"
 	"sigma/main/core/modules"
 	// "sigma/main/core/utils"
 	// "strings"
-
 	// "github.com/valyala/fasthttp"
 )
 
@@ -14,7 +13,7 @@ var allowedRoutes = map[string]bool{
 }
 
 func HandleInterfedPacket(app *modules.App, channelId string, payload modules.InterfedPacket) {
-	fmt.Println("federation message from:", channelId, "payload:", payload)
+	log.Println("federation message from:", channelId, "payload:", payload)
 	data := modules.Decrypt("server_key", payload.Data)
 	if data != "" {
 		if allowedRoutes[payload.Key] {

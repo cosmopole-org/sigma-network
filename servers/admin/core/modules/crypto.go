@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"os"
 	"sigma/admin/core/utils"
 )
@@ -17,18 +18,18 @@ const keysFolderName = "keys"
 func LoadKeys() {
 	files, err := os.ReadDir(Instance().StorageRoot + "/keys")
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	for _, file := range files {
 		if file.IsDir() {
 			priKey, err1 := os.ReadFile(Instance().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
 			if err1 != nil {
-				fmt.Println(err1)
+				log.Println(err1)
 				continue
 			}
 			pubKey, err2 := os.ReadFile(Instance().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
 			if err2 != nil {
-				fmt.Println(err2)
+				log.Println(err2)
 				continue
 			}
 			keys[file.Name()] = [][]byte{priKey, pubKey}
@@ -50,12 +51,12 @@ func Encrypt(tag string, plainText string) string {
 	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
 	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), []byte(plainText))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	return fmt.Sprintf("%x", ciphertext)
@@ -66,12 +67,12 @@ func Decrypt(tag string, cipherText string) string {
 	privateKeyBlock, _ := pem.Decode(privateKeyPEM)
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, []byte(cipherText))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	return string(plaintext)

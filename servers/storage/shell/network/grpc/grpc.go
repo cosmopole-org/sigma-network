@@ -38,7 +38,7 @@ func HandleFederationOrNot(action string, c modules.Check, md metadata.MD, mo mo
 		} else {
 			data, err := json.Marshal(f)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				return nil, status.Errorf(codes.Unauthenticated, err.Error())
 			}
 			reqId, err2 := utils.SecureUniqueString(16)
@@ -141,7 +141,7 @@ func (g *GrpcServer) ListenForGrpc(port int) {
 		log.Fatalf("failed to listen grpc: %v", err)
 	}
 	log.Printf("server listening at %v", lis.Addr())
-	go g.Server.Serve(lis);
+	go g.Server.Serve(lis)
 }
 
 func LoadGrpcServer() *GrpcServer {

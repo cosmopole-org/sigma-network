@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,7 +16,7 @@ type EmptySuccessResponse struct {
 }
 
 func (h *HttpServer) ListenForHttps(app *App, port int) {
-	fmt.Println("Listening to rest port ", port, "...")
+	log.Println("Listening to rest port ", port, "...")
 	go h.Server.Listen(fmt.Sprintf(":%d", port))
 }
 

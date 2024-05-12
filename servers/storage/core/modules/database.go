@@ -3,6 +3,7 @@ package modules
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/jackc/pgx/v4/log/logrusadapter"
@@ -19,7 +20,7 @@ func (d Database) GetDb() *pgxpool.Pool {
 }
 
 func CreateDatabase(uri string, dbName string) *Database {
-	fmt.Println("connecting to database...")
+	log.Println("connecting to database...")
 	dbInstance := &Database{}
 	config, err := pgxpool.ParseConfig(uri)
 	if err != nil {
@@ -43,7 +44,7 @@ func CreateDatabase(uri string, dbName string) *Database {
 	`, dbName)
 	_, err2 := conn.Exec(context.Background(), cdbQuery)
 	if err2 != nil {
-		fmt.Println(err2)
+		log.Println(err2)
 	}
 	conn.Close()
 	config2, err3 := pgxpool.ParseConfig(uri + "/" + dbName)
@@ -67,8 +68,8 @@ func (db *Database) ExecuteSqlFile(path string) {
 	sqlText := string(c)
 	result4, err4 := db.GetDb().Exec(context.Background(), string(sqlText))
 	if err4 != nil {
-		fmt.Println(err4)
+		log.Println(err4)
 	} else {
-		fmt.Println(result4)
+		log.Println(result4)
 	}
 }

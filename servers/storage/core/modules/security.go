@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"log"
 	"sigma/main/core/utils"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ func AuthWithToken(app *App, token string) (int64, int32) {
 		var dataParts = strings.Split(auth, "/")
 		i, err := strconv.ParseInt(dataParts[1], 10, 64)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		} else {
 			userId = i
 		}
@@ -75,8 +76,8 @@ type Location struct {
 }
 
 func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId int64, roomId int64) Location {
-	if (towerId == 0) {
-		return Location{TowerId: 0, RoomId: 0}	
+	if towerId == 0 {
+		return Location{TowerId: 0, RoomId: 0}
 	}
 	var ac = authCache[token]
 	if ac != nil && ac.TowerId == towerId && ac.RoomId == roomId {
@@ -100,20 +101,20 @@ func AuthorizeHumanWithProcessed(app *App, token string, humanId int64, towerId 
 }
 
 func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]string) Location {
-	if (headers["Tower_id"] == nil) {
-		return Location{TowerId: 0, RoomId: 0}	
+	if headers["Tower_id"] == nil {
+		return Location{TowerId: 0, RoomId: 0}
 	}
 	var towerId = string(headers["Tower_id"][0])
 	tid, err1 := strconv.ParseInt(towerId, 10, 64)
 	if err1 != nil {
-		fmt.Println(err1)
+		log.Println(err1)
 		return Location{TowerId: 0, RoomId: 0}
 	}
 	var roid int64 = 0
 	if headers["Room_id"] != nil {
 		rid, err1 := strconv.ParseInt(string(headers["Room_id"][0]), 10, 64)
 		if err1 != nil {
-			fmt.Println(err1)
+			log.Println(err1)
 		}
 		roid = rid
 	}
@@ -139,7 +140,7 @@ func AuthorizeHuman(app *App, token string, humanId int64, headers map[string][]
 
 func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid int64) Location {
 	if wid > 0 {
-		fmt.Println(utils.BuildErrorJson("worker id is empty"))
+		log.Println(utils.BuildErrorJson("worker id is empty"))
 		return Location{TowerId: 0, RoomId: 0}
 	}
 	var ac = authCache[token]
@@ -152,13 +153,13 @@ func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid 
 		var rid = dataParts[0]
 		roomId, err2 := strconv.ParseInt(rid, 10, 64)
 		if err2 != nil {
-			fmt.Println(err2)
+			log.Println(err2)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		var mid = dataParts[1]
 		machId, err3 := strconv.ParseInt(mid, 10, 64)
 		if err3 != nil {
-			fmt.Println(err3)
+			log.Println(err3)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		if machId != machineId {
@@ -170,7 +171,7 @@ func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid 
 		}
 		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
 		if err4 != nil {
-			fmt.Println(err4)
+			log.Println(err4)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		authCache[token].TowerId = towerId
@@ -185,7 +186,7 @@ func AuthorizeMachineWithProcessed(app *App, token string, machineId int64, wid 
 func AuthorizeMachine(app *App, token string, machineId int64, headers map[string][]string) Location {
 	wid, err1 := strconv.ParseInt(string(headers["worker_id"][0]), 10, 64)
 	if err1 != nil {
-		fmt.Println(err1)
+		log.Println(err1)
 		return Location{TowerId: 0, RoomId: 0}
 	}
 	var ac = authCache[token]
@@ -198,13 +199,13 @@ func AuthorizeMachine(app *App, token string, machineId int64, headers map[strin
 		var rid = dataParts[0]
 		roomId, err2 := strconv.ParseInt(rid, 10, 64)
 		if err2 != nil {
-			fmt.Println(err2)
+			log.Println(err2)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		var mid = dataParts[1]
 		machId, err3 := strconv.ParseInt(mid, 10, 64)
 		if err3 != nil {
-			fmt.Println(err3)
+			log.Println(err3)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		if machId != machineId {
@@ -216,7 +217,7 @@ func AuthorizeMachine(app *App, token string, machineId int64, headers map[strin
 		}
 		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
 		if err4 != nil {
-			fmt.Println(err4)
+			log.Println(err4)
 			return Location{TowerId: 0, RoomId: 0}
 		}
 		authCache[token].TowerId = towerId

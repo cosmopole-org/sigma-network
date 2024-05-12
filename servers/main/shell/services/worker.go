@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sigma/main/core/modules"
 	dtos_workers "sigma/main/shell/dtos/workers"
 	updates_workers "sigma/main/shell/updates/workers"
@@ -29,7 +30,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId, input.WorkerOrigin,
 	).Scan(&worker.Id); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.WorkerCreateOutput{}, err
 	}
 	if worker.Id > 0 {
@@ -56,7 +57,7 @@ func updateWorker(app *modules.App, input dtos_workers.UpdateDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Metadata, input.WorkerId, assistant.RoomId,
 	).Scan(&worker.Id, &worker.MachineId, &worker.Origin); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.WorkerUpdateOutput{}, err
 	}
 	if worker.Id > 0 {
@@ -76,7 +77,7 @@ func deleteWorker(app *modules.App, input dtos_workers.DeleteDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.WorkerId, assistant.RoomId,
 	).Scan(&result); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.WorkerDeleteOutput{}, err
 	}
 	return &pb.WorkerDeleteOutput{}, nil
@@ -88,19 +89,19 @@ func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules
 	`
 	rows, err := app.Database.Db.Query(context.Background(), query, assistant.RoomId)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	var rowSlice []*pb.Worker
 	for rows.Next() {
 		var w pb.Worker
 		err := rows.Scan(&w.Id, &w.MachineId, &w.RoomId, &w.Metadata, &w.Origin)
 		if err != nil {
-			fmt.Println(err)
+			log.Println(err)
 		}
 		rowSlice = append(rowSlice, &w)
 	}
 	if err := rows.Err(); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }

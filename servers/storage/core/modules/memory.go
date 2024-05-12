@@ -3,7 +3,7 @@ package modules
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"log"
 	"sigma/main/core/utils"
 
 	"github.com/mitchellh/mapstructure"
@@ -46,7 +46,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			var input any
 			err2 := json.Unmarshal([]byte(payload.Data), &input)
 			if err2 != nil {
-				fmt.Println(err2)
+				log.Println(err2)
 				return
 			}
 			fn := Handlers[payload.Key]
@@ -54,7 +54,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			mapstructure.Decode(input, &f)
 			result, err := fn(app, f, CreateAssistant(payload.UserId, "human", payload.TowerId, payload.RoomId, 0, nil))
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
 				if err2 == nil {
 					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -63,7 +63,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			}
 			packet, err3 := json.Marshal(result)
 			if err3 != nil {
-				fmt.Println(err3)
+				log.Println(err3)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
 				if err2 == nil {
 					m.SendInFederation(channelId, InterfedPacket{IsResponse: true, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -84,7 +84,7 @@ func (m *Memory) CreateClient(redisUri string) {
 			var interfedPacket InterfedPacket
 			err2 := json.Unmarshal([]byte(msg.Payload), &interfedPacket)
 			if err2 != nil {
-				fmt.Println(err2)
+				log.Println(err2)
 				continue
 			}
 			m.FedHandler(Instance(), msg.Channel[len(channelPrefix+app.AppId+"."):], interfedPacket)
@@ -95,7 +95,7 @@ func (m *Memory) CreateClient(redisUri string) {
 func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 	var output, err = json.Marshal(packet)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return
 	}
 	m.Storage.Publish(context.Background(), channelPrefix+destOrg+"."+app.AppId, output)
@@ -104,17 +104,17 @@ func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
 func (m *Memory) Put(key string, value string) {
 	err := m.Storage.Set(context.Background(), key, value, 0).Err()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
 func (m *Memory) Get(key string) string {
 	val, err := m.Storage.Get(context.Background(), key).Result()
 	if err == redis.Nil {
-		fmt.Println("key: " + key + " does not exist")
+		log.Println("key: " + key + " does not exist")
 		return ""
 	} else if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return ""
 	}
 	return val
@@ -123,13 +123,13 @@ func (m *Memory) Get(key string) string {
 func (m *Memory) Del(key string) {
 	err := m.Storage.Del(context.Background(), key).Err()
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
 func CreateMemory(redisUri string) *Memory {
 	memory := &Memory{}
-	fmt.Println("connecting to redis...")
+	log.Println("connecting to redis...")
 	memory.CreateClient(redisUri)
 	return memory
 }

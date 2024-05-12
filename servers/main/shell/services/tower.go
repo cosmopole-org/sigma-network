@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"sigma/main/core/modules"
 	dtos_towers "sigma/main/shell/dtos/towers"
 	updates_towers "sigma/main/shell/updates/towers"
@@ -25,7 +26,7 @@ func createTower(app *modules.App, input dtos_towers.CreateDto, assistant module
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, input.IsPublic, app.AppId,
 	).Scan(&member.Id, &tower.Id); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.TowerCreateOutput{}, err
 	}
 	if tower.Id > 0 {
@@ -53,7 +54,7 @@ func updateTower(app *modules.App, input dtos_towers.UpdateDto, assistant module
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.IsPublic, input.TowerId, assistant.UserId,
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.CreatorId, &tower.Origin); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.TowerUpdateOutput{}, err
 	}
 	go app.Network.PusherServer.PushToGroup("towers/update", tower.Id, updates_towers.Update{Tower: &tower},
@@ -71,7 +72,7 @@ func deleteTower(app *modules.App, input dtos_towers.DeleteDto, assistant module
 	`
 	var tower pb.Tower
 	if err := app.Database.Db.QueryRow(context.Background(), query, input.TowerId, assistant.UserId).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.CreatorId); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.TowerDeleteOutput{}, err
 	}
 	go app.Network.PusherServer.PushToGroup("towers/delete", tower.Id, updates_towers.Delete{Tower: &tower},
@@ -89,7 +90,7 @@ func getTower(app *modules.App, input dtos_towers.GetDto, assistant modules.Assi
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.TowerId,
 	).Scan(&tower.Id, &tower.Name, &tower.AvatarId, &tower.IsPublic, &tower.Origin); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.TowerGetOutput{}, err
 	}
 	if tower.IsPublic {
@@ -115,7 +116,7 @@ func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.As
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.TowerId, app.AppId, userOrigin,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return &pb.TowerJoinOutput{}, err
 	}
 	member.Origin = app.AppId

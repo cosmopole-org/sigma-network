@@ -2,7 +2,7 @@ package genesis
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"runtime"
 	"sigma/admin/core/modules"
 	"sigma/admin/core/utils"
@@ -35,7 +35,7 @@ func LoadKeys() {
 }
 
 func New(appId string, databaseUri string, dbName string, redisUri string, storageRoot string, port int, gods []models.Admin) *modules.App {
-	fmt.Println("Creating app...")
+	log.Println("Creating app...")
 	a := modules.App{
 		AppId:       appId,
 		StorageRoot: storageRoot,

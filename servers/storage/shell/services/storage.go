@@ -3,22 +3,23 @@ package services
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
-	dtos_storage "sigma/main/shell/dtos/storage"
 	"sigma/main/core/modules"
 	"sigma/main/core/outputs"
 	outputs_storage "sigma/main/core/outputs/storage"
+	dtos_storage "sigma/main/shell/dtos/storage"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func UploadFile(app *modules.App, input dtos_storage.UploadDto, assistant modules.Assistant) (any, error) {
-	fmt.Println(input)
+	log.Println(input)
 	if !((len(input.Data) == 1) && (len(input.DataKey) == 1)) {
 		return outputs_storage.Binary{}, errors.New("we need 1 file and 1 file key")
 	}
 	if err := assistant.SaveFileToStorage(app.StorageRoot, input.Data[0], input.DataKey[0]); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return outputs_storage.Binary{}, err
 	}
 	return outputs_storage.Binary{}, nil
