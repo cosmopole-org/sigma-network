@@ -14,7 +14,6 @@ import (
 )
 
 func UploadFile(app *modules.App, input dtos_storage.UploadDto, assistant modules.Assistant) (any, error) {
-	log.Println(input)
 	if !((len(input.Data) == 1) && (len(input.DataKey) == 1)) {
 		return outputs_storage.Binary{}, errors.New("we need 1 file and 1 file key")
 	}

@@ -6,7 +6,7 @@ import (
 	"log"
 	"sigma/admin/core/modules"
 
-	dtos_admins "sigma/admin/shell/dtos/admins"
+	dtos_auths "sigma/admin/shell/dtos/auths"
 
 	pb "sigma/admin/shell/grpc"
 
@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func signin(app *modules.App, input dtos_admins.SigninDto, assistant modules.Assistant) (any, error) {
+func signin(app *modules.App, input dtos_auths.SigninDto, assistant modules.Assistant) (any, error) {
 	var query = `select * from humans_signin($1, $2)`
 	var token string
 	if err := app.Database.Db.QueryRow(
@@ -26,7 +26,7 @@ func signin(app *modules.App, input dtos_admins.SigninDto, assistant modules.Ass
 	return &pb.AdminSigninOutput{Token: token}, nil
 }
 
-func updatePass(app *modules.App, input dtos_admins.UpdatePassDto, assistant modules.Assistant) (any, error) {
+func updatePass(app *modules.App, input dtos_auths.UpdatePassDto, assistant modules.Assistant) (any, error) {
 	if len(input.Password) == 0 {
 		return &pb.AdminUpdatePassOutput{}, errors.New("error: invalid password")
 	}
@@ -54,10 +54,10 @@ func CreateAuthService(app *modules.App) {
 	// Methods
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_admins.SigninDto, dtos_admins.SigninDto](
+		modules.CreateMethod[dtos_auths.SigninDto, dtos_auths.SigninDto](
 			"/auths/signin",
 			signin,
-			dtos_admins.SigninDto{},
+			dtos_auths.SigninDto{},
 			modules.CreateCheck(false, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
 			modules.CreateInterFedOptions(true, true),
@@ -65,10 +65,10 @@ func CreateAuthService(app *modules.App) {
 	)
 	modules.AddMethod(
 		app,
-		modules.CreateMethod[dtos_admins.UpdatePassDto, dtos_admins.UpdatePassDto](
+		modules.CreateMethod[dtos_auths.UpdatePassDto, dtos_auths.UpdatePassDto](
 			"/auths/updatePass",
 			updatePass,
-			dtos_admins.UpdatePassDto{},
+			dtos_auths.UpdatePassDto{},
 			modules.CreateCheck(true, false, false),
 			modules.CreateMethodOptions(true, fiber.MethodPost, true, false),
 			modules.CreateInterFedOptions(true, true),

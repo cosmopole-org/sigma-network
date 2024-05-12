@@ -1,4 +1,4 @@
-package dtos_admins
+package dtos_auths
 
 type UpdatePassDto struct {
 	Password string `json:"password" validate:"required"`

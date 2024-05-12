@@ -21,6 +21,7 @@ type ServersOutput struct {
 
 func LoadServices(a *modules.App) {
 	services.CreateAuthService(a)
+	services.CreateExternalService(a)
 }
 
 func LoadGrpcServices(gs *grpc.Server) {
