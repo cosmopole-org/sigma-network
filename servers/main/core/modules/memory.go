@@ -104,12 +104,12 @@ func (m *Memory) CreateClient(redisUri string) {
 				`
 					var memberId int64
 					if err := app.Database.Db.QueryRow(
-						context.Background(), query, member.HumanId, member.TowerId, member.Origin, member.UserOrigin,
+						context.Background(), query, member.HumanId, member.TowerId, channelId, app.AppId,
 					).Scan(&memberId); err != nil {
 						log.Println(err)
 						return
 					}
-					app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+					app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, app.AppId)
 				}
 			}
 			app.Network.PusherServer.PushToUser(payload.Key, payload.UserId, app.AppId, payload.Data, payload.RequestId, true)
