@@ -13,16 +13,18 @@ import (
 )
 
 func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assistant) (any, error) {
-	apiList, err := json.Marshal(input.ApiList)
-	if (err != nil) {
-		return outputs_external.PlugDto{}, err		
+
+	meta, err := json.Marshal(input.Meta)
+	if err != nil {
+		return outputs_external.PlugDto{}, err
 	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+"/plugins/" + input.Key, input.File, "module.wasm")
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+"/plugins/" + input.Key, apiList, "apiList.txt")
+	assistant.SaveFileToGlobalStorage(app.StorageRoot+"/plugins/"+input.Key, input.File, "module.wasm")
+	assistant.SaveDataToGlobalStorage(app.StorageRoot+"/plugins/"+input.Key, meta, "meta.txt")
+
 	agent := fiber.Post("http://localhost:8081/external/plug")
 	args := fiber.AcquireArgs()
 	args.Set("key", input.Key)
-	args.Set("apiList", input.ApiList)
+	args.Set("meta", string(meta))
 	agent.SendFile(app.StorageRoot+"/plugins/module.wasm").MultipartForm(args)
 	fiber.ReleaseArgs(args)
 	sc, _, errs := agent.Bytes()

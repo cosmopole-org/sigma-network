@@ -178,9 +178,26 @@ type Check struct {
 	Room  bool
 }
 
+type PluginFunction struct {
+	Key string
+	Ch Check
+	Mo MethodOptions
+}
+
 func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
 	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
 		return callback(app, dto.(T), a)
+	}
+	Frames[key] = inputFrame
+	Checks[key] = check
+	MethodOptionsMap[key] = mOptions
+	InterFedOptionsMap[key] = ifOptions
+	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame}
+}
+
+func CreateRawMethod[T any, V any](key string, callback func(*App, string, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
+	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
+		return callback(app, dto.(string), a)
 	}
 	Frames[key] = inputFrame
 	Checks[key] = check

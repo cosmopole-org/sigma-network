@@ -175,6 +175,12 @@ type Check struct {
 	Room  bool
 }
 
+type PluginFunction struct {
+	Key string
+	Ch Check
+	Mo MethodOptions
+}
+
 func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
 	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
 		return callback(app, dto.(T), a)

@@ -1,11 +1,13 @@
 package dtos_external
 
-import "mime/multipart"
+import (
+	"mime/multipart"
+)
 
 type PlugDto struct {
-	Key     string                `json:"key" validate:"required"`
-	ApiList string                `json:"apiList" validate:"required"`
-	File    *multipart.FileHeader `json:"file" validate:"required"`
+	Key  string                `json:"key" validate:"required"`
+	Meta string                `json:"meta" validate:"required"`
+	File *multipart.FileHeader `json:"file" validate:"required"`
 }
 
 func (d PlugDto) GetData() any {
