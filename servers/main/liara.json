@@ -1,5 +1,5 @@
 {
-    "app": "monopole",
+    "app": "cosmopole",
     "port": "8081",
     "platform": "docker",
     "build": {

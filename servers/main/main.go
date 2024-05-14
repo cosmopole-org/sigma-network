@@ -12,7 +12,7 @@ var quit = make(chan struct{})
 
 func main() {
 
-	var origin = "monopole"
+	var origin = "cosmopole"
 
 	err := godotenv.Load(origin + ".env")
 	if err != nil {

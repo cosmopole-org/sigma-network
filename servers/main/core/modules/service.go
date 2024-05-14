@@ -152,19 +152,21 @@ func CallMethod[T any, V any](key string, dto interface{}, meta *Meta) (any, err
 }
 
 type Method[T any, V any] struct {
-	Key           string
-	Callback      func(*App, interface{}, Assistant) (any, error)
-	Check         Check
-	MethodOptions MethodOptions
-	ServiceKey    string
-	InputFrame    interface{}
+	Key            string
+	Callback       func(*App, interface{}, Assistant) (any, error)
+	Check          Check
+	MethodOptions  MethodOptions
+	ServiceKey     string
+	InputFrame     interface{}
+	HttpValidation bool
+	Dynamic        bool
 }
 
 type MethodOptions struct {
-	AsEndpoint   bool
-	RestAction   string
-	AsGrpc       bool
-	InFederation bool
+	AsEndpoint   bool   `json:"asEndpoint" validate:"required"`
+	RestAction   string `json:"restAction" validate:"required"`
+	AsGrpc       bool   `json:"asGrpc" validate:"required"`
+	InFederation bool   `json:"inFederation" validate:"required"`
 }
 
 type InterFedOptions struct {
@@ -173,15 +175,16 @@ type InterFedOptions struct {
 }
 
 type Check struct {
-	User  bool
-	Tower bool
-	Room  bool
+	User  bool `json:"user" validate:"required"`
+	Tower bool `json:"tower" validate:"required"`
+	Room  bool `json:"room" validate:"required"`
 }
 
 type PluginFunction struct {
-	Key string
-	Ch Check
-	Mo MethodOptions
+	Key  string        `json:"key" validate:"required"`
+	Path string        `json:"path" validate:"required"`
+	Ch   Check         `json:"ch" validate:"required"`
+	Mo   MethodOptions `json:"mo" validate:"required"`
 }
 
 func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
@@ -192,7 +195,18 @@ func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (a
 	Checks[key] = check
 	MethodOptionsMap[key] = mOptions
 	InterFedOptionsMap[key] = ifOptions
-	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame}
+	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, HttpValidation: true, Dynamic: false}
+}
+
+func CreateNonValidateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
+	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
+		return callback(app, dto.(T), a)
+	}
+	Frames[key] = inputFrame
+	Checks[key] = check
+	MethodOptionsMap[key] = mOptions
+	InterFedOptionsMap[key] = ifOptions
+	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, HttpValidation: false, Dynamic: false}
 }
 
 func CreateRawMethod[T any, V any](key string, callback func(*App, string, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
@@ -203,7 +217,7 @@ func CreateRawMethod[T any, V any](key string, callback func(*App, string, Assis
 	Checks[key] = check
 	MethodOptionsMap[key] = mOptions
 	InterFedOptionsMap[key] = ifOptions
-	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame}
+	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, Dynamic: true}
 }
 
 func CreateCheck(user bool, tower bool, room bool) Check {

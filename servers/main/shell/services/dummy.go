@@ -4,7 +4,6 @@ import (
 	"os"
 	"sigma/main/core/modules"
 	"sigma/main/shell/dtos"
-	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -29,7 +28,7 @@ func CreateDummyService(app *modules.App) {
 		modules.CreateMethod[dtos.PingDto, dtos.PingDto](
 			"/api/ping",
 			func(app *modules.App, d dtos.PingDto, assistant modules.Assistant) (any, error) {
-				return strings.Split(os.Getenv("ORIGIN"), "->")[1], nil
+				return os.Getenv("MAIN_PORT"), nil
 			},
 			dtos.PingDto{},
 			modules.CreateCheck(false, false, false),

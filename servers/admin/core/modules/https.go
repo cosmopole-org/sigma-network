@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 type HttpServer struct {
@@ -27,10 +28,22 @@ func AddEndpoint[T IDto, V any](m *Method[T, V]) {
 		},
 		func(c *fiber.Ctx) error {
 			body := new(T)
-			if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
-				c.BodyParser(body)
-			} else if m.MethodOptions.RestAction == "GET" {
-				c.QueryParser(body)
+			form, err := c.MultipartForm()
+			if err == nil {
+				var formData = map[string]any{}
+				for k, v := range form.Value {
+					formData[k] = v
+				}
+				for k, v := range form.File {
+					formData[k] = v
+				}
+				mapstructure.Decode(formData, body)
+			} else {
+				if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
+					c.BodyParser(body)
+				} else if m.MethodOptions.RestAction == "GET" {
+					c.QueryParser(body)
+				}
 			}
 			originHeader := c.GetReqHeaders()["Origin"]
 			var origin = ""
