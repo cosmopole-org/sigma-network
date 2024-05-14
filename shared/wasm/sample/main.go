@@ -6,10 +6,28 @@ import (
 	"unsafe"
 )
 
+var funcMap = map[string]func(input string) []byte{}
+var funcFrame = map[string]interface{}{}
+
+func AddMethod[T any, V any](key string, handler func(input T) V) {
+	funcMap[key] = func(input string) []byte {
+		var frame T
+		json.Unmarshal([]byte(input), &frame)
+		result := handler(frame)
+		output, _ := json.Marshal(result)
+		return output
+	}
+	funcFrame[key] = *new(T)
+}
+
 func main() {}
 
-//export hello
-func hello(subject *int32) *int32 {
+//export build
+func build() {
+	AddMethod("hello", Hello)
+}
+
+func ptrToString(subject *int32) string {
 	nth := 0
 	var subjectStr strings.Builder
 	pointer := uintptr(unsafe.Pointer(subject))
@@ -22,29 +40,30 @@ func hello(subject *int32) *int32 {
 		subjectStr.WriteByte(byte(s))
 		nth++
 	}
+	return subjectStr.String()
+}
 
-	var output = ""
-
-	input := subjectStr.String()
-
-	var data map[string]interface{}
-	err := json.Unmarshal([]byte(input), &data)
-	if err != nil {
-		output = err.Error()
-	} else {
-		var name, ok = data["name"]
-		if ok {
-			output = "hello " + name.(string)
-		} else {
-			output = "hello [empty]"
-		}
-	}
-
-	var outp = []byte(output)
-
+//export run
+func run(keyPtr *int32, bodyPtr *int32) *int32 {
+	var key = ptrToString(keyPtr)
+	var body = ptrToString(bodyPtr)
+	output := funcMap[key](body)
 	r := make([]int32, 2)
-	r[0] = int32(uintptr(unsafe.Pointer(&(outp[0]))))
+	r[0] = int32(uintptr(unsafe.Pointer(&(output[0]))))
 	r[1] = int32(len(output))
-
 	return &r[0]
+}
+
+// services
+
+type HelloInput struct {
+	Name string `json:"name"`
+}
+
+type HelloOutput struct {
+	Message string `json:"message"`
+}
+
+func Hello(input HelloInput) HelloOutput {
+	return HelloOutput{Message: "welcome " + input.Name + " !"}
 }

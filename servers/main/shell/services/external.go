@@ -3,11 +3,9 @@ package services
 import (
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"sigma/main/core/modules"
-	"unsafe"
 
 	dtos_external "sigma/main/shell/dtos/external"
 	outputs_external "sigma/main/shell/outputs/external"
@@ -15,6 +13,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
 )
+
+const pluginsTemplateName = "/plugins/"
 
 var pluginVms = map[string]*wasmedge.VM{}
 var pluginMetas = map[string]modules.PluginFunction{}
@@ -25,8 +25,8 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	if err != nil {
 		return outputs_external.PlugDto{}, err
 	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+"/plugins/"+input.Key, input.File, "module.wasm")
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+"/plugins/"+input.Key, []byte(input.Meta), "meta.txt")
+	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm")
+	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt")
 
 	wasmedge.SetLogErrorLevel()
 	conf := wasmedge.NewConfigure(wasmedge.WASI)
@@ -44,37 +44,12 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	vm.Validate()
 	vm.Instantiate()
 
+	vm.Execute("build")
+
 	pluginVms[meta[0].Path] = vm
 	pluginMetas[meta[0].Path] = meta[0]
 
-	// for index, f := range meta {
-	// 	fn, err := instance.Exports.GetFunction(f.Key)
-	// 	if err != nil {
-	// 		log.Println(err)
-	// 		continue
-	// 	}
-	// 	plugins[f.Path] = fn
-	// 	pluginInsts[f.Path] = instance
-	// 	pluginMetas[f.Path] = meta[index]
-	// 	modules.AddMethod(
-	// 		app,
-	// 		modules.CreateRawMethod[modules.IDto, modules.IDto](
-	// 			f.Path,
-	// 			nil,
-	// 			nil,
-	// 			f.Ch,
-	// 			f.Mo,
-	// 			modules.CreateInterFedOptions(true, true),
-	// 		))
-	// }
 	return outputs_external.PlugDto{}, nil
-}
-
-func stringToPtr(s string) (uint32, uint32) {
-	buf := []byte(s)
-	ptr := &buf[0]
-	unsafePtr := uintptr(unsafe.Pointer(ptr))
-	return uint32(unsafePtr), uint32(len(buf))
 }
 
 func CreateExternalService(app *modules.App) {
@@ -97,20 +72,29 @@ func CreateExternalService(app *modules.App) {
 		}
 		var lengthOfSubject = len(body)
 
+		var key = meta.Key
+		var lengthOfKey = len(meta.Key)
+
+		keyAllocateResult, _ := vm.Execute("malloc", int32(lengthOfKey+1))
+		keyiInputPointer := keyAllocateResult[0].(int32)
+
 		allocateResult, _ := vm.Execute("malloc", int32(lengthOfSubject+1))
 		inputPointer := allocateResult[0].(int32)
 
 		// Write the subject into the memory.
 		mod := vm.GetActiveModule()
 		mem := mod.FindMemory("memory")
+		keyMemData, _ := mem.GetData(uint(keyiInputPointer), uint(lengthOfKey+1))
+		copy(keyMemData, key)
 		memData, _ := mem.GetData(uint(inputPointer), uint(lengthOfSubject+1))
 		copy(memData, body)
 
 		// C-string terminates by NULL.
+		keyMemData[lengthOfKey] = 0
 		memData[lengthOfSubject] = 0
 
 		// Run the `greet` function. Given the pointer to the subject.
-		greetResult, _ := vm.Execute(meta.Key, inputPointer)
+		greetResult, _ := vm.Execute("run", keyiInputPointer, inputPointer)
 		outputPointer := greetResult[0].(int32)
 
 		memData, _ = mem.GetData(uint(outputPointer), 8)
@@ -119,12 +103,14 @@ func CreateExternalService(app *modules.App) {
 
 		// Read the result of the `greet` function.
 		memData, _ = mem.GetData(uint(resultPointer), uint(resultLength))
-		fmt.Println(string(memData))
 
 		// Deallocate the subject, and the output.
 		vm.Execute("free", inputPointer)
 
-		return c.Status(fiber.StatusOK).JSON(string(memData))
+		var output map[string]interface{}
+		json.Unmarshal(memData, &output)
+
+		return c.Status(fiber.StatusOK).JSON(output)
 	})
 
 	// Methods
