@@ -25,7 +25,17 @@ func AddEndpoint[T IDto, V any](m *Method[T, V]) {
 	handlers := []fiber.Handler{}
 	if m.HttpValidation {
 		handlers = append(handlers, func(c *fiber.Ctx) error {
-			return ValidateInput[T](c, m.MethodOptions.RestAction)
+			body := new(T)
+			if m.MethodOptions.RestAction == "POST" || m.MethodOptions.RestAction == "PUT" || m.MethodOptions.RestAction == "DELETE" {
+				c.BodyParser(body)
+			} else if m.MethodOptions.RestAction == "GET" {
+				c.QueryParser(body)
+			}
+			errors := ValidateInput[T](*body, m.MethodOptions.RestAction)
+			if len(errors) > 0 {
+				return c.Status(fiber.ErrBadRequest.Code).JSON(errors)
+			}
+			return c.Next()
 		})
 	}
 	handlers = append(handlers, func(c *fiber.Ctx) error {
@@ -57,7 +67,12 @@ func AddEndpoint[T IDto, V any](m *Method[T, V]) {
 		if tokenHeader != nil {
 			token = tokenHeader[0]
 		}
-		statusCode, result := ProcessData[T, V](origin, token, *body, m)
+		var requestId = ""
+		requestIdHeader := c.GetReqHeaders()["RequestId"]
+		if requestIdHeader != nil {
+			requestId = requestIdHeader[0]
+		}
+		statusCode, result := ProcessData[T, V](origin, token, *body, requestId, m)
 		if statusCode == fiber.StatusOK {
 			return HandleResutOfFunc(c, result)
 		}

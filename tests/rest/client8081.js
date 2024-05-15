@@ -50,29 +50,29 @@ setGlobalDispatcher(
         console.log("[open] Connection established");
         console.log("Sending to server");
 
-        // let result = await request(`/humans/signup`, { email: Date.now().toString() });
-        // console.log(result);
-        // let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
-        // console.log(result2);
-        // let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
-        // console.log(result3);
+        let result = await request(`/humans/signup`, { email: Date.now().toString() });
+        console.log(result);
+        let result2 = await request(`/humans/verify`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode });
+        console.log(result2);
+        let result3 = await request(`/humans/complete`, { verifyCode: result.pending.verifyCode, clientCode: result.pending.clientCode, firstName: "Kasper", lastName: "Of Cosmopole" });
+        console.log(result3);
 
         let myId = 1;
         let token = "XTWYj4fyDXKpVRHTywjneAP3krM2lo1a"
 
-        let result5 = await authenticate(token);
-        console.log(result5);
+        //let result5 = await authenticate(token);
+        //console.log(result5);
 
         // let result8 = await request(`/humans/get`, { userId: 2 }, token, "monopole.liara.run");
         // console.log(result8);
 
-        // let result4 = await request(`/towers/create`, { name: "welcome from localhost->8081", avatarId: 123, isPublic: false }, token);
-        // console.log(result4);
+        let result4 = await request(`/towers/create`, { name: "welcome from localhost->8081", avatarId: 123, isPublic: false }, token);
+        console.log(result4);
 
-        let towerId = 1
+        let towerId = 3
 
-        // let result10 = await request(`/rooms/create`, { towerId: towerId, name: "welcomer...", avatarId: 125 }, token);
-        // console.log(result10);
+        let result10 = await request(`/rooms/create`, { towerId: towerId, name: "welcomer...", avatarId: 125 }, token);
+        console.log(result10);
 
         let roomId = 2;
 
@@ -93,8 +93,8 @@ setGlobalDispatcher(
 
         let workerId = 5;
 
-        let result8 = await request(`/rooms/send`, { type: "single", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId, recvId: 2, recvOrigin: "monopole.liara.run", recvType: "human" }, token);
-        console.log(result8);
+        // let result8 = await request(`/rooms/send`, { type: "single", data: `{ "hello": "hehe hoohoo hihi" }`, towerId: towerId, roomId: roomId, recvId: 2, recvOrigin: "monopole.liara.run", recvType: "human" }, token);
+        // console.log(result8);
     };
     socket.onclose = function (event) {
         if (event.wasClean) {

@@ -2,14 +2,17 @@ package shell_websocket
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strings"
 
 	"github.com/gofiber/contrib/websocket"
-	"github.com/mitchellh/mapstructure"
+	"github.com/gofiber/fiber/v2"
 )
+
+var endpoints = map[string]func(string, string, string, string) (any, string, error){}
 
 type WebsocketAnswer struct {
 	Status    int
@@ -37,6 +40,33 @@ func HandleNonFederationReq(action string, origin string, c modules.Check, mo mo
 	return result, nil
 }
 
+func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
+	endpoints[m.Key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
+		body := new(T)
+		err := json.Unmarshal([]byte(rawBody), body)
+		if err != nil {
+			return nil, "error", errors.New("invalid input format")
+		}
+		errs := modules.ValidateInput[T](*body, m.MethodOptions.RestAction)
+		if len(errs) > 0 {
+			resErr, err := json.Marshal(errs)
+			if err != nil {
+				return nil, "error", err
+			}
+			return nil, "error", errors.New(string(resErr))
+		}
+		var f = *body
+		statusCode, res := modules.ProcessData[T, V](origin, token, f, requestId, m)
+		if statusCode != fiber.StatusOK {
+			return nil, "error", errors.New(res.(utils.Error).Message)
+		}
+		if (m.MethodOptions.InFederation) && (origin != modules.Instance().AppId) {
+			return res, "noaction", nil
+		}
+		return res, "response", nil
+	}
+}
+
 func LoadWebsocket(app *modules.App) {
 	app.Network.HttpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
 		var uid int64 = 0
@@ -60,94 +90,12 @@ func LoadWebsocket(app *modules.App) {
 				var origin = splittedMsg[2]
 				var requestId = splittedMsg[3]
 				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(origin) + 1 + len(requestId)):]
-				fn := modules.Handlers[uri]
-				f := modules.Frames[uri]
-				c := modules.Checks[uri]
-				mo := modules.MethodOptionsMap[uri]
-				var req any
-				err2 := json.Unmarshal([]byte(body), &req)
-				if err2 != nil {
-					AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("invalid input format"))
-					continue
-				}
-				err3 := mapstructure.Decode(req, &f)
-				if err3 != nil {
-					AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("bad request"))
-					continue
-				}
-				towerId := f.(modules.IDto).GetTowerId()
-				roomId := f.(modules.IDto).GetRoomId()
-				workerId := f.(modules.IDto).GetWorkerId()
-				if mo.AsEndpoint {
-					var doLocal = func() {
-						if c.User {
-							var userId, userType = modules.AuthWithToken(app, token)
-							var creature = ""
-							if userType == 1 {
-								creature = "human"
-							} else if userType == 2 {
-								creature = "machine"
-							}
-							if userId > 0 {
-								if c.Tower {
-									var location modules.Location
-									if userType == 1 {
-										location = modules.HandleLocationWithProcessed(app, token, userId, "human", app.AppId, towerId, roomId, 0)
-									} else if userType == 2 {
-										location = modules.HandleLocationWithProcessed(app, token, userId, "machine", app.AppId, towerId, roomId, workerId)
-									}
-									if location.TowerId > 0 {
-										res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
-										if err != nil {
-											AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
-										} else {
-											AnswerSocket(conn, "response", requestId, res)
-										}
-									} else {
-										AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("access denied"))
-									}
-								} else {
-									res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
-									if err != nil {
-										AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
-									} else {
-										AnswerSocket(conn, "response", requestId, res)
-									}
-								}
-							} else {
-								AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("authentication failed"))
-							}
-						} else {
-							res, err := HandleNonFederationReq(uri, origin, c, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
-							if err != nil {
-								AnswerSocket(conn, "error", requestId, utils.BuildErrorJson(err.Error()))
-							} else {
-								AnswerSocket(conn, "response", requestId, res)
-							}
-						}
-					}
-					if mo.InFederation {
-						if origin == app.AppId {
-							doLocal()
-						} else {
-							if c.User {
-								var userId, _ = modules.AuthWithToken(app, token)
-								if userId > 0 {
-									modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: userId, TowerId: towerId, RoomId: roomId, Data: body, RequestId: requestId})
-									AnswerSocket(conn, "noaction", requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
-								} else {
-									AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("authentication failed"))
-								}
-							} else {
-								modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: uri, UserId: 0, TowerId: 0, RoomId: 0, Data: body, RequestId: requestId})
-								AnswerSocket(conn, "noaction", requestId, modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
-							}
-						}
-					} else {
-						doLocal()
-					}
+				endpoint := endpoints[uri]
+				res, resType, err := endpoint(body, token, origin, requestId)
+				if err != nil {
+					AnswerSocket(conn, resType, requestId, utils.BuildErrorJson(err.Error()))
 				} else {
-					AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("access to service denied"))
+					AnswerSocket(conn, resType, requestId, res)
 				}
 			}
 		}

@@ -6,6 +6,7 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	dtos_rooms "sigma/main/shell/dtos/rooms"
+	service_manager "sigma/main/shell/services/manager"
 	updates_rooms "sigma/main/shell/updates/rooms"
 	"strconv"
 	"strings"
@@ -148,8 +149,7 @@ func CreateRoomService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/rooms/get.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_rooms.CreateDto, dtos_rooms.CreateDto](
 			"/rooms/create",
 			createRoom,
@@ -159,8 +159,7 @@ func CreateRoomService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_rooms.UpdateDto, dtos_rooms.UpdateDto](
 			"/rooms/update",
 			updateRoom,
@@ -170,8 +169,7 @@ func CreateRoomService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_rooms.DeleteDto, dtos_rooms.DeleteDto](
 			"/rooms/delete",
 			deleteRoom,
@@ -181,8 +179,7 @@ func CreateRoomService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_rooms.GetDto, dtos_rooms.GetDto](
 			"/rooms/get",
 			getRoom,
@@ -192,8 +189,7 @@ func CreateRoomService(app *modules.App) {
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_rooms.SendDto, dtos_rooms.SendDto](
 			"/rooms/send",
 			send,

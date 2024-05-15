@@ -7,6 +7,7 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	dtos_towers "sigma/main/shell/dtos/towers"
+	service_manager "sigma/main/shell/services/manager"
 	updates_towers "sigma/main/shell/updates/towers"
 
 	pb "sigma/main/shell/grpc"
@@ -142,8 +143,7 @@ func CreateTowerService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/towers/create.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_towers.CreateDto, dtos_towers.CreateDto](
 			"/towers/create",
 			createTower,
@@ -153,8 +153,7 @@ func CreateTowerService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_towers.UpdateDto, dtos_towers.UpdateDto](
 			"/towers/update",
 			updateTower,
@@ -164,8 +163,7 @@ func CreateTowerService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_towers.DeleteDto, dtos_towers.DeleteDto](
 			"/towers/delete",
 			deleteTower,
@@ -175,8 +173,7 @@ func CreateTowerService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_towers.GetDto, dtos_towers.GetDto](
 			"/towers/get",
 			getTower,
@@ -186,8 +183,7 @@ func CreateTowerService(app *modules.App) {
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_towers.JoinDto, dtos_towers.JoinDto](
 			"/towers/join",
 			joinTower,

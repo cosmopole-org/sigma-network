@@ -9,6 +9,7 @@ import (
 
 	dtos_external "sigma/main/shell/dtos/external"
 	outputs_external "sigma/main/shell/outputs/external"
+	service_manager "sigma/main/shell/services/manager"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -25,8 +26,8 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	if err != nil {
 		return outputs_external.PlugDto{}, err
 	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm")
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt")
+	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
+	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
 	wasmedge.SetLogErrorLevel()
 	conf := wasmedge.NewConfigure(wasmedge.WASI)
@@ -46,8 +47,13 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 
 	vm.Execute("build")
 
-	pluginVms[meta[0].Path] = vm
-	pluginMetas[meta[0].Path] = meta[0]
+	for _, f := range meta {
+		if pluginVms[f.Path] != nil {
+			pluginVms[f.Path].Release()
+		}
+		pluginVms[f.Path] = vm
+		pluginMetas[f.Path] = f
+	}
 
 	return outputs_external.PlugDto{}, nil
 }
@@ -57,8 +63,8 @@ func CreateExternalService(app *modules.App) {
 	//Middleware for plugins
 	app.Network.HttpServer.Server.Use(func(c *fiber.Ctx) error {
 		path := c.Path()
-		vm := pluginVms[path]
-		if vm == nil {
+		vm, ok := pluginVms[path]
+		if !ok {
 			return c.Next()
 		}
 
@@ -114,8 +120,7 @@ func CreateExternalService(app *modules.App) {
 	})
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateNonValidateMethod[dtos_external.PlugDto, dtos_external.PlugDto](
 			"/external/plug",
 			plug,

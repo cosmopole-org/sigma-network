@@ -4,6 +4,7 @@ import (
 	"sigma/main/core/modules"
 	dtos_auth "sigma/main/shell/dtos/auth"
 	outputs_auth "sigma/main/shell/outputs/auth"
+	service_manager "sigma/main/shell/services/manager"
 
 	pb "sigma/main/shell/grpc"
 
@@ -22,8 +23,7 @@ func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant m
 }
 
 func CreateAuthService(app *modules.App) {
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_auth.GetServerKey, dtos_auth.GetServerKey](
 			"/auths/getServerPublicKey",
 			getServerPublicKey,
@@ -33,8 +33,7 @@ func CreateAuthService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_auth.GetServersMapDto, dtos_auth.GetServersMapDto](
 			"/auths/getServerPublicKey",
 			getServersMap,

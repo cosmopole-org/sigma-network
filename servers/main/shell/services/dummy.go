@@ -4,13 +4,13 @@ import (
 	"os"
 	"sigma/main/core/modules"
 	"sigma/main/shell/dtos"
+	service_manager "sigma/main/shell/services/manager"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func CreateDummyService(app *modules.App) {
-	modules.AddMethod[dtos.HelloDto, dtos.HelloDto](
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos.HelloDto, dtos.HelloDto](
 			"/api/hello",
 			func (app *modules.App, d dtos.HelloDto, assistant modules.Assistant) (any, error) {
@@ -22,9 +22,7 @@ func CreateDummyService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-
-	modules.AddMethod[dtos.PingDto, dtos.PingDto](
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos.PingDto, dtos.PingDto](
 			"/api/ping",
 			func(app *modules.App, d dtos.PingDto, assistant modules.Assistant) (any, error) {

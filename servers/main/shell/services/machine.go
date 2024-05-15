@@ -7,6 +7,7 @@ import (
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	dtos_machines "sigma/main/shell/dtos/machines"
+	service_manager "sigma/main/shell/services/manager"
 	"strconv"
 
 	pb "sigma/main/shell/grpc"
@@ -113,8 +114,7 @@ func CreateMachineService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/machines/get.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_machines.CreateDto, dtos_machines.CreateDto](
 			"/machines/create",
 			createMachine,
@@ -124,8 +124,7 @@ func CreateMachineService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_machines.UpdateDto, dtos_machines.UpdateDto](
 			"/machines/update",
 			updateMachine,
@@ -135,8 +134,7 @@ func CreateMachineService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_machines.DeleteDto, dtos_machines.DeleteDto](
 			"/machines/delete",
 			deleteMachine,
@@ -146,8 +144,7 @@ func CreateMachineService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_machines.GetDto, dtos_machines.GetDto](
 			"/machines/get",
 			getMachine,

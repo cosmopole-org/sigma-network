@@ -8,6 +8,7 @@ import (
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	dtos_humans "sigma/main/shell/dtos/humans"
+	service_manager "sigma/main/shell/services/manager"
 
 	pb "sigma/main/shell/grpc"
 
@@ -157,8 +158,7 @@ func CreateHumanService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/humans/verify.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.AuthenticateDto, dtos_humans.AuthenticateDto](
 			"/humans/authenticate",
 			authenticate,
@@ -168,8 +168,7 @@ func CreateHumanService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.SignupDto, dtos_humans.SignupDto](
 			"/humans/signup",
 			signup,
@@ -179,8 +178,7 @@ func CreateHumanService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.VerifyDto, dtos_humans.VerifyDto](
 			"/humans/verify",
 			verify,
@@ -190,8 +188,7 @@ func CreateHumanService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.CompleteDto, dtos_humans.CompleteDto](
 			"/humans/complete",
 			complete,
@@ -201,8 +198,7 @@ func CreateHumanService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.UpdateDto, dtos_humans.UpdateDto](
 			"/humans/update",
 			update,
@@ -212,8 +208,7 @@ func CreateHumanService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_humans.GetDto, dtos_humans.GetDto](
 			"/humans/get",
 			get,

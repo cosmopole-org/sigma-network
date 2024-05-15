@@ -7,6 +7,7 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	dtos_invites "sigma/main/shell/dtos/invites"
+	service_manager "sigma/main/shell/services/manager"
 	updates_invites "sigma/main/shell/updates/invites"
 
 	pb "sigma/main/shell/grpc"
@@ -133,8 +134,7 @@ func CreateInviteService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/invites/accept.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_invites.CreateDto, dtos_invites.CreateDto](
 			"/invites/create",
 			createInvite,
@@ -144,8 +144,7 @@ func CreateInviteService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_invites.CancelDto, dtos_invites.CancelDto](
 			"/invites/cancel",
 			cancelInvite,
@@ -155,8 +154,7 @@ func CreateInviteService(app *modules.App) {
 			modules.CreateInterFedOptions(true, true),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_invites.AcceptDto, dtos_invites.AcceptDto](
 			"/invites/accept",
 			acceptInvite,
@@ -166,8 +164,7 @@ func CreateInviteService(app *modules.App) {
 			modules.CreateInterFedOptions(true, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_invites.DeclineDto, dtos_invites.DeclineDto](
 			"/invites/decline",
 			declineInvite,

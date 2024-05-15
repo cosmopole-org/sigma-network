@@ -7,6 +7,7 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	dtos_workers "sigma/main/shell/dtos/workers"
+	service_manager "sigma/main/shell/services/manager"
 	updates_workers "sigma/main/shell/updates/workers"
 
 	pb "sigma/main/shell/grpc"
@@ -115,8 +116,7 @@ func CreateWorkerService(app *modules.App) {
 	app.Database.ExecuteSqlFile("shell/database/functions/workers/deliver.sql")
 
 	// Methods
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_workers.CreateDto, dtos_workers.CreateDto](
 			"/workers/create",
 			createWorker,
@@ -126,8 +126,7 @@ func CreateWorkerService(app *modules.App) {
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_workers.UpdateDto, dtos_workers.UpdateDto](
 			"/workers/update",
 			updateWorker,
@@ -137,8 +136,7 @@ func CreateWorkerService(app *modules.App) {
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_workers.DeleteDto, dtos_workers.DeleteDto](
 			"/workers/delete",
 			deleteWorker,
@@ -148,8 +146,7 @@ func CreateWorkerService(app *modules.App) {
 			modules.CreateInterFedOptions(false, false),
 		),
 	)
-	modules.AddMethod(
-		app,
+	service_manager.AddEndpoint(
 		modules.CreateMethod[dtos_workers.ReadDto, dtos_workers.ReadDto](
 			"/workers/read",
 			readWorkers,
