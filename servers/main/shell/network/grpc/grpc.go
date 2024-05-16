@@ -2,7 +2,6 @@ package shell_grpc
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -19,6 +18,10 @@ import (
 
 	"google.golang.org/grpc/status"
 )
+
+type GrpcServer struct {
+	Server *grpc.Server
+}
 
 var endpoints = map[string]func(interface{}, string, string, string) (any, string, error){}
 
@@ -38,89 +41,6 @@ func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
 			return res, "noaction", nil
 		}
 		return res, "response", nil
-	}
-}
-
-type GrpcServer struct {
-	Server *grpc.Server
-}
-
-func HandleFederationReq(app *modules.App, origin string, action string, req interface{}, md metadata.MD, requestId string) (any, error) {
-	data, err0 := json.Marshal(req)
-	if err0 != nil {
-		log.Println(err0)
-		return nil, status.Errorf(codes.Unauthenticated, err0.Error())
-	}
-	f := modules.Frames[action]
-	c := modules.Checks[action]
-	err := mapstructure.Decode(req, &f)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
-	}
-	if c.User {
-		tokenHeader, ok := md["token"]
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
-		}
-		token := tokenHeader[0]
-		var userId, _ = modules.AuthWithToken(app, token)
-		if userId > 0 {
-			modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: userId, TowerId: f.(modules.IDto).GetTowerId(), RoomId: f.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
-			return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
-		} else {
-			return nil, status.Errorf(codes.Unauthenticated, "authentication failed")
-		}
-	} else {
-		modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: 0, TowerId: 0, RoomId: 0, Data: string(data), RequestId: requestId})
-		return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
-	}
-}
-
-func HandleNonFederationReq(app *modules.App, action string, req interface{}, md metadata.MD) (any, error) {
-	fn := modules.Handlers[action]
-	f := modules.Frames[action]
-	c := modules.Checks[action]
-	err := mapstructure.Decode(req, &f)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
-	}
-	if c.User {
-		tokenHeader, ok := md["token"]
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
-		}
-		token := tokenHeader[0]
-		var userId, userType = modules.AuthWithToken(app, token)
-		var creature = ""
-		if userType == 1 {
-			creature = "human"
-		} else if userType == 2 {
-			creature = "machine"
-		}
-		if userId > 0 {
-			if c.Tower {
-				location := modules.HandleLocationWithProcessed(app, token, userId, creature, app.AppId, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), userId)
-				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
-				if err != nil {
-					return nil, status.Errorf(codes.Unauthenticated, err.Error())
-				}
-				return result, nil
-			} else {
-				result, err := fn(modules.Instance(), f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
-				if err != nil {
-					return nil, status.Errorf(codes.Unauthenticated, err.Error())
-				}
-				return result, nil
-			}
-		} else {
-			return nil, status.Errorf(codes.Unauthenticated, "Authentication failed")
-		}
-	} else {
-		result, err := fn(modules.Instance(), f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
-		if err != nil {
-			return nil, status.Errorf(codes.Unauthenticated, err.Error())
-		}
-		return result, nil
 	}
 }
 
@@ -168,10 +88,6 @@ func serverInterceptor(
 	}
 }
 
-func withServerUnaryInterceptor() grpc.ServerOption {
-	return grpc.UnaryInterceptor(serverInterceptor)
-}
-
 func (g *GrpcServer) ListenForGrpc(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
@@ -183,7 +99,7 @@ func (g *GrpcServer) ListenForGrpc(port int) {
 
 func LoadGrpcServer() *GrpcServer {
 	grpcServer := grpc.NewServer(
-		withServerUnaryInterceptor(),
+		grpc.UnaryInterceptor(serverInterceptor),
 	)
 	return &GrpcServer{Server: grpcServer}
 }

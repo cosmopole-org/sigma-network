@@ -3,8 +3,10 @@ package services
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"log"
 	"os"
+
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 
@@ -30,15 +32,41 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
 	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
-	wasmedge.SetLogErrorLevel()
-	conf := wasmedge.NewConfigure(wasmedge.WASI)
+	wasmedge.SetLogDebugLevel()
+
+	var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
+	conf.AddConfig(wasmedge.WASI)
 	vm := wasmedge.NewVMWithConfig(conf)
-	wasi := vm.GetImportModule(wasmedge.WASI)
+	var wasi = vm.GetImportModule(wasmedge.WASI)
 	wasi.InitWasi(
-		os.Args[1:],
-		os.Environ(),
-		[]string{".:."},
+		os.Args[1:],     // The args
+		os.Environ(),    // The envs
+		[]string{".:."}, // The mapping directories
 	)
+
+	obj := wasmedge.NewModule("env")
+
+	funcSqlType := wasmedge.NewFunctionType(
+		[]wasmedge.ValType{
+			wasmedge.ValType_I32,
+		},
+		[]wasmedge.ValType{
+			wasmedge.ValType_I32,
+		})
+	h := &vmHost{vm: vm}
+	hostSql := wasmedge.NewFunction(funcSqlType, h.sql, nil, 0)
+	obj.AddFunction("sql", hostSql)
+
+	funcLogType := wasmedge.NewFunctionType(
+		[]wasmedge.ValType{
+			wasmedge.ValType_I32,
+		},
+		[]wasmedge.ValType{})
+	hostLog := wasmedge.NewFunction(funcLogType, h.logData, nil, 0)
+	obj.AddFunction("logData", hostLog)
+
+	vm.RegisterModule(obj)
+
 	err2 := vm.LoadWasmFile(app.StorageRoot + pluginsTemplateName + input.Key + "/module.wasm")
 	if err2 != nil {
 		log.Println("failed to load wasm")
@@ -46,7 +74,7 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	vm.Validate()
 	vm.Instantiate()
 
-	vm.Execute("build")
+	vm.Execute("_start")
 
 	for _, f := range meta {
 		if pluginVms[f.Path] != nil {
@@ -59,6 +87,42 @@ func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assis
 	return outputs_external.PlugDto{}, nil
 }
 
+type vmHost struct {
+	vm *wasmedge.VM
+}
+
+func (h *vmHost) logData(_ interface{}, callframe *wasmedge.CallingFrame, params []interface{}) ([]interface{}, wasmedge.Result) {
+	fmt.Println(h.remotePtrToString(params[0].(int32), callframe))
+	return []interface{}{}, wasmedge.Result_Success
+}
+
+func (h *vmHost) sql(_ interface{}, callframe *wasmedge.CallingFrame, params []interface{}) ([]interface{}, wasmedge.Result) {
+	fmt.Println(string(h.remotePtrToString(params[0].(int32), callframe)))
+	return []interface{}{interface{}(h.localStringToPtr("response for sql", callframe))}, wasmedge.Result_Success
+}
+
+func (h *vmHost) remotePtrToString(pointer int32, callframe *wasmedge.CallingFrame) string {
+	mem := callframe.GetMemoryByIndex(0)
+	memData, _ := mem.GetData(uint(pointer), 8)
+	resultPointer := binary.LittleEndian.Uint32(memData[:4])
+	resultLength := binary.LittleEndian.Uint32(memData[4:])
+	data, _ := mem.GetData(uint(resultPointer), uint(resultLength))
+	url := make([]byte, resultLength)
+	copy(url, data)
+	return string(url)
+}
+
+func (h *vmHost) localStringToPtr(data string, callframe *wasmedge.CallingFrame) int32 {
+	mem := callframe.GetMemoryByIndex(0)
+	data2 := []byte(data)
+	result, _ := h.vm.Execute("malloc", int32(len(data2)+1))
+	pointer := result[0].(int32)
+	m, _ := mem.GetData(uint(pointer), uint(len(data2)+1))
+	copy(m[:len(data2)], data2)
+	copy(m[len(data2):], []byte{0})
+	return pointer
+}
+
 func loadWasmModules(app *modules.App) {
 	wasmedge.SetLogErrorLevel()
 	files, err := os.ReadDir(app.StorageRoot + "/plugins")
@@ -67,34 +131,66 @@ func loadWasmModules(app *modules.App) {
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			conf := wasmedge.NewConfigure(wasmedge.WASI)
+
+			var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
+			conf.AddConfig(wasmedge.WASI)
 			vm := wasmedge.NewVMWithConfig(conf)
-			wasi := vm.GetImportModule(wasmedge.WASI)
+			var wasi = vm.GetImportModule(wasmedge.WASI)
 			wasi.InitWasi(
-				os.Args[1:],
-				os.Environ(),
-				[]string{".:."},
+				os.Args[1:],     // The args
+				os.Environ(),    // The envs
+				[]string{".:."}, // The mapping directories
 			)
+
+			obj := wasmedge.NewModule("env")
+
+			funcSqlType := wasmedge.NewFunctionType(
+				[]wasmedge.ValType{
+					wasmedge.ValType_I32,
+				},
+				[]wasmedge.ValType{
+					wasmedge.ValType_I32,
+				})
+			h := &vmHost{vm: vm}
+			hostSql := wasmedge.NewFunction(funcSqlType, h.sql, nil, 0)
+			obj.AddFunction("sql", hostSql)
+
+			funcLogType := wasmedge.NewFunctionType(
+				[]wasmedge.ValType{
+					wasmedge.ValType_I32,
+				},
+				[]wasmedge.ValType{})
+			hostLog := wasmedge.NewFunction(funcLogType, h.logData, nil, 0)
+			obj.AddFunction("logData", hostLog)
+
+			vm.RegisterModule(obj)
+
 			err2 := vm.LoadWasmFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/module.wasm")
 			if err2 != nil {
 				log.Println("failed to load wasm")
 			}
 			vm.Validate()
 			vm.Instantiate()
-			vm.Execute("build")
 
+			vm.Execute("_start")
+			
 			metaJson, err1 := os.ReadFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/meta.txt")
 			if err1 != nil {
 				log.Println(err1)
 				continue
 			}
+			
 			var meta []modules.PluginFunction
 			err3 := json.Unmarshal(metaJson, &meta)
 			if err3 != nil {
 				log.Println(err3)
 				continue
 			}
+
 			for _, f := range meta {
+				if pluginVms[f.Path] != nil {
+					pluginVms[f.Path].Release()
+				}
 				pluginVms[f.Path] = vm
 				pluginMetas[f.Path] = f
 			}
@@ -135,11 +231,6 @@ func CreateExternalService(app *modules.App) {
 		if tokenHeader != nil {
 			token = tokenHeader[0]
 		}
-		// var requestId = ""
-		// requestIdHeader := c.GetReqHeaders()["RequestId"]
-		// if requestIdHeader != nil {
-		// 	requestId = requestIdHeader[0]
-		// }
 
 		var check = meta.Ch
 

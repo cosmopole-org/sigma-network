@@ -3,6 +3,7 @@ package services
 import (
 	"sigma/main/core/modules"
 	dtos_auth "sigma/main/shell/dtos/auth"
+	network_store "sigma/main/shell/network"
 	outputs_auth "sigma/main/shell/outputs/auth"
 	service_manager "sigma/main/shell/services/manager"
 
@@ -18,7 +19,7 @@ func getServerPublicKey(app *modules.App, dto dtos_auth.GetServerKey, assistant 
 
 func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant modules.Assistant) (any, error) {
 	return outputs_auth.GetServersMapOutput{
-		Servers: app.HostToIp,
+		Servers: network_store.WellKnownServers,
 	}, nil
 }
 

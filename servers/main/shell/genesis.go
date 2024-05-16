@@ -9,14 +9,10 @@ import (
 	shell_grpc "sigma/main/shell/network/grpc"
 	shell_websocket "sigma/main/shell/network/websocket"
 	"sigma/main/shell/services"
+	"sigma/main/shell/network"
 
 	"google.golang.org/grpc"
 )
-
-var wellKnownServers = []string{
-	"cosmopole.liara.run",
-	"monopole.liara.run",
-}
 
 type ServersOutput struct {
 	Map map[string]bool `json:"map"`
@@ -135,7 +131,7 @@ func New(appId string, config AppConfig) *modules.App {
 	log.Println("Creating app...")
 	ipToHostMap := map[string]string{}
 	hostToIpMap := map[string]string{}
-	for _, domain := range wellKnownServers {
+	for _, domain := range network_store.WellKnownServers {
 		ipAddr := ""
 		ips, _ := net.LookupIP(domain)
 		for _, ip := range ips {

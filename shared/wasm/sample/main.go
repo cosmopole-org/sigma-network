@@ -1,18 +1,13 @@
 package main
 
 import (
-	"sigma/wasm/core"
+	"fmt"
 	"sigma/wasm/services"
 )
 
-func main() {}
-
-//export build
-func build() {
+func main() {
+	fmt.Println()
+	fmt.Println("module starting...")
+	fmt.Println()
 	services.CreateGreetServices()
-}
-
-//export run
-func run(keyPtr *int32, bodyPtr *int32) *int32 {
-	return core.Run(keyPtr, bodyPtr)
 }

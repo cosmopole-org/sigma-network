@@ -30,7 +30,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan1153\"\n}",
+							"raw": "{\n    \"email\": \"keyhan11533\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -233,6 +233,11 @@
 							{
 								"key": "token",
 								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "origin",
+								"value": "cosmopole.liara.run",
 								"type": "text"
 							}
 						],
@@ -1497,6 +1502,120 @@
 							"path": [
 								"map",
 								"get"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "external",
+			"item": [
+				{
+					"name": "plug",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    postman.setEnvironmentVariable(\"token\", jsonData.token);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "key",
+									"value": "ax5",
+									"type": "text"
+								},
+								{
+									"key": "meta",
+									"value": "[\n    {\n        \"key\": \"hello\",\n        \"path\": \"/greet/hello\",\n        \"mo\": {\n            \"asEndpoint\": true,\n            \"restAction\": \"POST\",\n            \"asGrpc\": false,\n            \"inFederation\": true\n        },\n        \"ch\": {\n            \"user\": true,\n            \"tower\": false,\n            \"room\": false\n        }\n    },\n        {\n        \"key\": \"bye\",\n        \"path\": \"/greet/bye\",\n        \"mo\": {\n            \"asEndpoint\": true,\n            \"restAction\": \"POST\",\n            \"asGrpc\": false,\n            \"inFederation\": true\n        },\n        \"ch\": {\n            \"user\": false,\n            \"tower\": false,\n            \"room\": false\n        }\n    }\n]",
+									"type": "text"
+								},
+								{
+									"key": "file",
+									"type": "file",
+									"src": "/home/keyhan/MyWorkspace/sigma/shared/wasm/sample/greet.wasm"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{server}}/external/plug",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"external",
+								"plug"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "use",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.token) {",
+									"    postman.setEnvironmentVariable(\"token\", jsonData.token);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"kasperius\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/greet/hello",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"greet",
+								"hello"
 							]
 						}
 					},

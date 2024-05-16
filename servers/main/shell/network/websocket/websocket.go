@@ -12,13 +12,13 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-var endpoints = map[string]func(string, string, string, string) (any, string, error){}
-
 type WebsocketAnswer struct {
 	Status    int
 	RequestId string
 	Data      any
 }
+
+var endpoints = map[string]func(string, string, string, string) (any, string, error){}
 
 func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
@@ -30,14 +30,6 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 		log.Println(err)
 		return
 	}
-}
-
-func HandleNonFederationReq(action string, origin string, c modules.Check, mo modules.MethodOptions, fn func(*modules.App, interface{}, modules.Assistant) (any, error), f interface{}, assistant modules.Assistant) (any, error) {
-	result, err := fn(modules.Instance(), f, assistant)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
