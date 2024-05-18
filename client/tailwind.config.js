@@ -20,6 +20,7 @@ module.exports = {
       'black': '#171717',
       's-white': '#e6e6e6',
       's-black': '#172024',
+      's-black-2': '#1f282b',
       'passive': '#888888',
       'message': '#bbf',
       'link': '#08f'

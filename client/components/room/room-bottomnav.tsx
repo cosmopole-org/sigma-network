@@ -1,38 +1,27 @@
 "use client"
 
+import React from "react";
 import { Card } from "@nextui-org/react";
 import { BottomNavItem } from "../elements/bottomnav-item";
-import { hookstate, useHookstate } from "@hookstate/core";
 import { useTheme } from "next-themes";
-import { usePathname, useRouter } from "next/navigation";
-import { switchRoomLoading } from "@/api/offline/states";
-import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export const selectedRoomSection = hookstate("board");
-export const switchRoomSection = (s: string) => {
-    selectedRoomSection.set(s);
-}
-
-export default function RoomBottomNav() {
+export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPanel: (panelKey: string) => void, panelKey: string | undefined }>) {
     const { theme } = useTheme();
     const router = useRouter();
-    const path = usePathname();
-    const selectedState = useHookstate(selectedRoomSection);
-    useEffect(() => {
-        let pArr = path.split('/')
-        switchRoomSection(pArr[pArr.length - 1]);
-    }, []);
-    const onItemClick = (key: string) => () => {
-        selectedState.set(key);
-        switchRoomLoading(true);
+    const openCall = () => () => {
+        router.push("/app/call")
+    }
+    const openPanelByKey = (key: string) => () => {
+        openPanel(key);
         router.replace('/app/room/' + key);
     }
     return (
-        <Card isBlurred className="grid grid-cols-4 fixed bottom-0 left-0 w-full h-[72px] pt-1" style={{ borderRadius: '24px 24px 0px 0px', zIndex: 1000, backgroundColor: theme === 'light' ? "#ffffffaf" : "#172024af" }}>
-            <BottomNavItem itemKey="board" selected={selectedState.get({ noproxy: true })} title="Board" icon="board" onClick={onItemClick('board')} />
-            <BottomNavItem itemKey="chat" selected={selectedState.get({ noproxy: true })} title="Chat" icon="chat" onClick={onItemClick('chat')} />
-            <BottomNavItem itemKey="files" selected={selectedState.get({ noproxy: true })} title="Files" icon="storage" onClick={onItemClick('files')} />
-            <BottomNavItem pt={2} pb={3} iconSize={19} itemKey="settings" selected={selectedState.get({ noproxy: true })} title="Settings" icon="settings" onClick={onItemClick('settings')} />
+        <Card isBlurred className={`grid grid-cols-4 fixed left-${panelKey ? 0 : 2} bottom-${panelKey ? 0 : 2} w-full h-[72px] pt-1 w-${panelKey ? "full" : "[calc(100%-16px)]"}` + (panelKey ? " -translate-y-[calc(100vh-168px)]" : " -translate-y-[0px]")} style={{ borderRadius: panelKey ? "32px 32px 0px 0px" : 32, zIndex: 1000, backgroundColor: theme === 'light' ? "#ffffffaf" : "#172024af", transition: "transform 250ms" }}>
+            <BottomNavItem itemKey="call" selected={panelKey} title="Call" icon="call" onClick={openCall()} />
+            <BottomNavItem itemKey="chat" selected={panelKey} title="Chat" icon="chat" onClick={openPanelByKey('chat')} />
+            <BottomNavItem itemKey="files" selected={panelKey} title="Files" icon="storage" onClick={openPanelByKey('files')} />
+            <BottomNavItem pt={2} pb={3} iconSize={19} itemKey="settings" selected={panelKey} title="Settings" icon="settings" onClick={openPanelByKey('settings')} />
         </Card >
     )
 }

@@ -2,13 +2,12 @@
 
 import { Avatar, Navbar, NavbarContent } from "@nextui-org/react";
 import { hookstate, useHookstate } from "@hookstate/core";
-import HomeSearchbar from "../home/home-searchbar";
 import IconButton from "../elements/icon-button";
-import { selectedRoomSection } from "./room-bottomnav";
 import { getUsers } from "@/api/offline/constants";
 import { useRouter } from "next/navigation";
+import RoomSearchbar from "./room-searchbar";
 
-const roomNavShow = hookstate(true);
+export const roomNavShow = hookstate(true);
 export const switchRoomNav = (v: boolean) => {
     if (roomNavShow.get({ noproxy: true }) !== v) {
         roomNavShow.set(v)
@@ -17,40 +16,32 @@ export const switchRoomNav = (v: boolean) => {
 
 export default function RoomNavbar() {
     const router = useRouter();
-    const roomSectionState = useHookstate(selectedRoomSection);
-    const showSearchbar = ['files'].includes(roomSectionState.get({ noproxy: true }));
     const roomNavShowState = useHookstate(roomNavShow);
     return (
         <Navbar
-            isBordered
-            className={"sticky left-0 top-0 " + (showSearchbar ? "h-[120px] pb-4" : "h-[64px]")}
+            isBlurred
+            className={"sticky left-0 top-0 h-[128px] pb-4"}
             style={{ transform: roomNavShowState.get({ noproxy: true }) ? 'translateY(0px)' : 'translateY(-100%)', transition: 'transform 400ms' }}
         >
-            <NavbarContent as="div" className={"items-center w-full " + (showSearchbar ? "h-[120px]" : "h-[64px]")} justify="center">
-                <div className={"w-full"}>
+            <NavbarContent as="div" className={"items-center w-full h-[128px]"} justify="center">
+                <div className={"w-full mt-4 mb-2"}>
                     <div className="flex -ml-1">
                         <IconButton name="back" onClick={() => {
                             router.back();
-                        }} />
+                        }} className="backdrop-blur rounded-full dark:bg-s-black/50 bg-s-white/50" />
                         <p className="text-xl flex-1 text-center flex text-center items-center justify-center">
-                            <Avatar
-                                isBordered
-                                src={getUsers()[0].avatar}
-                                color={"primary"}
-                                name={"Room 1"}
-                                size={"sm"}
-                            />
-                            <span className="ml-3">Room 1</span>
+                            <span className="backdrop-blur rounded-full dark:bg-s-black/50 bg-s-white/50 pl-4 pr-4 pt-2 pb-2">Room 1</span>
                         </p>
-                        <IconButton name="call" onClick={() => {
-                            router.push('/app/call')
-                        }} />
+                        <Avatar
+                            isBordered
+                            src={getUsers()[0].avatar}
+                            color={"primary"}
+                            name={"Room 1"}
+                            size={"sm"}
+                            className="mt-1"
+                        />
                     </div>
-                    {
-                        showSearchbar ? (
-                            <HomeSearchbar />
-                        ) : null
-                    }
+                    <RoomSearchbar />
                 </div>
             </NavbarContent>
         </Navbar >

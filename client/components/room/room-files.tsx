@@ -8,10 +8,10 @@ import Icon from "../elements/icon";
 export default function Files() {
     const { theme } = useTheme();
     return (
-        <div className="w-full relative">
+        <div className="w-full h-auto relative">
             <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-3 pb-32">
                 {Array.from(Array(4).keys()).map(i => (
-                    <Card isBlurred shadow="sm" key={'folder-' + i} isPressable onPress={() => console.log("item pressed")} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf' }}>
+                    <Card isBlurred={false} shadow="sm" key={'folder-' + i} isPressable onPress={() => console.log("item pressed")}>
                         <CardBody className="overflow-visible p-0 relative">
                             <Chip className="absolute left-2 top-2"
                                 color="secondary">
@@ -33,7 +33,7 @@ export default function Files() {
                     const t = index % 3;
                     if (t === 0) {
                         return (
-                            <Card isBlurred shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf' }}>
+                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
                                 <CardBody className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">
@@ -63,7 +63,7 @@ export default function Files() {
                         );
                     } else if (t === 1) {
                         return (
-                            <Card isBlurred shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf' }}>
+                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
                                 <CardBody className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">
@@ -97,7 +97,7 @@ export default function Files() {
 
                     } else if (t === 2) {
                         return (
-                            <Card isBlurred shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf' }}>
+                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
                                 <CardBody className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">

@@ -4,13 +4,11 @@ import { getUsers } from "@/api/offline/constants";
 import Icon from "@/components/elements/icon";
 import IconButton from "@/components/elements/icon-button";
 import { Card, CardHeader, CardBody, CardFooter, Avatar, Chip, Image } from "@nextui-org/react";
-import { useTheme } from "next-themes";
 import React from "react";
 
 export default function VideoMessage({ rightSide }: Readonly<{ rightSide: boolean }>) {
-    const { theme } = useTheme();
     return (
-        <Card isPressable isBlurred className={"max-w-[300px] mt-2 " + (rightSide ? 'mr-0 ml-auto' : '')} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf', borderRadius: rightSide ? '24px 4px 24px 24px' : '4px 24px 24px 24px' }}>
+        <Card isPressable isBlurred={false} className={"max-w-[300px] mt-2 " + (rightSide ? 'mr-0 ml-auto' : '')} style={{ borderRadius: rightSide ? '24px 4px 24px 24px' : '4px 24px 24px 24px' }}>
             <CardHeader className="justify-between">
                 <div className="flex gap-5 w-full">
                     <Avatar isBordered radius="full" size="md" src={getUsers()[4].avatar} />
@@ -40,7 +38,7 @@ export default function VideoMessage({ rightSide }: Readonly<{ rightSide: boolea
                     className="w-full object-cover h-[140px]"
                     src={'https://nextui.org/images/hero-card.jpeg'}
                 />
-                <IconButton name="play" size={[28,28]} className="w-[56px] h-[56px] absolute left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4 bg-white/60 dark:bg-black/60 z-50 rounded-full backdrop-blur" />
+                <IconButton name="play" size={[28, 28]} className="w-[56px] h-[56px] absolute left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4 bg-white/60 dark:bg-black/60 z-50 rounded-full backdrop-blur" />
             </CardBody>
             <CardFooter className="gap-3">
                 <div className="flex gap-1">

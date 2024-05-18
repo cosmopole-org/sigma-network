@@ -75,7 +75,7 @@ export default function MessageList() {
                             rowRenderer={renderRow}
                             rowCount={list.length}
                             overscanRowCount={3}
-                            className={'px-2 pb-36'}
+                            className={'px-2 pb-36 pt-4'}
                         />
                     )
                 }

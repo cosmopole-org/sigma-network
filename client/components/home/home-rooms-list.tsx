@@ -41,7 +41,7 @@ export default function HomeRoomsList() {
             >
                 {getUsers().map(item => (
                     <Card onClick={() => {
-                        router.push('/app/room/board');
+                        router.push('/app/room/chat');
                     }} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <div className="flex flex-col">

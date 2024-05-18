@@ -2,14 +2,12 @@
 
 import IconButton from "@/components/elements/icon-button";
 import { Card, CardBody, Image } from "@nextui-org/react";
-import { useTheme } from "next-themes";
 import React from "react";
 import Waveform from '../../elements/waveform/waveform';
 
 export default function AudioMessage({ rightSide }: Readonly<{ rightSide: boolean }>) {
-    const { theme } = useTheme();
     return (
-        <Card isPressable isBlurred className={"min-w-[300px] max-w-[300px] mt-2 " + (rightSide ? 'mr-0 ml-auto' : '')} style={{ backgroundColor: theme === 'light' ? undefined : '#171717bf', borderRadius: rightSide ? '24px 4px 24px 24px' : '4px 24px 24px 24px' }}>
+        <Card isPressable isBlurred={false} className={"min-w-[300px] max-w-[300px] mt-2 " + (rightSide ? 'mr-0 ml-auto' : '')} style={{ borderRadius: rightSide ? '24px 4px 24px 24px' : '4px 24px 24px 24px' }}>
             <CardBody>
                 <div className="grid grid-cols-6 md:grid-cols-12 gap-6 md:gap-4 items-center justify-center">
                     <div className="flex flex-col col-span-6 md:col-span-8 relative">

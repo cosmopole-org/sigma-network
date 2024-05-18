@@ -5,14 +5,14 @@ import IconButton from "../elements/icon-button";
 
 export default function Chat() {
     return (
-        <div className="w-full overflow-hidden relative" style={{height: 'calc(100% - 64px)'}}>
+        <div className="w-full h-full overflow-hidden relative">
             <MessageList />
             <Input
                 classNames={{
                     base: "h-10",
                     mainWrapper: "items-center h-full",
                     input: "text-small text-center",
-                    inputWrapper: "bg-content2 w-[90%] backdrop-blur items-center fixed bottom-20 left-[5%] h-12 font-normal text-default-500 rounded-3xl",
+                    inputWrapper: "bg-content2 w-[90%] backdrop-blur items-center absolute bottom-12 left-[5%] h-12 font-normal text-default-500 rounded-3xl",
                 }}
                 placeholder="Type your message..."
                 size="lg"
