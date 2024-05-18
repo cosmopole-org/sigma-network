@@ -6,10 +6,10 @@ import (
 	"net"
 	"sigma/main/core/modules"
 	pb "sigma/main/shell/grpc"
+	"sigma/main/shell/network"
 	shell_grpc "sigma/main/shell/network/grpc"
 	shell_websocket "sigma/main/shell/network/websocket"
 	"sigma/main/shell/services"
-	"sigma/main/shell/network"
 
 	"google.golang.org/grpc"
 )
@@ -19,6 +19,7 @@ type ServersOutput struct {
 }
 
 func LoadServices(a *modules.App) {
+	//native
 	services.CreateDummyService(a)
 	services.CreateAuthService(a)
 	services.CreateHumanService(a)

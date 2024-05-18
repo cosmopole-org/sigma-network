@@ -72,7 +72,7 @@ func AddEndpoint[T IDto, V any](m *Method[T, V]) {
 		if requestIdHeader != nil {
 			requestId = requestIdHeader[0]
 		}
-		statusCode, result := ProcessData[T, V](origin, token, *body, requestId, m)
+		statusCode, result := ProcessData[T, V](origin, token, *body, requestId, m, c)
 		if statusCode == fiber.StatusOK {
 			return HandleResutOfFunc(c, result)
 		}

@@ -48,7 +48,7 @@ func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
 			return nil, "error", errors.New(string(resErr))
 		}
 		var f = *body
-		statusCode, res := modules.ProcessData[T, V](origin, token, f, requestId, m)
+		statusCode, res := modules.ProcessData[T, V](origin, token, f, requestId, m, nil)
 		if statusCode != fiber.StatusOK {
 			return nil, "error", errors.New(res.(utils.Error).Message)
 		}

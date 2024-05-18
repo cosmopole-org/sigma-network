@@ -6,6 +6,8 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type Assistant struct {
@@ -15,7 +17,7 @@ type Assistant struct {
 	TowerId    int64
 	RoomId     int64
 	UserOrigin string
-	Packet     IPacket
+	Ctx        *fiber.Ctx
 }
 
 func (g *Assistant) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, key string) error {
@@ -90,6 +92,6 @@ func (g *Assistant) SaveDataToGlobalStorage(storageRoot string, data []byte, key
 	return nil
 }
 
-func CreateAssistant(userId int64, userType string, towerId int64, roomId int64, workerId int64, packet IPacket) Assistant {
-	return Assistant{UserId: userId, UserType: userType, TowerId: towerId, RoomId: roomId, WorkerId: workerId, Packet: packet}
+func CreateAssistant(userId int64, userOrigin string, userType string, towerId int64, roomId int64, workerId int64, ctx *fiber.Ctx) Assistant {
+	return Assistant{UserId: userId, UserOrigin: userOrigin, UserType: userType, TowerId: towerId, RoomId: roomId, WorkerId: workerId, Ctx: ctx}
 }

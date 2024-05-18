@@ -32,7 +32,7 @@ func ValidateInput[T any](body T, actionType string) []*IError {
 	return []*IError{}
 }
 
-func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string, m *Method[T, V], data T) (int, any) {
+func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string, m *Method[T, V], data T, ctx *fiber.Ctx) (int, any) {
 	if m.Check.User {
 		var userId, userType = AuthWithToken(app, token)
 		var creature = ""
@@ -45,7 +45,7 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string
 			if m.Check.Tower {
 				var location = HandleLocationWithProcessed(app, token, userId, creature, userOrigin, data.GetTowerId(), data.GetRoomId(), data.GetWorkerId())
 				if location.TowerId > 0 {
-					result, err := m.Callback(Instance(), data, CreateAssistant(userId, creature, location.TowerId, location.RoomId, location.WorkerId, nil))
+					result, err := m.Callback(Instance(), data, CreateAssistant(userId, userOrigin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
 					if err != nil {
 						return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
 					}
@@ -54,7 +54,7 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string
 					return fiber.StatusForbidden, utils.BuildErrorJson("access denied")
 				}
 			} else {
-				result, err := m.Callback(Instance(), data, CreateAssistant(userId, creature, 0, 0, userId, nil))
+				result, err := m.Callback(Instance(), data, CreateAssistant(userId, userOrigin, creature, 0, 0, userId, ctx))
 				if err != nil {
 					return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
 				}
@@ -64,7 +64,7 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string
 			return fiber.StatusForbidden, utils.BuildErrorJson("access denied")
 		}
 	} else {
-		result, err := m.Callback(Instance(), data, CreateAssistant(0, "", 0, 0, 0, nil))
+		result, err := m.Callback(Instance(), data, CreateAssistant(0, "", "", 0, 0, 0, ctx))
 		if err != nil {
 			return fiber.ErrInternalServerError.Code, utils.BuildErrorJson(err.Error())
 		}
@@ -72,11 +72,15 @@ func HandleLocalRequest[T IDto, V any](app *App, token string, userOrigin string
 	}
 }
 
-func ProcessData[T IDto, V any](origin string, token string, body T, reqId string, m *Method[T, V]) (int, any) {
+func ProcessData[T IDto, V any](origin string, token string, body T, reqId string, m *Method[T, V], ctx *fiber.Ctx) (int, any) {
+	org := app.AppId
+	if origin != "" {
+		org = origin
+	}
 	if m.MethodOptions.AsEndpoint {
 		if m.MethodOptions.InFederation {
-			if origin == Instance().AppId {
-				return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body)
+			if org == Instance().AppId {
+				return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body, ctx)
 			} else {
 				data, err := json.Marshal(body)
 				if err != nil {
@@ -86,18 +90,18 @@ func ProcessData[T IDto, V any](origin string, token string, body T, reqId strin
 				if m.Check.User {
 					var userId, _ = AuthWithToken(Instance(), token)
 					if userId > 0 {
-						Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: userId, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+						Instance().Memory.SendInFederation(org, InterfedPacket{IsResponse: false, Key: m.Key, UserId: userId, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
 						return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 					} else {
 						return fiber.ErrInternalServerError.Code, utils.BuildErrorJson("access denied")
 					}
 				} else {
-					Instance().Memory.SendInFederation(origin, InterfedPacket{IsResponse: false, Key: m.Key, UserId: 0, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
+					Instance().Memory.SendInFederation(org, InterfedPacket{IsResponse: false, Key: m.Key, UserId: 0, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
 					return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
 				}
 			}
 		} else {
-			return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body)
+			return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body, ctx)
 		}
 	} else {
 		return fiber.ErrForbidden.Code, utils.BuildErrorJson("service not accessible")
@@ -128,7 +132,7 @@ func AddGrpcLoader(fn func()) {
 	fn()
 }
 
-func AddMethod[T IDto, V any](app *App, m *Method[T, V]) {
+func AddMethod[T IDto, V any](m *Method[T, V]) {
 	Methods[m.Key] = m
 }
 
@@ -138,7 +142,7 @@ func GetMethod[T any, V any](key string) *Method[T, V] {
 
 func CallMethod[T any, V any](key string, dto interface{}, meta *Meta) (any, error) {
 	var method = GetMethod[T, V](key)
-	return method.Callback(Instance(), dto, CreateAssistant(meta.UserId, "human", meta.TowerId, meta.RoomId, 0, nil))
+	return method.Callback(Instance(), dto, CreateAssistant(meta.UserId, app.AppId, "human", meta.TowerId, meta.RoomId, 0, nil))
 }
 
 type Method[T any, V any] struct {

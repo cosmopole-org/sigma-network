@@ -7,6 +7,7 @@ import (
 )
 
 func AddEndpoint[T modules.IDto, V modules.IDto](m *modules.Method[T, V]) {
+	modules.AddMethod(m)
 	if m.MethodOptions.AsEndpoint {
 		modules.AddEndpoint(m)
 		shell_websocket.AddEndpoint(m)
