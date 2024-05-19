@@ -1,10 +1,7 @@
 package modules
 
 import (
-	"encoding/json"
-	"log"
 	"sigma/main/core/utils"
-	"sigma/main/shell/outputs"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -16,7 +13,7 @@ type IError struct {
 	Value string
 }
 
-func ValidateInput[T any](body T, actionType string) []*IError {
+func ValidateInput[T any](body T) []*IError {
 	var errors []*IError
 	err := utils.Validate.Struct(body)
 	if err != nil {
@@ -77,47 +74,23 @@ func ProcessData[T IDto, V any](origin string, token string, body T, reqId strin
 	if origin != "" {
 		org = origin
 	}
-	if m.MethodOptions.AsEndpoint {
-		if m.MethodOptions.InFederation {
-			if org == Instance().AppId {
-				return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body, ctx)
-			} else {
-				data, err := json.Marshal(body)
-				if err != nil {
-					log.Println(err)
-					return fiber.ErrInternalServerError.Code, utils.BuildErrorJson((err.Error()))
-				}
-				if m.Check.User {
-					var userId, _ = AuthWithToken(Instance(), token)
-					if userId > 0 {
-						Instance().Memory.SendInFederation(org, InterfedPacket{IsResponse: false, Key: m.Key, UserId: userId, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
-						return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
-					} else {
-						return fiber.ErrInternalServerError.Code, utils.BuildErrorJson("access denied")
-					}
-				} else {
-					Instance().Memory.SendInFederation(org, InterfedPacket{IsResponse: false, Key: m.Key, UserId: 0, TowerId: body.GetTowerId(), RoomId: body.GetRoomId(), Data: string(data), RequestId: reqId})
-					return fiber.StatusOK, ResponseSimpleMessage{Message: "request to federation queued successfully"}
-				}
-			}
-		} else {
+	if m.MethodOptions.Fed {
+		if org == Instance().AppId {
 			return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body, ctx)
+		} else {
+			if m.Check.User {
+				var userId, _ = AuthWithToken(Instance(), token)
+				if userId > 0 {
+					return -2, userId
+				} else {
+					return fiber.ErrInternalServerError.Code, utils.BuildErrorJson("access denied")
+				}
+			} else {
+				return -2, 0
+			}
 		}
 	} else {
-		return fiber.ErrForbidden.Code, utils.BuildErrorJson("service not accessible")
-	}
-}
-
-func HandleResutOfFunc(c *fiber.Ctx, result any) error {
-	switch result := result.(type) {
-	case outputs.Command:
-		if result.Value == "sendFile" {
-			return c.Status(fiber.StatusOK).SendFile(result.Data)
-		} else {
-			return c.Status(fiber.StatusOK).JSON(result)
-		}
-	default:
-		return c.Status(fiber.StatusOK).JSON(result)
+		return HandleLocalRequest[T, V](Instance(), token, app.AppId, m, body, ctx)
 	}
 }
 
@@ -125,42 +98,51 @@ var Methods = map[string]interface{}{}
 var Handlers = map[string]func(*App, interface{}, Assistant) (any, error){}
 var Frames = map[string]interface{}{}
 var Checks = map[string]Check{}
-var MethodOptionsMap = map[string]MethodOptions{}
+var MethodOptionsMap = map[string]AccessOptions{}
 var InterFedOptionsMap = map[string]InterFedOptions{}
 
 func AddGrpcLoader(fn func()) {
 	fn()
 }
 
-func AddMethod[T IDto, V any](m *Method[T, V]) {
+func AddMethod[T IDto, V any](key string, callback func(*App, T, Assistant) (any, error), ck Check, ao AccessOptions) *Method[T, V] {
+	m := &Method[T, V]{Key: key, Callback: callback, Check: ck, MethodOptions: ao}
 	Methods[m.Key] = m
+	Handlers[m.Key] = func(app *App, dto interface{}, a Assistant) (any, error) {
+		return m.Callback(app, dto.(T), a)
+	}
+	Frames[m.Key] = *new(T)
+	Checks[m.Key] = m.Check
+	MethodOptionsMap[m.Key] = m.MethodOptions
+	return m
 }
 
-func GetMethod[T any, V any](key string) *Method[T, V] {
+func GetMethod[T IDto, V any](key string) *Method[T, V] {
 	return Methods[key].(*Method[T, V])
 }
 
-func CallMethod[T any, V any](key string, dto interface{}, meta *Meta) (any, error) {
+func CallMethod[T IDto, V any](key string, dto T, meta *Meta) (any, error) {
 	var method = GetMethod[T, V](key)
 	return method.Callback(Instance(), dto, CreateAssistant(meta.UserId, app.AppId, "human", meta.TowerId, meta.RoomId, 0, nil))
 }
 
-type Method[T any, V any] struct {
+type Method[T IDto, V any] struct {
 	Key            string
-	Callback       func(*App, interface{}, Assistant) (any, error)
+	Callback       func(*App, T, Assistant) (any, error)
 	Check          Check
-	MethodOptions  MethodOptions
+	MethodOptions  AccessOptions
 	ServiceKey     string
 	InputFrame     interface{}
 	HttpValidation bool
 	Dynamic        bool
 }
 
-type MethodOptions struct {
-	AsEndpoint   bool   `json:"asEndpoint" validate:"required"`
-	RestAction   string `json:"restAction" validate:"required"`
-	AsGrpc       bool   `json:"asGrpc" validate:"required"`
-	InFederation bool   `json:"inFederation" validate:"required"`
+type AccessOptions struct {
+	Http   bool   `json:"http" validate:"required"`
+	Action string `json:"action" validate:"required"`
+	Ws     bool   `json:"ws" validate:"required"`
+	Grpc   bool   `json:"grpc" validate:"required"`
+	Fed    bool   `json:"fed" validate:"required"`
 }
 
 type InterFedOptions struct {
@@ -178,53 +160,19 @@ type PluginFunction struct {
 	Key  string        `json:"key" validate:"required"`
 	Path string        `json:"path" validate:"required"`
 	Ch   Check         `json:"ch" validate:"required"`
-	Mo   MethodOptions `json:"mo" validate:"required"`
+	Mo   AccessOptions `json:"mo" validate:"required"`
 }
 
-func CreateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
-	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
-		return callback(app, dto.(T), a)
-	}
-	Frames[key] = inputFrame
-	Checks[key] = check
-	MethodOptionsMap[key] = mOptions
-	InterFedOptionsMap[key] = ifOptions
-	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, HttpValidation: true, Dynamic: false}
-}
-
-func CreateNonValidateMethod[T any, V any](key string, callback func(*App, T, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
-	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
-		return callback(app, dto.(T), a)
-	}
-	Frames[key] = inputFrame
-	Checks[key] = check
-	MethodOptionsMap[key] = mOptions
-	InterFedOptionsMap[key] = ifOptions
-	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, HttpValidation: false, Dynamic: false}
-}
-
-func CreateRawMethod[T any, V any](key string, callback func(*App, string, Assistant) (any, error), inputFrame interface{}, check Check, mOptions MethodOptions, ifOptions InterFedOptions) *Method[T, V] {
-	Handlers[key] = func(app *App, dto interface{}, a Assistant) (any, error) {
-		return callback(app, dto.(string), a)
-	}
-	Frames[key] = inputFrame
-	Checks[key] = check
-	MethodOptionsMap[key] = mOptions
-	InterFedOptionsMap[key] = ifOptions
-	return &Method[T, V]{Key: key, Callback: Handlers[key], Check: check, MethodOptions: mOptions, InputFrame: inputFrame, Dynamic: true}
-}
-
-func CreateCheck(user bool, tower bool, room bool) Check {
+func CreateCk(user bool, tower bool, room bool) Check {
 	return Check{User: user, Tower: tower, Room: room}
 }
 
-func CreateMethodOptions(asEndpoint bool, restAction string, asGrpc bool, inFederation bool) MethodOptions {
-	return MethodOptions{AsEndpoint: asEndpoint, RestAction: restAction, AsGrpc: asGrpc, InFederation: inFederation}
+func CreateAc(http bool, action string, ws bool, grpc bool, fed bool) AccessOptions {
+	return AccessOptions{Http: http, Action: action, Ws: ws, Grpc: grpc, Fed: fed}
 }
 
-func CreateInterFedOptions(user bool, tower bool) InterFedOptions {
-	return InterFedOptions{
-		ValidateUserAtHome:  user,
-		ValidateTowerAtHome: tower,
+func CreateFn[T IDto](f func(*App, T, Assistant) (any, error)) func (app *App, dto interface{}, a Assistant) (any, error) {
+	return func (app *App, dto interface{}, a Assistant) (any, error)  {
+		return f(app, dto.(T), a)
 	}
 }

@@ -190,12 +190,13 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
 					"request": {
-						"method": "POST",
+						"method": "PUT",
 						"header": [
 							{
 								"key": "token",
@@ -852,6 +853,51 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "send",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"broadcast\",\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61,\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/rooms/send",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"rooms",
+								"send"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -1070,51 +1116,6 @@
 							"path": [
 								"workers",
 								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "deliver",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61,\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/workers/deliver",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"workers",
-								"deliver"
 							]
 						}
 					},

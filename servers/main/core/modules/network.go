@@ -12,7 +12,6 @@ import (
 )
 
 type Network struct {
-	HttpServer   *HttpServer
 	PusherServer *Pusher
 }
 
@@ -20,13 +19,10 @@ func CreateListenOptions(https bool, httpsPort int, grpc bool, grpcPort int) Lis
 	return ListenOptions{https, httpsPort, grpc, grpcPort}
 }
 
-func (n *Network) Listen(port int) {
-	n.HttpServer.ListenForHttps(Instance(), port)
-}
-
 type Pusher struct {
-	Clients map[int64]*websocket.Conn
-	Groups  *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
+	Clients       map[int64]*websocket.Conn
+	Groups        *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
+	ToOuterOrigin func(string, OriginPacket)
 }
 
 func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
@@ -50,13 +46,13 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 		}
 	} else {
 		if alreadySerialized {
-			app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: data.(string)})
+			p.ToOuterOrigin(userOrigin, OriginPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: data.(string)})
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
 				log.Println(err)
 			} else {
-				app.Memory.SendInFederation(userOrigin, InterfedPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
+				p.ToOuterOrigin(userOrigin, OriginPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
 			}
 		}
 	}
@@ -102,7 +98,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 			}
 		}
 		for k, v := range foreignersMap {
-			app.Memory.SendInFederation(k, InterfedPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Exceptions: v, Data: string(message)})
+			p.ToOuterOrigin(k, OriginPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Exceptions: v, Data: string(message)})
 		}
 	}
 }
@@ -135,20 +131,19 @@ func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupM
 	return p.Groups.Get(fmt.Sprintf("%d", groupId))
 }
 
-func LoadPusher() *Pusher {
+func LoadPusher(toOuterOrigin func (string, OriginPacket)) *Pusher {
 	newMap := cmap.New[*cmap.ConcurrentMap[string, GroupMember]]()
 	return &Pusher{
 		Clients: map[int64]*websocket.Conn{},
 		Groups:  &newMap,
+		ToOuterOrigin: toOuterOrigin,
 	}
 }
 
-func CreateNetwork() *Network {
+func CreateNetwork(toOuterOrigin func (string, OriginPacket)) *Network {
 	log.Println("running network...")
 	netInstance := &Network{}
 	utils.LoadValidationSystem()
-	LoadHttpServer()
-	netInstance.HttpServer = LoadHttpServer()
-	netInstance.PusherServer = LoadPusher()
+	netInstance.PusherServer = LoadPusher(toOuterOrigin)
 	return netInstance
 }

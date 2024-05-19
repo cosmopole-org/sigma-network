@@ -20,13 +20,14 @@ import (
 )
 
 type GrpcServer struct {
-	Server *grpc.Server
+	Server    *grpc.Server
+	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
 
-var endpoints = map[string]func(interface{}, string, string, string) (any, string, error){}
+var instance *GrpcServer
 
 func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
-	endpoints[m.Key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
+	instance.Endpoints[m.Key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
 		body := new(T)
 		err := mapstructure.Decode(rawBody, body)
 		if err != nil {
@@ -37,7 +38,7 @@ func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
 		if statusCode != fiber.StatusOK {
 			return nil, "error", errors.New(res.(utils.Error).Message)
 		}
-		if (m.MethodOptions.InFederation) && (origin != modules.Instance().AppId) {
+		if (m.MethodOptions.Fed) && (origin != modules.Instance().AppId) {
 			return res, "noaction", nil
 		}
 		return res, "response", nil
@@ -79,27 +80,34 @@ func serverInterceptor(
 		return nil, status.Errorf(codes.Unauthenticated, "RequestId is not supplied")
 	}
 	requestId := reqIdHeader[0]
-	endpoint := endpoints[action]
-	res, _, err := endpoint(req, token, origin, requestId)
-	if err != nil {
-		return nil, status.Errorf(codes.Unauthenticated, err.Error())
+	endpoint, ok := instance.Endpoints[action]
+	if ok {
+		res, _, err := endpoint(req, token, origin, requestId)
+		if err != nil {
+			return nil, status.Errorf(codes.Unauthenticated, err.Error())
+		} else {
+			return res, nil
+		}
 	} else {
-		return res, nil
+		return nil, status.Errorf(codes.Unauthenticated, "endpoint not found")
 	}
 }
 
-func (g *GrpcServer) ListenForGrpc(port int) {
+func Listen(port int) *GrpcServer {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen grpc: %v", err)
 	}
 	log.Printf("server listening at %v", lis.Addr())
-	go g.Server.Serve(lis)
+	go instance.Server.Serve(lis)
+	return instance
 }
 
-func LoadGrpcServer() *GrpcServer {
+func New() *GrpcServer {
+	instance = &GrpcServer{Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(serverInterceptor),
 	)
-	return &GrpcServer{Server: grpcServer}
+	instance.Server = grpcServer
+	return instance
 }

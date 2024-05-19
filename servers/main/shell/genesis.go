@@ -4,41 +4,17 @@ import (
 	"context"
 	"log"
 	"net"
+	"sigma/main/core"
+	pb "sigma/main/core/models/grpc"
 	"sigma/main/core/modules"
-	pb "sigma/main/shell/grpc"
+	service_manager "sigma/main/shell/manager"
 	"sigma/main/shell/network"
 	shell_grpc "sigma/main/shell/network/grpc"
-	shell_websocket "sigma/main/shell/network/websocket"
-	"sigma/main/shell/services"
-
-	"google.golang.org/grpc"
+	shell_http "sigma/main/shell/network/http"
 )
 
 type ServersOutput struct {
 	Map map[string]bool `json:"map"`
-}
-
-func LoadServices(a *modules.App) {
-	//native
-	services.CreateDummyService(a)
-	services.CreateAuthService(a)
-	services.CreateHumanService(a)
-	services.CreateInviteService(a)
-	services.CreateTowerService(a)
-	services.CreateRoomService(a)
-	services.CreateMachineService(a)
-	services.CreateWorkerService(a)
-	services.CreateExternalService(a)
-}
-
-func LoadGrpcServices(gs *grpc.Server) {
-	services.LoadAuthGrpcService(gs)
-	services.LoadHumanGrpcService(gs)
-	services.LoadInviteGrpcService(gs)
-	services.LoadTowerGrpcService(gs)
-	services.LoadRoomGrpcService(gs)
-	services.LoadMachineGrpcService(gs)
-	services.LoadWorkerGrpcService(gs)
 }
 
 func LoadAccess(app *modules.App) {
@@ -126,6 +102,7 @@ type AppConfig struct {
 	StorageRoot      string
 	Ports            map[string]int
 	EnableFederation bool
+	CoreAccess       bool
 }
 
 func New(appId string, config AppConfig) *modules.App {
@@ -151,24 +128,26 @@ func New(appId string, config AppConfig) *modules.App {
 		AppId:       appId,
 		StorageRoot: config.StorageRoot,
 		Federative:  config.EnableFederation,
+		CoreAccess:  config.CoreAccess,
 		HostToIp:    hostToIpMap,
 		IpToHost:    ipToHostMap,
 	}
 	modules.Keep(a)
 	inst := modules.Instance()
-	LoadKeys()
 	inst.Database = modules.CreateDatabase(config.DatabaseUri, config.DatabaseName)
-	inst.Network = modules.CreateNetwork()
+	LoadKeys()
+	_, fn, _, gc := service_manager.Load(inst)
+	core.LoadCoreServices(inst, config.CoreAccess)
+	inst.Network = modules.CreateNetwork(func(s string, op modules.OriginPacket) {
+		fn.SendInFederation(inst, s, op)
+	})
 	inst.Memory = modules.CreateMemory(config.MemoryUri)
-	LoadServices(inst)
 	if config.Ports["http"] > 0 {
-		inst.Network.Listen(config.Ports["http"])
-		shell_websocket.LoadWebsocket(inst)
+		shell_http.Listen(config.Ports["http"])
 	}
 	if config.Ports["grpc"] > 0 {
-		gs := shell_grpc.LoadGrpcServer()
-		LoadGrpcServices(gs.Server)
-		gs.ListenForGrpc(config.Ports["grpc"])
+		shell_grpc.Listen(config.Ports["grpc"])
+		core.LoadCoreGrpcServices(gc.Server)
 	}
 	LoadAccess(inst)
 

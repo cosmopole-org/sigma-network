@@ -35,6 +35,7 @@ func main() {
 				"http": int(port),
 			},
 			EnableFederation: true,
+			CoreAccess: os.Getenv("CORE_ACCESS") == "true",
 		},
 	)
 

@@ -6,6 +6,7 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
+	shell_http "sigma/main/shell/network/http"
 	"strings"
 
 	"github.com/gofiber/contrib/websocket"
@@ -18,7 +19,11 @@ type WebsocketAnswer struct {
 	Data      any
 }
 
-var endpoints = map[string]func(string, string, string, string) (any, string, error){}
+type WsServer struct {
+	Endpoints map[string]func(string, string, string, string) (any, string, error)
+}
+
+var instance *WsServer
 
 func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
@@ -33,13 +38,13 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 }
 
 func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
-	endpoints[m.Key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
+	instance.Endpoints[m.Key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
 		body := new(T)
 		err := json.Unmarshal([]byte(rawBody), body)
 		if err != nil {
 			return nil, "error", errors.New("invalid input format")
 		}
-		errs := modules.ValidateInput[T](*body, m.MethodOptions.RestAction)
+		errs := modules.ValidateInput[T](*body)
 		if len(errs) > 0 {
 			resErr, err := json.Marshal(errs)
 			if err != nil {
@@ -52,15 +57,15 @@ func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
 		if statusCode != fiber.StatusOK {
 			return nil, "error", errors.New(res.(utils.Error).Message)
 		}
-		if (m.MethodOptions.InFederation) && (origin != modules.Instance().AppId) {
+		if (m.MethodOptions.Fed) && (origin != modules.Instance().AppId) {
 			return res, "noaction", nil
 		}
 		return res, "response", nil
 	}
 }
 
-func LoadWebsocket(app *modules.App) {
-	app.Network.HttpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
+func Load(app *modules.App, httpServer *shell_http.HttpServer) {
+	httpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
 		var uid int64 = 0
 		for {
 			_, p, err := conn.ReadMessage()
@@ -82,12 +87,16 @@ func LoadWebsocket(app *modules.App) {
 				var origin = splittedMsg[2]
 				var requestId = splittedMsg[3]
 				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(origin) + 1 + len(requestId)):]
-				endpoint := endpoints[uri]
-				res, resType, err := endpoint(body, token, origin, requestId)
-				if err != nil {
-					AnswerSocket(conn, resType, requestId, utils.BuildErrorJson(err.Error()))
+				endpoint, ok := instance.Endpoints[uri]
+				if ok {
+					res, resType, err := endpoint(body, token, origin, requestId)
+					if err != nil {
+						AnswerSocket(conn, resType, requestId, utils.BuildErrorJson(err.Error()))
+					} else {
+						AnswerSocket(conn, resType, requestId, res)
+					}
 				} else {
-					AnswerSocket(conn, resType, requestId, res)
+					AnswerSocket(conn, "error", requestId, utils.BuildErrorJson("endpoint not found"))
 				}
 			}
 		}
@@ -96,4 +105,10 @@ func LoadWebsocket(app *modules.App) {
 		}
 		log.Println("socket broken")
 	}))
+}
+
+func New(app *modules.App, httpServer *shell_http.HttpServer) *WsServer {
+	instance = &WsServer{Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
+	Load(app, httpServer)
+	return instance
 }
