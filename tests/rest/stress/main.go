@@ -1,53 +1,63 @@
 package main
 
-import "fmt"
+import (
+	"encoding/json"
+	"fmt"
+)
+
+// hello
+
+func hello(c Hello) any {
+	fmt.Println("hello " + c.Content1)
+	return nil
+}
 
 type Hello struct {
 	Content1 string
 }
 
-func (h *Hello) GetContent() string {
-	return h.Content1
+// bye
+
+func bye(c Bye) any {
+	fmt.Println("bye " + c.Content2)
+	return nil
 }
 
 type Bye struct {
 	Content2 string
 }
 
-func (b *Bye) GetContent() string {
-	return b.Content2
-}
-
-type Packet interface {
-	*Hello | *Bye
-	GetContent() string
-}
-
-func ExtractPacket[T Packet](x T) string {
-	return x.GetContent()
-}
+// base
 
 type Action struct {
-	Process func(interface{})
+	Process func(string) any
+}
+
+func CreateAction[T any](fn func(T) any) Action {
+	return Action{Process: func(rawStr string) any {
+		frame := new(T)
+		json.Unmarshal([]byte(rawStr), frame)
+		return fn(*frame)
+	}}
 }
 
 type Services struct {
 	Actions map[string]Action
 }
 
-func hello(c Hello) {
-	fmt.Println(c.GetContent())
+func (ss *Services) RunAction(key string, input string) any {
+	return ss.Actions[key].Process(input)
 }
 
-func (ss *Services) RunAction(key string, input interface{}) {
-	ss.Actions["hello"].Process(input)
+func (ss *Services) AddAction(key string, action Action) {
+	ss.Actions[key] = action
 }
 
 func main() {
 	services := Services{Actions: map[string]Action{}}
-	action1 := Action{Process: func(raw interface{}) {
-		hello(raw.(Hello))
-	}}
-	services.Actions["hello"] = action1
-	services.RunAction("hello", Hello{Content1: "test world !"})
+	services2 := Services{Actions: map[string]Action{}}
+	services.AddAction("hello", CreateAction(hello))
+	services2.AddAction("bye", CreateAction(bye))
+	services.RunAction("hello", `{ "Content1": "world 1" }`)
+	services2.RunAction("bye", `{ "Content2": "world 2" }`)
 }
