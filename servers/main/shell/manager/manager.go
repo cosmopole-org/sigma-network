@@ -12,7 +12,7 @@ func AddEndpoint[T modules.IDto, V any](key string, callback func(*modules.App, 
 	m := &modules.Method[T, V]{Key: key, Callback: callback, Check: ck, MethodOptions: ao}
 	modules.AddMethod[T, V](key, callback, ck, ao)
 	if ao.Http {
-		shell_http.AddEndpoint[T, V](m)
+		shell_http.AddEndpoint(m)
 	}
 	if ao.Ws {
 		shell_websocket.AddEndpoint(m)
