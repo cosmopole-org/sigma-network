@@ -5,6 +5,7 @@ type App struct {
 	Network     *Network
 	Database    *Database
 	Memory      *Memory
+	Services    *Services
 	StorageRoot string
 	Federative  bool
 	CoreAccess  bool

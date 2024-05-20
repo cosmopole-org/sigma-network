@@ -7,7 +7,7 @@ import (
 	dtos_machines "sigma/main/core/dtos/machines"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 	"strconv"
 
 	pb "sigma/main/core/models/grpc"
@@ -114,34 +114,38 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/machines/get.sql")
 
 	// Methods
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_machines.CreateDto, dtos_machines.CreateDto](
-			"/machines/create",
-			createMachine,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_machines.UpdateDto, dtos_machines.UpdateDto](
-			"/machines/update",
-			updateMachine,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPut, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_machines.DeleteDto, dtos_machines.DeleteDto](
-			"/machines/delete",
-			deleteMachine,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodDelete, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_machines.GetDto, dtos_machines.GetDto](
-			"/machines/get",
-			getMachine,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/machines/create",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		createMachine,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/machines/update",
+		fiber.MethodPut,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		updateMachine,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/machines/delete",
+		fiber.MethodDelete,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		deleteMachine,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/machines/get",
+		fiber.MethodGet,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		getMachine,
+	))
 }
 
 func LoadMachineGrpcService(grpcServer *grpc.Server) {

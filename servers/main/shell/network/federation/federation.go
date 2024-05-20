@@ -12,7 +12,6 @@ import (
 	pb "sigma/main/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/mitchellh/mapstructure"
 )
 
 type FedNet struct {
@@ -89,15 +88,8 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
 			app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
 		} else {
-			var input any
-			err2 := json.Unmarshal([]byte(payload.Data), &input)
-			if err2 != nil {
-				log.Println(err2)
-				return
-			}
-			fn := modules.Handlers[payload.Key]
-			f := modules.Frames[payload.Key]
-			check := modules.Checks[payload.Key]
+			action := modules.Instance().Services.GetAction(payload.Key)
+			check := action.Check
 			location := modules.AuthorizeFedHumanWithProcessed(app, payload.UserId, channelId, payload.TowerId, payload.RoomId)
 			if check.Tower && location.TowerId == 0 {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
@@ -106,8 +98,7 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 				}
 				return
 			}
-			mapstructure.Decode(input, &f)
-			result, err := fn(app, f, modules.Assistant{
+			_, res, err := action.ProcessFederative(app, payload.Data, modules.Assistant{
 				UserId:     payload.UserId,
 				UserType:   "human",
 				TowerId:    location.TowerId,
@@ -123,7 +114,7 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 				}
 				return
 			}
-			packet, err3 := json.Marshal(result)
+			packet, err3 := json.Marshal(res)
 			if err3 != nil {
 				log.Println(err3)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))

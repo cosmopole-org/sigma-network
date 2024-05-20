@@ -8,7 +8,7 @@ import (
 	dtos_workers "sigma/main/core/dtos/workers"
 	"sigma/main/core/modules"
 	updates_workers "sigma/main/core/updates/workers"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -116,34 +116,39 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/workers/deliver.sql")
 
 	// Methods
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_workers.CreateDto, dtos_workers.CreateDto](
-			"/workers/create",
-			createWorker,
-			modules.CreateCk(true, true, true),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_workers.UpdateDto, dtos_workers.UpdateDto](
-			"/workers/update",
-			updateWorker,
-			modules.CreateCk(true, true, true),
-			modules.CreateAc(coreAccess, fiber.MethodPut, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_workers.DeleteDto, dtos_workers.DeleteDto](
-			"/workers/delete",
-			deleteWorker,
-			modules.CreateCk(true, true, true),
-			modules.CreateAc(coreAccess, fiber.MethodDelete, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_workers.ReadDto, dtos_workers.ReadDto](
-			"/workers/read",
-			readWorkers,
-			modules.CreateCk(true, true, true),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		))
+
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/workers/create",
+		fiber.MethodPost,
+		modules.CreateCk(true, true, true),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		createWorker,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/workers/update",
+		fiber.MethodPut,
+		modules.CreateCk(true, true, true),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		updateWorker,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/workers/delete",
+		fiber.MethodDelete,
+		modules.CreateCk(true, true, true),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		deleteWorker,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/workers/read",
+		fiber.MethodGet,
+		modules.CreateCk(true, true, true),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		readWorkers,
+	))
 }
 
 func LoadWorkerGrpcService(grpcServer *grpc.Server) {

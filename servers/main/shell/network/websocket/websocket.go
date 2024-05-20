@@ -2,7 +2,6 @@ package shell_websocket
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
@@ -23,8 +22,6 @@ type WsServer struct {
 	Endpoints map[string]func(string, string, string, string) (any, string, error)
 }
 
-var instance *WsServer
-
 func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
@@ -37,34 +34,21 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 	}
 }
 
-func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
-	instance.Endpoints[m.Key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		body := new(T)
-		err := json.Unmarshal([]byte(rawBody), body)
-		if err != nil {
-			return nil, "error", errors.New("invalid input format")
-		}
-		errs := modules.ValidateInput[T](*body)
-		if len(errs) > 0 {
-			resErr, err := json.Marshal(errs)
-			if err != nil {
-				return nil, "error", err
-			}
-			return nil, "error", errors.New(string(resErr))
-		}
-		var f = *body
-		statusCode, res := modules.ProcessData[T, V](origin, token, f, requestId, m, nil)
-		if statusCode != fiber.StatusOK {
-			return nil, "error", errors.New(res.(utils.Error).Message)
-		}
-		if (m.MethodOptions.Fed) && (origin != modules.Instance().AppId) {
+func (ws *WsServer) EnableEndpoint(key string) {
+	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
+		statusCode, res, err := modules.Instance().Services.CallAction(key, rawBody, token, origin)
+		if statusCode == fiber.StatusOK {
+			return res, "response", nil
+		} else if statusCode == -2 {
 			return res, "noaction", nil
+		} else if err != nil {
+			return nil, "error", err
 		}
-		return res, "response", nil
+		return nil, "", nil
 	}
 }
 
-func Load(app *modules.App, httpServer *shell_http.HttpServer) {
+func (ws *WsServer) Load(app *modules.App, httpServer *shell_http.HttpServer) {
 	httpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
 		var uid int64 = 0
 		for {
@@ -87,7 +71,7 @@ func Load(app *modules.App, httpServer *shell_http.HttpServer) {
 				var origin = splittedMsg[2]
 				var requestId = splittedMsg[3]
 				var body = dataStr[(len(uri) + 1 + len(token) + 1 + len(origin) + 1 + len(requestId)):]
-				endpoint, ok := instance.Endpoints[uri]
+				endpoint, ok := ws.Endpoints[uri]
 				if ok {
 					res, resType, err := endpoint(body, token, origin, requestId)
 					if err != nil {
@@ -108,7 +92,7 @@ func Load(app *modules.App, httpServer *shell_http.HttpServer) {
 }
 
 func New(app *modules.App, httpServer *shell_http.HttpServer) *WsServer {
-	instance = &WsServer{Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
-	Load(app, httpServer)
-	return instance
+	ws := &WsServer{Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
+	ws.Load(app, httpServer)
+	return ws
 }

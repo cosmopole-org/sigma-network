@@ -7,7 +7,7 @@ import (
 	dtos_rooms "sigma/main/core/dtos/rooms"
 	"sigma/main/core/modules"
 	updates_rooms "sigma/main/core/updates/rooms"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 	"strconv"
 	"strings"
 
@@ -149,41 +149,46 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
 	// Methods
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_rooms.CreateDto, dtos_rooms.CreateDto](
-			"/rooms/create",
-			createRoom,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_rooms.UpdateDto, dtos_rooms.UpdateDto](
-			"/rooms/update",
-			updateRoom,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodPut, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_rooms.DeleteDto, dtos_rooms.DeleteDto](
-			"/rooms/delete",
-			deleteRoom,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodDelete, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_rooms.GetDto, dtos_rooms.GetDto](
-			"/rooms/get",
-			getRoom,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_rooms.SendDto, dtos_rooms.SendDto](
-			"/rooms/send",
-			send,
-			modules.CreateCk(true, true, true),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/rooms/create",
+		fiber.MethodPost,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		createRoom,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/rooms/update",
+		fiber.MethodPut,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		updateRoom,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/rooms/delete",
+		fiber.MethodDelete,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		deleteRoom,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/rooms/get",
+		fiber.MethodGet,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		getRoom,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/rooms/send",
+		fiber.MethodPost,
+		modules.CreateCk(true, true, true),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		send,
+	))
 }
 
 func LoadRoomGrpcService(grpcServer *grpc.Server) {

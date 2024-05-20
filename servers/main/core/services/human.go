@@ -8,7 +8,7 @@ import (
 	dtos_humans "sigma/main/core/dtos/humans"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -17,7 +17,7 @@ import (
 )
 
 func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant modules.Assistant) (any, error) {
-	res, _ := modules.CallMethod[dtos_humans.GetDto, dtos_humans.GetDto]("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, &modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+	_, res, _ := modules.Instance().Services.CallActionHonestly("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
@@ -158,49 +158,54 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/humans/verify.sql")
 
 	// Methods
-
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.AuthenticateDto, dtos_humans.AuthenticateDto](
-			"/humans/authenticate",
-			authenticate,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.SignupDto, dtos_humans.SignupDto](
-			"/humans/signup",
-			signup,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.VerifyDto, dtos_humans.VerifyDto](
-			"/humans/verify",
-			verify,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.CompleteDto, dtos_humans.CompleteDto](
-			"/humans/complete",
-			complete,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.UpdateDto, dtos_humans.UpdateDto](
-			"/humans/update",
-			update,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPut, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_humans.GetDto, dtos_humans.GetDto](
-			"/humans/get",
-			get,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/authenticate",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		authenticate,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/signup",
+		fiber.MethodPost,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		signup,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/verify",
+		fiber.MethodPost,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		verify,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/complete",
+		fiber.MethodPost,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		complete,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/update",
+		fiber.MethodPut,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		update,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/humans/get",
+		fiber.MethodGet,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		get,
+	))
 }
 
 func LoadHumanGrpcService(grpcServer *grpc.Server) {

@@ -7,10 +7,9 @@ import (
 	"sigma/main/core"
 	pb "sigma/main/core/models/grpc"
 	"sigma/main/core/modules"
-	service_manager "sigma/main/shell/manager"
+	shell_keeper "sigma/main/shell/keeper"
 	"sigma/main/shell/network"
-	shell_grpc "sigma/main/shell/network/grpc"
-	shell_http "sigma/main/shell/network/http"
+	network_manager "sigma/main/shell/network/manager"
 )
 
 type ServersOutput struct {
@@ -134,20 +133,22 @@ func New(appId string, config AppConfig) *modules.App {
 	}
 	modules.Keep(a)
 	inst := modules.Instance()
+	inst.Services = modules.CreateServices()
 	inst.Database = modules.CreateDatabase(config.DatabaseUri, config.DatabaseName)
 	LoadKeys()
-	_, fn, _, gc := service_manager.Load(inst)
+	nm := network_manager.Load(inst)
+	shell_keeper.Keep(nm)
 	core.LoadCoreServices(inst, config.CoreAccess)
 	inst.Network = modules.CreateNetwork(func(s string, op modules.OriginPacket) {
-		fn.SendInFederation(inst, s, op)
+		nm.FedNet.SendInFederation(inst, s, op)
 	})
 	inst.Memory = modules.CreateMemory(config.MemoryUri)
 	if config.Ports["http"] > 0 {
-		shell_http.Listen(config.Ports["http"])
+		nm.HttpServer.Listen(config.Ports["http"])
 	}
 	if config.Ports["grpc"] > 0 {
-		shell_grpc.Listen(config.Ports["grpc"])
-		core.LoadCoreGrpcServices(gc.Server)
+		nm.GrpcServer.Listen(config.Ports["grpc"])
+		core.LoadCoreGrpcServices(nm.GrpcServer.Server)
 	}
 	LoadAccess(inst)
 

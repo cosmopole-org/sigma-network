@@ -24,28 +24,36 @@ type GrpcServer struct {
 	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
 
-var instance *GrpcServer
-
-func AddEndpoint[T modules.IDto, V any](m *modules.Method[T, V]) {
-	instance.Endpoints[m.Key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
+func CreateConverter[T modules.IDto](key string) func(interface{}) (any, error) {
+	return func(i interface{}) (any, error) {
 		body := new(T)
-		err := mapstructure.Decode(rawBody, body)
+		err := mapstructure.Decode(i, body)
 		if err != nil {
-			return nil, "error", errors.New("invalid input format")
+			return nil, errors.New("invalid input format")
 		}
-		var f = *body
-		statusCode, res := modules.ProcessData[T, V](origin, token, f, requestId, m, nil)
-		if statusCode != fiber.StatusOK {
-			return nil, "error", errors.New(res.(utils.Error).Message)
-		}
-		if (m.MethodOptions.Fed) && (origin != modules.Instance().AppId) {
-			return res, "noaction", nil
-		}
-		return res, "response", nil
+		return *body, nil
 	}
 }
 
-func serverInterceptor(
+func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (any, error)) {
+	gs.Endpoints[key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
+		data, err0 := converter(rawBody)
+		if err0 != nil {
+			return nil, "error", err0
+		}
+		statusCode, res, err := modules.Instance().Services.CallAction(key, data, token, origin)
+		if statusCode == fiber.StatusOK {
+			return res, "response", nil
+		} else if statusCode == -2 {
+			return res, "noaction", nil
+		} else if err != nil {
+			return nil, "error", errors.New(res.(utils.Error).Message)
+		}
+		return nil, "", nil
+	}
+}
+
+func (gs *GrpcServer) serverInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
@@ -80,7 +88,7 @@ func serverInterceptor(
 		return nil, status.Errorf(codes.Unauthenticated, "RequestId is not supplied")
 	}
 	requestId := reqIdHeader[0]
-	endpoint, ok := instance.Endpoints[action]
+	endpoint, ok := gs.Endpoints[action]
 	if ok {
 		res, _, err := endpoint(req, token, origin, requestId)
 		if err != nil {
@@ -93,21 +101,20 @@ func serverInterceptor(
 	}
 }
 
-func Listen(port int) *GrpcServer {
+func (gs  *GrpcServer) Listen(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen grpc: %v", err)
 	}
 	log.Printf("server listening at %v", lis.Addr())
-	go instance.Server.Serve(lis)
-	return instance
+	go gs.Server.Serve(lis)
 }
 
 func New() *GrpcServer {
-	instance = &GrpcServer{Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
+	gs := &GrpcServer{Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
-		grpc.UnaryInterceptor(serverInterceptor),
+		grpc.UnaryInterceptor(gs.serverInterceptor),
 	)
-	instance.Server = grpcServer
-	return instance
+	gs.Server = grpcServer
+	return gs
 }

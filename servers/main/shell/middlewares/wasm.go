@@ -11,7 +11,6 @@ import (
 	"sigma/main/core/utils"
 
 	dtos_external "sigma/main/core/dtos/external"
-	service_manager "sigma/main/shell/manager"
 	outputs_external "sigma/main/shell/outputs/external"
 
 	"github.com/gofiber/fiber/v2"
@@ -204,11 +203,14 @@ func CreateExternalService(app *modules.App) func(*fiber.Ctx) error {
 	loadWasmModules(app)
 
 	// Methods
-	service_manager.AddEndpoint[dtos_external.PlugDto, dtos_external.PlugDto](
-		"/external/plug",
-		plug,
-		modules.CreateCk(true, false, false),
-		modules.CreateAc(true, fiber.MethodPost, true, false, false),
+	modules.Instance().Services.AddAction(
+		modules.CreateAction("/external/plug",
+			fiber.MethodPost,
+			modules.CreateCk(true, false, false),
+			modules.CreateAc(true, true, false, false),
+			false,
+			plug,
+		),
 	)
 
 	return func(c *fiber.Ctx) error {
@@ -217,9 +219,9 @@ func CreateExternalService(app *modules.App) func(*fiber.Ctx) error {
 		if ok {
 			meta := pluginMetas[path]
 			var body = ""
-			if meta.Mo.Action == "POST" || meta.Mo.Action == "PUT" || meta.Mo.Action == "DELETE" {
+			if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
 				body = string(c.BodyRaw())
-			} else if meta.Mo.Action == "GET" {
+			} else if meta.Access.ActionType == "GET" {
 				dictStr, _ := json.Marshal(c.AllParams())
 				body = string(dictStr)
 			}
@@ -236,12 +238,12 @@ func CreateExternalService(app *modules.App) func(*fiber.Ctx) error {
 				token = tokenHeader[0]
 			}
 
-			var check = meta.Ch
+			var check = meta.Check
 
 			var data = map[string]interface{}{}
-			if meta.Mo.Action == "POST" || meta.Mo.Action == "PUT" || meta.Mo.Action == "DELETE" {
+			if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
 				c.BodyParser(&data)
-			} else if meta.Mo.Action == "GET" {
+			} else if meta.Access.ActionType == "GET" {
 				c.ParamsParser(&data)
 			}
 

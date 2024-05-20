@@ -8,7 +8,7 @@ import (
 	dtos_invites "sigma/main/core/dtos/invites"
 	"sigma/main/core/modules"
 	updates_invites "sigma/main/core/updates/invites"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -134,34 +134,38 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
 	// Methods
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_invites.CreateDto, dtos_invites.CreateDto](
-			"/invites/create",
-			createInvite,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_invites.CancelDto, dtos_invites.CancelDto](
-			"/invites/cancel",
-			cancelInvite,
-			modules.CreateCk(true, true, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_invites.AcceptDto, dtos_invites.AcceptDto](
-			"/invites/accept",
-			acceptInvite,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_invites.DeclineDto, dtos_invites.DeclineDto](
-			"/invites/decline",
-			declineInvite,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/invites/create",
+		fiber.MethodPost,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		createInvite,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/invites/cancel",
+		fiber.MethodPost,
+		modules.CreateCk(true, true, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		cancelInvite,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/invites/accept",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		acceptInvite,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/invites/decline",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		declineInvite,
+	))
 }
 
 func LoadInviteGrpcService(grpcServer *grpc.Server) {

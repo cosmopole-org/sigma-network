@@ -3,8 +3,8 @@ package services
 import (
 	dtos_auth "sigma/main/core/dtos/auth"
 	"sigma/main/core/modules"
+	"sigma/main/shell/manager"
 	network_store "sigma/main/shell/network"
-	shell_controller "sigma/main/shell/network/core"
 	outputs_auth "sigma/main/shell/outputs/auth"
 
 	pb "sigma/main/core/models/grpc"
@@ -24,22 +24,22 @@ func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant m
 }
 
 func CreateAuthService(app *modules.App, coreAccess bool) {
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_auth.GetServerKey, dtos_auth.GetServerKey](
-			"/auths/getServerPublicKey",
-			getServerPublicKey,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		),
-	)
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_auth.GetServersMapDto, dtos_auth.GetServersMapDto](
-			"/auths/getServerPublicKey",
-			getServersMap,
-			modules.CreateCk(false, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		),
-	)
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/auths/getServerPublicKey",
+		fiber.MethodGet,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		getServerPublicKey,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/auths/getServersMap",
+		fiber.MethodGet,
+		modules.CreateCk(false, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		getServersMap,
+	))
 }
 
 func LoadAuthGrpcService(grpcServer *grpc.Server) {

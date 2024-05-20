@@ -8,7 +8,7 @@ import (
 	dtos_towers "sigma/main/core/dtos/towers"
 	"sigma/main/core/modules"
 	updates_towers "sigma/main/core/updates/towers"
-	shell_controller "sigma/main/shell/network/core"
+	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -143,41 +143,46 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/towers/create.sql")
 
 	// Methods
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_towers.CreateDto, dtos_towers.CreateDto](
-			"/towers/create",
-			createTower,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_towers.UpdateDto, dtos_towers.UpdateDto](
-			"/towers/update",
-			updateTower,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPut, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_towers.DeleteDto, dtos_towers.DeleteDto](
-			"/towers/delete",
-			deleteTower,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodDelete, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_towers.GetDto, dtos_towers.GetDto](
-			"/towers/get",
-			getTower,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodGet, true, false, false),
-		))
-	shell_controller.AddEndpoint(
-		modules.AddMethod[dtos_towers.JoinDto, dtos_towers.JoinDto](
-			"/towers/join",
-			joinTower,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(coreAccess, fiber.MethodPost, true, false, false),
-		))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/towers/create",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		createTower,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/towers/update",
+		fiber.MethodPut,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		updateTower,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/towers/delete",
+		fiber.MethodDelete,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		deleteTower,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/towers/get",
+		fiber.MethodGet,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		getTower,
+	))
+	manager.Instance.Endpoint(modules.CreateAction(
+		"/towers/join",
+		fiber.MethodPost,
+		modules.CreateCk(true, false, false),
+		modules.CreateAc(coreAccess, true, false, false),
+		true,
+		joinTower,
+	))
 }
 
 func LoadTowerGrpcService(grpcServer *grpc.Server) {
