@@ -39,9 +39,11 @@ func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assist
 	return outputs_external.PlugDto{}, nil
 }
 
-func CreateWasmPluggerService() {
+func CreateWasmPluggerService(mans *mans.Managers) {
 
-	wasmS := &WasmService{}
+	wasmS := &WasmService{
+		managers: mans,
+	}
 
 	// Methods
 	core.Core().Services.AddAction(

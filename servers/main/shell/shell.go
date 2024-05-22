@@ -54,7 +54,7 @@ func New(appId string, config ShellConfig) *Sigma {
 	})
 	sh.managers = mans.New()
 	core.LoadCoreServices(config.CoreAccess)
-	services.CreateWasmPluggerService()
+	services.CreateWasmPluggerService(sh.managers)
 	sh.ConnectServicesToNet()
 	return sh
 }
