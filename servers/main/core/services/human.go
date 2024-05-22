@@ -8,7 +8,6 @@ import (
 	dtos_humans "sigma/main/core/dtos/humans"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -17,7 +16,7 @@ import (
 )
 
 func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant modules.Assistant) (any, error) {
-	_, res, _ := modules.Instance().Services.CallActionHonestly("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+	_, res, _ := modules.GetApp().Services.CallActionHonestly("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
@@ -158,51 +157,45 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/humans/verify.sql")
 
 	// Methods
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/authenticate",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		authenticate,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/signup",
-		fiber.MethodPost,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		signup,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/verify",
-		fiber.MethodPost,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		verify,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/complete",
-		fiber.MethodPost,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		complete,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/update",
-		fiber.MethodPut,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		update,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/humans/get",
-		fiber.MethodGet,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		get,
 	))

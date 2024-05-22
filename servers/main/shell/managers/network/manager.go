@@ -1,7 +1,6 @@
 package network_manager
 
 import (
-	"sigma/main/core/modules"
 	shell_federation "sigma/main/shell/network/federation"
 	shell_grpc "sigma/main/shell/network/grpc"
 	shell_http "sigma/main/shell/network/http"
@@ -27,16 +26,16 @@ func (nm *NetManager) SwitchNetAccess(key string, http bool, actType string, ws 
 	}
 }
 
-func Load(app *modules.App) *NetManager{
+func New() *NetManager {
 	fn := shell_federation.New()
 	hs := shell_http.New(fn.SendInFederation)
-	ws := shell_websocket.New(app, hs)
+	ws := shell_websocket.New(hs)
 	gc := shell_grpc.New()
-	fn.LoadFedNet(app, hs)
+	fn.LoadFedNet(hs.Server)
 	return &NetManager{
 		HttpServer: hs,
-		WsServer: ws,
+		WsServer:   ws,
 		GrpcServer: gc,
-		FedNet: fn,
+		FedNet:     fn,
 	}
 }

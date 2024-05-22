@@ -8,7 +8,6 @@ import (
 	dtos_invites "sigma/main/core/dtos/invites"
 	"sigma/main/core/modules"
 	updates_invites "sigma/main/core/updates/invites"
-	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -50,7 +49,7 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	}
 	invite.Origin = app.AppId
 	invite.UserOrigin = ro
-	go app.Network.PusherServer.PushToUser("invites/create", input.HumanId, ro, updates_invites.Create{Invite: &invite}, "", false)
+	go app.Pusher.PushToUser("invites/create", input.HumanId, ro, updates_invites.Create{Invite: &invite}, "", false)
 	return &pb.InviteCreateOutput{Invite: &invite}, nil
 }
 
@@ -66,7 +65,7 @@ func cancelInvite(app *modules.App, input dtos_invites.CancelDto, assistant modu
 		log.Println(err)
 		return &pb.InviteCancelOutput{}, err
 	}
-	go app.Network.PusherServer.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, "", false)
+	go app.Pusher.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, "", false)
 	return &pb.InviteCancelOutput{}, nil
 }
 
@@ -92,10 +91,10 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 		log.Println(err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
-	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+	app.Pusher.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId, member.UserOrigin), "true")
 	var invite = pb.Invite{Id: input.InviteId, Origin: member.Origin, UserOrigin: member.UserOrigin, HumanId: member.HumanId, TowerId: member.TowerId}
-	go app.Network.PusherServer.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, "", false)
+	go app.Pusher.PushToUser("invites/accept", creatorId, member.Origin, updates_invites.Accept{Invite: &invite}, "", false)
 	return &pb.InviteAcceptOutput{Member: &member}, nil
 }
 
@@ -121,7 +120,7 @@ func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant mo
 		log.Println(err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
-	go app.Network.PusherServer.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, "", false)
+	go app.Pusher.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, "", false)
 	return &pb.InviteDeclineOutput{}, nil
 }
 
@@ -134,35 +133,31 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/invites/accept.sql")
 
 	// Methods
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/invites/create",
-		fiber.MethodPost,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createInvite,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/invites/cancel",
-		fiber.MethodPost,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		cancelInvite,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/invites/accept",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		acceptInvite,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/invites/decline",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		declineInvite,
 	))

@@ -10,9 +10,6 @@ import (
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 
-	dtos_external "sigma/main/core/dtos/external"
-	outputs_external "sigma/main/shell/outputs/external"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
 )
@@ -21,70 +18,6 @@ const pluginsTemplateName = "/plugins/"
 
 var pluginVms = map[string]*wasmedge.VM{}
 var pluginMetas = map[string]modules.PluginFunction{}
-
-func plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assistant) (any, error) {
-	var meta []modules.PluginFunction
-	err := json.Unmarshal([]byte(input.Meta), &meta)
-	if err != nil {
-		return outputs_external.PlugDto{}, err
-	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
-
-	wasmedge.SetLogDebugLevel()
-
-	var conf = wasmedge.NewConfigure(wasmedge.REFERENCE_TYPES)
-	conf.AddConfig(wasmedge.WASI)
-	vm := wasmedge.NewVMWithConfig(conf)
-	var wasi = vm.GetImportModule(wasmedge.WASI)
-	wasi.InitWasi(
-		os.Args[1:],     // The args
-		os.Environ(),    // The envs
-		[]string{".:."}, // The mapping directories
-	)
-
-	obj := wasmedge.NewModule("env")
-
-	funcSqlType := wasmedge.NewFunctionType(
-		[]wasmedge.ValType{
-			wasmedge.ValType_I32,
-		},
-		[]wasmedge.ValType{
-			wasmedge.ValType_I32,
-		})
-	h := &vmHost{vm: vm}
-	hostSql := wasmedge.NewFunction(funcSqlType, h.sql, nil, 0)
-	obj.AddFunction("sql", hostSql)
-
-	funcLogType := wasmedge.NewFunctionType(
-		[]wasmedge.ValType{
-			wasmedge.ValType_I32,
-		},
-		[]wasmedge.ValType{})
-	hostLog := wasmedge.NewFunction(funcLogType, h.logData, nil, 0)
-	obj.AddFunction("logData", hostLog)
-
-	vm.RegisterModule(obj)
-
-	err2 := vm.LoadWasmFile(app.StorageRoot + pluginsTemplateName + input.Key + "/module.wasm")
-	if err2 != nil {
-		log.Println("failed to load wasm")
-	}
-	vm.Validate()
-	vm.Instantiate()
-
-	vm.Execute("_start")
-
-	for _, f := range meta {
-		if pluginVms[f.Path] != nil {
-			pluginVms[f.Path].Release()
-		}
-		pluginVms[f.Path] = vm
-		pluginMetas[f.Path] = f
-	}
-
-	return outputs_external.PlugDto{}, nil
-}
 
 type vmHost struct {
 	vm *wasmedge.VM
@@ -198,20 +131,6 @@ func loadWasmModules(app *modules.App) {
 }
 
 func CreateExternalService(app *modules.App) func(*fiber.Ctx) error {
-
-	// load vms into memory
-	loadWasmModules(app)
-
-	// Methods
-	modules.Instance().Services.AddAction(
-		modules.CreateAction("/external/plug",
-			fiber.MethodPost,
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(true, true, false, false),
-			false,
-			plug,
-		),
-	)
 
 	return func(c *fiber.Ctx) error {
 		path := c.Path()

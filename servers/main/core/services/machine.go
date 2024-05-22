@@ -7,7 +7,6 @@ import (
 	dtos_machines "sigma/main/core/dtos/machines"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	"sigma/main/shell/manager"
 	"strconv"
 
 	pb "sigma/main/core/models/grpc"
@@ -114,35 +113,31 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/machines/get.sql")
 
 	// Methods
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/machines/create",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createMachine,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/machines/update",
-		fiber.MethodPut,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		updateMachine,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/machines/delete",
-		fiber.MethodDelete,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
 		deleteMachine,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/machines/get",
-		fiber.MethodGet,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		getMachine,
 	))

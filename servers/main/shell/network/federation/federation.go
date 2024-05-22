@@ -6,7 +6,9 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	shell_http "sigma/main/shell/network/http"
+	"sigma/main/shell/store/config"
+	"sigma/main/shell/store/core"
+	"sigma/main/shell/store/ipmap"
 	"strings"
 
 	pb "sigma/main/core/models/grpc"
@@ -15,29 +17,26 @@ import (
 )
 
 type FedNet struct {
-	
 }
 
-func (fed *FedNet) LoadFedNet(app *modules.App, hs *shell_http.HttpServer) {
-	if app.Federative {
-		hs.Server.Post("/api/federation", func(c *fiber.Ctx) error {
-			var pack modules.OriginPacket
-			c.BodyParser(&pack)
-			ip := utils.FromRequest(c.Context())
-			hostName, ok := app.IpToHost[ip]
-			log.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
-			if ok {
-				fed.HandlePacket(app, hostName, pack)
-				return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "federation packet received"})
-			} else {
-				log.Println("hostname not known")
-				return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "hostname not known"})
-			}
-		})
-	}
+func (fed *FedNet) LoadFedNet(f *fiber.App) {
+	f.Post("/api/federation", func(c *fiber.Ctx) error {
+		var pack modules.OriginPacket
+		c.BodyParser(&pack)
+		ip := utils.FromRequest(c.Context())
+		hostName, ok := ipmap.IpToHostMap()[ip]
+		log.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
+		if ok {
+			fed.HandlePacket(hostName, pack)
+			return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "federation packet received"})
+		} else {
+			log.Println("hostname not known")
+			return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "hostname not known"})
+		}
+	})
 }
 
-func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modules.OriginPacket) {
+func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) {
 	if payload.IsResponse {
 		dataArr := strings.Split(payload.Key, " ")
 		if dataArr[0] == "/invites/accept" || dataArr[0] == "/towers/join" {
@@ -71,34 +70,34 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 			returning id;
 		`
 				var memberId int64
-				if err := app.Database.Db.QueryRow(
-					context.Background(), query, member.HumanId, member.TowerId, channelId, app.AppId,
+				if err := core.Core().Database.Db.QueryRow(
+					context.Background(), query, member.HumanId, member.TowerId, channelId, core.Core().AppId,
 				).Scan(&memberId); err != nil {
 					log.Println(err)
 					return
 				}
-				app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, app.AppId)
+				core.Core().Pusher.JoinGroup(member.TowerId, member.HumanId, core.Core().AppId)
 			}
 		}
-		app.Network.PusherServer.PushToUser(payload.Key, payload.UserId, app.AppId, payload.Data, payload.RequestId, true)
+		core.Core().Pusher.PushToUser(payload.Key, payload.UserId, core.Core().AppId, payload.Data, payload.RequestId, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			app.Network.PusherServer.PushToUser(payload.Key[len("update "):], payload.UserId, app.AppId, payload.Data, "", true)
+			core.Core().Pusher.PushToUser(payload.Key[len("update "):], payload.UserId, core.Core().AppId, payload.Data, "", true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			app.Network.PusherServer.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
+			core.Core().Pusher.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
 		} else {
-			action := modules.Instance().Services.GetAction(payload.Key)
+			action := core.Core().Services.GetAction(payload.Key)
 			check := action.Check
-			location := modules.AuthorizeFedHumanWithProcessed(app, payload.UserId, channelId, payload.TowerId, payload.RoomId)
+			location := modules.AuthorizeFedHumanWithProcessed(core.Core(), payload.UserId, channelId, payload.TowerId, payload.RoomId)
 			if check.Tower && location.TowerId == 0 {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
-					fed.SendInFederation(app, channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
-			_, res, err := action.ProcessFederative(app, payload.Data, modules.Assistant{
+			_, res, err := action.ProcessFederative(core.Core(), payload.Data, modules.Assistant{
 				UserId:     payload.UserId,
 				UserType:   "human",
 				TowerId:    location.TowerId,
@@ -110,7 +109,7 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 				log.Println(err)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
 				if err2 == nil {
-					fed.SendInFederation(app, channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
@@ -119,18 +118,18 @@ func (fed *FedNet) HandlePacket(app *modules.App, channelId string, payload modu
 				log.Println(err3)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
 				if err2 == nil {
-					fed.SendInFederation(app, channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
-			fed.SendInFederation(app, channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
+			fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(packet), UserId: payload.UserId})
 		}
 	}
 }
 
-func (fed *FedNet) SendInFederation(app *modules.App, destOrg string, packet modules.OriginPacket) {
-	if app.Federative {
-		_, ok := app.HostToIp[destOrg]
+func (fed *FedNet) SendInFederation(destOrg string, packet modules.OriginPacket) {
+	if config.Federative() {
+		_, ok := ipmap.HostToIpMap()[destOrg]
 		if ok {
 			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
 			if err != nil {

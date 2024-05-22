@@ -43,11 +43,11 @@ type Services struct {
 }
 
 func (ss *Services) CallAction(key string, input interface{}, token string, origin string) (int, any, error) {
-	return ss.Actions[key].Process(Instance(), input, token, origin)
+	return ss.Actions[key].Process(GetApp(), input, token, origin)
 }
 
 func (ss *Services) CallActionHonestly(key string, input interface{}, m Meta) (int, any, error) {
-	return ss.Actions[key].ProcessHonestly(Instance(), input, m)
+	return ss.Actions[key].ProcessHonestly(GetApp(), input, m)
 }
 
 func (ss *Services) AddAction(action *Action) {
@@ -70,8 +70,8 @@ func CreateCk(user bool, tower bool, room bool) Check {
 	return Check{User: user, Tower: tower, Room: room}
 }
 
-func CreateAc(http bool, ws bool, grpc bool, fed bool) Access {
-	return Access{Http: http, Ws: ws, Grpc: grpc, Fed: fed}
+func CreateAc(http bool, ws bool, grpc bool, fed bool, actionType string) Access {
+	return Access{Http: http, Ws: ws, Grpc: grpc, Fed: fed, ActionType: actionType}
 }
 
 type PreFedPacket struct {
@@ -86,8 +86,7 @@ type PluginFunction struct {
 	Access Access `json:"access" validate:"required"`
 }
 
-func CreateAction[T IDto](key string, actionType string, check Check, access Access, Validate bool, callback func(*App, T, Assistant) (any, error)) *Action {
-	access.ActionType = actionType
+func CreateAction[T IDto](key string, check Check, access Access, Validate bool, callback func(*App, T, Assistant) (any, error)) *Action {
 	return &Action{
 		Key:    key,
 		Access: access,
@@ -100,9 +99,9 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 				json.Unmarshal([]byte(input), data)
 			case *fiber.Ctx:
 				ctx = input
-				if actionType == "POST" || actionType == "PUT" || actionType == "DELETE" {
+				if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
 					input.BodyParser(data)
-				} else if actionType == "GET" {
+				} else if access.ActionType == "GET" {
 					input.QueryParser(data)
 				}
 			default:
@@ -128,7 +127,7 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 						if check.Tower {
 							var location = HandleLocationWithProcessed(app, token, userId, creature, origin, (*data).GetTowerId(), (*data).GetRoomId(), (*data).GetWorkerId())
 							if location.TowerId > 0 {
-								result, err := callback(Instance(), (*data), CreateAssistant(userId, origin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
+								result, err := callback(GetApp(), (*data), CreateAssistant(userId, origin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err
 								}
@@ -137,7 +136,7 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 								return fiber.StatusForbidden, nil, errors.New("access denied")
 							}
 						} else {
-							result, err := callback(Instance(), *data, CreateAssistant(userId, origin, creature, 0, 0, userId, ctx))
+							result, err := callback(GetApp(), *data, CreateAssistant(userId, origin, creature, 0, 0, userId, ctx))
 							if err != nil {
 								return fiber.ErrInternalServerError.Code, nil, err
 							}
@@ -147,7 +146,7 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 						return fiber.StatusForbidden, nil, errors.New("access denied")
 					}
 				} else {
-					result, err := callback(Instance(), *data, CreateAssistant(0, "", "", 0, 0, 0, ctx))
+					result, err := callback(GetApp(), *data, CreateAssistant(0, "", "", 0, 0, 0, ctx))
 					if err != nil {
 						return fiber.ErrInternalServerError.Code, nil, err
 					}
@@ -155,7 +154,7 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 				}
 			} else {
 				if check.User {
-					var userId, _ = AuthWithToken(Instance(), token)
+					var userId, _ = AuthWithToken(GetApp(), token)
 					if userId > 0 {
 						return -2, PreFedPacket{UserId: userId, Body: *data}, nil
 					} else {
@@ -167,14 +166,14 @@ func CreateAction[T IDto](key string, actionType string, check Check, access Acc
 			}
 		},
 		ProcessHonestly: func(app *App, data interface{}, m Meta) (int, any, error) {
-			result, err := callback(Instance(), data.(T), CreateAssistant(m.UserId, app.AppId, "human", m.TowerId, m.RoomId, 0, nil))
+			result, err := callback(GetApp(), data.(T), CreateAssistant(m.UserId, app.AppId, "human", m.TowerId, m.RoomId, 0, nil))
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}
 			return fiber.StatusOK, result, nil
 		},
 		ProcessFederative: func(app *App, data interface{}, a Assistant) (int, any, error) {
-			result, err := callback(Instance(), data.(T), a)
+			result, err := callback(GetApp(), data.(T), a)
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}

@@ -6,23 +6,18 @@ import (
 	"log"
 	"sigma/main/core/utils"
 
-	"github.com/gofiber/contrib/websocket"
-
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
-type Network struct {
-	PusherServer *Pusher
-}
-
-func CreateListenOptions(https bool, httpsPort int, grpc bool, grpcPort int) ListenOptions {
-	return ListenOptions{https, httpsPort, grpc, grpcPort}
-}
-
 type Pusher struct {
-	Clients       map[int64]*websocket.Conn
+	Clients       map[int64]func([]byte)
 	Groups        *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
 	ToOuterOrigin func(string, OriginPacket)
+}
+
+type GroupMember struct {
+	UserId     int64
+	UserOrigin string
 }
 
 func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
@@ -30,16 +25,16 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 		conn := p.Clients[userId]
 		if conn != nil {
 			if len(requestId) > 0 {
-				conn.WriteMessage(websocket.TextMessage, []byte("response "+requestId+" "+data.(string)))
+				conn([]byte("response "+requestId+" "+data.(string)))
 			} else {
 				if alreadySerialized {
-					conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+data.(string)))
+					conn([]byte("update "+key+" "+data.(string)))
 				} else {
 					message, err := json.Marshal(data)
 					if err != nil {
 						log.Println(err)
 					} else {
-						conn.WriteMessage(websocket.TextMessage, []byte("update "+key+" "+string(message)))
+						conn([]byte("update "+key+" "+string(message)))
 					}
 				}
 			}
@@ -85,7 +80,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 				if !excepDict[t.Key] {
 					var conn = p.Clients[userId]
 					if conn != nil {
-						conn.WriteMessage(websocket.TextMessage, packet)
+						conn(packet)
 					}
 				}
 			} else {
@@ -101,11 +96,6 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 			p.ToOuterOrigin(k, OriginPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Exceptions: v, Data: string(message)})
 		}
 	}
-}
-
-type GroupMember struct {
-	UserId     int64
-	UserOrigin string
 }
 
 func (p *Pusher) JoinGroup(groupId int64, userId int64, userOrigin string) {
@@ -131,19 +121,13 @@ func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupM
 	return p.Groups.Get(fmt.Sprintf("%d", groupId))
 }
 
-func LoadPusher(toOuterOrigin func (string, OriginPacket)) *Pusher {
+func CreatePusher(toOuterOrigin func(string, OriginPacket)) *Pusher {
+	log.Println("running network...")
+	utils.LoadValidationSystem()
 	newMap := cmap.New[*cmap.ConcurrentMap[string, GroupMember]]()
 	return &Pusher{
-		Clients: map[int64]*websocket.Conn{},
-		Groups:  &newMap,
+		Clients:       map[int64]func([]byte){},
+		Groups:        &newMap,
 		ToOuterOrigin: toOuterOrigin,
 	}
-}
-
-func CreateNetwork(toOuterOrigin func (string, OriginPacket)) *Network {
-	log.Println("running network...")
-	netInstance := &Network{}
-	utils.LoadValidationSystem()
-	netInstance.PusherServer = LoadPusher(toOuterOrigin)
-	return netInstance
 }

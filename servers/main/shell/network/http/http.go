@@ -7,13 +7,14 @@ import (
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"sigma/main/shell/outputs"
+	"sigma/main/shell/store/core"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type HttpServer struct {
 	Server    *fiber.App
-	SendToFed func(*modules.App, string, modules.OriginPacket)
+	SendToFed func(string, modules.OriginPacket)
 }
 
 type EmptySuccessResponse struct {
@@ -26,7 +27,7 @@ func (hs *HttpServer) Listen(port int) {
 }
 
 func (hs *HttpServer) Enablendpoint(key string) {
-	hs.Server.Add(modules.Instance().Services.GetAction(key).Access.ActionType, key, []fiber.Handler{
+	hs.Server.Add(core.Core().Services.GetAction(key).Access.ActionType, key, []fiber.Handler{
 		func(c *fiber.Ctx) error {
 			originHeader := c.GetReqHeaders()["Origin"]
 			var origin = ""
@@ -43,11 +44,11 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			if requestIdHeader != nil {
 				requestId = requestIdHeader[0]
 			}
-			org := modules.Instance().AppId
+			org := core.Core().AppId
 			if origin != "" {
 				org = origin
 			}
-			statusCode, result, err := modules.Instance().Services.CallAction(key, c, token, origin)
+			statusCode, result, err := core.Core().Services.CallAction(key, c, token, origin)
 			if statusCode == fiber.StatusOK {
 				return HandleResutOfFunc(c, result)
 			} else if statusCode == -2 {
@@ -56,7 +57,7 @@ func (hs *HttpServer) Enablendpoint(key string) {
 					log.Println(err)
 					return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 				}
-				hs.SendToFed(modules.Instance(), org, modules.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(modules.PreFedPacket).Body.(modules.IDto).GetTowerId(), RoomId: result.(modules.PreFedPacket).Body.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
+				hs.SendToFed(org, modules.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(modules.PreFedPacket).Body.(modules.IDto).GetTowerId(), RoomId: result.(modules.PreFedPacket).Body.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
 				return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 			} else if err != nil {
 				return c.Status(statusCode).JSON(utils.BuildErrorJson(err.Error()))
@@ -79,6 +80,6 @@ func HandleResutOfFunc(c *fiber.Ctx, result any) error {
 	}
 }
 
-func New(sendToFed func(*modules.App, string, modules.OriginPacket)) *HttpServer {
+func New(sendToFed func(string, modules.OriginPacket)) *HttpServer {
 	return &HttpServer{Server: fiber.New(), SendToFed: sendToFed}
 }

@@ -8,6 +8,7 @@ import (
 	"net"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
+	"sigma/main/shell/store/core"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -41,7 +42,7 @@ func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (an
 		if err0 != nil {
 			return nil, "error", err0
 		}
-		statusCode, res, err := modules.Instance().Services.CallAction(key, data, token, origin)
+		statusCode, res, err := core.Core().Services.CallAction(key, data, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -101,7 +102,7 @@ func (gs *GrpcServer) serverInterceptor(
 	}
 }
 
-func (gs  *GrpcServer) Listen(port int) {
+func (gs *GrpcServer) Listen(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen grpc: %v", err)

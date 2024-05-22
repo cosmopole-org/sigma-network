@@ -8,7 +8,6 @@ import (
 	dtos_workers "sigma/main/core/dtos/workers"
 	"sigma/main/core/modules"
 	updates_workers "sigma/main/core/updates/workers"
-	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -42,7 +41,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		worker.UserOrigin = input.WorkerOrigin
 	}
 	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d/%s", worker.RoomId, worker.MachineId, input.WorkerOrigin))
-	go app.Network.PusherServer.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker},
+	go app.Pusher.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -117,35 +116,31 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 
 	// Methods
 
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/workers/create",
-		fiber.MethodPost,
 		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createWorker,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/workers/update",
-		fiber.MethodPut,
 		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		updateWorker,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/workers/delete",
-		fiber.MethodDelete,
 		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
 		deleteWorker,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/workers/read",
-		fiber.MethodGet,
 		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		readWorkers,
 	))

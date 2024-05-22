@@ -3,7 +3,6 @@ package services
 import (
 	dtos_auth "sigma/main/core/dtos/auth"
 	"sigma/main/core/modules"
-	"sigma/main/shell/manager"
 	network_store "sigma/main/shell/network"
 	outputs_auth "sigma/main/shell/outputs/auth"
 
@@ -24,19 +23,17 @@ func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant m
 }
 
 func CreateAuthService(app *modules.App, coreAccess bool) {
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/auths/getServerPublicKey",
-		fiber.MethodGet,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		getServerPublicKey,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/auths/getServersMap",
-		fiber.MethodGet,
 		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		getServersMap,
 	))

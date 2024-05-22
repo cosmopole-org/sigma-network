@@ -7,7 +7,6 @@ import (
 	dtos_rooms "sigma/main/core/dtos/rooms"
 	"sigma/main/core/modules"
 	updates_rooms "sigma/main/core/updates/rooms"
-	"sigma/main/shell/manager"
 	"strconv"
 	"strings"
 
@@ -37,7 +36,7 @@ func createRoom(app *modules.App, input dtos_rooms.CreateDto, assistant modules.
 	}
 	room.Origin = app.AppId
 	app.Memory.Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
-	go app.Network.PusherServer.PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room},
+	go app.Pusher.PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -56,7 +55,7 @@ func updateRoom(app *modules.App, input dtos_rooms.UpdateDto, assistant modules.
 		log.Println(err)
 		return &pb.RoomUpdateOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room},
+	go app.Pusher.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -77,7 +76,7 @@ func deleteRoom(app *modules.App, input dtos_rooms.DeleteDto, assistant modules.
 		return &pb.RoomDeleteOutput{}, err
 	}
 	app.Memory.Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
-	go app.Network.PusherServer.PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room},
+	go app.Pusher.PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -109,7 +108,7 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 	if input.Type == "broadcast" {
 		var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
 		log.Println(assistant.TowerId, p, assistant.UserId)
-		app.Network.PusherServer.PushToGroup(sendTemplate, assistant.TowerId, p,
+		app.Pusher.PushToGroup(sendTemplate, assistant.TowerId, p,
 			[]modules.GroupMember{
 				{UserId: assistant.UserId, UserOrigin: userOrigin},
 			})
@@ -119,7 +118,7 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 			memberData := app.Memory.Get(fmt.Sprintf("member::%d::%d::%s", assistant.TowerId, input.RecvId, input.RecvOrigin))
 			if memberData == "true" {
 				var p = updates_rooms.Send{Action: "single", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
-				app.Network.PusherServer.PushToUser(sendTemplate, input.RecvId, input.RecvOrigin, p, "", false)
+				app.Pusher.PushToUser(sendTemplate, input.RecvId, input.RecvOrigin, p, "", false)
 				return &pb.RoomSendOutput{Passed: true}, nil
 			}
 		} else if input.RecvType == "machine" {
@@ -131,7 +130,7 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 				machineOrigin := arr[2]
 				if roomId == assistant.RoomId {
 					var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
-					app.Network.PusherServer.PushToUser(sendTemplate, machineId, machineOrigin, p, "", false)
+					app.Pusher.PushToUser(sendTemplate, machineId, machineOrigin, p, "", false)
 					return &pb.RoomSendOutput{Passed: true}, nil
 				}
 			}
@@ -149,43 +148,38 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/rooms/get.sql")
 
 	// Methods
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/rooms/create",
-		fiber.MethodPost,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createRoom,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/rooms/update",
-		fiber.MethodPut,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		updateRoom,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/rooms/delete",
-		fiber.MethodDelete,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
 		deleteRoom,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/rooms/get",
-		fiber.MethodGet,
 		modules.CreateCk(true, true, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		getRoom,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/rooms/send",
-		fiber.MethodPost,
 		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		send,
 	))

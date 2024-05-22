@@ -7,19 +7,15 @@ import (
 	"google.golang.org/grpc"
 )
 
-func Connector[T modules.IDto]() {
-
-}
-
-func LoadCoreServices(a *modules.App, coreAccess bool) {
-	services.CreateDummyService(a, coreAccess)
-	services.CreateAuthService(a, coreAccess)
-	services.CreateHumanService(a, coreAccess)
-	services.CreateInviteService(a, coreAccess)
-	services.CreateTowerService(a, coreAccess)
-	services.CreateRoomService(a, coreAccess)
-	services.CreateMachineService(a, coreAccess)
-	services.CreateWorkerService(a, coreAccess)
+func LoadCoreServices(coreAccess bool) {
+	services.CreateDummyService(modules.GetApp(), coreAccess)
+	services.CreateAuthService(modules.GetApp(), coreAccess)
+	services.CreateHumanService(modules.GetApp(), coreAccess)
+	services.CreateInviteService(modules.GetApp(), coreAccess)
+	services.CreateTowerService(modules.GetApp(), coreAccess)
+	services.CreateRoomService(modules.GetApp(), coreAccess)
+	services.CreateMachineService(modules.GetApp(), coreAccess)
+	services.CreateWorkerService(modules.GetApp(), coreAccess)
 }
 
 func LoadCoreGrpcServices(gs *grpc.Server) {

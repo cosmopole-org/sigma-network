@@ -8,7 +8,6 @@ import (
 	dtos_towers "sigma/main/core/dtos/towers"
 	"sigma/main/core/modules"
 	updates_towers "sigma/main/core/updates/towers"
-	"sigma/main/shell/manager"
 
 	pb "sigma/main/core/models/grpc"
 
@@ -41,7 +40,7 @@ func createTower(app *modules.App, input dtos_towers.CreateDto, assistant module
 		member.Origin = app.AppId
 		member.UserOrigin = app.AppId
 	}
-	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+	app.Pusher.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId, member.UserOrigin), "true")
 	return &pb.TowerCreateOutput{Tower: &tower, Member: &member}, nil
 }
@@ -58,7 +57,7 @@ func updateTower(app *modules.App, input dtos_towers.UpdateDto, assistant module
 		log.Println(err)
 		return &pb.TowerUpdateOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup("towers/update", tower.Id, updates_towers.Update{Tower: &tower},
+	go app.Pusher.PushToGroup("towers/update", tower.Id, updates_towers.Update{Tower: &tower},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -76,7 +75,7 @@ func deleteTower(app *modules.App, input dtos_towers.DeleteDto, assistant module
 		log.Println(err)
 		return &pb.TowerDeleteOutput{}, err
 	}
-	go app.Network.PusherServer.PushToGroup("towers/delete", tower.Id, updates_towers.Delete{Tower: &tower},
+	go app.Pusher.PushToGroup("towers/delete", tower.Id, updates_towers.Delete{Tower: &tower},
 		[]modules.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
@@ -122,9 +121,9 @@ func joinTower(app *modules.App, input dtos_towers.JoinDto, assistant modules.As
 	}
 	member.Origin = app.AppId
 	member.UserOrigin = userOrigin
-	app.Network.PusherServer.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
+	app.Pusher.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
 	app.Memory.Put(fmt.Sprintf(memberTemplate, member.TowerId, member.HumanId, member.UserOrigin), "true")
-	go app.Network.PusherServer.PushToGroup("towers/join", member.TowerId, updates_towers.Join{Member: &member},
+	go app.Pusher.PushToGroup("towers/join", member.TowerId, updates_towers.Join{Member: &member},
 		[]modules.GroupMember{
 			{UserId: member.HumanId, UserOrigin: member.UserOrigin},
 		})
@@ -143,43 +142,38 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 	app.Database.ExecuteSqlFile("core/database/functions/towers/create.sql")
 
 	// Methods
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/towers/create",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createTower,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/towers/update",
-		fiber.MethodPut,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		updateTower,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/towers/delete",
-		fiber.MethodDelete,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
 		deleteTower,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/towers/get",
-		fiber.MethodGet,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		getTower,
 	))
-	manager.Instance.Endpoint(modules.CreateAction(
+	app.Services.AddAction(modules.CreateAction(
 		"/towers/join",
-		fiber.MethodPost,
 		modules.CreateCk(true, false, false),
-		modules.CreateAc(coreAccess, true, false, false),
+		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		joinTower,
 	))

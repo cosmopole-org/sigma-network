@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	app "sigma/main/shell"
+	sigma "sigma/main/shell"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -24,20 +24,18 @@ func main() {
 		panic(err)
 	}
 
-	app.New(
-		origin + ".liara.run",
-		app.AppConfig{
-			DatabaseUri:  os.Getenv("POSTGRES_URI"),
-			DatabaseName: os.Getenv("POSTGRES_DB"),
-			MemoryUri:    os.Getenv("REDIS_URI"),
-			StorageRoot:  os.Getenv("STORAGE_ROOT_PATH"),
-			Ports: map[string]int{
-				"http": int(port),
-			},
-			EnableFederation: true,
-			CoreAccess: os.Getenv("CORE_ACCESSIBLE") == "true",
+	sigmaApp := sigma.New(
+		origin+".liara.run",
+		sigma.ShellConfig{
+			DbUri:       os.Getenv("POSTGRES_URI"),
+			MemUri:      os.Getenv("REDIS_URI"),
+			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
+			Federation:  true,
+			CoreAccess:  os.Getenv("CORE_ACCESSIBLE") == "true",
 		},
 	)
 
+	sigmaApp.ConnectToNetwork(map[string]int{"http": int(port)})
+	
 	<-quit
 }
