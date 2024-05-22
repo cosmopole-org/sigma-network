@@ -49,11 +49,11 @@ func New(appId string, config ShellConfig) *Sigma {
 	log.Println("Creating app...")
 	sh := &Sigma{}
 	ipmap.LoadWellknownServers()
-	modules.NewApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
+	_, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
 	})
 	sh.managers = mans.New()
-	core.LoadCoreServices(config.CoreAccess)
+	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
 	services.CreateWasmPluggerService(sh.managers)
 	sh.ConnectServicesToNet()
 	return sh
@@ -65,6 +65,5 @@ func (s *Sigma) ConnectToNetwork(ports map[string]int) {
 	}
 	if ports["grpc"] > 0 {
 		s.Managers().NetManager().GrpcServer.Listen(ports["grpc"])
-		core.LoadCoreGrpcServices(s.Managers().NetManager().GrpcServer.Server)
 	}
 }

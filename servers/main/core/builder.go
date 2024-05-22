@@ -1,4 +1,4 @@
-package core
+package builder
 
 import (
 	"sigma/main/core/modules"
@@ -7,18 +7,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-func LoadCoreServices(coreAccess bool) {
-	services.CreateDummyService(modules.GetApp(), coreAccess)
-	services.CreateAuthService(modules.GetApp(), coreAccess)
-	services.CreateHumanService(modules.GetApp(), coreAccess)
-	services.CreateInviteService(modules.GetApp(), coreAccess)
-	services.CreateTowerService(modules.GetApp(), coreAccess)
-	services.CreateRoomService(modules.GetApp(), coreAccess)
-	services.CreateMachineService(modules.GetApp(), coreAccess)
-	services.CreateWorkerService(modules.GetApp(), coreAccess)
+func BuildApp(appId string, StorageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op modules.OriginPacket)) (*modules.App, func(*grpc.Server)) {
+	app := modules.NewApp(appId, StorageRoot, coreAccess, dbUri, memUri, pusherConnector)
+	services.CreateDummyService(app, coreAccess)
+	services.CreateAuthService(app, coreAccess)
+	services.CreateHumanService(app, coreAccess)
+	services.CreateInviteService(app, coreAccess)
+	services.CreateTowerService(app, coreAccess)
+	services.CreateRoomService(app, coreAccess)
+	services.CreateMachineService(app, coreAccess)
+	services.CreateWorkerService(app, coreAccess)
+	return app, grpcModelLoader
 }
 
-func LoadCoreGrpcServices(gs *grpc.Server) {
+func grpcModelLoader(gs *grpc.Server) {
 	services.LoadAuthGrpcService(gs)
 	services.LoadHumanGrpcService(gs)
 	services.LoadInviteGrpcService(gs)
