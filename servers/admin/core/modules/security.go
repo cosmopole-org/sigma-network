@@ -25,10 +25,6 @@ type LastPos struct {
 var authCache = map[string]*LastPos{}
 
 func AuthWithToken(app *App, token string) (int64, int32) {
-	var ac = authCache[token]
-	if ac != nil {
-		return ac.UserId, ac.UserType
-	}
 	var auth = app.Memory.Get("auth::" + token)
 	var userId int64 = 0
 	var userType int32 = 0

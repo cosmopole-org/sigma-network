@@ -7,20 +7,8 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type InterfedPacket struct {
-	Key        string
-	UserId     int64
-	TowerId    int64
-	RoomId     int64
-	RequestId  string
-	Data       string
-	IsResponse bool
-	GroupId    int64
-	Exceptions []GroupMember
-}
-
 type Memory struct {
-	Storage *redis.Client
+	Storage      *redis.Client
 }
 
 func (m *Memory) GetClient() *redis.Client {
@@ -34,10 +22,6 @@ func (m *Memory) CreateClient(redisUri string) {
 	}
 	db := redis.NewClient(opts)
 	m.Storage = db
-}
-
-func (m *Memory) SendInFederation(destOrg string, packet InterfedPacket) {
-	// pass
 }
 
 func (m *Memory) Put(key string, value string) {

@@ -2,19 +2,24 @@ package modules
 
 type App struct {
 	AppId       string
-	Network     *Network
+	Pusher      *Pusher
 	Database    *Database
 	Memory      *Memory
-	Security    *Security
+	Services    *Services
 	StorageRoot string
+	CoreAccess  bool
 }
 
-var app App
-
-func Instance() *App {
-	return &app
+func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op OriginPacket)) *App {
+	a := &App{
+		AppId:       appId,
+		StorageRoot: storageRoot,
+		CoreAccess:  coreAccess,
+	}
+	PutApp(a)
+	a.Services = CreateServices()
+	a.Database = CreateDatabase(dbUri)
+	a.Memory = CreateMemory(memUri)
+	a.Pusher = CreatePusher(pusherConnector)
+	return a
 }
-func Keep(a App) {
-	app = a
-}
-

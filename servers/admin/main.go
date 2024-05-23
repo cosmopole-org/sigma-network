@@ -2,8 +2,9 @@ package main
 
 import (
 	"os"
-	app "sigma/admin/shell"
-	"sigma/admin/shell/models"
+	admin_builder "sigma/admin/admin"
+	"sigma/admin/core/models"
+	sigma "sigma/admin/shell"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -23,13 +24,15 @@ func main() {
 		panic(err.Error())
 	}
 
-	app.New(
+	adminApp := admin_builder.BuildAdmin(
 		"localhost",
-		os.Getenv("POSTGRES_URI"),
-		os.Getenv("POSTGRES_DB"),
-		os.Getenv("REDIS_URI"),
-		os.Getenv("STORAGE_ROOT_PATH"),
-		int(port),
+		sigma.ShellConfig{
+			DbUri:       os.Getenv("POSTGRES_URI"),
+			MemUri:      os.Getenv("REDIS_URI"),
+			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
+			Federation:  false,
+			CoreAccess:  false,
+		},
 		[]models.Admin{
 			{Email: "mani@midopia.com", FirstName: "mani", LastName: "shabanzadeh"},
 			{Email: "aras@midopia.com", FirstName: "aras", LastName: "mehranfar"},
@@ -37,6 +40,10 @@ func main() {
 			{Email: "amir@midopia.com", FirstName: "amir", LastName: "ebadi"},
 		},
 	)
+
+	adminApp.SigmaApp.ConnectToNetwork(map[string]int{
+		"http": int(port),
+	})
 
 	<-quit
 }
