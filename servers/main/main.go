@@ -30,12 +30,12 @@ func main() {
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
-			Federation:  true,
+			Federation:  os.Getenv("FEDERATIVE") == "true",
 			CoreAccess:  os.Getenv("CORE_ACCESSIBLE") == "true",
 		},
 	)
 
 	sigmaApp.ConnectToNetwork(map[string]int{"http": int(port)})
-	
+
 	<-quit
 }
