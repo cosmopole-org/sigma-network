@@ -2,16 +2,24 @@ package sigma
 
 import (
 	"log"
+	"net"
 	"sigma/main/core"
 	"sigma/main/core/modules"
 	mans "sigma/main/shell/managers"
 	"sigma/main/shell/services"
-	coreApp "sigma/main/shell/store/core"
-	"sigma/main/shell/store/ipmap"
 )
 
+
+var wellKnownServers = []string{
+	"cosmopole.liara.run",
+	"monopole.liara.run",
+}
+
 type Sigma struct {
-	managers *mans.Managers
+	sigmaCore   *modules.App
+	managers    *mans.Managers
+	ipToHostMap map[string]string
+	hostToIpMap map[string]string
 }
 
 func (s *Sigma) Managers() *mans.Managers {
@@ -32,7 +40,7 @@ type ShellConfig struct {
 }
 
 func (s *Sigma) ConnectServicesToNet() {
-	for _, v := range coreApp.Core().Services.Actions {
+	for _, v := range s.sigmaCore.Services.Actions {
 		s.Managers().NetManager().SwitchNetAccessByAction(
 			v,
 			func(i interface{}) (any, error) {
@@ -42,16 +50,36 @@ func (s *Sigma) ConnectServicesToNet() {
 	}
 }
 
+func (s *Sigma) loadWellknownServers() {
+	s.ipToHostMap = map[string]string{}
+	s.hostToIpMap = map[string]string{}
+	for _, domain := range wellKnownServers {
+		ipAddr := ""
+		ips, _ := net.LookupIP(domain)
+		for _, ip := range ips {
+			if ipv4 := ip.To4(); ipv4 != nil {
+				ipAddr = ipv4.String()
+				break
+			}
+		}
+		s.ipToHostMap[ipAddr] = domain
+		s.hostToIpMap[domain] = ipAddr
+	}
+	log.Println()
+	log.Println(s.hostToIpMap)
+	log.Println()
+}
+
 func New(appId string, config ShellConfig) *Sigma {
 	log.Println("Creating app...")
 	sh := &Sigma{}
-	ipmap.LoadWellknownServers()
-	_, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
+	sh.loadWellknownServers()
+	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
 	})
-	sh.managers = mans.New(config.MaxReqSize)
+	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
-	services.CreateWasmPluggerService(sh.managers)
+	services.CreateWasmPluggerService(app, sh.managers)
 	sh.ConnectServicesToNet()
 	return sh
 }

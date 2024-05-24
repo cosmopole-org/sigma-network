@@ -8,7 +8,6 @@ import (
 	dtos_external "sigma/main/core/dtos/external"
 	outputs_external "sigma/main/shell/outputs/external"
 	mans "sigma/main/shell/managers"
-	"sigma/main/shell/store/core"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -39,15 +38,17 @@ func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assist
 	return outputs_external.PlugDto{}, nil
 }
 
-func CreateWasmPluggerService(mans *mans.Managers) {
+func CreateWasmPluggerService(sc *modules.App, mans *mans.Managers) {
 
 	wasmS := &WasmService{
 		managers: mans,
 	}
 
 	// Methods
-	core.Core().Services.AddAction(
-		modules.CreateAction("/external/plug",
+	sc.Services.AddAction(
+		modules.CreateAction(
+			sc,
+			"/external/plug",
 			modules.CreateCk(true, false, false),
 			modules.CreateAc(true, true, false, false, fiber.MethodPost),
 			false,

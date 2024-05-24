@@ -10,6 +10,7 @@ import (
 
 func CreateDummyService(app *modules.App, coreAccess bool) {
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/api/hello",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
@@ -19,6 +20,7 @@ func CreateDummyService(app *modules.App, coreAccess bool) {
 		},
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/api/ping",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),

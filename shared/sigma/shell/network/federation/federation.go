@@ -6,9 +6,6 @@ import (
 	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-	"sigma/main/shell/store/config"
-	"sigma/main/shell/store/core"
-	"sigma/main/shell/store/ipmap"
 	"strings"
 
 	pb "sigma/main/core/models/grpc"
@@ -17,6 +14,10 @@ import (
 )
 
 type FedNet struct {
+	ipToHostMap map[string]string
+	hostToIpMap map[string]string
+	sigmaCore   *modules.App
+	fed         bool
 }
 
 func (fed *FedNet) LoadFedNet(f *fiber.App) {
@@ -24,7 +25,7 @@ func (fed *FedNet) LoadFedNet(f *fiber.App) {
 		var pack modules.OriginPacket
 		c.BodyParser(&pack)
 		ip := utils.FromRequest(c.Context())
-		hostName, ok := ipmap.IpToHostMap()[ip]
+		hostName, ok := fed.ipToHostMap[ip]
 		log.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
 		if ok {
 			fed.HandlePacket(hostName, pack)
@@ -70,26 +71,26 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 			returning id;
 		`
 				var memberId int64
-				if err := core.Core().Database.Db.QueryRow(
-					context.Background(), query, member.HumanId, member.TowerId, channelId, core.Core().AppId,
+				if err := fed.sigmaCore.Database.Db.QueryRow(
+					context.Background(), query, member.HumanId, member.TowerId, channelId, fed.sigmaCore.AppId,
 				).Scan(&memberId); err != nil {
 					log.Println(err)
 					return
 				}
-				core.Core().Pusher.JoinGroup(member.TowerId, member.HumanId, core.Core().AppId)
+				fed.sigmaCore.Pusher.JoinGroup(member.TowerId, member.HumanId, fed.sigmaCore.AppId)
 			}
 		}
-		core.Core().Pusher.PushToUser(payload.Key, payload.UserId, core.Core().AppId, payload.Data, payload.RequestId, true)
+		fed.sigmaCore.Pusher.PushToUser(payload.Key, payload.UserId, fed.sigmaCore.AppId, payload.Data, payload.RequestId, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			core.Core().Pusher.PushToUser(payload.Key[len("update "):], payload.UserId, core.Core().AppId, payload.Data, "", true)
+			fed.sigmaCore.Pusher.PushToUser(payload.Key[len("update "):], payload.UserId, fed.sigmaCore.AppId, payload.Data, "", true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			core.Core().Pusher.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
+			fed.sigmaCore.Pusher.PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
 		} else {
-			action := core.Core().Services.GetAction(payload.Key)
+			action := fed.sigmaCore.Services.GetAction(payload.Key)
 			check := action.Check
-			location := modules.AuthorizeFedHumanWithProcessed(core.Core(), payload.UserId, channelId, payload.TowerId, payload.RoomId)
+			location := modules.AuthorizeFedHumanWithProcessed(fed.sigmaCore, payload.UserId, channelId, payload.TowerId, payload.RoomId)
 			if check.Tower && location.TowerId == 0 {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
@@ -97,7 +98,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 				}
 				return
 			}
-			_, res, err := action.ProcessFederative(core.Core(), payload.Data, modules.Assistant{
+			_, res, err := action.ProcessFederative(fed.sigmaCore, payload.Data, modules.Assistant{
 				UserId:     payload.UserId,
 				UserType:   "human",
 				TowerId:    location.TowerId,
@@ -128,8 +129,8 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 }
 
 func (fed *FedNet) SendInFederation(destOrg string, packet modules.OriginPacket) {
-	if config.Federative() {
-		_, ok := ipmap.HostToIpMap()[destOrg]
+	if fed.fed {
+		_, ok := fed.hostToIpMap[destOrg]
 		if ok {
 			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
 			if err != nil {
@@ -144,6 +145,6 @@ func (fed *FedNet) SendInFederation(destOrg string, packet modules.OriginPacket)
 	}
 }
 
-func New() *FedNet {
-	return &FedNet{}
+func New(sc *modules.App, ip2host map[string]string, host2ip map[string]string, fed bool) *FedNet {
+	return &FedNet{sigmaCore: sc, ipToHostMap: ip2host, hostToIpMap: host2ip, fed: fed}
 }

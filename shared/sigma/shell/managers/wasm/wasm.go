@@ -8,7 +8,6 @@ import (
 	"os"
 
 	"sigma/main/core/modules"
-	"sigma/main/shell/store/core"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
 )
@@ -186,11 +185,11 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 	}
 }
 
-func New() *WasmManager {
+func New(sc *modules.App) *WasmManager {
 	wm := &WasmManager{
 		PluginVms:   make(map[string]*wasmedge.VM),
 		PluginMetas: make(map[string]modules.PluginFunction),
 	}
-	wm.LoadWasmModules(core.Core())
+	wm.LoadWasmModules(sc)
 	return wm
 }

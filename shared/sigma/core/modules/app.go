@@ -5,6 +5,7 @@ type App struct {
 	Pusher      *Pusher
 	Database    *Database
 	Memory      *Memory
+	Crypto      *Crypto
 	Services    *Services
 	StorageRoot string
 	CoreAccess  bool
@@ -16,10 +17,10 @@ func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, mem
 		StorageRoot: storageRoot,
 		CoreAccess:  coreAccess,
 	}
-	PutApp(a)
+	a.Crypto = CreateCrypto(a)
 	a.Services = CreateServices()
 	a.Database = CreateDatabase(dbUri)
 	a.Memory = CreateMemory(memUri)
-	a.Pusher = CreatePusher(pusherConnector)
+	a.Pusher = CreatePusher(a, pusherConnector)
 	return a
 }

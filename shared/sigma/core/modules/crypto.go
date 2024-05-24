@@ -11,43 +11,46 @@ import (
 	"sigma/main/core/utils"
 )
 
-var keys = map[string][][]byte{}
+type Crypto struct {
+	app *App
+	keys map[string][][]byte
+}
 
 const keysFolderName = "keys"
 
-func LoadKeys() {
-	files, err := os.ReadDir(GetApp().StorageRoot + "/keys")
+func (c *Crypto) LoadKeys() {
+	files, err := os.ReadDir(c.app.StorageRoot + "/keys")
 	if err != nil {
 		log.Println(err)
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			priKey, err1 := os.ReadFile(GetApp().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
+			priKey, err1 := os.ReadFile(c.app.StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
 			if err1 != nil {
 				log.Println(err1)
 				continue
 			}
-			pubKey, err2 := os.ReadFile(GetApp().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
+			pubKey, err2 := os.ReadFile(c.app.StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
 			if err2 != nil {
 				log.Println(err2)
 				continue
 			}
-			keys[file.Name()] = [][]byte{priKey, pubKey}
+			c.keys[file.Name()] = [][]byte{priKey, pubKey}
 		}
 	}
 }
 
-func GenerateSecureKeyPair(tag string) {
-	var priKey, pubKey = utils.SecureKeyPairs(GetApp().StorageRoot + "/" + keysFolderName + "/" + tag)
-	keys[tag] = [][]byte{priKey, pubKey}
+func (c *Crypto) GenerateSecureKeyPair(tag string) {
+	var priKey, pubKey = utils.SecureKeyPairs(c.app.StorageRoot + "/" + keysFolderName + "/" + tag)
+	c.keys[tag] = [][]byte{priKey, pubKey}
 }
 
-func FetchKeyPair(tag string) [][]byte {
-	return keys[tag]
+func (c *Crypto) FetchKeyPair(tag string) [][]byte {
+	return c.keys[tag]
 }
 
-func Encrypt(tag string, plainText string) string {
-	publicKeyPEM := keys[tag][1]
+func (c *Crypto) Encrypt(tag string, plainText string) string {
+	publicKeyPEM := c.keys[tag][1]
 	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
 	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
 	if err != nil {
@@ -62,8 +65,8 @@ func Encrypt(tag string, plainText string) string {
 	return fmt.Sprintf("%x", ciphertext)
 }
 
-func Decrypt(tag string, cipherText string) string {
-	privateKeyPEM := keys[tag][0]
+func (c *Crypto) Decrypt(tag string, cipherText string) string {
+	privateKeyPEM := c.keys[tag][0]
 	privateKeyBlock, _ := pem.Decode(privateKeyPEM)
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
 	if err != nil {
@@ -76,4 +79,10 @@ func Decrypt(tag string, cipherText string) string {
 		return ""
 	}
 	return string(plaintext)
+}
+
+func CreateCrypto(app *App) *Crypto {
+	c := &Crypto{app: app}
+	c.LoadKeys()
+	return c
 }
