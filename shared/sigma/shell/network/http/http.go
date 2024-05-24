@@ -12,13 +12,17 @@ import (
 )
 
 type HttpServer struct {
-	sigmaCore *modules.App
-	Server    *fiber.App
-	SendToFed func(string, modules.OriginPacket)
+	sigmaCore   *modules.App
+	Server      *fiber.App
+	SendToFed   func(string, modules.OriginPacket)
 }
 
 type EmptySuccessResponse struct {
 	Success bool `json:"success"`
+}
+
+func (hs *HttpServer) AddMiddleware(mw func(*fiber.Ctx) error) {
+	hs.Server.Use(mw)
 }
 
 func (hs *HttpServer) Listen(port int) {
@@ -27,7 +31,8 @@ func (hs *HttpServer) Listen(port int) {
 }
 
 func (hs *HttpServer) Enablendpoint(key string) {
-	hs.Server.Add(hs.sigmaCore.Services.GetAction(key).Access.ActionType, key, []fiber.Handler{
+	layers := []fiber.Handler{}
+	layers = append(layers,
 		func(c *fiber.Ctx) error {
 			originHeader := c.GetReqHeaders()["Origin"]
 			var origin = ""
@@ -64,7 +69,8 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			}
 			return c.Status(statusCode).JSON(result)
 		},
-	}...)
+	)
+	hs.Server.Add(hs.sigmaCore.Services.GetAction(key).Access.ActionType, key, layers...)
 }
 
 func HandleResutOfFunc(c *fiber.Ctx, result any) error {

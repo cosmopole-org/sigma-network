@@ -1,5 +1,7 @@
 package modules
 
+import "log"
+
 type App struct {
 	AppId       string
 	Pusher      *Pusher
@@ -12,13 +14,14 @@ type App struct {
 }
 
 func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op OriginPacket)) *App {
+	log.Println("Creating app...")
 	a := &App{
 		AppId:       appId,
 		StorageRoot: storageRoot,
 		CoreAccess:  coreAccess,
 	}
 	a.Crypto = CreateCrypto(a)
-	a.Services = CreateServices()
+	a.Services = CreateServices(a)
 	a.Database = CreateDatabase(dbUri)
 	a.Memory = CreateMemory(memUri)
 	a.Pusher = CreatePusher(a, pusherConnector)

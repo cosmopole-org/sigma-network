@@ -3,6 +3,7 @@ package modules
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"sigma/main/core/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -103,12 +104,13 @@ func CreateAction[T IDto](app *App, key string, check Check, access Access, Vali
 				ctx = input
 				form, err := input.MultipartForm()
 				if err == nil {
+					log.Println(form)
 					var formData = map[string]any{}
 					for k, v := range form.Value {
-						formData[k] = v
+						formData[k] = v[0]
 					}
 					for k, v := range form.File {
-						formData[k] = v
+						formData[k] = v[0]
 					}
 					mapstructure.Decode(formData, data)
 				} else {
@@ -196,8 +198,9 @@ func CreateAction[T IDto](app *App, key string, check Check, access Access, Vali
 	}
 }
 
-func CreateServices() *Services {
+func CreateServices(a *App) *Services {
 	return &Services{
+		app:     a,
 		Actions: map[string]*Action{},
 	}
 }

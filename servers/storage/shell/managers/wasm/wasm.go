@@ -112,6 +112,10 @@ func (h *vmHost) localStringToPtr(data string, callframe *wasmedge.CallingFrame)
 
 func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 	wasmedge.SetLogErrorLevel()
+	err0 := os.MkdirAll(app.StorageRoot+"/plugins", os.ModePerm)
+	if err0 != nil {
+		log.Println(err0)
+	}
 	files, err := os.ReadDir(app.StorageRoot + "/plugins")
 	if err != nil {
 		log.Println(err)

@@ -6,9 +6,9 @@ import (
 	"sigma/admin/core"
 	"sigma/admin/core/modules"
 	mans "sigma/admin/shell/managers"
+	middlewares_wasm "sigma/admin/shell/middlewares"
 	"sigma/admin/shell/services"
 )
-
 
 var wellKnownServers = []string{
 	"cosmopole.liara.run",
@@ -43,7 +43,7 @@ type ShellConfig struct {
 	MaxReqSize  int
 }
 
-func (s *Sigma) ConnectServicesToNet() {
+func (s *Sigma) connectServicesToNet() {
 	for _, v := range s.sigmaCore.Services.Actions {
 		s.Managers().NetManager().SwitchNetAccessByAction(
 			v,
@@ -75,7 +75,6 @@ func (s *Sigma) loadWellknownServers() {
 }
 
 func New(appId string, config ShellConfig) *Sigma {
-	log.Println("Creating app...")
 	sh := &Sigma{}
 	sh.loadWellknownServers()
 	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
@@ -83,9 +82,10 @@ func New(appId string, config ShellConfig) *Sigma {
 	})
 	sh.sigmaCore = app
 	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
+	sh.managers.NetManager().HttpServer.AddMiddleware(middlewares_wasm.WasmMiddleware(app, sh.managers))
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
 	services.CreateWasmPluggerService(app, sh.managers)
-	sh.ConnectServicesToNet()
+	sh.connectServicesToNet()
 	return sh
 }
 

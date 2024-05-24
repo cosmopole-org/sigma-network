@@ -52,7 +52,7 @@ func CreateWasmPluggerService(sc *modules.App, mans *mans.Managers) {
 			"/external/plug",
 			modules.CreateCk(true, false, false),
 			modules.CreateAc(true, true, false, false, fiber.MethodPost),
-			false,
+			true,
 			wasmS.plug,
 		),
 	)
