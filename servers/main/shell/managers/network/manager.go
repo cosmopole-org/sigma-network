@@ -39,11 +39,11 @@ func (nm *NetManager) SwitchNetAccessByAction(action *modules.Action, converter 
 	}
 }
 
-func New(maxReqSize int) *NetManager {
-	fn := shell_federation.New()
-	hs := shell_http.New(maxReqSize, fn.SendInFederation)
-	ws := shell_websocket.New(hs)
-	gc := shell_grpc.New()
+func New(sc *modules.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *NetManager {
+	fn := shell_federation.New(sc, ip2host, host2ip, fed)
+	hs := shell_http.New(sc, maxReqSize, fn.SendInFederation)
+	ws := shell_websocket.New(sc, hs)
+	gc := shell_grpc.New(sc)
 	fn.LoadFedNet(hs.Server)
 	return &NetManager{
 		HttpServer: hs,

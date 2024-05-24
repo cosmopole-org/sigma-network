@@ -134,6 +134,7 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 
 	// Methods
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/invites/create",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -141,6 +142,7 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 		createInvite,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/invites/cancel",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -148,6 +150,7 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 		cancelInvite,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/invites/accept",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -155,6 +158,7 @@ func CreateInviteService(app *modules.App, coreAccess bool) {
 		acceptInvite,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/invites/decline",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),

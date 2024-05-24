@@ -8,7 +8,6 @@ import (
 	"net"
 	"sigma/storage/core/modules"
 	"sigma/storage/core/utils"
-	"sigma/storage/shell/store/core"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -21,6 +20,7 @@ import (
 )
 
 type GrpcServer struct {
+	sigmaCore *modules.App
 	Server    *grpc.Server
 	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
@@ -42,7 +42,7 @@ func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (an
 		if err0 != nil {
 			return nil, "error", err0
 		}
-		statusCode, res, err := core.Core().Services.CallAction(key, data, token, origin)
+		statusCode, res, err := gs.sigmaCore.Services.CallAction(key, data, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -111,8 +111,8 @@ func (gs *GrpcServer) Listen(port int) {
 	go gs.Server.Serve(lis)
 }
 
-func New() *GrpcServer {
-	gs := &GrpcServer{Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
+func New(sc *modules.App) *GrpcServer {
+	gs := &GrpcServer{sigmaCore: sc, Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(gs.serverInterceptor),
 	)

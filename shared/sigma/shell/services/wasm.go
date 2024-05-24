@@ -6,8 +6,8 @@ import (
 	"sigma/main/core/modules"
 
 	dtos_external "sigma/main/core/dtos/external"
-	outputs_external "sigma/main/shell/outputs/external"
 	mans "sigma/main/shell/managers"
+	outputs_external "sigma/main/shell/outputs/external"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -30,8 +30,9 @@ func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assist
 	if err != nil {
 		return outputs_external.PlugDto{}, err
 	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
+
+	w.managers.StorageManager().SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
+	w.managers.StorageManager().SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
 	w.managers.WasmManager().Plug(app.StorageRoot+pluginsTemplateName+input.Key+"/module.wasm", meta)
 

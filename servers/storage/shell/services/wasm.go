@@ -6,9 +6,8 @@ import (
 	"sigma/storage/core/modules"
 
 	dtos_external "sigma/storage/core/dtos/external"
-	outputs_external "sigma/storage/shell/outputs/external"
 	mans "sigma/storage/shell/managers"
-	"sigma/storage/shell/store/core"
+	outputs_external "sigma/storage/shell/outputs/external"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -31,23 +30,26 @@ func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assist
 	if err != nil {
 		return outputs_external.PlugDto{}, err
 	}
-	assistant.SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
-	assistant.SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
+
+	w.managers.StorageManager().SaveFileToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
+	w.managers.StorageManager().SaveDataToGlobalStorage(app.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
 	w.managers.WasmManager().Plug(app.StorageRoot+pluginsTemplateName+input.Key+"/module.wasm", meta)
 
 	return outputs_external.PlugDto{}, nil
 }
 
-func CreateWasmPluggerService(mans *mans.Managers) {
+func CreateWasmPluggerService(sc *modules.App, mans *mans.Managers) {
 
 	wasmS := &WasmService{
 		managers: mans,
 	}
 
 	// Methods
-	core.Core().Services.AddAction(
-		modules.CreateAction("/external/plug",
+	sc.Services.AddAction(
+		modules.CreateAction(
+			sc,
+			"/external/plug",
 			modules.CreateCk(true, false, false),
 			modules.CreateAc(true, true, false, false, fiber.MethodPost),
 			false,

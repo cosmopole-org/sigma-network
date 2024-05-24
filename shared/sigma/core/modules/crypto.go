@@ -82,7 +82,7 @@ func (c *Crypto) Decrypt(tag string, cipherText string) string {
 }
 
 func CreateCrypto(app *App) *Crypto {
-	c := &Crypto{app: app}
+	c := &Crypto{app: app, keys: make(map[string][][]byte)}
 	c.LoadKeys()
 	return c
 }

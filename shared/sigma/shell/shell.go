@@ -26,6 +26,10 @@ func (s *Sigma) Managers() *mans.Managers {
 	return s.managers
 }
 
+func (s *Sigma) Core() *modules.App {
+	return s.sigmaCore
+}
+
 type ServersOutput struct {
 	Map map[string]bool `json:"map"`
 }
@@ -77,6 +81,7 @@ func New(appId string, config ShellConfig) *Sigma {
 	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
 	})
+	sh.sigmaCore = app
 	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
 	services.CreateWasmPluggerService(app, sh.managers)

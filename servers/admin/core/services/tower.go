@@ -143,6 +143,7 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 
 	// Methods
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/towers/create",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -150,6 +151,7 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 		createTower,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/towers/update",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
@@ -157,6 +159,7 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 		updateTower,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/towers/delete",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
@@ -164,6 +167,7 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 		deleteTower,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/towers/get",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
@@ -171,6 +175,7 @@ func CreateTowerService(app *modules.App, coreAccess bool) {
 		getTower,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/towers/join",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),

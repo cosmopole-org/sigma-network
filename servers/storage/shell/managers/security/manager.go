@@ -5,16 +5,15 @@ import (
 	"log"
 	pb "sigma/storage/core/models/grpc"
 	"sigma/storage/core/modules"
-	"sigma/storage/shell/store/core"
 )
 
 type SecurityManager struct {
+	sigmaCore *modules.App
 }
 
 func (sm *SecurityManager) LoadKeys() {
-	modules.LoadKeys()
-	if modules.FetchKeyPair("server_key") == nil {
-		modules.GenerateSecureKeyPair("server_key")
+	if sm.sigmaCore.Crypto.FetchKeyPair("server_key") == nil {
+		sm.sigmaCore.Crypto.GenerateSecureKeyPair("server_key")
 	}
 }
 
@@ -22,7 +21,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query = `
 		select user_origin, origin, tower_id, human_id from member;
 	`
-	rows, err := core.Core().Database.Db.Query(context.Background(), query)
+	rows, err := sm.sigmaCore.Database.Db.Query(context.Background(), query)
 	if err != nil {
 		log.Println(err)
 	}
@@ -32,7 +31,7 @@ func (sm *SecurityManager) LoadAccess() {
 		if err != nil {
 			log.Println(err)
 		}
-		core.Core().Pusher.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
+		sm.sigmaCore.Pusher.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
 	}
 	if err := rows.Err(); err != nil {
 		log.Println(err)
@@ -41,7 +40,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query2 = `
 		select user_origin, origin, room_id, machine_id from worker;
 	`
-	rows2, err2 := core.Core().Database.Db.Query(context.Background(), query2)
+	rows2, err2 := sm.sigmaCore.Database.Db.Query(context.Background(), query2)
 	if err2 != nil {
 		log.Println(err2)
 	}
@@ -67,7 +66,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query3 = `
 		select tower_id, id from room where id = any($1);
 	`
-	rows3, err3 := core.Core().Database.Db.Query(context.Background(), query3, roomsArr)
+	rows3, err3 := sm.sigmaCore.Database.Db.Query(context.Background(), query3, roomsArr)
 	if err3 != nil {
 		log.Println(err3)
 	}
@@ -85,12 +84,12 @@ func (sm *SecurityManager) LoadAccess() {
 	}
 
 	for _, w := range workers {
-		core.Core().Pusher.JoinGroup(roomSet[w.RoomId], w.MachineId, w.UserOrigin)
+		sm.sigmaCore.Pusher.JoinGroup(roomSet[w.RoomId], w.MachineId, w.UserOrigin)
 	}
 }
 
-func New() *SecurityManager {
-	sm := &SecurityManager{}
+func New(sc *modules.App) *SecurityManager {
+	sm := &SecurityManager{sigmaCore: sc}
 	sm.LoadKeys()
 	sm.LoadAccess()
 	return sm

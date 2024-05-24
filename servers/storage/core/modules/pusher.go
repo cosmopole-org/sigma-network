@@ -10,6 +10,7 @@ import (
 )
 
 type Pusher struct {
+	app           *App
 	Clients       map[int64]func([]byte)
 	Groups        *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, GroupMember]]
 	ToOuterOrigin func(string, OriginPacket)
@@ -21,20 +22,20 @@ type GroupMember struct {
 }
 
 func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
-	if userOrigin == app.AppId {
+	if userOrigin == p.app.AppId {
 		conn := p.Clients[userId]
 		if conn != nil {
 			if len(requestId) > 0 {
-				conn([]byte("response "+requestId+" "+data.(string)))
+				conn([]byte("response " + requestId + " " + data.(string)))
 			} else {
 				if alreadySerialized {
-					conn([]byte("update "+key+" "+data.(string)))
+					conn([]byte("update " + key + " " + data.(string)))
 				} else {
 					message, err := json.Marshal(data)
 					if err != nil {
 						log.Println(err)
 					} else {
-						conn([]byte("update "+key+" "+string(message)))
+						conn([]byte("update " + key + " " + string(message)))
 					}
 				}
 			}
@@ -76,7 +77,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 		var foreignersMap = map[string][]GroupMember{}
 		for t := range group.IterBuffered() {
 			userId := t.Val.UserId
-			if t.Val.UserOrigin == app.AppId {
+			if t.Val.UserOrigin == p.app.AppId {
 				if !excepDict[t.Key] {
 					var conn = p.Clients[userId]
 					if conn != nil {
@@ -121,11 +122,12 @@ func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupM
 	return p.Groups.Get(fmt.Sprintf("%d", groupId))
 }
 
-func CreatePusher(toOuterOrigin func(string, OriginPacket)) *Pusher {
+func CreatePusher(app *App, toOuterOrigin func(string, OriginPacket)) *Pusher {
 	log.Println("running network...")
 	utils.LoadValidationSystem()
 	newMap := cmap.New[*cmap.ConcurrentMap[string, GroupMember]]()
 	return &Pusher{
+		app: app,
 		Clients:       map[int64]func([]byte){},
 		Groups:        &newMap,
 		ToOuterOrigin: toOuterOrigin,

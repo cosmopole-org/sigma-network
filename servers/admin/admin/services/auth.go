@@ -6,7 +6,6 @@ import (
 	"log"
 	"sigma/admin/core/modules"
 	"sigma/admin/shell/managers"
-	"sigma/admin/shell/store/core"
 
 	dtos_auth "sigma/admin/admin/dtos/auth"
 
@@ -47,38 +46,40 @@ func (authS *AuthService) updatePass(app *modules.App, input dtos_auth.UpdatePas
 	return &pb.AdminUpdatePassOutput{}, nil
 }
 
-func CreateAuthService(mans *managers.Managers) {
+func CreateAuthService(sc *modules.App, mans *managers.Managers) {
 
 	authS := &AuthService{
 		managers: mans,
 	}
 
 	// tables
-	core.Core().Database.ExecuteSqlFile("admin/database/tables/admin.sql")
+	sc.Database.ExecuteSqlFile("admin/database/tables/admin.sql")
 
 	// Functions
-	core.Core().Database.ExecuteSqlFile("admin/database/functions/admins/signin.sql")
+	sc.Database.ExecuteSqlFile("admin/database/functions/admins/signin.sql")
 
 	// Methods
-	
+
 	signInAction := modules.CreateAction(
+		sc,
 		"/auths/signin",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		authS.signin,
 	)
-	core.Core().Services.AddAction(signInAction)
+	sc.Services.AddAction(signInAction)
 	authS.managers.NetManager().SwitchNetAccessByAction(signInAction, func(i interface{}) (any, error) { return nil, nil })
 
 	updatePassAction := modules.CreateAction(
+		sc,
 		"/auths/updatePass",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		authS.updatePass,
 	)
-	core.Core().Services.AddAction(updatePassAction)
+	sc.Services.AddAction(updatePassAction)
 	authS.managers.NetManager().SwitchNetAccessByAction(updatePassAction, func(i interface{}) (any, error) { return nil, nil })
 }
 

@@ -1,8 +1,10 @@
 package managers
 
 import (
+	"sigma/storage/core/modules"
 	network_manager "sigma/storage/shell/managers/network"
 	security_manager "sigma/storage/shell/managers/security"
+	storage_manager "sigma/storage/shell/managers/storage"
 	wasm_manager "sigma/storage/shell/managers/wasm"
 )
 
@@ -11,6 +13,15 @@ type Managers struct {
 	netManager      *network_manager.NetManager
 	wasmManager     *wasm_manager.WasmManager
 	securityManager *security_manager.SecurityManager
+	storageManager  *storage_manager.StorageManager
+}
+
+func (s *Managers) PutStorageManager(nm *storage_manager.StorageManager) {
+	s.storageManager = nm
+}
+
+func (s *Managers) StorageManager() *storage_manager.StorageManager {
+	return s.storageManager
 }
 
 func (s *Managers) PutNetManager(nm *network_manager.NetManager) {
@@ -37,10 +48,11 @@ func (s *Managers) SecurityManager() *security_manager.SecurityManager {
 	return s.securityManager
 }
 
-func New(maxReqSize int) *Managers {
+func New(sc *modules.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *Managers {
 	return &Managers{
-		securityManager: security_manager.New(),
-		netManager: network_manager.New(maxReqSize),
-		wasmManager: wasm_manager.New(),
+		securityManager: security_manager.New(sc),
+		netManager:      network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),
+		wasmManager:     wasm_manager.New(sc),
+		storageManager: storage_manager.New(),
 	}
 }

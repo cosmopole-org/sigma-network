@@ -114,6 +114,7 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 
 	// Methods
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/machines/create",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -121,6 +122,7 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 		createMachine,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/machines/update",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
@@ -128,6 +130,7 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 		updateMachine,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/machines/delete",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
@@ -135,6 +138,7 @@ func CreateMachineService(app *modules.App, coreAccess bool) {
 		deleteMachine,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/machines/get",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),

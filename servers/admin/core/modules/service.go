@@ -40,15 +40,16 @@ type Check struct {
 }
 
 type Services struct {
+	app     *App
 	Actions map[string]*Action
 }
 
 func (ss *Services) CallAction(key string, input interface{}, token string, origin string) (int, any, error) {
-	return ss.Actions[key].Process(GetApp(), input, token, origin)
+	return ss.Actions[key].Process(ss.app, input, token, origin)
 }
 
 func (ss *Services) CallActionHonestly(key string, input interface{}, m Meta) (int, any, error) {
-	return ss.Actions[key].ProcessHonestly(GetApp(), input, m)
+	return ss.Actions[key].ProcessHonestly(ss.app, input, m)
 }
 
 func (ss *Services) AddAction(action *Action) {
@@ -87,7 +88,7 @@ type PluginFunction struct {
 	Access Access `json:"access" validate:"required"`
 }
 
-func CreateAction[T IDto](key string, check Check, access Access, Validate bool, callback func(*App, T, Assistant) (any, error)) *Action {
+func CreateAction[T IDto](app *App, key string, check Check, access Access, Validate bool, callback func(*App, T, Assistant) (any, error)) *Action {
 	return &Action{
 		Key:    key,
 		Access: access,
@@ -140,7 +141,7 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 						if check.Tower {
 							var location = HandleLocationWithProcessed(app, token, userId, creature, origin, (*data).GetTowerId(), (*data).GetRoomId(), (*data).GetWorkerId())
 							if location.TowerId > 0 {
-								result, err := callback(GetApp(), (*data), CreateAssistant(userId, origin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
+								result, err := callback(app, (*data), CreateAssistant(userId, origin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err
 								}
@@ -149,7 +150,7 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 								return fiber.StatusForbidden, nil, errors.New("access denied")
 							}
 						} else {
-							result, err := callback(GetApp(), *data, CreateAssistant(userId, origin, creature, 0, 0, userId, ctx))
+							result, err := callback(app, *data, CreateAssistant(userId, origin, creature, 0, 0, userId, ctx))
 							if err != nil {
 								return fiber.ErrInternalServerError.Code, nil, err
 							}
@@ -159,7 +160,7 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 						return fiber.StatusForbidden, nil, errors.New("access denied")
 					}
 				} else {
-					result, err := callback(GetApp(), *data, CreateAssistant(0, "", "", 0, 0, 0, ctx))
+					result, err := callback(app, *data, CreateAssistant(0, "", "", 0, 0, 0, ctx))
 					if err != nil {
 						return fiber.ErrInternalServerError.Code, nil, err
 					}
@@ -167,7 +168,7 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 				}
 			} else {
 				if check.User {
-					var userId, _ = AuthWithToken(GetApp(), token)
+					var userId, _ = AuthWithToken(app, token)
 					if userId > 0 {
 						return -2, PreFedPacket{UserId: userId, Body: *data}, nil
 					} else {
@@ -179,14 +180,14 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 			}
 		},
 		ProcessHonestly: func(app *App, data interface{}, m Meta) (int, any, error) {
-			result, err := callback(GetApp(), data.(T), CreateAssistant(m.UserId, app.AppId, "human", m.TowerId, m.RoomId, 0, nil))
+			result, err := callback(app, data.(T), CreateAssistant(m.UserId, app.AppId, "human", m.TowerId, m.RoomId, 0, nil))
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}
 			return fiber.StatusOK, result, nil
 		},
 		ProcessFederative: func(app *App, data interface{}, a Assistant) (int, any, error) {
-			result, err := callback(GetApp(), data.(T), a)
+			result, err := callback(app, data.(T), a)
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}

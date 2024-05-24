@@ -6,7 +6,6 @@ import (
 	"sigma/admin/core/modules"
 	"sigma/admin/core/utils"
 	shell_http "sigma/admin/shell/network/http"
-	"sigma/admin/shell/store/core"
 	"strings"
 
 	"github.com/gofiber/contrib/websocket"
@@ -20,6 +19,7 @@ type WebsocketAnswer struct {
 }
 
 type WsServer struct {
+	sigmaCore *modules.App
 	Endpoints map[string]func(string, string, string, string) (any, string, error)
 }
 
@@ -37,7 +37,7 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 
 func (ws *WsServer) EnableEndpoint(key string) {
 	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		statusCode, res, err := core.Core().Services.CallAction(key, rawBody, token, origin)
+		statusCode, res, err := ws.sigmaCore.Services.CallAction(key, rawBody, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -63,9 +63,9 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			if uri == "authenticate" {
 				var token = splittedMsg[1]
 				var requestId = splittedMsg[2]
-				userId, _ := modules.AuthWithToken(core.Core(), token)
+				userId, _ := modules.AuthWithToken(ws.sigmaCore, token)
 				uid = userId
-				core.Core().Pusher.Clients[userId] = func(b []byte) {
+				ws.sigmaCore.Pusher.Clients[userId] = func(b []byte) {
 					conn.WriteMessage(websocket.TextMessage, b)
 				}
 				AnswerSocket(conn, "response", requestId, modules.ResponseSimpleMessage{Message: "authenticated"})
@@ -88,14 +88,14 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			}
 		}
 		if uid > 0 {
-			delete(core.Core().Pusher.Clients, uid)
+			delete(ws.sigmaCore.Pusher.Clients, uid)
 		}
 		log.Println("socket broken")
 	}))
 }
 
-func New(httpServer *shell_http.HttpServer) *WsServer {
-	ws := &WsServer{Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
+func New(sc *modules.App, httpServer *shell_http.HttpServer) *WsServer {
+	ws := &WsServer{sigmaCore: sc, Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
 	ws.Load(httpServer)
 	return ws
 }

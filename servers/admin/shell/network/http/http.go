@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"log"
 	"sigma/admin/core/modules"
-	"sigma/admin/core/utils"
 	"sigma/admin/core/outputs"
-	"sigma/admin/shell/store/core"
+	"sigma/admin/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type HttpServer struct {
+	sigmaCore *modules.App
 	Server    *fiber.App
 	SendToFed func(string, modules.OriginPacket)
 }
@@ -27,7 +27,7 @@ func (hs *HttpServer) Listen(port int) {
 }
 
 func (hs *HttpServer) Enablendpoint(key string) {
-	hs.Server.Add(core.Core().Services.GetAction(key).Access.ActionType, key, []fiber.Handler{
+	hs.Server.Add(hs.sigmaCore.Services.GetAction(key).Access.ActionType, key, []fiber.Handler{
 		func(c *fiber.Ctx) error {
 			originHeader := c.GetReqHeaders()["Origin"]
 			var origin = ""
@@ -44,11 +44,11 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			if requestIdHeader != nil {
 				requestId = requestIdHeader[0]
 			}
-			org := core.Core().AppId
+			org := hs.sigmaCore.AppId
 			if origin != "" {
 				org = origin
 			}
-			statusCode, result, err := core.Core().Services.CallAction(key, c, token, origin)
+			statusCode, result, err := hs.sigmaCore.Services.CallAction(key, c, token, origin)
 			if statusCode == fiber.StatusOK {
 				return HandleResutOfFunc(c, result)
 			} else if statusCode == -2 {
@@ -80,10 +80,10 @@ func HandleResutOfFunc(c *fiber.Ctx, result any) error {
 	}
 }
 
-func New(maxReqSize int, sendToFed func(string, modules.OriginPacket)) *HttpServer {
+func New(sc *modules.App, maxReqSize int, sendToFed func(string, modules.OriginPacket)) *HttpServer {
 	if maxReqSize > 0 {
-		return &HttpServer{Server: fiber.New(fiber.Config{BodyLimit: maxReqSize}), SendToFed: sendToFed}
+		return &HttpServer{sigmaCore: sc, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize}), SendToFed: sendToFed}
 	} else {
-		return &HttpServer{Server: fiber.New(), SendToFed: sendToFed}
+		return &HttpServer{sigmaCore: sc, Server: fiber.New(), SendToFed: sendToFed}
 	}
 }

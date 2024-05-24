@@ -16,7 +16,7 @@ import (
 )
 
 func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant modules.Assistant) (any, error) {
-	_, res, _ := modules.GetApp().Services.CallActionHonestly("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
+	_, res, _ := app.Services.CallActionHonestly("/humans/get", dtos_humans.GetDto{UserId: assistant.UserId}, modules.Meta{UserId: 0, TowerId: 0, RoomId: 0})
 	result := res.(*pb.HumanGetOutput)
 	return &pb.HumanAuthenticateOutput{Authenticated: true, Me: result.Human}, nil
 }
@@ -158,6 +158,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 
 	// Methods
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/authenticate",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -165,6 +166,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 		authenticate,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/signup",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -172,6 +174,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 		signup,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/verify",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -179,6 +182,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 		verify,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/complete",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -186,6 +190,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 		complete,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/update",
 		modules.CreateCk(true, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
@@ -193,6 +198,7 @@ func CreateHumanService(app *modules.App, coreAccess bool) {
 		update,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/humans/get",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),

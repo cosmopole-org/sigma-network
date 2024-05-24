@@ -13,7 +13,7 @@ import (
 )
 
 func getServerPublicKey(app *modules.App, dto dtos_auth.GetServerKey, assistant modules.Assistant) (any, error) {
-	return &pb.AuthGetServerPublicKeyOutput{PublicKey: string(modules.FetchKeyPair("server_key")[1])}, nil
+	return &pb.AuthGetServerPublicKeyOutput{PublicKey: string(app.Crypto.FetchKeyPair("server_key")[1])}, nil
 }
 
 func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant modules.Assistant) (any, error) {
@@ -24,6 +24,7 @@ func getServersMap(app *modules.App, dto dtos_auth.GetServersMapDto, assistant m
 
 func CreateAuthService(app *modules.App, coreAccess bool) {
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/auths/getServerPublicKey",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
@@ -31,6 +32,7 @@ func CreateAuthService(app *modules.App, coreAccess bool) {
 		getServerPublicKey,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/auths/getServersMap",
 		modules.CreateCk(false, false, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),

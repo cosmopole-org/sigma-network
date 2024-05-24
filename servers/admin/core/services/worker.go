@@ -117,6 +117,7 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 	// Methods
 
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/workers/create",
 		modules.CreateCk(true, true, true),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -124,6 +125,7 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 		createWorker,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/workers/update",
 		modules.CreateCk(true, true, true),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
@@ -131,6 +133,7 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 		updateWorker,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/workers/delete",
 		modules.CreateCk(true, true, true),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
@@ -138,6 +141,7 @@ func CreateWorkerService(app *modules.App, coreAccess bool) {
 		deleteWorker,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/workers/read",
 		modules.CreateCk(true, true, true),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),

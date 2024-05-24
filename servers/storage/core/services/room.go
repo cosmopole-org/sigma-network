@@ -149,6 +149,7 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 
 	// Methods
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/rooms/create",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
@@ -156,6 +157,7 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 		createRoom,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/rooms/update",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
@@ -163,6 +165,7 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 		updateRoom,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/rooms/delete",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
@@ -170,6 +173,7 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 		deleteRoom,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/rooms/get",
 		modules.CreateCk(true, true, false),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
@@ -177,6 +181,7 @@ func CreateRoomService(app *modules.App, coreAccess bool) {
 		getRoom,
 	))
 	app.Services.AddAction(modules.CreateAction(
+		app,
 		"/rooms/send",
 		modules.CreateCk(true, true, true),
 		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
