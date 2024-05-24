@@ -30,7 +30,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan11533\"\n}",
+							"raw": "{\n    \"email\": \"keyhan11933\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1365,7 +1365,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"amir@midopia.com\",\n    \"password\": \"_SQsxMbI_chBC647y0B0XU1hr92xqlNk\"\n}",
+							"raw": "{\n    \"email\": \"amir@midopia.com\",\n    \"password\": \"Qz5-JiweDjp_jvaMGQbGtJz4DmZwBN5K\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1410,7 +1410,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"password\": \"A_xH_2p3dgFL1sv6u0NiL_vznsDjZkx5\"\n}",
+							"raw": "{\n    \"password\": \"Qz5-JiweDjp_jvaMGQbGtJz4DmZwBN5K\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1545,12 +1545,12 @@
 							"formdata": [
 								{
 									"key": "key",
-									"value": "ax5",
+									"value": "6",
 									"type": "text"
 								},
 								{
 									"key": "meta",
-									"value": "[\n    {\n        \"key\": \"hello\",\n        \"path\": \"/greet/hello\",\n        \"mo\": {\n            \"asEndpoint\": true,\n            \"restAction\": \"POST\",\n            \"asGrpc\": false,\n            \"inFederation\": true\n        },\n        \"ch\": {\n            \"user\": true,\n            \"tower\": false,\n            \"room\": false\n        }\n    },\n        {\n        \"key\": \"bye\",\n        \"path\": \"/greet/bye\",\n        \"mo\": {\n            \"asEndpoint\": true,\n            \"restAction\": \"POST\",\n            \"asGrpc\": false,\n            \"inFederation\": true\n        },\n        \"ch\": {\n            \"user\": false,\n            \"tower\": false,\n            \"room\": false\n        }\n    }\n]",
+									"value": "[\n    {\n        \"key\": \"hello\",\n        \"path\": \"/greet/hello\",\n        \"access\": {\n            \"http\": true,\n            \"actionType\": \"POST\",\n            \"grpc\": false,\n            \"fed\": true\n        },\n        \"check\": {\n            \"user\": true,\n            \"tower\": false,\n            \"room\": false\n        }\n    },\n{\n        \"key\": \"bye\",\n        \"path\": \"/greet/bye\",\n        \"access\": {\n            \"http\": true,\n            \"actionType\": \"POST\",\n            \"grpc\": false,\n            \"fed\": true\n        },\n        \"check\": {\n            \"user\": true,\n            \"tower\": false,\n            \"room\": false\n        }\n    }\n]",
 									"type": "text"
 								},
 								{
@@ -1602,7 +1602,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"kasperius\"\n}",
+							"raw": "{\n    \"name\": \"keyhan\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1630,13 +1630,19 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{server}}/api/hello",
+					"raw": "{{server}}/api/hello?name=keyhan",
 					"host": [
 						"{{server}}"
 					],
 					"path": [
 						"api",
 						"hello"
+					],
+					"query": [
+						{
+							"key": "name",
+							"value": "keyhan"
+						}
 					]
 				}
 			},
