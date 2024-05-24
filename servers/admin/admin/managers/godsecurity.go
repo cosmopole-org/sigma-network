@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sigma/admin/core/models"
+	"sigma/admin/admin/models"
 	"sigma/admin/core/utils"
 	"sigma/admin/shell/store/core"
 )

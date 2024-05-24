@@ -37,10 +37,10 @@ func (s *Managers) SecurityManager() *security_manager.SecurityManager {
 	return s.securityManager
 }
 
-func New() *Managers {
+func New(maxReqSize int) *Managers {
 	return &Managers{
 		securityManager: security_manager.New(),
-		netManager:      network_manager.New(),
-		wasmManager:     wasm_manager.New(),
+		netManager: network_manager.New(maxReqSize),
+		wasmManager: wasm_manager.New(),
 	}
 }

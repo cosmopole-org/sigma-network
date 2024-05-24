@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sigma/main/core/utils"
+	"sigma/storage/core/utils"
 )
 
 var keys = map[string][][]byte{}
@@ -16,18 +16,18 @@ var keys = map[string][][]byte{}
 const keysFolderName = "keys"
 
 func LoadKeys() {
-	files, err := os.ReadDir(Instance().StorageRoot + "/keys")
+	files, err := os.ReadDir(GetApp().StorageRoot + "/keys")
 	if err != nil {
 		log.Println(err)
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			priKey, err1 := os.ReadFile(Instance().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
+			priKey, err1 := os.ReadFile(GetApp().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
 			if err1 != nil {
 				log.Println(err1)
 				continue
 			}
-			pubKey, err2 := os.ReadFile(Instance().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
+			pubKey, err2 := os.ReadFile(GetApp().StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
 			if err2 != nil {
 				log.Println(err2)
 				continue
@@ -38,7 +38,7 @@ func LoadKeys() {
 }
 
 func GenerateSecureKeyPair(tag string) {
-	var priKey, pubKey = utils.SecureKeyPairs(Instance().StorageRoot + "/" + keysFolderName + "/" + tag)
+	var priKey, pubKey = utils.SecureKeyPairs(GetApp().StorageRoot + "/" + keysFolderName + "/" + tag)
 	keys[tag] = [][]byte{priKey, pubKey}
 }
 

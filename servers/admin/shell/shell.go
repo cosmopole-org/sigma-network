@@ -2,7 +2,7 @@ package sigma
 
 import (
 	"log"
-	builder "sigma/admin/core"
+	"sigma/admin/core"
 	"sigma/admin/core/modules"
 	mans "sigma/admin/shell/managers"
 	"sigma/admin/shell/services"
@@ -28,19 +28,16 @@ type ShellConfig struct {
 	StorageRoot string
 	Federation  bool
 	CoreAccess  bool
+	MaxReqSize  int
 }
 
 func (s *Sigma) ConnectServicesToNet() {
 	for _, v := range coreApp.Core().Services.Actions {
-		s.Managers().NetManager().SwitchNetAccess(
-			v.Key,
-			v.Access.Http,
-			v.Access.ActionType,
-			v.Access.Ws,
-			v.Access.Grpc,
+		s.Managers().NetManager().SwitchNetAccessByAction(
+			v,
 			func(i interface{}) (any, error) {
 				return nil, nil
-			}, false,
+			},
 		)
 	}
 }
@@ -52,10 +49,9 @@ func New(appId string, config ShellConfig) *Sigma {
 	_, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
 	})
-	sh.managers = mans.New()
+	sh.managers = mans.New(config.MaxReqSize)
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
 	services.CreateWasmPluggerService(sh.managers)
-	
 	sh.ConnectServicesToNet()
 	return sh
 }

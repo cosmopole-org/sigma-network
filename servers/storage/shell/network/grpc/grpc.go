@@ -2,14 +2,16 @@ package shell_grpc
 
 import (
 	"context"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net"
-	"sigma/main/core/modules"
-	"sigma/main/core/utils"
+	"sigma/storage/core/modules"
+	"sigma/storage/core/utils"
+	"sigma/storage/shell/store/core"
 	"strings"
 
+	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -19,49 +21,44 @@ import (
 )
 
 type GrpcServer struct {
-	Server *grpc.Server
+	Server    *grpc.Server
+	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
 
-func HandleFederationOrNot(action string, c modules.Check, md metadata.MD, mo modules.MethodOptions, fn func(*modules.App, interface{}, modules.Assistant) (any, error), f interface{}, assistant modules.Assistant) (any, error) {
-	if mo.InFederation {
-		originHeader, ok := md["origin"]
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Origin is not supplied")
-		}
-		origin := originHeader[0]
-		if origin == modules.Instance().AppId {
-			result, err := fn(modules.Instance(), f, assistant)
-			if err != nil {
-				return nil, status.Errorf(codes.Unauthenticated, (err.Error()))
-			}
-			return result, nil
-		} else {
-			data, err := json.Marshal(f)
-			if err != nil {
-				log.Println(err)
-				return nil, status.Errorf(codes.Unauthenticated, err.Error())
-			}
-			reqId, err2 := utils.SecureUniqueString(16)
-			if err2 != nil {
-				return nil, status.Errorf(codes.Unauthenticated, err2.Error())
-			}
-			modules.Instance().Memory.SendInFederation(origin, modules.InterfedPacket{IsResponse: false, Key: action, UserId: assistant.UserId, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: string(data), RequestId: reqId})
-			return modules.ResponseSimpleMessage{Message: "request to federation queued successfully"}, nil
-		}
-	} else {
-		result, err := fn(modules.Instance(), f, assistant)
+func CreateConverter[T modules.IDto](key string) func(interface{}) (any, error) {
+	return func(i interface{}) (any, error) {
+		body := new(T)
+		err := mapstructure.Decode(i, body)
 		if err != nil {
-			return nil, status.Errorf(codes.Unauthenticated, err.Error())
+			return nil, errors.New("invalid input format")
 		}
-		return result, nil
+		return *body, nil
 	}
 }
 
-func serverInterceptor(
-	app *modules.App,
+func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (any, error)) {
+	gs.Endpoints[key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
+		data, err0 := converter(rawBody)
+		if err0 != nil {
+			return nil, "error", err0
+		}
+		statusCode, res, err := core.Core().Services.CallAction(key, data, token, origin)
+		if statusCode == fiber.StatusOK {
+			return res, "response", nil
+		} else if statusCode == -2 {
+			return res, "noaction", nil
+		} else if err != nil {
+			return nil, "error", errors.New(res.(utils.Error).Message)
+		}
+		return nil, "", nil
+	}
+}
+
+func (gs *GrpcServer) serverInterceptor(
 	ctx context.Context,
 	req interface{},
 	info *grpc.UnaryServerInfo,
+	_ grpc.UnaryHandler,
 ) (interface{}, error) {
 	fullMethod := info.FullMethod
 	keyArr := strings.Split(fullMethod, "/")
@@ -73,80 +70,52 @@ func serverInterceptor(
 		return nil, status.Errorf(codes.InvalidArgument, "Wrong path format")
 	}
 	action := "/" + strings.ToLower(fmArr[1][0:len(fmArr[1])-len("Service")]) + "s" + "/" + keyArr[2]
-	fn := modules.Handlers[action]
-	f := modules.Frames[action]
-	c := modules.Checks[action]
-	mo := modules.MethodOptionsMap[action]
-	err := mapstructure.Decode(req, &f)
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "Wrong input")
-	}
 	md, ok := metadata.FromIncomingContext(ctx)
-	if c.User {
-		if !ok {
-			return nil, status.Errorf(codes.InvalidArgument, "Retrieving metadata is failed")
-		}
-		tokenHeader, ok := md["token"]
-		if !ok {
-			return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
-		}
-		token := tokenHeader[0]
-		var userId, userType = modules.AuthWithToken(app, token)
-		var creature = ""
-		if userType == 1 {
-			creature = "human"
-		} else if userType == 2 {
-			creature = "machine"
-		}
-		if userId > 0 {
-			if c.Tower {
-				location := modules.HandleLocationWithProcessed(app, token, userId, creature, f.(modules.IDto).GetTowerId(), f.(modules.IDto).GetRoomId(), 0)
-				if location.TowerId > 0 {
-					return HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(userId, creature, location.TowerId, location.RoomId, userId, nil))
-				} else {
-					return nil, status.Errorf(codes.Unauthenticated, "Access denied")
-				}
-			} else {
-				return HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(userId, creature, 0, 0, 0, nil))
-			}
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "Metadata not provided")
+	}
+	tokenHeader, ok := md["token"]
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "Authorization token is not supplied")
+	}
+	token := tokenHeader[0]
+	originHeader, ok := md["origin"]
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "Origin is not supplied")
+	}
+	origin := originHeader[0]
+	reqIdHeader, ok := md["requestId"]
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "RequestId is not supplied")
+	}
+	requestId := reqIdHeader[0]
+	endpoint, ok := gs.Endpoints[action]
+	if ok {
+		res, _, err := endpoint(req, token, origin, requestId)
+		if err != nil {
+			return nil, status.Errorf(codes.Unauthenticated, err.Error())
 		} else {
-			return nil, status.Errorf(codes.Unauthenticated, "Authenticatio failed")
+			return res, nil
 		}
 	} else {
-		h, err := HandleFederationOrNot(action, c, md, mo, fn, f, modules.CreateAssistant(0, "", 0, 0, 0, nil))
-		return h, err
+		return nil, status.Errorf(codes.Unauthenticated, "endpoint not found")
 	}
 }
 
-func withServerUnaryInterceptor() grpc.ServerOption {
-	return grpc.UnaryInterceptor(
-		func(
-			ctx context.Context,
-			req interface{},
-			info *grpc.UnaryServerInfo,
-			_ grpc.UnaryHandler) (interface{}, error) {
-			return serverInterceptor(
-				modules.Instance(),
-				ctx,
-				req,
-				info,
-			)
-		},
-	)
-}
-
-func (g *GrpcServer) ListenForGrpc(port int) {
+func (gs *GrpcServer) Listen(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		log.Fatalf("failed to listen grpc: %v", err)
 	}
 	log.Printf("server listening at %v", lis.Addr())
-	go g.Server.Serve(lis)
+	go gs.Server.Serve(lis)
 }
 
-func LoadGrpcServer() *GrpcServer {
+func New() *GrpcServer {
+	gs := &GrpcServer{Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
-		withServerUnaryInterceptor(),
+		grpc.UnaryInterceptor(gs.serverInterceptor),
 	)
-	return &GrpcServer{Server: grpcServer}
+	gs.Server = grpcServer
+	return gs
 }

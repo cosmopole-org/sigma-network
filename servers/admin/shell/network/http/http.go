@@ -6,7 +6,7 @@ import (
 	"log"
 	"sigma/admin/core/modules"
 	"sigma/admin/core/utils"
-	"sigma/admin/shell/outputs"
+	"sigma/admin/core/outputs"
 	"sigma/admin/shell/store/core"
 
 	"github.com/gofiber/fiber/v2"
@@ -80,6 +80,10 @@ func HandleResutOfFunc(c *fiber.Ctx, result any) error {
 	}
 }
 
-func New(sendToFed func(string, modules.OriginPacket)) *HttpServer {
-	return &HttpServer{Server: fiber.New(), SendToFed: sendToFed}
+func New(maxReqSize int, sendToFed func(string, modules.OriginPacket)) *HttpServer {
+	if maxReqSize > 0 {
+		return &HttpServer{Server: fiber.New(fiber.Config{BodyLimit: maxReqSize}), SendToFed: sendToFed}
+	} else {
+		return &HttpServer{Server: fiber.New(), SendToFed: sendToFed}
+	}
 }

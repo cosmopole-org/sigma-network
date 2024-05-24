@@ -21,17 +21,17 @@ func WellKnownServers() []string {
 func LoadWellknownServers() {
 	IpToHostMap := map[string]string{}
 	HostToIpMap := map[string]string{}
-	for _, domain := range wellKnownServers {
+	for _, doadmin := range wellKnownServers {
 		ipAddr := ""
-		ips, _ := net.LookupIP(domain)
+		ips, _ := net.LookupIP(doadmin)
 		for _, ip := range ips {
 			if ipv4 := ip.To4(); ipv4 != nil {
 				ipAddr = ipv4.String()
 				break
 			}
 		}
-		IpToHostMap[ipAddr] = domain
-		HostToIpMap[domain] = ipAddr
+		IpToHostMap[ipAddr] = doadmin
+		HostToIpMap[doadmin] = ipAddr
 	}
 	log.Println()
 	log.Println(HostToIpMap)

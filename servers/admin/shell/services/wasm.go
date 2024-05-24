@@ -6,12 +6,18 @@ import (
 	"sigma/admin/core/modules"
 
 	dtos_external "sigma/admin/core/dtos/external"
-	mans "sigma/admin/shell/managers"
 	outputs_external "sigma/admin/shell/outputs/external"
+	mans "sigma/admin/shell/managers"
 	"sigma/admin/shell/store/core"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/second-state/WasmEdge-go/wasmedge"
 )
+
+type WasmManager struct {
+	PluginVms   map[string]*wasmedge.VM
+	PluginMetas map[string]modules.PluginFunction
+}
 
 const pluginsTemplateName = "/plugins/"
 

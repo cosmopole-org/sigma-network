@@ -3,7 +3,7 @@ package admin_builder
 import (
 	godsecurity "sigma/admin/admin/managers"
 	"sigma/admin/admin/services"
-	"sigma/admin/core/models"
+	"sigma/admin/admin/models"
 	sigma "sigma/admin/shell"
 )
 

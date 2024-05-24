@@ -12,9 +12,7 @@ var quit = make(chan struct{})
 
 func main() {
 
-	var origin = "cosmopole"
-
-	err := godotenv.Load(origin + ".env")
+	err := godotenv.Load()
 	if err != nil {
 		panic(err)
 	}
@@ -25,7 +23,7 @@ func main() {
 	}
 
 	sigmaApp := sigma.New(
-		origin+".liara.run",
+		os.Getenv("FED_ORIGIN"),
 		sigma.ShellConfig{
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),

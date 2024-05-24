@@ -2,19 +2,13 @@ package main
 
 import (
 	"os"
-	"sigma/main/shell/dtos"
-	app "sigma/main/shell"
+	sigma "sigma/storage/shell"
+	storage_builder "sigma/storage/storage"
 
-	"sigma/main/core/modules"
 	"strconv"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/joho/godotenv"
 )
-
-func hello(app *modules.App, d dtos.HelloDto, assistant modules.Assistant) (any, error) {
-	return `{ "hello": "world" }`, nil
-}
 
 var quit = make(chan struct{})
 
@@ -25,43 +19,24 @@ func main() {
 		panic(err)
 	}
 
-	port, err := strconv.ParseInt(os.Getenv("PORT"), 10, 32)
-	if (err != nil) {
+	port, err := strconv.ParseInt(os.Getenv("MAIN_PORT"), 10, 32)
+	if err != nil {
 		panic("invalid port number")
 	}
 
-	app := app.New(
-		os.Getenv("PORT"),
-		os.Getenv("POSTGRES_URI"),
-		os.Getenv("POSTGRES_DB")+"_"+os.Getenv("PORT"),
-		os.Getenv("REDIS_URI"),
-		os.Getenv("STORAGE_ROOT_PATH"),
-		int(port),
+	storageApp := storage_builder.BuildStorage(
+		os.Getenv("FED_ORIGIN"),
+		sigma.ShellConfig{
+			DbUri:       os.Getenv("POSTGRES_URI"),
+			MemUri:      os.Getenv("REDIS_URI"),
+			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
+			Federation:  os.Getenv("FEDERATIVE") == "true",
+			CoreAccess:  false,
+			MaxReqSize: 1000 * 1024 * 1024,
+		},
 	)
 
-	modules.AddMethod[dtos.HelloDto, dtos.HelloDto](
-		app,
-		modules.CreateMethod[dtos.HelloDto, dtos.HelloDto](
-			"/api/hello",
-			hello,
-			dtos.HelloDto{},
-			modules.CreateCheck(false, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
-		),
-	)
-
-	modules.AddMethod[dtos.PingDto, dtos.PingDto](
-		app,
-		modules.CreateMethod[dtos.PingDto, dtos.PingDto](
-			"/api/ping",
-			func(app *modules.App, d dtos.PingDto, assistant modules.Assistant) (any, error) {
-				return os.Getenv("PORT"), nil
-			},
-			dtos.PingDto{},
-			modules.CreateCheck(false, false, false),
-			modules.CreateMethodOptions(true, fiber.MethodGet, true, false),
-		),
-	)
+	storageApp.SigmaApp.ConnectToNetwork(map[string]int{"http": int(port)})
 
 	<-quit
 }

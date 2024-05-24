@@ -4,7 +4,7 @@ import (
 	dtos_auth "sigma/admin/core/dtos/auth"
 	"sigma/admin/core/modules"
 	network_store "sigma/admin/shell/network"
-	outputs_auth "sigma/admin/shell/outputs/auth"
+	outputs_auth "sigma/admin/core/outputs/auth"
 
 	pb "sigma/admin/core/models/grpc"
 

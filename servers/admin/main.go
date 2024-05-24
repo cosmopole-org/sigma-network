@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 	admin_builder "sigma/admin/admin"
-	"sigma/admin/core/models"
+	"sigma/admin/admin/models"
 	sigma "sigma/admin/shell"
 	"strconv"
 
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	adminApp := admin_builder.BuildAdmin(
-		"localhost",
+		os.Getenv("FED_ORIGIN"),
 		sigma.ShellConfig{
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),

@@ -15,7 +15,7 @@ type NetManager struct {
 	FedNet     *shell_federation.FedNet
 }
 
-func (nm *NetManager) SwitchNetAccess(key string, http bool, actType string, ws bool, grpc bool, converter func(interface{}) (any, error), fed bool) {
+func (nm *NetManager) SwitchNetAccess(key string, http bool, ws bool, grpc bool, converter func(interface{}) (any, error)) {
 	if http {
 		nm.HttpServer.Enablendpoint(key)
 	}
@@ -39,9 +39,9 @@ func (nm *NetManager) SwitchNetAccessByAction(action *modules.Action, converter 
 	}
 }
 
-func New() *NetManager {
+func New(maxReqSize int) *NetManager {
 	fn := shell_federation.New()
-	hs := shell_http.New(fn.SendInFederation)
+	hs := shell_http.New(maxReqSize, fn.SendInFederation)
 	ws := shell_websocket.New(hs)
 	gc := shell_grpc.New()
 	fn.LoadFedNet(hs.Server)

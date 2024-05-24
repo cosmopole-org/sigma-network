@@ -25,16 +25,16 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 		conn := p.Clients[userId]
 		if conn != nil {
 			if len(requestId) > 0 {
-				conn([]byte("response " + requestId + " " + data.(string)))
+				conn([]byte("response "+requestId+" "+data.(string)))
 			} else {
 				if alreadySerialized {
-					conn([]byte("update " + key + " " + data.(string)))
+					conn([]byte("update "+key+" "+data.(string)))
 				} else {
 					message, err := json.Marshal(data)
 					if err != nil {
 						log.Println(err)
 					} else {
-						conn([]byte("update " + key + " " + string(message)))
+						conn([]byte("update "+key+" "+string(message)))
 					}
 				}
 			}

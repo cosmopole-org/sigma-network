@@ -9,10 +9,10 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o main .
+RUN go build -o admin .
 
 ENV PORT=8080
 
 EXPOSE $PORT
 
-ENTRYPOINT ["/app/main"]
+ENTRYPOINT ["/app/admin"]

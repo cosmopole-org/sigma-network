@@ -6,6 +6,7 @@ import (
 	"sigma/admin/core/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/mitchellh/mapstructure"
 )
 
 type IError struct {
@@ -99,10 +100,22 @@ func CreateAction[T IDto](key string, check Check, access Access, Validate bool,
 				json.Unmarshal([]byte(input), data)
 			case *fiber.Ctx:
 				ctx = input
-				if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
-					input.BodyParser(data)
-				} else if access.ActionType == "GET" {
-					input.QueryParser(data)
+				form, err := input.MultipartForm()
+				if err == nil {
+					var formData = map[string]any{}
+					for k, v := range form.Value {
+						formData[k] = v
+					}
+					for k, v := range form.File {
+						formData[k] = v
+					}
+					mapstructure.Decode(formData, data)
+				} else {
+					if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
+						input.BodyParser(data)
+					} else if access.ActionType == "GET" {
+						input.QueryParser(data)
+					}
 				}
 			default:
 				//pass
