@@ -3,10 +3,10 @@ package modules
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sigma/admin/core/utils"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type Pusher struct {
@@ -33,7 +33,7 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 				} else {
 					message, err := json.Marshal(data)
 					if err != nil {
-						log.Println(err)
+						utils.Log(logrus.DebugLevel, err)
 					} else {
 						conn([]byte("update " + key + " " + string(message)))
 					}
@@ -46,7 +46,7 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 		} else {
 			message, err := json.Marshal(data)
 			if err != nil {
-				log.Println(err)
+				utils.Log(logrus.DebugLevel, err)
 			} else {
 				p.ToOuterOrigin(userOrigin, OriginPacket{IsResponse: false, Key: "update " + key, UserId: userId, Data: string(message)})
 			}
@@ -68,7 +68,7 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []G
 		default:
 			msg, err := json.Marshal(d)
 			if err != nil {
-				log.Println(err)
+				utils.Log(logrus.DebugLevel, err)
 				return
 			}
 			message = msg
@@ -123,11 +123,11 @@ func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, GroupM
 }
 
 func CreatePusher(app *App, toOuterOrigin func(string, OriginPacket)) *Pusher {
-	log.Println("running network...")
+	utils.Log(logrus.DebugLevel, "running network...")
 	utils.LoadValidationSystem()
 	newMap := cmap.New[*cmap.ConcurrentMap[string, GroupMember]]()
 	return &Pusher{
-		app: app,
+		app:           app,
 		Clients:       map[int64]func([]byte){},
 		Groups:        &newMap,
 		ToOuterOrigin: toOuterOrigin,

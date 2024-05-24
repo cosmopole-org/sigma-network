@@ -3,18 +3,18 @@ package shell_http
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"sigma/storage/core/modules"
 	"sigma/storage/core/outputs"
 	"sigma/storage/core/utils"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type HttpServer struct {
-	sigmaCore   *modules.App
-	Server      *fiber.App
-	SendToFed   func(string, modules.OriginPacket)
+	sigmaCore *modules.App
+	Server    *fiber.App
+	SendToFed func(string, modules.OriginPacket)
 }
 
 type EmptySuccessResponse struct {
@@ -26,7 +26,7 @@ func (hs *HttpServer) AddMiddleware(mw func(*fiber.Ctx) error) {
 }
 
 func (hs *HttpServer) Listen(port int) {
-	log.Println("Listening to rest port ", port, "...")
+	utils.Log(logrus.DebugLevel, "Listening to rest port ", port, "...")
 	go hs.Server.Listen(fmt.Sprintf(":%d", port))
 }
 
@@ -59,7 +59,7 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			} else if statusCode == -2 {
 				data, err := json.Marshal(result.(modules.PreFedPacket).Body)
 				if err != nil {
-					log.Println(err)
+					utils.Log(logrus.DebugLevel, err)
 					return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 				}
 				hs.SendToFed(org, modules.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(modules.PreFedPacket).Body.(modules.IDto).GetTowerId(), RoomId: result.(modules.PreFedPacket).Body.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})

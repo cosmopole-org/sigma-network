@@ -3,13 +3,13 @@ package wasm_manager
 import (
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
-	"log"
 	"os"
 
 	"sigma/storage/core/modules"
+	"sigma/storage/core/utils"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
+	"github.com/sirupsen/logrus"
 )
 
 type WasmManager struct {
@@ -58,7 +58,7 @@ func (wm *WasmManager) Plug(wasmFilePath string, meta []modules.PluginFunction) 
 
 	err2 := vm.LoadWasmFile(wasmFilePath)
 	if err2 != nil {
-		log.Println("failed to load wasm")
+		utils.Log(logrus.DebugLevel, "failed to load wasm")
 	}
 	vm.Validate()
 	vm.Instantiate()
@@ -79,12 +79,12 @@ type vmHost struct {
 }
 
 func (h *vmHost) logData(_ interface{}, callframe *wasmedge.CallingFrame, params []interface{}) ([]interface{}, wasmedge.Result) {
-	fmt.Println(h.remotePtrToString(params[0].(int32), callframe))
+	utils.Log(logrus.DebugLevel, h.remotePtrToString(params[0].(int32), callframe))
 	return []interface{}{}, wasmedge.Result_Success
 }
 
 func (h *vmHost) sql(_ interface{}, callframe *wasmedge.CallingFrame, params []interface{}) ([]interface{}, wasmedge.Result) {
-	fmt.Println(string(h.remotePtrToString(params[0].(int32), callframe)))
+	utils.Log(logrus.DebugLevel, string(h.remotePtrToString(params[0].(int32), callframe)))
 	return []interface{}{interface{}(h.localStringToPtr("response for sql", callframe))}, wasmedge.Result_Success
 }
 
@@ -114,11 +114,11 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 	wasmedge.SetLogErrorLevel()
 	err0 := os.MkdirAll(app.StorageRoot+"/plugins", os.ModePerm)
 	if err0 != nil {
-		log.Println(err0)
+		utils.Log(logrus.DebugLevel, err0)
 	}
 	files, err := os.ReadDir(app.StorageRoot + "/plugins")
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 	for _, file := range files {
 		if file.IsDir() {
@@ -158,7 +158,7 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 
 			err2 := vm.LoadWasmFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/module.wasm")
 			if err2 != nil {
-				log.Println("failed to load wasm")
+				utils.Log(logrus.DebugLevel, "failed to load wasm")
 			}
 			vm.Validate()
 			vm.Instantiate()
@@ -167,14 +167,14 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 
 			metaJson, err1 := os.ReadFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/meta.txt")
 			if err1 != nil {
-				log.Println(err1)
+				utils.Log(logrus.DebugLevel, err1)
 				continue
 			}
 
 			var meta []modules.PluginFunction
 			err3 := json.Unmarshal(metaJson, &meta)
 			if err3 != nil {
-				log.Println(err3)
+				utils.Log(logrus.DebugLevel, err3)
 				continue
 			}
 

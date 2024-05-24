@@ -2,13 +2,14 @@ package modules
 
 import (
 	"context"
-	"log"
+	"sigma/admin/core/utils"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/sirupsen/logrus"
 )
 
 type Memory struct {
-	Storage      *redis.Client
+	Storage *redis.Client
 }
 
 func (m *Memory) GetClient() *redis.Client {
@@ -27,17 +28,17 @@ func (m *Memory) CreateClient(redisUri string) {
 func (m *Memory) Put(key string, value string) {
 	err := m.Storage.Set(context.Background(), key, value, 0).Err()
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 }
 
 func (m *Memory) Get(key string) string {
 	val, err := m.Storage.Get(context.Background(), key).Result()
 	if err == redis.Nil {
-		log.Println("key: " + key + " does not exist")
+		utils.Log(logrus.DebugLevel, "key: "+key+" does not exist")
 		return ""
 	} else if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return ""
 	}
 	return val
@@ -46,13 +47,13 @@ func (m *Memory) Get(key string) string {
 func (m *Memory) Del(key string) {
 	err := m.Storage.Del(context.Background(), key).Err()
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 }
 
 func CreateMemory(redisUri string) *Memory {
 	memory := &Memory{}
-	log.Println("connecting to redis...")
+	utils.Log(logrus.DebugLevel, "connecting to redis...")
 	memory.CreateClient(redisUri)
 	return memory
 }

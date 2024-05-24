@@ -3,11 +3,11 @@ package modules
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"sigma/main/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 )
 
 type IError struct {
@@ -104,7 +104,7 @@ func CreateAction[T IDto](app *App, key string, check Check, access Access, Vali
 				ctx = input
 				form, err := input.MultipartForm()
 				if err == nil {
-					log.Println(form)
+					utils.Log(logrus.DebugLevel, form)
 					var formData = map[string]any{}
 					for k, v := range form.Value {
 						formData[k] = v[0]

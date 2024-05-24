@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"log"
 
 	dtos_humans "sigma/storage/core/dtos/humans"
 	"sigma/storage/core/modules"
@@ -12,6 +11,7 @@ import (
 	pb "sigma/storage/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -24,12 +24,12 @@ func authenticate(app *modules.App, input dtos_humans.AuthenticateDto, assistant
 func signup(app *modules.App, input dtos_humans.SignupDto, assistant modules.Assistant) (any, error) {
 	var cc, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
-		log.Println(err1)
+		utils.Log(logrus.DebugLevel, err1)
 		return &pb.HumanSignupOutput{}, err1
 	}
 	var vc, err2 = utils.SecureUniqueString(32)
 	if err2 != nil {
-		log.Println(err2)
+		utils.Log(logrus.DebugLevel, err2)
 		return &pb.HumanSignupOutput{}, err2
 	}
 	var query = `
@@ -47,7 +47,7 @@ func signup(app *modules.App, input dtos_humans.SignupDto, assistant modules.Ass
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Email, vc, cc, "created",
 	).Scan(&pending.Id, &pending.Email, &pending.VerifyCode, &pending.ClientCode, &pending.State); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.HumanSignupOutput{}, err
 	}
 	return &pb.HumanSignupOutput{Pending: &pending}, nil
@@ -63,7 +63,7 @@ func verify(app *modules.App, input dtos_humans.VerifyDto, assistant modules.Ass
 	).Scan(
 		&record,
 	); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.HumanVerifyOutput{}, err
 	}
 	var pending = pb.Pending{
@@ -98,7 +98,7 @@ func complete(app *modules.App, input dtos_humans.CompleteDto, assistant modules
 	var session pb.Session
 	var token, tokenErr = utils.SecureUniqueString(32)
 	if tokenErr != nil {
-		log.Println(tokenErr)
+		utils.Log(logrus.DebugLevel, tokenErr)
 		return &pb.HumanCompleteOutput{}, tokenErr
 	}
 	var query = `
@@ -106,7 +106,7 @@ func complete(app *modules.App, input dtos_humans.CompleteDto, assistant modules
 	`
 	if err := app.Database.Db.QueryRow(context.Background(), query, input.ClientCode, input.VerifyCode, input.FirstName, input.LastName, token, app.AppId).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &session.Id, &session.Token); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.HumanCompleteOutput{}, err
 	}
 	if human.Id > 0 {
@@ -126,7 +126,7 @@ func update(app *modules.App, input dtos_humans.UpdateDto, assistant modules.Ass
 	`
 	if err := app.Database.Db.QueryRow(context.Background(), query, input.FirstName, input.LastName, assistant.UserId).
 		Scan(&human.Id, &human.Email, &human.FirstName, &human.LastName, &human.Origin); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.HumanUpdateOutput{}, err
 	}
 	return &pb.HumanUpdateOutput{Human: &human}, nil
@@ -139,7 +139,7 @@ func get(app *modules.App, input dtos_humans.GetDto, assistant modules.Assistant
 	`
 	if err := app.Database.Db.QueryRow(context.Background(), query, input.UserId).
 		Scan(&human.Id, &human.FirstName, &human.LastName, &human.Origin); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.HumanGetOutput{}, err
 	}
 	return &pb.HumanGetOutput{Human: &human}, nil

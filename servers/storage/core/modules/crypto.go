@@ -6,13 +6,14 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"log"
 	"os"
 	"sigma/storage/core/utils"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Crypto struct {
-	app *App
+	app  *App
 	keys map[string][][]byte
 }
 
@@ -21,18 +22,18 @@ const keysFolderName = "keys"
 func (c *Crypto) LoadKeys() {
 	files, err := os.ReadDir(c.app.StorageRoot + "/keys")
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 	for _, file := range files {
 		if file.IsDir() {
 			priKey, err1 := os.ReadFile(c.app.StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/private.pem")
 			if err1 != nil {
-				log.Println(err1)
+				utils.Log(logrus.DebugLevel, err1)
 				continue
 			}
 			pubKey, err2 := os.ReadFile(c.app.StorageRoot + "/" + keysFolderName + "/" + file.Name() + "/public.pem")
 			if err2 != nil {
-				log.Println(err2)
+				utils.Log(logrus.DebugLevel, err2)
 				continue
 			}
 			c.keys[file.Name()] = [][]byte{priKey, pubKey}
@@ -54,12 +55,12 @@ func (c *Crypto) Encrypt(tag string, plainText string) string {
 	publicKeyBlock, _ := pem.Decode(publicKeyPEM)
 	publicKey, err := x509.ParsePKIXPublicKey(publicKeyBlock.Bytes)
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return ""
 	}
 	ciphertext, err := rsa.EncryptPKCS1v15(rand.Reader, publicKey.(*rsa.PublicKey), []byte(plainText))
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return ""
 	}
 	return fmt.Sprintf("%x", ciphertext)
@@ -70,12 +71,12 @@ func (c *Crypto) Decrypt(tag string, cipherText string) string {
 	privateKeyBlock, _ := pem.Decode(privateKeyPEM)
 	privateKey, err := x509.ParsePKCS1PrivateKey(privateKeyBlock.Bytes)
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return ""
 	}
 	plaintext, err := rsa.DecryptPKCS1v15(rand.Reader, privateKey, []byte(cipherText))
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return ""
 	}
 	return string(plaintext)

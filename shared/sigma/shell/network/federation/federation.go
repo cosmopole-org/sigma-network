@@ -3,7 +3,6 @@ package shell_federation
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	pb "sigma/main/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type FedNet struct {
@@ -26,12 +26,12 @@ func (fed *FedNet) LoadFedNet(f *fiber.App) {
 		c.BodyParser(&pack)
 		ip := utils.FromRequest(c.Context())
 		hostName, ok := fed.ipToHostMap[ip]
-		log.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
+		utils.Log(logrus.DebugLevel, "packet from ip: [", ip, "] and hostname: [", hostName, "]")
 		if ok {
 			fed.HandlePacket(hostName, pack)
 			return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "federation packet received"})
 		} else {
-			log.Println("hostname not known")
+			utils.Log(logrus.DebugLevel, "hostname not known")
 			return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "hostname not known"})
 		}
 	})
@@ -46,7 +46,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 				var memberRes pb.InviteAcceptOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
-					log.Println(err2)
+					utils.Log(logrus.DebugLevel, err2)
 					return
 				}
 				member = memberRes.Member
@@ -54,7 +54,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 				var memberRes pb.TowerJoinOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
-					log.Println(err2)
+					utils.Log(logrus.DebugLevel, err2)
 					return
 				}
 				member = memberRes.Member
@@ -74,7 +74,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 				if err := fed.sigmaCore.Database.Db.QueryRow(
 					context.Background(), query, member.HumanId, member.TowerId, channelId, fed.sigmaCore.AppId,
 				).Scan(&memberId); err != nil {
-					log.Println(err)
+					utils.Log(logrus.DebugLevel, err)
 					return
 				}
 				fed.sigmaCore.Pusher.JoinGroup(member.TowerId, member.HumanId, fed.sigmaCore.AppId)
@@ -107,7 +107,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 				UserOrigin: channelId,
 			})
 			if err != nil {
-				log.Println(err)
+				utils.Log(logrus.DebugLevel, err)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
 				if err2 == nil {
 					fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -116,7 +116,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload modules.OriginPacket) 
 			}
 			packet, err3 := json.Marshal(res)
 			if err3 != nil {
-				log.Println(err3)
+				utils.Log(logrus.DebugLevel, err3)
 				errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
 				if err2 == nil {
 					fed.SendInFederation(channelId, modules.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
@@ -134,13 +134,13 @@ func (fed *FedNet) SendInFederation(destOrg string, packet modules.OriginPacket)
 		if ok {
 			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
 			if err != nil {
-				log.Printf("could not send: status: %d error: %v", statusCode, err)
-				log.Println()
+				utils.Log(logrus.DebugLevel, "could not send: status: %d error: %v", statusCode, err)
+				utils.Log(logrus.DebugLevel)
 			} else {
-				log.Println("packet sent successfully. status: ", statusCode)
+				utils.Log(logrus.DebugLevel, "packet sent successfully. status: ", statusCode)
 			}
 		} else {
-			log.Println("state org not found")
+			utils.Log(logrus.DebugLevel, "state org not found")
 		}
 	}
 }

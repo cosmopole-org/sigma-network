@@ -2,7 +2,6 @@ package shell_websocket
 
 import (
 	"encoding/json"
-	"log"
 	"sigma/storage/core/modules"
 	"sigma/storage/core/utils"
 	shell_http "sigma/storage/shell/network/http"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 )
 
 type WebsocketAnswer struct {
@@ -26,11 +26,11 @@ type WsServer struct {
 func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
-		log.Println(err0)
+		utils.Log(logrus.DebugLevel, err0)
 		return
 	}
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(t+" "+requestId+" "+string(answerBytes))); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return
 	}
 }
@@ -90,7 +90,7 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 		if uid > 0 {
 			delete(ws.sigmaCore.Pusher.Clients, uid)
 		}
-		log.Println("socket broken")
+		utils.Log(logrus.DebugLevel, "socket broken")
 	}))
 }
 

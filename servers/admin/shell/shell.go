@@ -1,13 +1,15 @@
 package sigma
 
 import (
-	"log"
 	"net"
-	"sigma/admin/core"
+	builder "sigma/admin/core"
 	"sigma/admin/core/modules"
+	"sigma/admin/core/utils"
 	mans "sigma/admin/shell/managers"
 	middlewares_wasm "sigma/admin/shell/middlewares"
 	"sigma/admin/shell/services"
+
+	"github.com/sirupsen/logrus"
 )
 
 var wellKnownServers = []string{
@@ -69,9 +71,9 @@ func (s *Sigma) loadWellknownServers() {
 		s.ipToHostMap[ipAddr] = doadmin
 		s.hostToIpMap[doadmin] = ipAddr
 	}
-	log.Println()
-	log.Println(s.hostToIpMap)
-	log.Println()
+	utils.Log(logrus.DebugLevel)
+	utils.Log(logrus.DebugLevel, s.hostToIpMap)
+	utils.Log(logrus.DebugLevel)
 }
 
 func New(appId string, config ShellConfig) *Sigma {

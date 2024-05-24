@@ -3,7 +3,6 @@ package middlewares_wasm
 import (
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 
 	"sigma/admin/core/modules"
 	"sigma/admin/core/utils"
@@ -20,7 +19,6 @@ func WasmMiddleware(app *modules.App, mans *managers.Managers) func(*fiber.Ctx) 
 			meta := mans.WasmManager().PluginMetas[path]
 			var body = ""
 			if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
-				fmt.Println(c.BodyRaw())
 				body = string(c.BodyRaw())
 			} else if meta.Access.ActionType == "GET" {
 				dictStr, _ := json.Marshal(c.AllParams())

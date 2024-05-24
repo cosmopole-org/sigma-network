@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	dtos_workers "sigma/storage/core/dtos/workers"
 	"sigma/storage/core/modules"
 	updates_workers "sigma/storage/core/updates/workers"
+	"sigma/storage/core/utils"
 
 	pb "sigma/storage/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -30,7 +31,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId, input.WorkerOrigin,
 	).Scan(&worker.Id); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.WorkerCreateOutput{}, err
 	}
 	if worker.Id > 0 {
@@ -57,7 +58,7 @@ func updateWorker(app *modules.App, input dtos_workers.UpdateDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Metadata, input.WorkerId, assistant.RoomId,
 	).Scan(&worker.Id, &worker.MachineId, &worker.Origin); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.WorkerUpdateOutput{}, err
 	}
 	if worker.Id > 0 {
@@ -77,7 +78,7 @@ func deleteWorker(app *modules.App, input dtos_workers.DeleteDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.WorkerId, assistant.RoomId,
 	).Scan(&result); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 		return &pb.WorkerDeleteOutput{}, err
 	}
 	return &pb.WorkerDeleteOutput{}, nil
@@ -89,19 +90,19 @@ func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules
 	`
 	rows, err := app.Database.Db.Query(context.Background(), query, assistant.RoomId)
 	if err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 	var rowSlice []*pb.Worker
 	for rows.Next() {
 		var w pb.Worker
 		err := rows.Scan(&w.Id, &w.MachineId, &w.RoomId, &w.Metadata, &w.Origin)
 		if err != nil {
-			log.Println(err)
+			utils.Log(logrus.DebugLevel, err)
 		}
 		rowSlice = append(rowSlice, &w)
 	}
 	if err := rows.Err(); err != nil {
-		log.Println(err)
+		utils.Log(logrus.DebugLevel, err)
 	}
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
