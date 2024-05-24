@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"sigma/storage/core/modules"
+	"sigma/storage/core/models"
 	outputs "sigma/storage/core/outputs"
+	"sigma/storage/core/runtime"
 	"sigma/storage/shell/managers"
 	dtos_storage "sigma/storage/storage/dtos/storage"
 	outputs_storage "sigma/storage/storage/outputs/storage"
@@ -18,7 +19,7 @@ type StorageService struct {
 	managers *managers.Managers
 }
 
-func (ss *StorageService) UploadFile(app *modules.App, input dtos_storage.UploadDto, assistant modules.Assistant) (any, error) {
+func (ss *StorageService) UploadFile(app *runtime.App, input dtos_storage.UploadDto, assistant models.Assistant) (any, error) {
 	if !((len(input.Data) == 1) && (len(input.DataKey) == 1)) {
 		return outputs_storage.Binary{}, errors.New("we need 1 file and 1 file key")
 	}
@@ -29,7 +30,7 @@ func (ss *StorageService) UploadFile(app *modules.App, input dtos_storage.Upload
 	return outputs_storage.Binary{}, nil
 }
 
-func (ss *StorageService) DownloadFile(app *modules.App, input dtos_storage.DownloadDto, assistant modules.Assistant) (any, error) {
+func (ss *StorageService) DownloadFile(app *runtime.App, input dtos_storage.DownloadDto, assistant models.Assistant) (any, error) {
 	var path = fmt.Sprintf("%s/%d/%s", app.StorageRoot, assistant.RoomId, input.FileKey)
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return outputs_storage.Binary{}, err
@@ -38,29 +39,29 @@ func (ss *StorageService) DownloadFile(app *modules.App, input dtos_storage.Down
 	}
 }
 
-func CreateStorageService(sc *modules.App, mans *managers.Managers) {
+func CreateStorageService(sc *runtime.App, mans *managers.Managers) {
 
 	storageS := &StorageService{
 		managers: mans,
 	}
 
 	// Methods
-	uploadAction := modules.CreateAction(
+	uploadAction := runtime.CreateAction(
 		sc,
 		"/storages/upload",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(true, true, false, false, fiber.MethodPost),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		storageS.UploadFile,
 	)
 	sc.Services.AddAction(uploadAction)
 	storageS.managers.NetManager().SwitchNetAccessByAction(uploadAction, func(i interface{}) (any, error) { return nil, nil })
 
-	downloadAction := modules.CreateAction(
+	downloadAction := runtime.CreateAction(
 		sc,
 		"/storages/download",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(true, true, false, false, fiber.MethodGet),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(true, true, false, false, fiber.MethodGet),
 		true,
 		storageS.DownloadFile,
 	)

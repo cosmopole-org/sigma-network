@@ -3,17 +3,19 @@ package shell_http
 import (
 	"encoding/json"
 	"fmt"
-	"sigma/main/core/modules"
+	"sigma/main/core/dtos"
+	"sigma/main/core/models"
 	"sigma/main/core/outputs"
+	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type HttpServer struct {
-	sigmaCore *modules.App
+	app *runtime.App
 	Server    *fiber.App
-	SendToFed func(string, modules.OriginPacket)
+	SendToFed func(string, models.OriginPacket)
 }
 
 type EmptySuccessResponse struct {
@@ -48,28 +50,28 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			if requestIdHeader != nil {
 				requestId = requestIdHeader[0]
 			}
-			org := hs.sigmaCore.AppId
+			org := hs.app.AppId
 			if origin != "" {
 				org = origin
 			}
-			statusCode, result, err := hs.sigmaCore.Services.CallAction(key, c, token, origin)
+			statusCode, result, err := hs.app.Services.CallAction(key, c, token, origin)
 			if statusCode == fiber.StatusOK {
 				return HandleResutOfFunc(c, result)
 			} else if statusCode == -2 {
-				data, err := json.Marshal(result.(modules.PreFedPacket).Body)
+				data, err := json.Marshal(result.(runtime.PreFedPacket).Body)
 				if err != nil {
 					utils.Log(5, err)
 					return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 				}
-				hs.SendToFed(org, modules.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(modules.PreFedPacket).Body.(modules.IDto).GetTowerId(), RoomId: result.(modules.PreFedPacket).Body.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
-				return c.Status(fiber.StatusOK).JSON(modules.ResponseSimpleMessage{Message: "request to federation queued successfully"})
+				hs.SendToFed(org, models.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(runtime.PreFedPacket).Body.(dtos.IDto).GetTowerId(), RoomId: result.(runtime.PreFedPacket).Body.(dtos.IDto).GetRoomId(), Data: string(data), RequestId: requestId})
+				return c.Status(fiber.StatusOK).JSON(models.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 			} else if err != nil {
 				return c.Status(statusCode).JSON(utils.BuildErrorJson(err.Error()))
 			}
 			return c.Status(statusCode).JSON(result)
 		},
 	)
-	hs.Server.Add(hs.sigmaCore.Services.GetAction(key).Access.ActionType, key, layers...)
+	hs.Server.Add(hs.app.Services.GetAction(key).Access.ActionType, key, layers...)
 }
 
 func HandleResutOfFunc(c *fiber.Ctx, result any) error {
@@ -85,10 +87,10 @@ func HandleResutOfFunc(c *fiber.Ctx, result any) error {
 	}
 }
 
-func New(sc *modules.App, maxReqSize int, sendToFed func(string, modules.OriginPacket)) *HttpServer {
+func New(sc *runtime.App, maxReqSize int, sendToFed func(string, models.OriginPacket)) *HttpServer {
 	if maxReqSize > 0 {
-		return &HttpServer{sigmaCore: sc, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize}), SendToFed: sendToFed}
+		return &HttpServer{app: sc, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize}), SendToFed: sendToFed}
 	} else {
-		return &HttpServer{sigmaCore: sc, Server: fiber.New(), SendToFed: sendToFed}
+		return &HttpServer{app: sc, Server: fiber.New(), SendToFed: sendToFed}
 	}
 }

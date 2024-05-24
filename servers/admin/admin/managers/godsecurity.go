@@ -7,18 +7,18 @@ import (
 	"log"
 	"os"
 	"sigma/admin/admin/models"
-	"sigma/admin/core/modules"
+	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 )
 
 type Security struct {
-	sigmaCore *modules.App
-	gods      []models.Admin
+	app  *runtime.App
+	gods []models.Admin
 }
 
 func (a *Security) SetGodEmails(gods []models.Admin) {
 	a.gods = gods
-	a.sigmaCore.Database.ExecuteSqlFile("admin/database/functions/admins/gods.sql")
+	a.app.Managers.DatabaseManager().ExecuteSqlFile("admin/database/functions/admins/gods.sql")
 	var auth = map[string]string{}
 	for _, g := range gods {
 		var query = `select * from humans_create_gods($1, $2, $3, $4, $5)`
@@ -29,15 +29,15 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 			log.Println(err)
 			continue
 		}
-		if err2 := a.sigmaCore.Database.GetDb().QueryRow(
-			context.Background(), query, g.Email, g.FirstName, g.LastName, token, a.sigmaCore.AppId,
+		if err2 := a.app.Managers.DatabaseManager().GetDb().QueryRow(
+			context.Background(), query, g.Email, g.FirstName, g.LastName, token, a.app.AppId,
 		).Scan(
 			&humanId, &t,
 		); err2 != nil {
 			log.Println(err2)
 			continue
 		}
-		a.sigmaCore.Memory.Put("auth::"+t, fmt.Sprintf("human/%d", humanId))
+		a.app.Managers.MemoryManager().Put("auth::"+t, fmt.Sprintf("human/%d", humanId))
 		auth[g.Email] = t
 	}
 	str, err := json.Marshal(auth)
@@ -46,8 +46,8 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 		return
 	}
 	log.Println(string(str))
-	os.MkdirAll(a.sigmaCore.StorageRoot, os.ModePerm)
-	var filePath = fmt.Sprintf("%s/gods.txt", a.sigmaCore.StorageRoot)
+	os.MkdirAll(a.app.StorageRoot, os.ModePerm)
+	var filePath = fmt.Sprintf("%s/gods.txt", a.app.StorageRoot)
 	err2 := os.WriteFile(filePath, str, 0644)
 	if err2 != nil {
 		log.Println(err2)
@@ -70,8 +70,8 @@ func (a *Security) GetGodByEmail(email string) *models.Admin {
 	return nil
 }
 
-func CreateSecurity(sc *modules.App, gods []models.Admin) *Security {
-	s := &Security{sigmaCore: sc}
+func CreateSecurity(sc *runtime.App, gods []models.Admin) *Security {
+	s := &Security{app: sc}
 	log.Println("creating security...")
 	s.SetGodEmails(gods)
 	return s

@@ -4,14 +4,14 @@ import (
 	"encoding/binary"
 	"encoding/json"
 
-	"sigma/storage/core/modules"
+	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
 	"sigma/storage/shell/managers"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func WasmMiddleware(app *modules.App, mans *managers.Managers) func(*fiber.Ctx) error {
+func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		path := c.Path()
 		vm, ok := mans.WasmManager().PluginVms[path]
@@ -89,7 +89,7 @@ func WasmMiddleware(app *modules.App, mans *managers.Managers) func(*fiber.Ctx) 
 			}
 
 			if check.User {
-				var userId, userType = modules.AuthWithToken(app, token)
+				var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
 				var creature = ""
 				if userType == 1 {
 					creature = "human"
@@ -113,7 +113,7 @@ func WasmMiddleware(app *modules.App, mans *managers.Managers) func(*fiber.Ctx) 
 						if !wOk {
 							workerId = 0
 						}
-						var location = modules.HandleLocationWithProcessed(app, token, userId, creature, origin, towerId.(int64), roomId.(int64), workerId.(int64))
+						var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, creature, origin, towerId.(int64), roomId.(int64), workerId.(int64))
 						if location.TowerId > 0 {
 							return doAction()
 						} else {

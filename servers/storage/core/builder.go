@@ -1,14 +1,30 @@
 package builder
 
 import (
-	"sigma/storage/core/modules"
+	"sigma/storage/core/managers"
+	"sigma/storage/core/models"
+	"sigma/storage/core/runtime"
 	"sigma/storage/core/services"
+	"sigma/storage/core/utils"
 
 	"google.golang.org/grpc"
 )
 
-func BuildApp(appId string, StorageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op modules.OriginPacket), logcb func(uint32, ...interface{})) (*modules.App, func(*grpc.Server)) {
-	app := modules.NewApp(appId, StorageRoot, coreAccess, dbUri, memUri, pusherConnector, logcb)
+func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op models.OriginPacket), logCb func(uint32, ...interface{})) *runtime.App {
+	utils.RegisterLoggerCallback(logCb)
+	utils.Log(5, "Creating app...")
+	a := &runtime.App{
+		AppId:       appId,
+		StorageRoot: storageRoot,
+		CoreAccess:  coreAccess,
+		Managers: managers.New(appId, dbUri, memUri, storageRoot, pusherConnector),
+	}
+	a.Services = runtime.CreateServices(a)
+	return a
+}
+
+func BuildApp(appId string, StorageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op models.OriginPacket), logcb func(uint32, ...interface{})) (*runtime.App, func(*grpc.Server)) {
+	app := NewApp(appId, StorageRoot, coreAccess, dbUri, memUri, pusherConnector, logcb)
 	services.CreateDummyService(app, coreAccess)
 	services.CreateAuthService(app, coreAccess)
 	services.CreateHumanService(app, coreAccess)

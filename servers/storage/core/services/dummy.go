@@ -3,29 +3,30 @@ package services
 import (
 	"os"
 	"sigma/storage/core/dtos"
-	"sigma/storage/core/modules"
+	"sigma/storage/core/models"
+	"sigma/storage/core/runtime"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func CreateDummyService(app *modules.App, coreAccess bool) {
-	app.Services.AddAction(modules.CreateAction(
+func CreateDummyService(app *runtime.App, coreAccess bool) {
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/api/hello",
-		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateCk(false, false, false),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *modules.App, d dtos.HelloDto, assistant modules.Assistant) (any, error) {
+		func(app *runtime.App, d dtos.HelloDto, assistant models.Assistant) (any, error) {
 			return `{ "hello": "world" }`, nil
 		},
 	))
-	app.Services.AddAction(modules.CreateAction(
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/api/ping",
-		modules.CreateCk(false, false, false),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateCk(false, false, false),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *modules.App, d dtos.HelloDto, assistant modules.Assistant) (any, error) {
+		func(app *runtime.App, d dtos.HelloDto, assistant models.Assistant) (any, error) {
 			return os.Getenv("MAIN_PORT"), nil
 		},
 	))

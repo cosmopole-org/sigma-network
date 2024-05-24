@@ -3,17 +3,17 @@ package security_manager
 import (
 	"context"
 	pb "sigma/admin/core/models/grpc"
-	"sigma/admin/core/modules"
+	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 )
 
 type SecurityManager struct {
-	sigmaCore *modules.App
+	app *runtime.App
 }
 
 func (sm *SecurityManager) LoadKeys() {
-	if sm.sigmaCore.Crypto.FetchKeyPair("server_key") == nil {
-		sm.sigmaCore.Crypto.GenerateSecureKeyPair("server_key")
+	if sm.app.Managers.CryptoManager().FetchKeyPair("server_key") == nil {
+		sm.app.Managers.CryptoManager().GenerateSecureKeyPair("server_key")
 	}
 }
 
@@ -21,7 +21,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query = `
 		select user_origin, origin, tower_id, human_id from member;
 	`
-	rows, err := sm.sigmaCore.Database.Db.Query(context.Background(), query)
+	rows, err := sm.app.Managers.DatabaseManager().Db.Query(context.Background(), query)
 	if err != nil {
 		utils.Log(5, err)
 	}
@@ -31,7 +31,7 @@ func (sm *SecurityManager) LoadAccess() {
 		if err != nil {
 			utils.Log(5, err)
 		}
-		sm.sigmaCore.Pusher.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
+		sm.app.Managers.PushManager().JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
 	}
 	if err := rows.Err(); err != nil {
 		utils.Log(5, err)
@@ -40,7 +40,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query2 = `
 		select user_origin, origin, room_id, machine_id from worker;
 	`
-	rows2, err2 := sm.sigmaCore.Database.Db.Query(context.Background(), query2)
+	rows2, err2 := sm.app.Managers.DatabaseManager().Db.Query(context.Background(), query2)
 	if err2 != nil {
 		utils.Log(5, err2)
 	}
@@ -66,7 +66,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var query3 = `
 		select tower_id, id from room where id = any($1);
 	`
-	rows3, err3 := sm.sigmaCore.Database.Db.Query(context.Background(), query3, roomsArr)
+	rows3, err3 := sm.app.Managers.DatabaseManager().Db.Query(context.Background(), query3, roomsArr)
 	if err3 != nil {
 		utils.Log(5, err3)
 	}
@@ -84,12 +84,12 @@ func (sm *SecurityManager) LoadAccess() {
 	}
 
 	for _, w := range workers {
-		sm.sigmaCore.Pusher.JoinGroup(roomSet[w.RoomId], w.MachineId, w.UserOrigin)
+		sm.app.Managers.PushManager().JoinGroup(roomSet[w.RoomId], w.MachineId, w.UserOrigin)
 	}
 }
 
-func New(sc *modules.App) *SecurityManager {
-	sm := &SecurityManager{sigmaCore: sc}
+func New(sc *runtime.App) *SecurityManager {
+	sm := &SecurityManager{app: sc}
 	sm.LoadKeys()
 	sm.LoadAccess()
 	return sm

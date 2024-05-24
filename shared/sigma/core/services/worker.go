@@ -5,7 +5,8 @@ import (
 	"errors"
 	"fmt"
 	dtos_workers "sigma/main/core/dtos/workers"
-	"sigma/main/core/modules"
+	"sigma/main/core/models"
+	"sigma/main/core/runtime"
 	updates_workers "sigma/main/core/updates/workers"
 	"sigma/main/core/utils"
 
@@ -15,7 +16,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modules.Assistant) (any, error) {
+func createWorker(app *runtime.App, input dtos_workers.CreateDto, assistant models.Assistant) (any, error) {
 	var query = `
 		insert into worker (
 			machine_id,
@@ -27,7 +28,7 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		returning id;
 	`
 	var worker pb.Worker
-	if err := app.Database.Db.QueryRow(
+	if err := app.Managers.DatabaseManager().Db.QueryRow(
 		context.Background(), query, input.MachineId, assistant.RoomId, input.Metadata, app.AppId, input.WorkerOrigin,
 	).Scan(&worker.Id); err != nil {
 		utils.Log(5, err)
@@ -40,21 +41,21 @@ func createWorker(app *modules.App, input dtos_workers.CreateDto, assistant modu
 		worker.Origin = app.AppId
 		worker.UserOrigin = input.WorkerOrigin
 	}
-	app.Memory.Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d/%s", worker.RoomId, worker.MachineId, input.WorkerOrigin))
-	go app.Pusher.PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker},
-		[]modules.GroupMember{
+	app.Managers.MemoryManager().Put(fmt.Sprintf("worker::%d", worker.Id), fmt.Sprintf("%d/%d/%s", worker.RoomId, worker.MachineId, input.WorkerOrigin))
+	go app.Managers.PushManager().PushToGroup("workers/create", assistant.TowerId, updates_workers.Create{TowerId: assistant.TowerId, Worker: &worker},
+		[]models.GroupMember{
 			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
 		})
 	return &pb.WorkerCreateOutput{Worker: &worker}, nil
 }
 
-func updateWorker(app *modules.App, input dtos_workers.UpdateDto, assistant modules.Assistant) (any, error) {
+func updateWorker(app *runtime.App, input dtos_workers.UpdateDto, assistant models.Assistant) (any, error) {
 	var query = `
 		update worker set metadata = $1 where id = $2 and room_id = $3
 		returning id, machine_id, origin;
 	`
 	var worker pb.Worker
-	if err := app.Database.Db.QueryRow(
+	if err := app.Managers.DatabaseManager().Db.QueryRow(
 		context.Background(), query, input.Metadata, input.WorkerId, assistant.RoomId,
 	).Scan(&worker.Id, &worker.MachineId, &worker.Origin); err != nil {
 		utils.Log(5, err)
@@ -69,12 +70,12 @@ func updateWorker(app *modules.App, input dtos_workers.UpdateDto, assistant modu
 	}
 }
 
-func deleteWorker(app *modules.App, input dtos_workers.DeleteDto, assistant modules.Assistant) (any, error) {
+func deleteWorker(app *runtime.App, input dtos_workers.DeleteDto, assistant models.Assistant) (any, error) {
 	query := `
 		delete from worker where id = $1 and room_id = $2 returning true;
 	`
 	var result bool
-	if err := app.Database.Db.QueryRow(
+	if err := app.Managers.DatabaseManager().Db.QueryRow(
 		context.Background(), query, input.WorkerId, assistant.RoomId,
 	).Scan(&result); err != nil {
 		utils.Log(5, err)
@@ -83,11 +84,11 @@ func deleteWorker(app *modules.App, input dtos_workers.DeleteDto, assistant modu
 	return &pb.WorkerDeleteOutput{}, nil
 }
 
-func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules.Assistant) (any, error) {
+func readWorkers(app *runtime.App, input dtos_workers.ReadDto, assistant models.Assistant) (any, error) {
 	var query = `
 		select id, machine_id, room_id, metadata, origin from worker where room_id = $1;
 	`
-	rows, err := app.Database.Db.Query(context.Background(), query, assistant.RoomId)
+	rows, err := app.Managers.DatabaseManager().Db.Query(context.Background(), query, assistant.RoomId)
 	if err != nil {
 		utils.Log(5, err)
 	}
@@ -106,45 +107,45 @@ func readWorkers(app *modules.App, input dtos_workers.ReadDto, assistant modules
 	return &pb.WorkerReadOutput{Workers: rowSlice}, nil
 }
 
-func CreateWorkerService(app *modules.App, coreAccess bool) {
+func CreateWorkerService(app *runtime.App, coreAccess bool) {
 
 	// Tables
-	app.Database.ExecuteSqlFile("core/database/tables/worker.sql")
+	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/tables/worker.sql")
 
 	// Functions
-	app.Database.ExecuteSqlFile("core/database/functions/workers/deliver.sql")
+	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/functions/workers/deliver.sql")
 
 	// Methods
 
-	app.Services.AddAction(modules.CreateAction(
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/workers/create",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
 		createWorker,
 	))
-	app.Services.AddAction(modules.CreateAction(
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/workers/update",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
 		updateWorker,
 	))
-	app.Services.AddAction(modules.CreateAction(
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/workers/delete",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
 		deleteWorker,
 	))
-	app.Services.AddAction(modules.CreateAction(
+	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/workers/read",
-		modules.CreateCk(true, true, true),
-		modules.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateCk(true, true, true),
+		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
 		readWorkers,
 	))

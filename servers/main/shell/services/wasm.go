@@ -3,7 +3,8 @@ package services
 import (
 	"encoding/json"
 
-	"sigma/main/core/modules"
+	"sigma/main/core/models"
+	"sigma/main/core/runtime"
 
 	dtos_external "sigma/main/core/dtos/external"
 	mans "sigma/main/shell/managers"
@@ -15,7 +16,7 @@ import (
 
 type WasmManager struct {
 	PluginVms   map[string]*wasmedge.VM
-	PluginMetas map[string]modules.PluginFunction
+	PluginMetas map[string]runtime.PluginFunction
 }
 
 const pluginsTemplateName = "/plugins/"
@@ -24,8 +25,8 @@ type WasmService struct {
 	managers *mans.Managers
 }
 
-func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assistant modules.Assistant) (any, error) {
-	var meta []modules.PluginFunction
+func (w *WasmService) plug(app *runtime.App, input dtos_external.PlugDto, assistant models.Assistant) (any, error) {
+	var meta []runtime.PluginFunction
 	err := json.Unmarshal([]byte(input.Meta), &meta)
 	if err != nil {
 		return outputs_external.PlugDto{}, err
@@ -39,7 +40,7 @@ func (w *WasmService) plug(app *modules.App, input dtos_external.PlugDto, assist
 	return outputs_external.PlugDto{}, nil
 }
 
-func CreateWasmPluggerService(sc *modules.App, mans *mans.Managers) {
+func CreateWasmPluggerService(sc *runtime.App, mans *mans.Managers) {
 
 	wasmS := &WasmService{
 		managers: mans,
@@ -47,11 +48,11 @@ func CreateWasmPluggerService(sc *modules.App, mans *mans.Managers) {
 
 	// Methods
 	sc.Services.AddAction(
-		modules.CreateAction(
+		runtime.CreateAction(
 			sc,
 			"/external/plug",
-			modules.CreateCk(true, false, false),
-			modules.CreateAc(true, true, false, false, fiber.MethodPost),
+			runtime.CreateCk(true, false, false),
+			runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 			true,
 			wasmS.plug,
 		),

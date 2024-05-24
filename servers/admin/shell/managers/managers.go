@@ -1,7 +1,7 @@
 package managers
 
 import (
-	"sigma/admin/core/modules"
+	"sigma/admin/core/runtime"
 	network_manager "sigma/admin/shell/managers/network"
 	security_manager "sigma/admin/shell/managers/security"
 	storage_manager "sigma/admin/shell/managers/storage"
@@ -48,7 +48,7 @@ func (s *Managers) SecurityManager() *security_manager.SecurityManager {
 	return s.securityManager
 }
 
-func New(sc *modules.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *Managers {
+func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *Managers {
 	return &Managers{
 		securityManager: security_manager.New(sc),
 		netManager:      network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),

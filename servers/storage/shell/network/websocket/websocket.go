@@ -2,7 +2,8 @@ package shell_websocket
 
 import (
 	"encoding/json"
-	"sigma/storage/core/modules"
+	"sigma/storage/core/models"
+	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
 	shell_http "sigma/storage/shell/network/http"
 	"strings"
@@ -18,7 +19,7 @@ type WebsocketAnswer struct {
 }
 
 type WsServer struct {
-	sigmaCore *modules.App
+	app *runtime.App
 	Endpoints map[string]func(string, string, string, string) (any, string, error)
 }
 
@@ -36,7 +37,7 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 
 func (ws *WsServer) EnableEndpoint(key string) {
 	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		statusCode, res, err := ws.sigmaCore.Services.CallAction(key, rawBody, token, origin)
+		statusCode, res, err := ws.app.Services.CallAction(key, rawBody, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -62,12 +63,12 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			if uri == "authenticate" {
 				var token = splittedMsg[1]
 				var requestId = splittedMsg[2]
-				userId, _ := modules.AuthWithToken(ws.sigmaCore, token)
+				userId, _ := ws.app.Managers.SecurityManager().AuthWithToken(token)
 				uid = userId
-				ws.sigmaCore.Pusher.Clients[userId] = func(b []byte) {
+				ws.app.Managers.PushManager().Clients[userId] = func(b []byte) {
 					conn.WriteMessage(websocket.TextMessage, b)
 				}
-				AnswerSocket(conn, "response", requestId, modules.ResponseSimpleMessage{Message: "authenticated"})
+				AnswerSocket(conn, "response", requestId, models.ResponseSimpleMessage{Message: "authenticated"})
 			} else {
 				var token = splittedMsg[1]
 				var origin = splittedMsg[2]
@@ -87,14 +88,14 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			}
 		}
 		if uid > 0 {
-			delete(ws.sigmaCore.Pusher.Clients, uid)
+			delete(ws.app.Managers.PushManager().Clients, uid)
 		}
 		utils.Log(5, "socket broken")
 	}))
 }
 
-func New(sc *modules.App, httpServer *shell_http.HttpServer) *WsServer {
-	ws := &WsServer{sigmaCore: sc, Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
+func New(sc *runtime.App, httpServer *shell_http.HttpServer) *WsServer {
+	ws := &WsServer{app: sc, Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
 	ws.Load(httpServer)
 	return ws
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"sigma/storage/core/modules"
+	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -13,12 +13,12 @@ import (
 
 type WasmManager struct {
 	PluginVms   map[string]*wasmedge.VM
-	PluginMetas map[string]modules.PluginFunction
+	PluginMetas map[string]runtime.PluginFunction
 }
 
 const pluginsTemplateName = "/plugins/"
 
-func (wm *WasmManager) Plug(wasmFilePath string, meta []modules.PluginFunction) {
+func (wm *WasmManager) Plug(wasmFilePath string, meta []runtime.PluginFunction) {
 
 	wasmedge.SetLogDebugLevel()
 
@@ -109,7 +109,7 @@ func (h *vmHost) localStringToPtr(data string, callframe *wasmedge.CallingFrame)
 	return pointer
 }
 
-func (wm *WasmManager) LoadWasmModules(app *modules.App) {
+func (wm *WasmManager) LoadWasmModules(app *runtime.App) {
 	wasmedge.SetLogErrorLevel()
 	err0 := os.MkdirAll(app.StorageRoot+"/plugins", os.ModePerm)
 	if err0 != nil {
@@ -170,7 +170,7 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 				continue
 			}
 
-			var meta []modules.PluginFunction
+			var meta []runtime.PluginFunction
 			err3 := json.Unmarshal(metaJson, &meta)
 			if err3 != nil {
 				utils.Log(5, err3)
@@ -188,10 +188,10 @@ func (wm *WasmManager) LoadWasmModules(app *modules.App) {
 	}
 }
 
-func New(sc *modules.App) *WasmManager {
+func New(sc *runtime.App) *WasmManager {
 	wm := &WasmManager{
 		PluginVms:   make(map[string]*wasmedge.VM),
-		PluginMetas: make(map[string]modules.PluginFunction),
+		PluginMetas: make(map[string]runtime.PluginFunction),
 	}
 	wm.LoadWasmModules(sc)
 	return wm

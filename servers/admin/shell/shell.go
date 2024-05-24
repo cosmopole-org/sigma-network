@@ -3,7 +3,8 @@ package sigma
 import (
 	"net"
 	builder "sigma/admin/core"
-	"sigma/admin/core/modules"
+	"sigma/admin/core/models"
+	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 	mans "sigma/admin/shell/managers"
 	middlewares_wasm "sigma/admin/shell/middlewares"
@@ -15,19 +16,19 @@ var wellKnownServers = []string{
 	"monopole.liara.run",
 }
 
-type Sigma struct {
-	sigmaCore   *modules.App
+type Shell struct {
+	core        *runtime.App
 	managers    *mans.Managers
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
 }
 
-func (s *Sigma) Managers() *mans.Managers {
+func (s *Shell) Managers() *mans.Managers {
 	return s.managers
 }
 
-func (s *Sigma) Core() *modules.App {
-	return s.sigmaCore
+func (s *Shell) Core() *runtime.App {
+	return s.core
 }
 
 type ServersOutput struct {
@@ -44,8 +45,8 @@ type ShellConfig struct {
 	LogCb       func(uint32, ...interface{})
 }
 
-func (s *Sigma) connectServicesToNet() {
-	for _, v := range s.sigmaCore.Services.Actions {
+func (s *Shell) connectServicesToNet() {
+	for _, v := range s.core.Services.Actions {
 		s.Managers().NetManager().SwitchNetAccessByAction(
 			v,
 			func(i interface{}) (any, error) {
@@ -55,7 +56,7 @@ func (s *Sigma) connectServicesToNet() {
 	}
 }
 
-func (s *Sigma) loadWellknownServers() {
+func (s *Shell) loadWellknownServers() {
 	s.ipToHostMap = map[string]string{}
 	s.hostToIpMap = map[string]string{}
 	for _, doadmin := range wellKnownServers {
@@ -75,13 +76,13 @@ func (s *Sigma) loadWellknownServers() {
 	utils.Log(5)
 }
 
-func New(appId string, config ShellConfig) *Sigma {
-	sh := &Sigma{}
-	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
+func New(appId string, config ShellConfig) *Shell {
+	sh := &Shell{}
+	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op models.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
 	}, config.LogCb)
 	sh.loadWellknownServers()
-	sh.sigmaCore = app
+	sh.core = app
 	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
 	sh.managers.NetManager().HttpServer.AddMiddleware(middlewares_wasm.WasmMiddleware(app, sh.managers))
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
@@ -90,7 +91,7 @@ func New(appId string, config ShellConfig) *Sigma {
 	return sh
 }
 
-func (s *Sigma) ConnectToNetwork(ports map[string]int) {
+func (s *Shell) ConnectToNetwork(ports map[string]int) {
 	if ports["http"] > 0 {
 		s.Managers().NetManager().HttpServer.Listen(ports["http"])
 	}

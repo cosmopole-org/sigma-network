@@ -1,7 +1,7 @@
 package network_manager
 
 import (
-	"sigma/admin/core/modules"
+	"sigma/admin/core/runtime"
 	shell_federation "sigma/admin/shell/network/federation"
 	shell_grpc "sigma/admin/shell/network/grpc"
 	shell_http "sigma/admin/shell/network/http"
@@ -27,7 +27,7 @@ func (nm *NetManager) SwitchNetAccess(key string, http bool, ws bool, grpc bool,
 	}
 }
 
-func (nm *NetManager) SwitchNetAccessByAction(action *modules.Action, converter func(interface{}) (any, error)) {
+func (nm *NetManager) SwitchNetAccessByAction(action *runtime.Action, converter func(interface{}) (any, error)) {
 	if action.Access.Http {
 		nm.HttpServer.Enablendpoint(action.Key)
 	}
@@ -39,7 +39,7 @@ func (nm *NetManager) SwitchNetAccessByAction(action *modules.Action, converter 
 	}
 }
 
-func New(sc *modules.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *NetManager {
+func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *NetManager {
 	fn := shell_federation.New(sc, ip2host, host2ip, fed)
 	hs := shell_http.New(sc, maxReqSize, fn.SendInFederation)
 	ws := shell_websocket.New(sc, hs)

@@ -6,7 +6,7 @@ import (
 )
 
 type Storage struct {
-	SigmaApp    *sigma.Sigma
+	SigmaApp    *sigma.Shell
 }
 
 func BuildStorage(appId string, config sigma.ShellConfig) *Storage {
