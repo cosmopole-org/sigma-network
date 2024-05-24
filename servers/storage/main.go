@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 var quit = make(chan struct{})
@@ -24,6 +25,15 @@ func main() {
 		panic("invalid port number")
 	}
 
+	var logrusLogger = &logrus.Logger{
+		Out:          os.Stderr,
+		Formatter:    new(logrus.JSONFormatter),
+		Hooks:        make(logrus.LevelHooks),
+		Level:        logrus.InfoLevel,
+		ExitFunc:     os.Exit,
+		ReportCaller: false,
+	}
+
 	storageApp := storage_builder.BuildStorage(
 		os.Getenv("FED_ORIGIN"),
 		sigma.ShellConfig{
@@ -33,6 +43,9 @@ func main() {
 			Federation:  os.Getenv("FEDERATIVE") == "true",
 			CoreAccess:  false,
 			MaxReqSize: 1000 * 1024 * 1024,
+			LogCb: func(u uint32, i ...interface{}) {
+				logrusLogger.Logln(logrus.DebugLevel)
+			},
 		},
 	)
 

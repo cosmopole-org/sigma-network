@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 var quit = make(chan struct{})
@@ -24,6 +25,15 @@ func main() {
 		panic(err.Error())
 	}
 
+	var logrusLogger = &logrus.Logger{
+		Out:          os.Stderr,
+		Formatter:    new(logrus.JSONFormatter),
+		Hooks:        make(logrus.LevelHooks),
+		Level:        logrus.InfoLevel,
+		ExitFunc:     os.Exit,
+		ReportCaller: false,
+	}
+
 	adminApp := admin_builder.BuildAdmin(
 		os.Getenv("FED_ORIGIN"),
 		sigma.ShellConfig{
@@ -32,6 +42,9 @@ func main() {
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  false,
 			CoreAccess:  false,
+			LogCb: func(u uint32, i ...interface{}) {
+				logrusLogger.Logln(logrus.DebugLevel)
+			},
 		},
 		[]models.Admin{
 			{Email: "mani@midopia.com", FirstName: "mani", LastName: "shabanzadeh"},

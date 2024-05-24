@@ -8,8 +8,6 @@ import (
 	mans "sigma/storage/shell/managers"
 	middlewares_wasm "sigma/storage/shell/middlewares"
 	"sigma/storage/shell/services"
-
-	"github.com/sirupsen/logrus"
 )
 
 var wellKnownServers = []string{
@@ -43,6 +41,7 @@ type ShellConfig struct {
 	Federation  bool
 	CoreAccess  bool
 	MaxReqSize  int
+	LogCb       func(uint32, ...interface{})
 }
 
 func (s *Sigma) connectServicesToNet() {
@@ -71,17 +70,17 @@ func (s *Sigma) loadWellknownServers() {
 		s.ipToHostMap[ipAddr] = dostorage
 		s.hostToIpMap[dostorage] = ipAddr
 	}
-	utils.Log(logrus.DebugLevel)
-	utils.Log(logrus.DebugLevel, s.hostToIpMap)
-	utils.Log(logrus.DebugLevel)
+	utils.Log(5)
+	utils.Log(5, s.hostToIpMap)
+	utils.Log(5)
 }
 
 func New(appId string, config ShellConfig) *Sigma {
 	sh := &Sigma{}
-	sh.loadWellknownServers()
 	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, func(s string, op modules.OriginPacket) {
 		sh.Managers().NetManager().FedNet.SendInFederation(s, op)
-	})
+	}, config.LogCb)
+	sh.loadWellknownServers()
 	sh.sigmaCore = app
 	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
 	sh.managers.NetManager().HttpServer.AddMiddleware(middlewares_wasm.WasmMiddleware(app, sh.managers))

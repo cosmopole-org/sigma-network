@@ -5,8 +5,6 @@ import (
 	pb "sigma/main/core/models/grpc"
 	"sigma/main/core/modules"
 	"sigma/main/core/utils"
-
-	"github.com/sirupsen/logrus"
 )
 
 type SecurityManager struct {
@@ -25,18 +23,18 @@ func (sm *SecurityManager) LoadAccess() {
 	`
 	rows, err := sm.sigmaCore.Database.Db.Query(context.Background(), query)
 	if err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 	}
 	for rows.Next() {
 		var m pb.Member
 		err := rows.Scan(&m.UserOrigin, &m.Origin, &m.TowerId, &m.HumanId)
 		if err != nil {
-			utils.Log(logrus.DebugLevel, err)
+			utils.Log(5, err)
 		}
 		sm.sigmaCore.Pusher.JoinGroup(m.TowerId, m.HumanId, m.UserOrigin)
 	}
 	if err := rows.Err(); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 	}
 
 	var query2 = `
@@ -44,7 +42,7 @@ func (sm *SecurityManager) LoadAccess() {
 	`
 	rows2, err2 := sm.sigmaCore.Database.Db.Query(context.Background(), query2)
 	if err2 != nil {
-		utils.Log(logrus.DebugLevel, err2)
+		utils.Log(5, err2)
 	}
 	workers := []*pb.Worker{}
 	roomSet := map[int64]int64{}
@@ -52,13 +50,13 @@ func (sm *SecurityManager) LoadAccess() {
 		var w pb.Worker
 		err := rows2.Scan(&w.UserOrigin, &w.Origin, &w.RoomId, &w.MachineId)
 		if err != nil {
-			utils.Log(logrus.DebugLevel, err)
+			utils.Log(5, err)
 		}
 		roomSet[w.RoomId] = -1
 		workers = append(workers, &w)
 	}
 	if err2 := rows2.Err(); err2 != nil {
-		utils.Log(logrus.DebugLevel, err2)
+		utils.Log(5, err2)
 	}
 	roomsArr := []int64{}
 	for rid := range roomSet {
@@ -70,19 +68,19 @@ func (sm *SecurityManager) LoadAccess() {
 	`
 	rows3, err3 := sm.sigmaCore.Database.Db.Query(context.Background(), query3, roomsArr)
 	if err3 != nil {
-		utils.Log(logrus.DebugLevel, err3)
+		utils.Log(5, err3)
 	}
 	for rows3.Next() {
 		var roomId int64 = 0
 		var towerId int64 = 0
 		err := rows3.Scan(&towerId, &roomId)
 		if err != nil {
-			utils.Log(logrus.DebugLevel, err)
+			utils.Log(5, err)
 		}
 		roomSet[roomId] = towerId
 	}
 	if err3 := rows3.Err(); err3 != nil {
-		utils.Log(logrus.DebugLevel, err2)
+		utils.Log(5, err2)
 	}
 
 	for _, w := range workers {

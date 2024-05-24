@@ -7,8 +7,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func BuildApp(appId string, StorageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op modules.OriginPacket)) (*modules.App, func(*grpc.Server)) {
-	app := modules.NewApp(appId, StorageRoot, coreAccess, dbUri, memUri, pusherConnector)
+func BuildApp(appId string, StorageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op modules.OriginPacket), logcb func(uint32, ...interface{})) (*modules.App, func(*grpc.Server)) {
+	app := modules.NewApp(appId, StorageRoot, coreAccess, dbUri, memUri, pusherConnector, logcb)
 	services.CreateDummyService(app, coreAccess)
 	services.CreateAuthService(app, coreAccess)
 	services.CreateHumanService(app, coreAccess)

@@ -11,7 +11,6 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -105,9 +104,9 @@ func (gs *GrpcServer) serverInterceptor(
 func (gs *GrpcServer) Listen(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		utils.Log(logrus.DebugLevel, "failed to listen grpc: %v", err)
+		utils.Log(5, "failed to listen grpc: %v", err)
 	}
-	utils.Log(logrus.DebugLevel, "server listening at %v", lis.Addr())
+	utils.Log(5, "server listening at %v", lis.Addr())
 	go gs.Server.Serve(lis)
 }
 

@@ -9,7 +9,6 @@ import (
 
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 )
 
 type WebsocketAnswer struct {
@@ -26,11 +25,11 @@ type WsServer struct {
 func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
-		utils.Log(logrus.DebugLevel, err0)
+		utils.Log(5, err0)
 		return
 	}
 	if err := conn.WriteMessage(websocket.TextMessage, []byte(t+" "+requestId+" "+string(answerBytes))); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return
 	}
 }
@@ -90,7 +89,7 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 		if uid > 0 {
 			delete(ws.sigmaCore.Pusher.Clients, uid)
 		}
-		utils.Log(logrus.DebugLevel, "socket broken")
+		utils.Log(5, "socket broken")
 	}))
 }
 

@@ -12,7 +12,6 @@ import (
 	pb "sigma/storage/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -24,7 +23,7 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	if err0 := app.Database.Db.QueryRow(
 		context.Background(), query0, assistant.TowerId,
 	).Scan(&towerId); err0 != nil {
-		utils.Log(logrus.DebugLevel, err0)
+		utils.Log(5, err0)
 		return &pb.InviteCreateOutput{}, errors.New("tower not found")
 	}
 	ro := input.RecepientOrigin
@@ -45,7 +44,7 @@ func createInvite(app *modules.App, input dtos_invites.CreateDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.HumanId, assistant.TowerId, app.AppId, ro,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.InviteCreateOutput{}, err
 	}
 	invite.Origin = app.AppId
@@ -63,7 +62,7 @@ func cancelInvite(app *modules.App, input dtos_invites.CancelDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.InviteId, assistant.TowerId,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId, &invite.UserOrigin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.InviteCancelOutput{}, err
 	}
 	go app.Pusher.PushToUser("invites/cancel", invite.HumanId, invite.UserOrigin, updates_invites.Cancel{Invite: &invite}, "", false)
@@ -78,7 +77,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.InviteId, assistant.UserOrigin,
 	).Scan(&member.Id, &member.HumanId, &member.TowerId, &member.UserOrigin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.InviteAcceptOutput{}, err
 	}
 	member.Origin = app.AppId
@@ -89,7 +88,7 @@ func acceptInvite(app *modules.App, input dtos_invites.AcceptDto, assistant modu
 	if err2 := app.Database.Db.QueryRow(
 		context.Background(), query2, member.TowerId,
 	).Scan(&creatorId); err2 != nil {
-		utils.Log(logrus.DebugLevel, err2)
+		utils.Log(5, err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
 	app.Pusher.JoinGroup(member.TowerId, member.HumanId, member.UserOrigin)
@@ -108,7 +107,7 @@ func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant mo
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.InviteId, assistant.UserId,
 	).Scan(&invite.Id, &invite.HumanId, &invite.TowerId, &invite.UserOrigin, &invite.Origin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.InviteDeclineOutput{}, err
 	}
 	var query2 = `
@@ -118,7 +117,7 @@ func declineInvite(app *modules.App, input dtos_invites.DeclineDto, assistant mo
 	if err2 := app.Database.Db.QueryRow(
 		context.Background(), query2, invite.TowerId,
 	).Scan(&creatorId); err2 != nil {
-		utils.Log(logrus.DebugLevel, err2)
+		utils.Log(5, err2)
 		return &pb.InviteAcceptOutput{}, err2
 	}
 	go app.Pusher.PushToUser("invites/decline", creatorId, invite.Origin, updates_invites.Decline{Invite: &invite}, "", false)

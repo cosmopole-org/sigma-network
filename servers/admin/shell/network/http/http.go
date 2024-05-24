@@ -8,7 +8,6 @@ import (
 	"sigma/admin/core/utils"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 )
 
 type HttpServer struct {
@@ -26,7 +25,7 @@ func (hs *HttpServer) AddMiddleware(mw func(*fiber.Ctx) error) {
 }
 
 func (hs *HttpServer) Listen(port int) {
-	utils.Log(logrus.DebugLevel, "Listening to rest port ", port, "...")
+	utils.Log(5, "Listening to rest port ", port, "...")
 	go hs.Server.Listen(fmt.Sprintf(":%d", port))
 }
 
@@ -59,7 +58,7 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			} else if statusCode == -2 {
 				data, err := json.Marshal(result.(modules.PreFedPacket).Body)
 				if err != nil {
-					utils.Log(logrus.DebugLevel, err)
+					utils.Log(5, err)
 					return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 				}
 				hs.SendToFed(org, modules.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), TowerId: result.(modules.PreFedPacket).Body.(modules.IDto).GetTowerId(), RoomId: result.(modules.PreFedPacket).Body.(modules.IDto).GetRoomId(), Data: string(data), RequestId: requestId})

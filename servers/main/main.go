@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/joho/godotenv"
+	"github.com/sirupsen/logrus"
 )
 
 var quit = make(chan struct{})
@@ -22,6 +23,15 @@ func main() {
 		panic(err)
 	}
 
+	var logrusLogger = &logrus.Logger{
+		Out:          os.Stderr,
+		Formatter:    new(logrus.JSONFormatter),
+		Hooks:        make(logrus.LevelHooks),
+		Level:        logrus.InfoLevel,
+		ExitFunc:     os.Exit,
+		ReportCaller: false,
+	}
+
 	sigmaApp := sigma.New(
 		os.Getenv("FED_ORIGIN"),
 		sigma.ShellConfig{
@@ -30,6 +40,9 @@ func main() {
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  os.Getenv("FEDERATIVE") == "true",
 			CoreAccess:  os.Getenv("CORE_ACCESSIBLE") == "true",
+			LogCb: func(u uint32, i ...interface{}) {
+				logrusLogger.Logln(logrus.DebugLevel)
+			},
 		},
 	)
 

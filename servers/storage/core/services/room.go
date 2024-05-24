@@ -13,7 +13,6 @@ import (
 	pb "sigma/storage/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +31,7 @@ func createRoom(app *modules.App, input dtos_rooms.CreateDto, assistant modules.
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, assistant.TowerId, app.AppId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.RoomCreateOutput{}, err
 	}
 	room.Origin = app.AppId
@@ -53,7 +52,7 @@ func updateRoom(app *modules.App, input dtos_rooms.UpdateDto, assistant modules.
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId, &room.Origin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.RoomUpdateOutput{}, err
 	}
 	go app.Pusher.PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room},
@@ -73,7 +72,7 @@ func deleteRoom(app *modules.App, input dtos_rooms.DeleteDto, assistant modules.
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.RoomId, assistant.TowerId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.RoomDeleteOutput{}, err
 	}
 	app.Memory.Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
@@ -92,7 +91,7 @@ func getRoom(app *modules.App, input dtos_rooms.GetDto, assistant modules.Assist
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, assistant.TowerId, input.RoomId,
 	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.Origin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.RoomGetOutput{}, err
 	}
 	room.TowerId = assistant.TowerId
@@ -108,7 +107,7 @@ func send(app *modules.App, input dtos_rooms.SendDto, assistant modules.Assistan
 	}
 	if input.Type == "broadcast" {
 		var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
-		utils.Log(logrus.DebugLevel, assistant.TowerId, p, assistant.UserId)
+		utils.Log(5, assistant.TowerId, p, assistant.UserId)
 		app.Pusher.PushToGroup(sendTemplate, assistant.TowerId, p,
 			[]modules.GroupMember{
 				{UserId: assistant.UserId, UserOrigin: userOrigin},

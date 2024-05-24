@@ -11,14 +11,13 @@ import (
 	pb "sigma/main/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 )
 
 func createMachine(app *modules.App, input dtos_machines.CreateDto, assistant modules.Assistant) (any, error) {
 	var token, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
-		utils.Log(logrus.DebugLevel, err1)
+		utils.Log(5, err1)
 		return &pb.MachineCreateOutput{}, err1
 	}
 	var query = `
@@ -29,7 +28,7 @@ func createMachine(app *modules.App, input dtos_machines.CreateDto, assistant mo
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, token, app.AppId,
 	).Scan(&machine.Id, &session.Id); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.MachineCreateOutput{}, err
 	}
 	if machine.Id > 0 {
@@ -54,7 +53,7 @@ func updateMachine(app *modules.App, input dtos_machines.UpdateDto, assistant mo
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, input.Name, input.AvatarId, input.MachineId, assistant.UserId,
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &machine.Origin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.MachineUpdateOutput{}, err
 	}
 	return &pb.MachineUpdateOutput{Machine: &machine}, nil
@@ -69,7 +68,7 @@ func deleteMachine(app *modules.App, input dtos_machines.DeleteDto, assistant mo
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, input.MachineId,
 	).Scan(&id); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.MachineDeleteOutput{}, err
 	}
 	return &pb.MachineDeleteOutput{}, nil
@@ -78,7 +77,7 @@ func deleteMachine(app *modules.App, input dtos_machines.DeleteDto, assistant mo
 func getMachine(app *modules.App, input dtos_machines.GetDto, assistant modules.Assistant) (any, error) {
 	machineId, err := strconv.ParseInt(input.MachineId, 10, 64)
 	if err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.MachineGetOutput{}, err
 	}
 	var query = `
@@ -89,7 +88,7 @@ func getMachine(app *modules.App, input dtos_machines.GetDto, assistant modules.
 	if err := app.Database.Db.QueryRow(
 		context.Background(), query, assistant.UserId, machineId,
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &session.Id, &session.Token, &machine.Origin); err != nil {
-		utils.Log(logrus.DebugLevel, err)
+		utils.Log(5, err)
 		return &pb.MachineGetOutput{}, err
 	}
 	if machine.CreatorId != assistant.UserId {

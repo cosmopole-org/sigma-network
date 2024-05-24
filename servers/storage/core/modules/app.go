@@ -2,8 +2,6 @@ package modules
 
 import (
 	"sigma/storage/core/utils"
-
-	"github.com/sirupsen/logrus"
 )
 
 type App struct {
@@ -17,8 +15,9 @@ type App struct {
 	CoreAccess  bool
 }
 
-func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op OriginPacket)) *App {
-	utils.Log(logrus.DebugLevel, "Creating app...")
+func NewApp(appId string, storageRoot string, coreAccess bool, dbUri string, memUri string, pusherConnector func(s string, op OriginPacket), logCb func(uint32, ...interface{})) *App {
+	utils.RegisterLoggerCallback(logCb)
+	utils.Log(5, "Creating app...")
 	a := &App{
 		AppId:       appId,
 		StorageRoot: storageRoot,

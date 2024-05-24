@@ -1,20 +1,11 @@
 package utils
 
-import (
-	"os"
+var logCb func(uint32, ...interface{})
 
-	"github.com/sirupsen/logrus"
-)
-
-var LogrusLogger = &logrus.Logger{
-	Out:          os.Stderr,
-	Formatter:    new(logrus.JSONFormatter),
-	Hooks:        make(logrus.LevelHooks),
-	Level:        logrus.InfoLevel,
-	ExitFunc:     os.Exit,
-	ReportCaller: false,
+func RegisterLoggerCallback(lcb func(uint32, ...interface{})) {
+	logCb = lcb
 }
 
-func Log(level logrus.Level, content ...interface{}) {
-	LogrusLogger.Logln(level, content...)
+func Log(level uint32, content ...interface{}) {
+	logCb(level, content...)
 }
