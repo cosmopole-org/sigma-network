@@ -7,7 +7,7 @@ export default function RoomSearchbar() {
     return (
         <Input
             classNames={{
-                base: "max-w-full sm:max-w-[10rem] h-10",
+                base: "max-w-full h-10",
                 mainWrapper: "items-center h-full",
                 input: "text-small text-center " + (theme === 'light' ? "placeholder:text-white" : ""),
                 inputWrapper: "items-center mt-3 h-full font-normal text-default-500 bg-s-white/30 dark:bg-default-500/20 rounded-3xl",
