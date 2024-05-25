@@ -90,6 +90,7 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
             })
         measureFinal();
         setLoaded(true);
+        return () => AppletHost.unloadAllHosts()
     }, []);
     if (isTouchDevice()) {
         return (

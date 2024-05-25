@@ -19,7 +19,7 @@ export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPa
         router.replace('/app/room/' + key);
     }
     return (
-        <Card isBlurred={false} className={`grid grid-cols-4 fixed ${panelKey ? "left-0" : "left-4"} ${panelKey ? "bottom-0" : "bottom-3"} h-[56px] pt-[6px] ${panelKey ? "w-full" : "w-[calc(100%-32px)]"}` + (panelKey ? " -translate-y-[calc(100vh-168px)]" : " -translate-y-[0px]")} style={{ backdropFilter: 'blur(10px)', background: theme === 'light' ? 'rgba(41, 98, 255, 0.8)' : '#7828C8aa', borderRadius: panelKey ? "32px 32px 0px 0px" : 32, zIndex: 1000, transition: "transform 250ms" }}>
+        <Card isBlurred={false} className={`grid grid-cols-4 fixed ${panelKey ? "left-0" : "left-14"} ${panelKey ? "bottom-0" : "bottom-3"} h-[56px] pt-[6px] ${panelKey ? "w-full" : "w-[calc(100%-112px)]"}` + (panelKey ? " -translate-y-[calc(100vh-168px)]" : " -translate-y-[0px]")} style={{ backdropFilter: 'blur(10px)', background: theme === 'light' ? 'rgba(41, 98, 255, 0.8)' : '#7828C8aa', borderRadius: panelKey ? "32px 32px 0px 0px" : 32, zIndex: 1000, transition: "transform 250ms" }}>
             <BottomNavItem color="#fff" iconOnly itemKey="call" selected={panelKey} title="Call" icon="call" onClick={openCall()} />
             <BottomNavItem color="#fff" iconOnly itemKey="chat" selected={panelKey} title="Chat" icon="chat" onClick={openPanelByKey('chat')} />
             <BottomNavItem color="#fff" iconOnly itemKey="files" selected={panelKey} title="Files" icon="storage" onClick={openPanelByKey('files')} />

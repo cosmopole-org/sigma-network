@@ -5,7 +5,7 @@ import RoomNavbar, { roomNavShow, switchRoomNav } from "@/components/room/room-n
 import { useTheme } from "next-themes";
 import { useEffect, useRef } from "react";
 
-export default function Board() {
+export default function Main() {
     const scrollValRef = useRef(0);
     const { theme } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);

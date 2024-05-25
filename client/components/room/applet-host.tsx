@@ -113,7 +113,7 @@ const unloadAllHosts = () => {
     hostLoaded = {}
 }
 
-const Host = (props: { isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: any, onCancel?: () => void, overlay?: boolean, style?: any }) => {
+const Host = (props: { appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: any, onCancel?: () => void, overlay?: boolean, style?: any }) => {
     const hostContainerrId = `AppletHost:${props.appletKey}`
     const appletRef = useRef<Applet | null>(null)
     const rootRef = useRef<HTMLDivElement>(null)
