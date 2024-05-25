@@ -2,6 +2,7 @@ package network_manager
 
 import (
 	"sigma/admin/core/runtime"
+	base_manager "sigma/admin/shell/managers/base"
 	shell_federation "sigma/admin/shell/network/federation"
 	shell_grpc "sigma/admin/shell/network/grpc"
 	shell_http "sigma/admin/shell/network/http"
@@ -9,6 +10,7 @@ import (
 )
 
 type NetManager struct {
+	base_manager.BaseManager
 	HttpServer *shell_http.HttpServer
 	WsServer   *shell_websocket.WsServer
 	GrpcServer *shell_grpc.GrpcServer
@@ -40,15 +42,12 @@ func (nm *NetManager) SwitchNetAccessByAction(action *runtime.Action, converter 
 }
 
 func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *NetManager {
-	fn := shell_federation.New(sc, ip2host, host2ip, fed)
-	hs := shell_http.New(sc, maxReqSize, fn.SendInFederation)
-	ws := shell_websocket.New(sc, hs)
-	gc := shell_grpc.New(sc)
-	fn.LoadFedNet(hs.Server)
-	return &NetManager{
-		HttpServer: hs,
-		WsServer:   ws,
-		GrpcServer: gc,
-		FedNet:     fn,
-	}
+	nm := &NetManager{}
+	nm.App = sc
+	nm.FedNet = shell_federation.New(sc, ip2host, host2ip, fed)
+	nm.HttpServer = shell_http.New(sc, maxReqSize, nm.FedNet.SendInFederation)
+	nm.WsServer = shell_websocket.New(sc, nm.HttpServer)
+	nm.GrpcServer = shell_grpc.New(sc)
+	nm.FedNet.LoadFedNet(nm.HttpServer.Server)
+	return nm
 }

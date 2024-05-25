@@ -1,22 +1,23 @@
 package storage_builder
 
 import (
-	sigma "sigma/storage/shell"
+	"sigma/storage/shell"
+	sigma "sigma/storage/sigma"
 	"sigma/storage/storage/services"
 )
 
 type Storage struct {
-	SigmaApp    *sigma.Shell
+	Sigma    *sigma.Sigma
 }
 
-func BuildStorage(appId string, config sigma.ShellConfig) *Storage {
+func BuildStorage(appId string, config shell.Config) *Storage {
 	sigmaApp := sigma.New(
 		appId,
 		config,
 	)
 	storage := &Storage{
-		SigmaApp: sigmaApp,
+		Sigma: sigmaApp,
 	}
-	services.CreateStorageService(sigmaApp.Core(), sigmaApp.Managers())
+	services.CreateStorageService(sigmaApp.Core, sigmaApp.Shell.Managers())
 	return storage
 }

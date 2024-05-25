@@ -4,24 +4,25 @@ import (
 	godsecurity "sigma/admin/admin/managers"
 	"sigma/admin/admin/models"
 	"sigma/admin/admin/services"
-	sigma "sigma/admin/shell"
+	"sigma/admin/shell"
+	sigma "sigma/admin/sigma"
 )
 
 type Admin struct {
 	GodSecurity *godsecurity.Security
-	Shell       *sigma.Shell
+	Sigma       *sigma.Sigma
 }
 
-func BuildAdmin(appId string, config sigma.ShellConfig, gods []models.Admin) *Admin {
-	shell := sigma.New(
+func BuildAdmin(appId string, config shell.Config, gods []models.Admin) *Admin {
+	sigmaApp := sigma.New(
 		appId,
 		config,
 	)
 	admin := &Admin{
-		Shell: shell,
+		Sigma: sigmaApp,
 	}
-	admin.GodSecurity = godsecurity.CreateSecurity(shell.Core(), gods)
-	services.CreateAuthService(shell.Core(), shell.Managers())
-	services.LoadAuthGrpcService(shell.Managers().NetManager().GrpcServer.Server)
+	admin.GodSecurity = godsecurity.CreateSecurity(sigmaApp.Core, gods)
+	services.CreateAuthService(sigmaApp.Core, sigmaApp.Shell.Managers())
+	services.LoadAuthGrpcService(sigmaApp.Shell.Managers().NetManager().GrpcServer.Server)
 	return admin
 }

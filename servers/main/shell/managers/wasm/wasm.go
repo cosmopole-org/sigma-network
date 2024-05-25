@@ -7,11 +7,13 @@ import (
 
 	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
+	base_manager "sigma/main/shell/managers/base"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 type WasmManager struct {
+	base_manager.BaseManager
 	PluginVms   map[string]*wasmedge.VM
 	PluginMetas map[string]runtime.PluginFunction
 }
@@ -109,13 +111,13 @@ func (h *vmHost) localStringToPtr(data string, callframe *wasmedge.CallingFrame)
 	return pointer
 }
 
-func (wm *WasmManager) LoadWasmModules(app *runtime.App) {
+func (wm *WasmManager) loadWasmModules() {
 	wasmedge.SetLogErrorLevel()
-	err0 := os.MkdirAll(app.StorageRoot+"/plugins", os.ModePerm)
+	err0 := os.MkdirAll(wm.App.StorageRoot+"/plugins", os.ModePerm)
 	if err0 != nil {
 		utils.Log(5, err0)
 	}
-	files, err := os.ReadDir(app.StorageRoot + "/plugins")
+	files, err := os.ReadDir(wm.App.StorageRoot + "/plugins")
 	if err != nil {
 		utils.Log(5, err)
 	}
@@ -155,7 +157,7 @@ func (wm *WasmManager) LoadWasmModules(app *runtime.App) {
 
 			vm.RegisterModule(obj)
 
-			err2 := vm.LoadWasmFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/module.wasm")
+			err2 := vm.LoadWasmFile(wm.App.StorageRoot + pluginsTemplateName + file.Name() + "/module.wasm")
 			if err2 != nil {
 				utils.Log(5, "failed to load wasm")
 			}
@@ -164,7 +166,7 @@ func (wm *WasmManager) LoadWasmModules(app *runtime.App) {
 
 			vm.Execute("_start")
 
-			metaJson, err1 := os.ReadFile(app.StorageRoot + pluginsTemplateName + file.Name() + "/meta.txt")
+			metaJson, err1 := os.ReadFile(wm.App.StorageRoot + pluginsTemplateName + file.Name() + "/meta.txt")
 			if err1 != nil {
 				utils.Log(5, err1)
 				continue
@@ -193,6 +195,7 @@ func New(sc *runtime.App) *WasmManager {
 		PluginVms:   make(map[string]*wasmedge.VM),
 		PluginMetas: make(map[string]runtime.PluginFunction),
 	}
-	wm.LoadWasmModules(sc)
+	wm.App = sc
+	wm.loadWasmModules()
 	return wm
 }

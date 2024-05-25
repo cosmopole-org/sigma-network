@@ -36,7 +36,7 @@ func main() {
 
 	adminApp := admin_builder.BuildAdmin(
 		os.Getenv("FED_ORIGIN"),
-		sigma.ShellConfig{
+		sigma.Config{
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
@@ -54,7 +54,7 @@ func main() {
 		},
 	)
 
-	adminApp.Shell.ConnectToNetwork(map[string]int{
+	adminApp.Sigma.ConnectToNetwork(map[string]int{
 		"http": int(port),
 	})
 

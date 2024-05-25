@@ -2,7 +2,8 @@ package main
 
 import (
 	"os"
-	sigma "sigma/main/shell"
+	"sigma/main/shell"
+	"sigma/main/sigma"
 	"strconv"
 
 	"github.com/joho/godotenv"
@@ -34,7 +35,7 @@ func main() {
 
 	sigmaApp := sigma.New(
 		os.Getenv("FED_ORIGIN"),
-		sigma.ShellConfig{
+		shell.Config{
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),

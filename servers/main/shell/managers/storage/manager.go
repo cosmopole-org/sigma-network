@@ -6,9 +6,12 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"sigma/main/core/runtime"
+	base_manager "sigma/main/shell/managers/base"
 )
 
 type StorageManager struct {
+	base_manager.BaseManager
 }
 
 func (g *StorageManager) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, roomId int64, key string) error {
@@ -83,6 +86,8 @@ func (g *StorageManager) SaveDataToGlobalStorage(storageRoot string, data []byte
 	return nil
 }
 
-func New() *StorageManager {
-	return &StorageManager{}
+func New(sc *runtime.App) *StorageManager {
+	sm := &StorageManager{}
+	sm.App = sc
+	return sm
 }

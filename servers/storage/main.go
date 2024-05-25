@@ -2,7 +2,7 @@ package main
 
 import (
 	"os"
-	sigma "sigma/storage/shell"
+	"sigma/storage/shell"
 	storage_builder "sigma/storage/storage"
 
 	"strconv"
@@ -36,7 +36,7 @@ func main() {
 
 	storageApp := storage_builder.BuildStorage(
 		os.Getenv("FED_ORIGIN"),
-		sigma.ShellConfig{
+		shell.Config{
 			DbUri:       os.Getenv("POSTGRES_URI"),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
@@ -49,7 +49,7 @@ func main() {
 		},
 	)
 
-	storageApp.SigmaApp.ConnectToNetwork(map[string]int{"http": int(port)})
+	storageApp.Sigma.ConnectToNetwork(map[string]int{"http": int(port)})
 
 	<-quit
 }
