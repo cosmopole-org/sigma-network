@@ -1,12 +1,12 @@
 "use client"
 
-import { setHomeCityScrollPos, setHomePeopleScrollPos, setHomeSettingsScrollPos } from "@/api/offline/backup";
 import RoomBottomNav from "@/components/room/room-bottomnav";
 import { useHookstate } from "@hookstate/core";
 import { Card, Spinner } from "@nextui-org/react";
-import { useEffect, useState } from "react";
-import { roomSliderView, showRoomLoading } from '../../../api/offline/states';
+import { useState } from "react";
+import { showRoomLoading } from '../../../api/offline/states';
 import Board from "./board/page";
+import { useRouter } from "next/navigation";
 
 export default function RoomLayout({
 	children,
@@ -15,6 +15,7 @@ export default function RoomLayout({
 }>) {
 	const showLoadingState = useHookstate(showRoomLoading);
 	const [panelKey, setPanelKey] = useState<string | undefined>(undefined)
+	const router = useRouter();
 	return (
 		<div className="relative flex flex-col h-screen w-screen">
 			<main className="w-full h-full relative">
@@ -22,8 +23,9 @@ export default function RoomLayout({
 				{panelKey ? (
 					<div
 						className="w-full h-full fixed top-0 left-0 bg-s-black/60 z-50"
-						onClick={(e) => {
+						onClick={() => {
 							setPanelKey(undefined)
+							router.replace('/app/room/board');
 						}} />
 				) : null}
 				<div className={"z-50 w-full h-[calc(100vh-168px)] fixed top-[100%] dark:bg-s-black-2 bg-s-white"}
@@ -44,6 +46,9 @@ export default function RoomLayout({
 					}
 				</div>
 				<RoomBottomNav panelKey={panelKey} openPanel={(pk: string) => {
+					if (!pk) {
+						router.replace('/app/room/board');
+					}
 					setPanelKey(pk)
 				}} />
 			</main>

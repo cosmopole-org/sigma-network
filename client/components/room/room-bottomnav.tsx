@@ -8,8 +8,8 @@ import { useRouter } from "next/navigation";
 import { switchRoomLoading } from "@/api/offline/states";
 
 export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPanel: (panelKey: string) => void, panelKey: string | undefined }>) {
-    const { theme } = useTheme();
     const router = useRouter();
+    const { theme } = useTheme();
     const openCall = () => () => {
         router.push("/app/call")
     }
@@ -19,11 +19,11 @@ export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPa
         router.replace('/app/room/' + key);
     }
     return (
-        <Card isBlurred className={`grid grid-cols-4 fixed ${panelKey ? "left-0" : "left-2"} ${panelKey ? "bottom-0" : "bottom-2"} h-[72px] pt-1 ${panelKey ? "w-full" : "w-[calc(100%-16px)]"}` + (panelKey ? " -translate-y-[calc(100vh-168px)]" : " -translate-y-[0px]")} style={{ borderRadius: panelKey ? "32px 32px 0px 0px" : 32, zIndex: 1000, backgroundColor: theme === 'light' ? "#ffffffaf" : "#172024af", transition: "transform 250ms" }}>
-            <BottomNavItem itemKey="call" selected={panelKey} title="Call" icon="call" onClick={openCall()} />
-            <BottomNavItem itemKey="chat" selected={panelKey} title="Chat" icon="chat" onClick={openPanelByKey('chat')} />
-            <BottomNavItem itemKey="files" selected={panelKey} title="Files" icon="storage" onClick={openPanelByKey('files')} />
-            <BottomNavItem pt={2} pb={3} iconSize={19} itemKey="settings" selected={panelKey} title="Settings" icon="settings" onClick={openPanelByKey('settings')} />
+        <Card isBlurred={false} className={`grid grid-cols-4 fixed ${panelKey ? "left-0" : "left-4"} ${panelKey ? "bottom-0" : "bottom-3"} h-[56px] pt-[6px] ${panelKey ? "w-full" : "w-[calc(100%-32px)]"}` + (panelKey ? " -translate-y-[calc(100vh-168px)]" : " -translate-y-[0px]")} style={{ backdropFilter: 'blur(10px)', background: theme === 'light' ? 'rgba(41, 98, 255, 0.8)' : '#7828C8aa', borderRadius: panelKey ? "32px 32px 0px 0px" : 32, zIndex: 1000, transition: "transform 250ms" }}>
+            <BottomNavItem color="#fff" iconOnly itemKey="call" selected={panelKey} title="Call" icon="call" onClick={openCall()} />
+            <BottomNavItem color="#fff" iconOnly itemKey="chat" selected={panelKey} title="Chat" icon="chat" onClick={openPanelByKey('chat')} />
+            <BottomNavItem color="#fff" iconOnly itemKey="files" selected={panelKey} title="Files" icon="storage" onClick={openPanelByKey('files')} />
+            <BottomNavItem color="#fff" iconOnly pt={2} pb={3} iconSize={19} itemKey="settings" selected={panelKey} title="Settings" icon="settings" onClick={openPanelByKey('settings')} />
         </Card >
     )
 }

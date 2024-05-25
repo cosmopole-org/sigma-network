@@ -19,6 +19,7 @@ import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
 import Script from "next/script";
 import { Logo } from "@/components/icons";
+import { putForge } from "@/api/offline/crypto";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -79,7 +80,9 @@ export default function RootLayout({
 				oldScroll = contentRef.current.scrollTop;
 			}
 		}
-		contentRef.current?.addEventListener('scroll', scroller);
+		if (loaded) {
+			contentRef.current?.addEventListener('scroll', scroller);
+		}
 		handleResize()
 		loadTheme()
 		window.addEventListener('resize', handleResize)
@@ -88,7 +91,7 @@ export default function RootLayout({
 			window.removeEventListener('resize', handleResize);
 		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
+	}, [loaded])
 	useEffect(() => {
 		if (contentRef.current) {
 			if (oldPath !== dynamicPath) {
@@ -130,9 +133,9 @@ export default function RootLayout({
 				<meta name='description' content='Welcome to Sigma universe!' />
 				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
 				<link rel="manifest" href="/manifest.json" />
-				<Script src="/out.js" onLoad={async () => {
+				<Script src="/forge.js" onLoad={async () => {
 					if (typeof window !== 'undefined') {
-						(window as any).install();
+						putForge((window as any).forge.pki.rsa);
 						setLoaded(true);
 					}
 				}} />
@@ -191,7 +194,7 @@ export default function RootLayout({
 						) : (
 							<div className="relative flex flex-col" style={{ height: h }}>
 								<main className="w-full h-full">
-									<Logo size={88} className="fixed left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4"/>
+									<Logo size={88} className="fixed left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4" />
 								</main>
 							</div>
 						)
