@@ -17,6 +17,8 @@ import 'swiper/css/effect-creative';
 import { switchHomeNav } from "@/components/home/home-navbar";
 import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
+import Script from "next/script";
+import { Logo } from "@/components/icons";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -29,7 +31,6 @@ if (typeof window !== 'undefined') {
 			});
 	});
 }
-
 
 let dynamicPath = '';
 
@@ -57,6 +58,7 @@ export default function RootLayout({
 	const scrollPositions = useRef<{ [url: string]: number }>({})
 	loadSizes();
 	const contentRef = useRef<HTMLDivElement>(null);
+	const [loaded, setLoaded] = useState(false);
 	useEffect(() => {
 		const scroller = () => {
 			if (contentRef.current) {
@@ -78,9 +80,14 @@ export default function RootLayout({
 			}
 		}
 		contentRef.current?.addEventListener('scroll', scroller);
+		handleResize()
+		loadTheme()
+		window.addEventListener('resize', handleResize)
 		return () => {
 			contentRef.current?.removeEventListener('scroll', scroller);
+			window.removeEventListener('resize', handleResize);
 		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [])
 	useEffect(() => {
 		if (contentRef.current) {
@@ -114,13 +121,6 @@ export default function RootLayout({
 		}
 	}
 	useEffect(() => {
-		handleResize()
-		loadTheme()
-		window.addEventListener('resize', handleResize)
-		return () => window.removeEventListener('resize', handleResize)
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [])
-	useEffect(() => {
 		loadTheme()
 	}, [theme]);
 	return (
@@ -130,6 +130,12 @@ export default function RootLayout({
 				<meta name='description' content='Welcome to Sigma universe!' />
 				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
 				<link rel="manifest" href="/manifest.json" />
+				<Script src="/out.js" onLoad={async () => {
+					if (typeof window !== 'undefined') {
+						(window as any).install();
+						setLoaded(true);
+					}
+				}} />
 			</head>
 			<body
 				className={clsx(
@@ -138,48 +144,58 @@ export default function RootLayout({
 				)}
 			>
 				<Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-					<div className="relative flex flex-col" style={{ height: h }}>
-						<main className="w-full h-full">
-							<Swiper
-								onInit={(swiper: any) => {
-									swiperInst = swiper
-								}}
-								grabCursor={true}
-								effect={'creative'}
-								creativeEffect={{
-									prev: {
-										shadow: true,
-										translate: [0, 0, -100],
-									},
-									next: {
-										translate: ['100%', 0, 0],
-									},
-								}}
-								modules={[EffectCreative]}
-								className="h-full w-full"
-							>
-								<SwiperSlide className="w-full h-full"><div ref={contentRef} className="w-full h-full overflow-x-hidden overflow-y-auto">{children}</div></SwiperSlide>
-								<SwiperSlide className="w-full h-full">
-									<div className="grid grid-cols-2 w-full h-full overflow-auto p-4 gap-2 bg-s-white/70 dark:bg-black/70">
-										{getUsers().map(i => (
-											<div key={i.id} className="w-full h-48 bg-white dark:bg-s-black rounded-lg">
+					{
+						loaded ? (
+							<div className="relative flex flex-col" style={{ height: h }}>
+								<main className="w-full h-full">
+									<Swiper
+										onInit={(swiper: any) => {
+											swiperInst = swiper
+										}}
+										grabCursor={true}
+										effect={'creative'}
+										creativeEffect={{
+											prev: {
+												shadow: true,
+												translate: [0, 0, -100],
+											},
+											next: {
+												translate: ['100%', 0, 0],
+											},
+										}}
+										modules={[EffectCreative]}
+										className="h-full w-full"
+									>
+										<SwiperSlide className="w-full h-full"><div ref={contentRef} className="w-full h-full overflow-x-hidden overflow-y-auto">{children}</div></SwiperSlide>
+										<SwiperSlide className="w-full h-full">
+											<div className="grid grid-cols-2 w-full h-full overflow-auto p-4 gap-2 bg-s-white/70 dark:bg-black/70">
+												{getUsers().map(i => (
+													<div key={i.id} className="w-full h-48 bg-white dark:bg-s-black rounded-lg">
 
+													</div>
+												))}
 											</div>
-										))}
-									</div>
-								</SwiperSlide>
-							</Swiper>
-							{
-								showLoadingState.get({ noproxy: true }) ? (
-									<Card isBlurred shadow="none" radius="none" className="w-full h-full fixed left-0 top-0 bg-transparent" style={{ zIndex: 100 }}>
-										<Card className="w-24 h-24 fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-											<CircularProgress />
-										</Card>
-									</Card>
-								) : null
-							}
-						</main>
-					</div>
+										</SwiperSlide>
+									</Swiper>
+									{
+										showLoadingState.get({ noproxy: true }) ? (
+											<Card isBlurred shadow="none" radius="none" className="w-full h-full fixed left-0 top-0 bg-transparent" style={{ zIndex: 100 }}>
+												<Card className="w-24 h-24 fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 items-center justify-center">
+													<CircularProgress />
+												</Card>
+											</Card>
+										) : null
+									}
+								</main>
+							</div>
+						) : (
+							<div className="relative flex flex-col" style={{ height: h }}>
+								<main className="w-full h-full">
+									<Logo size={88} className="fixed left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4"/>
+								</main>
+							</div>
+						)
+					}
 				</Providers>
 			</body>
 		</html>
