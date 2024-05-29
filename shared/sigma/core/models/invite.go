@@ -1,8 +1,7 @@
 package models
 
 type Invite struct {
-	Id         int64  `json:"id"`
-	HumanId    int64  `json:"humanId"`
-	TowerId    int64  `json:"towerId"`
-	UserOrigin string `json:"userOrigin"`
+	Id      string `json:"id"`
+	UserId  string `json:"humanId"`
+	SpaceId int64  `json:"spaceId"`
 }

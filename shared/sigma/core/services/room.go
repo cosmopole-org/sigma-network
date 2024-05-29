@@ -3,10 +3,10 @@ package services
 import (
 	"context"
 	"fmt"
-	dtos_rooms "sigma/main/core/dtos/rooms"
+	inputs_topics "sigma/main/core/inputs/topics"
 	"sigma/main/core/models"
 	"sigma/main/core/runtime"
-	updates_rooms "sigma/main/core/updates/rooms"
+	updates_topics "sigma/main/core/updates/topics"
 	"sigma/main/core/utils"
 	"strconv"
 	"strings"
@@ -17,173 +17,173 @@ import (
 	"google.golang.org/grpc"
 )
 
-func createRoom(app *runtime.App, input dtos_rooms.CreateDto, assistant models.Assistant) (any, error) {
+func createTopic(app *runtime.App, input inputs_topics.CreateInput, info models.Info) (any, error) {
 	var query = `
-		insert into room
+		insert into topic
 		(
 			name,
 			avatar_id,
-			tower_id,
+			space_id,
 			origin
 		) values ($1, $2, $3, $4)
-		returning id, name, avatar_id, tower_id;
+		returning id, name, avatar_id, space_id;
 	`
-	var room pb.Room
+	var topic pb.Topic
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, assistant.TowerId, app.AppId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
+		context.Background(), query, input.Name, input.AvatarId, info.SpaceId, app.AppId,
+	).Scan(&topic.Id, &topic.Name, &topic.AvatarId, &topic.SpaceId); err != nil {
 		utils.Log(5, err)
-		return &pb.RoomCreateOutput{}, err
+		return &pb.TopicCreateOutput{}, err
 	}
-	room.Origin = app.AppId
-	app.Managers.MemoryManager().Put(fmt.Sprintf("city::%d", room.Id), fmt.Sprintf("%d", room.TowerId))
-	go app.Managers.PushManager().PushToGroup("rooms/create", room.TowerId, updates_rooms.Create{Room: &room},
+	topic.Origin = app.AppId
+	app.Managers.MemoryManager().Put(fmt.Sprintf("city::%d", topic.Id), fmt.Sprintf("%d", topic.SpaceId))
+	go app.Managers.PushManager().PushToGroup("topics/create", topic.SpaceId, updates_topics.Create{Topic: &topic},
 		[]models.GroupMember{
-			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+			{UserId: info.UserId, UserOrigin: info.UserOrigin},
 		})
-	return &pb.RoomCreateOutput{Room: &room}, nil
+	return &pb.TopicCreateOutput{Topic: &topic}, nil
 }
 
-func updateRoom(app *runtime.App, input dtos_rooms.UpdateDto, assistant models.Assistant) (any, error) {
+func updateTopic(app *runtime.App, input inputs_topics.UpdateInput, info models.Info) (any, error) {
 	var query = `
-		update room set name = $1, avatar_id = $2 where id = $3 and tower_id = $4
-		returning id, name, avatar_id, tower_id, origin;
+		update topic set name = $1, avatar_id = $2 where id = $3 and space_id = $4
+		returning id, name, avatar_id, space_id, origin;
 	`
-	var room pb.Room
+	var topic pb.Topic
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.RoomId, assistant.TowerId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId, &room.Origin); err != nil {
+		context.Background(), query, input.Name, input.AvatarId, input.TopicId, info.SpaceId,
+	).Scan(&topic.Id, &topic.Name, &topic.AvatarId, &topic.SpaceId, &topic.Origin); err != nil {
 		utils.Log(5, err)
-		return &pb.RoomUpdateOutput{}, err
+		return &pb.TopicUpdateOutput{}, err
 	}
-	go app.Managers.PushManager().PushToGroup("rooms/update", room.TowerId, updates_rooms.Update{Room: &room},
+	go app.Managers.PushManager().PushToGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: &topic},
 		[]models.GroupMember{
-			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+			{UserId: info.UserId, UserOrigin: info.UserOrigin},
 		})
-	return &pb.RoomUpdateOutput{Room: &room}, nil
+	return &pb.TopicUpdateOutput{Topic: &topic}, nil
 }
 
-func deleteRoom(app *runtime.App, input dtos_rooms.DeleteDto, assistant models.Assistant) (any, error) {
+func deleteTopic(app *runtime.App, input inputs_topics.DeleteInput, info models.Info) (any, error) {
 	var query = ``
 	query = `
-		delete from room where id = $1 and tower_id = $2
-		returning id, name, avatar_id, tower_id;
+		delete from topic where id = $1 and space_id = $2
+		returning id, name, avatar_id, space_id;
 	`
-	var room pb.Room
+	var topic pb.Topic
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.RoomId, assistant.TowerId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.TowerId); err != nil {
+		context.Background(), query, input.TopicId, info.SpaceId,
+	).Scan(&topic.Id, &topic.Name, &topic.AvatarId, &topic.SpaceId); err != nil {
 		utils.Log(5, err)
-		return &pb.RoomDeleteOutput{}, err
+		return &pb.TopicDeleteOutput{}, err
 	}
-	app.Managers.MemoryManager().Del(fmt.Sprintf("city::%d::%d", room.TowerId, room.Id))
-	go app.Managers.PushManager().PushToGroup("rooms/delete", room.TowerId, updates_rooms.Update{Room: &room},
+	app.Managers.MemoryManager().Del(fmt.Sprintf("city::%d::%d", topic.SpaceId, topic.Id))
+	go app.Managers.PushManager().PushToGroup("topics/delete", topic.SpaceId, updates_topics.Update{Topic: &topic},
 		[]models.GroupMember{
-			{UserId: assistant.UserId, UserOrigin: assistant.UserOrigin},
+			{UserId: info.UserId, UserOrigin: info.UserOrigin},
 		})
-	return &pb.RoomDeleteOutput{}, nil
+	return &pb.TopicDeleteOutput{}, nil
 }
 
-func getRoom(app *runtime.App, input dtos_rooms.GetDto, assistant models.Assistant) (any, error) {
+func getTopic(app *runtime.App, input inputs_topics.GetInput, info models.Info) (any, error) {
 	var query = `
-		select * from rooms_get($1, $2, $3);
+		select * from topics_get($1, $2, $3);
 	`
-	var room pb.Room
+	var topic pb.Topic
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, assistant.UserId, assistant.TowerId, input.RoomId,
-	).Scan(&room.Id, &room.Name, &room.AvatarId, &room.Origin); err != nil {
+		context.Background(), query, info.UserId, info.SpaceId, input.TopicId,
+	).Scan(&topic.Id, &topic.Name, &topic.AvatarId, &topic.Origin); err != nil {
 		utils.Log(5, err)
-		return &pb.RoomGetOutput{}, err
+		return &pb.TopicGetOutput{}, err
 	}
-	room.TowerId = assistant.TowerId
-	return &pb.RoomGetOutput{Room: &room}, nil
+	topic.SpaceId = info.SpaceId
+	return &pb.TopicGetOutput{Topic: &topic}, nil
 }
 
-var sendTemplate = "rooms/send"
+var sendTemplate = "topics/send"
 
-func send(app *runtime.App, input dtos_rooms.SendDto, assistant models.Assistant) (any, error) {
-	userOrigin := assistant.UserOrigin
+func send(app *runtime.App, input inputs_topics.SendInput, info models.Info) (any, error) {
+	userOrigin := info.UserOrigin
 	if userOrigin == "" {
 		userOrigin = app.AppId
 	}
 	if input.Type == "broadcast" {
-		var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
-		utils.Log(5, assistant.TowerId, p, assistant.UserId)
-		app.Managers.PushManager().PushToGroup(sendTemplate, assistant.TowerId, p,
+		var p = updates_topics.Send{Action: "broadcast", UserId: info.UserId, UserType: info.UserType, UserOrigin: userOrigin, SpaceId: info.SpaceId, TopicId: info.TopicId, Data: input.Data}
+		utils.Log(5, info.SpaceId, p, info.UserId)
+		app.Managers.PushManager().PushToGroup(sendTemplate, info.SpaceId, p,
 			[]models.GroupMember{
-				{UserId: assistant.UserId, UserOrigin: userOrigin},
+				{UserId: info.UserId, UserOrigin: userOrigin},
 			})
-		return &pb.RoomSendOutput{Passed: true}, nil
+		return &pb.TopicSendOutput{Passed: true}, nil
 	} else if input.Type == "single" {
 		if input.RecvType == "human" {
-			memberData := app.Managers.MemoryManager().Get(fmt.Sprintf("member::%d::%d::%s", assistant.TowerId, input.RecvId, input.RecvOrigin))
+			memberData := app.Managers.MemoryManager().Get(fmt.Sprintf("member::%d::%d::%s", info.SpaceId, input.RecvId, input.RecvOrigin))
 			if memberData == "true" {
-				var p = updates_rooms.Send{Action: "single", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
+				var p = updates_topics.Send{Action: "single", UserId: info.UserId, UserType: info.UserType, UserOrigin: userOrigin, SpaceId: info.SpaceId, TopicId: info.TopicId, Data: input.Data}
 				app.Managers.PushManager().PushToUser(sendTemplate, input.RecvId, input.RecvOrigin, p, "", false)
-				return &pb.RoomSendOutput{Passed: true}, nil
+				return &pb.TopicSendOutput{Passed: true}, nil
 			}
 		} else if input.RecvType == "machine" {
 			workerData := app.Managers.MemoryManager().Get(fmt.Sprintf("worker::%d", input.WorkerId))
 			arr := strings.Split(workerData, "/")
 			if len(arr) == 3 {
-				roomId, _ := strconv.ParseInt(arr[0], 10, 64)
+				topicId, _ := strconv.ParseInt(arr[0], 10, 64)
 				machineId, _ := strconv.ParseInt(arr[1], 10, 64)
 				machineOrigin := arr[2]
-				if roomId == assistant.RoomId {
-					var p = updates_rooms.Send{Action: "broadcast", UserId: assistant.UserId, UserType: assistant.UserType, UserOrigin: userOrigin, TowerId: assistant.TowerId, RoomId: assistant.RoomId, Data: input.Data}
+				if topicId == info.TopicId {
+					var p = updates_topics.Send{Action: "broadcast", UserId: info.UserId, UserType: info.UserType, UserOrigin: userOrigin, SpaceId: info.SpaceId, TopicId: info.TopicId, Data: input.Data}
 					app.Managers.PushManager().PushToUser(sendTemplate, machineId, machineOrigin, p, "", false)
-					return &pb.RoomSendOutput{Passed: true}, nil
+					return &pb.TopicSendOutput{Passed: true}, nil
 				}
 			}
 		}
 	}
-	return &pb.RoomSendOutput{Passed: false}, nil
+	return &pb.TopicSendOutput{Passed: false}, nil
 }
 
-func CreateRoomService(app *runtime.App, coreAccess bool) {
+func CreateTopicService(app *runtime.App, coreAccess bool) {
 
 	// Tables
-	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/tables/room.sql")
+	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/tables/topic.sql")
 
 	// Functions
-	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/functions/rooms/get.sql")
+	app.Managers.DatabaseManager().ExecuteSqlFile("core/managers/database/functions/topics/get.sql")
 
 	// Methods
 	app.Services.AddAction(runtime.CreateAction(
 		app,
-		"/rooms/create",
+		"/topics/create",
 		runtime.CreateCk(true, true, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
-		createRoom,
+		createTopic,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
-		"/rooms/update",
+		"/topics/update",
 		runtime.CreateCk(true, true, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodPut),
 		true,
-		updateRoom,
+		updateTopic,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
-		"/rooms/delete",
+		"/topics/delete",
 		runtime.CreateCk(true, true, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodDelete),
 		true,
-		deleteRoom,
+		deleteTopic,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
-		"/rooms/get",
+		"/topics/get",
 		runtime.CreateCk(true, true, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
-		getRoom,
+		getTopic,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
-		"/rooms/send",
+		"/topics/send",
 		runtime.CreateCk(true, true, true),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodPost),
 		true,
@@ -191,9 +191,9 @@ func CreateRoomService(app *runtime.App, coreAccess bool) {
 	))
 }
 
-func LoadRoomGrpcService(grpcServer *grpc.Server) {
+func LoadTopicGrpcService(grpcServer *grpc.Server) {
 	type server struct {
-		pb.UnimplementedRoomServiceServer
+		pb.UnimplementedTopicServiceServer
 	}
-	pb.RegisterRoomServiceServer(grpcServer, &server{})
+	pb.RegisterTopicServiceServer(grpcServer, &server{})
 }

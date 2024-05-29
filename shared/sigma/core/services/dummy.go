@@ -2,7 +2,7 @@ package services
 
 import (
 	"os"
-	"sigma/main/core/dtos"
+	"sigma/main/core/inputs"
 	"sigma/main/core/models"
 	"sigma/main/core/runtime"
 
@@ -16,7 +16,7 @@ func CreateDummyService(app *runtime.App, coreAccess bool) {
 		runtime.CreateCk(false, false, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *runtime.App, d dtos.HelloDto, assistant models.Assistant) (any, error) {
+		func(app *runtime.App, d inputs.HelloInput, info models.Info) (any, error) {
 			return `{ "hello": "world" }`, nil
 		},
 	))
@@ -26,7 +26,7 @@ func CreateDummyService(app *runtime.App, coreAccess bool) {
 		runtime.CreateCk(false, false, false),
 		runtime.CreateAc(coreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *runtime.App, d dtos.HelloDto, assistant models.Assistant) (any, error) {
+		func(app *runtime.App, d inputs.HelloInput, info models.Info) (any, error) {
 			return os.Getenv("MAIN_PORT"), nil
 		},
 	))

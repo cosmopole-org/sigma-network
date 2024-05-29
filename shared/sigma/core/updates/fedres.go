@@ -1,4 +1,4 @@
-package updates_workers
+package updates_fed
 
 type FedRes struct {
 	RequestId string `json:"requestId"`

@@ -1,7 +1,6 @@
 package shell_federation
 
 import (
-	"context"
 	"encoding/json"
 	"sigma/main/core/models"
 	"sigma/main/core/runtime"
@@ -16,7 +15,7 @@ import (
 type FedNet struct {
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
-	app   *runtime.App
+	app         *runtime.App
 	fed         bool
 }
 
@@ -40,7 +39,7 @@ func (fed *FedNet) LoadFedNet(f *fiber.App) {
 func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 	if payload.IsResponse {
 		dataArr := strings.Split(payload.Key, " ")
-		if dataArr[0] == "/invites/accept" || dataArr[0] == "/towers/join" {
+		if dataArr[0] == "/invites/accept" || dataArr[0] == "/spaces/join" {
 			var member *pb.Member
 			if dataArr[0] == "/invites/accept" {
 				var memberRes pb.InviteAcceptOutput
@@ -50,8 +49,8 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 					return
 				}
 				member = memberRes.Member
-			} else if dataArr[0] == "/towers/join" {
-				var memberRes pb.TowerJoinOutput
+			} else if dataArr[0] == "/spaces/join" {
+				var memberRes pb.SpaceJoinOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
 					utils.Log(5, err2)
@@ -64,20 +63,20 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 			insert into member
 			(
 				human_id,
-				tower_id,
+				space_id,
 				origin,
 				user_origin
-			) values ($1, $2, $3, $4)
+			) values (?, ?, ?, ?)
 			returning id;
 		`
 				var memberId int64
-				if err := fed.app.Managers.DatabaseManager().Db.QueryRow(
-					context.Background(), query, member.HumanId, member.TowerId, channelId, fed.app.AppId,
+				if err := fed.app.Managers.DatabaseManager().Db.Raw(
+					query, member.UserId, member.SpaceId, channelId, fed.app.AppId,
 				).Scan(&memberId); err != nil {
 					utils.Log(5, err)
 					return
 				}
-				fed.app.Managers.PushManager().JoinGroup(member.TowerId, member.HumanId, fed.app.AppId)
+				fed.app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId, fed.app.AppId)
 			}
 		}
 		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, fed.app.AppId, payload.Data, payload.RequestId, true)
@@ -90,19 +89,19 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 		} else {
 			action := fed.app.Services.GetAction(payload.Key)
 			check := action.Check
-			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, channelId, payload.TowerId, payload.RoomId)
-			if check.Tower && location.TowerId == 0 {
+			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, channelId, payload.SpaceId, payload.TopicId)
+			if check.Space && location.SpaceId == 0 {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
 					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
-			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Assistant{
+			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Info{
 				UserId:     payload.UserId,
 				UserType:   "human",
-				TowerId:    location.TowerId,
-				RoomId:     location.RoomId,
+				SpaceId:    location.SpaceId,
+				TopicId:    location.TopicId,
 				WorkerId:   0,
 				UserOrigin: channelId,
 			})

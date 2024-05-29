@@ -53,6 +53,6 @@ func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map
 		securityManager: security_manager.New(sc),
 		netManager:      network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),
 		wasmManager:     wasm_manager.New(sc),
-		storageManager: storage_manager.New(sc),
+		storageManager:  storage_manager.New(sc),
 	}
 }

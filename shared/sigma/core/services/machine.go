@@ -3,7 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
-	dtos_machines "sigma/main/core/dtos/machines"
+	inputs_machines "sigma/main/core/inputs/machines"
 	"sigma/main/core/models"
 	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func createMachine(app *runtime.App, input dtos_machines.CreateDto, assistant models.Assistant) (any, error) {
+func createMachine(app *runtime.App, input inputs_machines.CreateInput, info models.Info) (any, error) {
 	var token, err1 = utils.SecureUniqueString(32)
 	if err1 != nil {
 		utils.Log(5, err1)
@@ -27,7 +27,7 @@ func createMachine(app *runtime.App, input dtos_machines.CreateDto, assistant mo
 	var machine pb.Machine
 	var session pb.Session
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.Name, input.AvatarId, token, app.AppId,
+		context.Background(), query, info.UserId, input.Name, input.AvatarId, token, app.AppId,
 	).Scan(&machine.Id, &session.Id); err != nil {
 		utils.Log(5, err)
 		return &pb.MachineCreateOutput{}, err
@@ -35,7 +35,7 @@ func createMachine(app *runtime.App, input dtos_machines.CreateDto, assistant mo
 	if machine.Id > 0 {
 		machine.Name = input.Name
 		machine.AvatarId = input.AvatarId
-		machine.CreatorId = assistant.UserId
+		machine.CreatorId = info.UserId
 		machine.Origin = app.AppId
 		session.UserId = machine.Id
 		session.Token = token
@@ -45,14 +45,14 @@ func createMachine(app *runtime.App, input dtos_machines.CreateDto, assistant mo
 	return &pb.MachineCreateOutput{Machine: &machine, Session: &session}, nil
 }
 
-func updateMachine(app *runtime.App, input dtos_machines.UpdateDto, assistant models.Assistant) (any, error) {
+func updateMachine(app *runtime.App, input inputs_machines.UpdateInput, info models.Info) (any, error) {
 	var query = `
 		update machine set name = $1, avatar_id = $2 where id = $3 and creator_id = $4
 		returning id, name, avatar_id, creator_id, origin;
 	`
 	var machine pb.Machine
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.Name, input.AvatarId, input.MachineId, assistant.UserId,
+		context.Background(), query, input.Name, input.AvatarId, input.UserId, info.UserId,
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &machine.Origin); err != nil {
 		utils.Log(5, err)
 		return &pb.MachineUpdateOutput{}, err
@@ -60,14 +60,14 @@ func updateMachine(app *runtime.App, input dtos_machines.UpdateDto, assistant mo
 	return &pb.MachineUpdateOutput{Machine: &machine}, nil
 }
 
-func deleteMachine(app *runtime.App, input dtos_machines.DeleteDto, assistant models.Assistant) (any, error) {
+func deleteMachine(app *runtime.App, input inputs_machines.DeleteInput, info models.Info) (any, error) {
 	var query = ``
 	query = `
 		select * from machines_delete($1, $2);
 	`
 	var id = 0
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, assistant.UserId, input.MachineId,
+		context.Background(), query, info.UserId, input.UserId,
 	).Scan(&id); err != nil {
 		utils.Log(5, err)
 		return &pb.MachineDeleteOutput{}, err
@@ -75,8 +75,8 @@ func deleteMachine(app *runtime.App, input dtos_machines.DeleteDto, assistant mo
 	return &pb.MachineDeleteOutput{}, nil
 }
 
-func getMachine(app *runtime.App, input dtos_machines.GetDto, assistant models.Assistant) (any, error) {
-	machineId, err := strconv.ParseInt(input.MachineId, 10, 64)
+func getMachine(app *runtime.App, input inputs_machines.GetInput, info models.Info) (any, error) {
+	machineId, err := strconv.ParseInt(input.UserId, 10, 64)
 	if err != nil {
 		utils.Log(5, err)
 		return &pb.MachineGetOutput{}, err
@@ -87,12 +87,12 @@ func getMachine(app *runtime.App, input dtos_machines.GetDto, assistant models.A
 	var machine pb.Machine
 	var session pb.Session
 	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, assistant.UserId, machineId,
+		context.Background(), query, info.UserId, machineId,
 	).Scan(&machine.Id, &machine.Name, &machine.AvatarId, &machine.CreatorId, &session.Id, &session.Token, &machine.Origin); err != nil {
 		utils.Log(5, err)
 		return &pb.MachineGetOutput{}, err
 	}
-	if machine.CreatorId != assistant.UserId {
+	if machine.CreatorId != info.UserId {
 		machine.CreatorId = 0
 		session.Token = ""
 		session.Id = 0

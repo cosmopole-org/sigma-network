@@ -1,8 +1,9 @@
 package models
 
 type Member struct {
-	Id         int64  `json:"id"`
-	HumanId    int64  `json:"humanId"`
-	TowerId    int64  `json:"towerId"`
-	UserOrigin string `json:"userOrigin"`
+	Id       string `json:"id"`
+	UserId   string `json:"humanId"`
+	SpaceId  string `json:"spaceId"`
+	TopicIds string `json:"topicIds"`
+	Metadata string `json:"metadata"`
 }
