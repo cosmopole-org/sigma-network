@@ -10,55 +10,55 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
-func authenticate(app *runtime.App, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
-	_, res, _ := app.Services.CallActionHonestly("/humans/get", inputs_users.GetInput{UserId: info.User.Id}, runtime.Meta{UserId: 0, SpaceId: 0, TopicId: 0})
-	result := res.(*outputs_users.GetOutput)
-	return outputs_users.AuthenticateOutput{Authenticated: true, User: result.User}, nil
+func authenticate(app *runtime.App, tx *gorm.DB, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
+	_, res, _ := app.Services.CallActionHonestly("/users/get", tx, inputs_users.GetInput{UserId: info.User.Id}, runtime.Meta{UserId: "", SpaceId: "", TopicId: ""})
+	return outputs_users.AuthenticateOutput{Authenticated: true, User: res.(outputs_users.GetOutput).User}, nil
 }
 
-func create(app *runtime.App, input inputs_users.CreateInput, info models.Info) (any, error) {
+func create(app *runtime.App, tx *gorm.DB, input inputs_users.CreateInput, info models.Info) (any, error) {
 	token := utils.SecureUniqueString()
 	user := models.User{Id: utils.SecureUniqueId(app.AppId), Type: "human", Username: input.Username + "@" + app.AppId, Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
-	app.Managers.DatabaseManager().Db.Create(&user)
+	tx.Create(&user)
 	session := models.Session{Id: utils.SecureUniqueId(app.AppId), Token: token, UserId: user.Id}
-	app.Managers.DatabaseManager().Db.Create(&session)
+	tx.Create(&session)
 	app.Managers.MemoryManager().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
 	return outputs_users.CreateOutput{User: user, Session: session}, nil
 }
 
-func update(app *runtime.App, input inputs_users.UpdateInput, info models.Info) (any, error) {
+func update(app *runtime.App, tx *gorm.DB, input inputs_users.UpdateInput, info models.Info) (any, error) {
 	user := models.User{Id: info.User.Id}
-	app.Managers.DatabaseManager().Db.First(&user)
+	tx.First(&user)
 	user.Name = input.Name
 	user.Avatar = input.Avatar
 	user.Username = input.Username
-	app.Managers.DatabaseManager().Db.Save(&user)
+	tx.Save(&user)
 	return outputs_users.UpdateOutput{
 		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar},
 	}, nil
 }
 
-func get(app *runtime.App, input inputs_users.GetInput, info models.Info) (any, error) {
+func get(app *runtime.App, tx *gorm.DB, input inputs_users.GetInput, info models.Info) (any, error) {
 	user := models.User{Id: input.UserId}
-	err := app.Managers.DatabaseManager().Db.First(&user).Error
+	err := tx.First(&user).Error
 	return outputs_users.GetOutput{User: user}, err
 }
 
-func delete(app *runtime.App, input inputs_users.DeleteInput, info models.Info) (any, error) {
+func delete(app *runtime.App, tx *gorm.DB, input inputs_users.DeleteInput, info models.Info) (any, error) {
 	user := models.User{Id: info.User.Id}
-	err := app.Managers.DatabaseManager().Db.First(&user).Error
+	err := tx.First(&user).Error
 	if err != nil {
 		return nil, err
 	}
 	sessions := []models.Session{}
-	app.Managers.DatabaseManager().Db.Where("user_id = ?", user.Id).Find(&sessions)
+	tx.Where("user_id = ?", user.Id).Find(&sessions)
 	for _, session := range sessions {
 		app.Managers.MemoryManager().Del("auth::" + session.Token)
-		app.Managers.DatabaseManager().Db.Delete(&session)
+		tx.Delete(&session)
 	}
-	app.Managers.DatabaseManager().Db.Delete(&user)
+	tx.Delete(&user)
 	return outputs_users.DeleteOutput{User: user}, nil
 }
 

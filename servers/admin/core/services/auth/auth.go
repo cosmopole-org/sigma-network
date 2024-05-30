@@ -9,13 +9,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
-func getServerPublicKey(app *runtime.App, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
+func getServerPublicKey(app *runtime.App, tx *gorm.DB, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
 	return &outputs_auth.GetServerKeyOutput{PublicKey: string(app.Managers.CryptoManager().FetchKeyPair("server_key")[1])}, nil
 }
 
-func getServersMap(app *runtime.App, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
+func getServersMap(app *runtime.App, tx *gorm.DB, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
 	return outputs_auth.GetServersMapOutput{
 		Servers: network_store.WellKnownServers,
 	}, nil

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
+	"gorm.io/gorm"
 )
 
 type WasmManager struct {
@@ -25,7 +26,7 @@ type WasmService struct {
 	managers *mans.Managers
 }
 
-func (w *WasmService) plug(app *runtime.App, input inputs_external.PlugInput, info models.Info) (any, error) {
+func (w *WasmService) plug(app *runtime.App, tx *gorm.DB, input inputs_external.PlugInput, info models.Info) (any, error) {
 	var meta []runtime.PluginFunction
 	err := json.Unmarshal([]byte(input.Meta), &meta)
 	if err != nil {

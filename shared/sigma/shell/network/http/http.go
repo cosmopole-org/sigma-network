@@ -54,7 +54,7 @@ func (hs *HttpServer) Enablendpoint(key string) {
 			if origin != "" {
 				org = origin
 			}
-			statusCode, result, err := hs.app.Services.CallAction(key, c, token, origin)
+			statusCode, result, err := hs.app.Services.CallAction(key, nil, c, token, origin)
 			if statusCode == fiber.StatusOK {
 				return HandleResutOfFunc(c, result)
 			} else if statusCode == -2 {

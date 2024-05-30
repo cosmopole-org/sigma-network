@@ -12,16 +12,17 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
-func create(app *runtime.App, input inputs_invites.CreateInput, info models.Info) (any, error) {
+func create(app *runtime.App, tx *gorm.DB, input inputs_invites.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: input.SpaceId}
-	err := app.Managers.DatabaseManager().Db.First(&space).Error
+	err := tx.First(&space).Error
 	if err != nil {
 		return nil, err
 	}
 	invite := models.Invite{Id: utils.SecureUniqueId(app.AppId), UserId: input.UserId, SpaceId: input.SpaceId}
-	err2 := app.Managers.DatabaseManager().Db.Create(&invite).Error
+	err2 := tx.Create(&invite).Error
 	if err2 != nil {
 		return nil, err2
 	}
@@ -29,21 +30,21 @@ func create(app *runtime.App, input inputs_invites.CreateInput, info models.Info
 	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
-func cancel(app *runtime.App, input inputs_invites.CancelInput, info models.Info) (any, error) {
+func cancel(app *runtime.App, tx *gorm.DB, input inputs_invites.CancelInput, info models.Info) (any, error) {
 	admin := models.Admin{UserId: info.User.Id, SpaceId: input.SpaceId}
-	err := app.Managers.DatabaseManager().Db.First(&admin).Error
+	err := tx.First(&admin).Error
 	if err != nil {
 		return nil, err
 	}
 	invite := models.Invite{Id: input.InviteId}
-	err2 := app.Managers.DatabaseManager().Db.First(&invite).Error
+	err2 := tx.First(&invite).Error
 	if err2 != nil {
 		return nil, err2
 	}
 	if invite.SpaceId != input.SpaceId {
 		return nil, errors.New("invite not found")
 	}
-	err3 := app.Managers.DatabaseManager().Db.Delete(&invite).Error
+	err3 := tx.Delete(&invite).Error
 	if err3 != nil {
 		return nil, err3
 	}
@@ -53,25 +54,25 @@ func cancel(app *runtime.App, input inputs_invites.CancelInput, info models.Info
 
 var memberTemplate = "member::%s::%s"
 
-func accept(app *runtime.App, input inputs_invites.AcceptInput, info models.Info) (any, error) {
+func accept(app *runtime.App, tx *gorm.DB, input inputs_invites.AcceptInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
-	err := app.Managers.DatabaseManager().Db.First(&invite).Error
+	err := tx.First(&invite).Error
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != info.User.Id {
 		return nil, errors.New("invite not found")
 	}
-	err2 := app.Managers.DatabaseManager().Db.Delete(&invite).Error
+	err2 := tx.Delete(&invite).Error
 	if err2 != nil {
 		return nil, err2
 	}
 	member := models.Member{Id: utils.SecureUniqueId(app.AppId), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
-	app.Managers.DatabaseManager().Db.Create(&member)
+	tx.Create(&member)
 	app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
 	app.Managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	admins := []models.Admin{}
-	app.Managers.DatabaseManager().Db.Where("space_id = ?", invite.SpaceId).Find(&admins)
+	tx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
 		go app.Managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: invite}, "", false)
 	}
@@ -79,21 +80,21 @@ func accept(app *runtime.App, input inputs_invites.AcceptInput, info models.Info
 	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
-func decline(app *runtime.App, input inputs_invites.DeclineInput, info models.Info) (any, error) {
+func decline(app *runtime.App, tx *gorm.DB, input inputs_invites.DeclineInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
-	err := app.Managers.DatabaseManager().Db.First(&invite).Error
+	err := tx.First(&invite).Error
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != info.User.Id {
 		return nil, errors.New("invite not found")
 	}
-	err2 := app.Managers.DatabaseManager().Db.Delete(&invite).Error
+	err2 := tx.Delete(&invite).Error
 	if err2 != nil {
 		return nil, err2
 	}
 	admins := []models.Admin{}
-	app.Managers.DatabaseManager().Db.Where("space_id = ?", invite.SpaceId).Find(&admins)
+	tx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
 		go app.Managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: &invite}, "", false)
 	}

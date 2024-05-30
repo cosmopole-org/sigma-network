@@ -12,13 +12,14 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
-func create(app *runtime.App, input inputs_topics.CreateInput, info models.Info) (any, error) {
+func create(app *runtime.App, tx *gorm.DB, input inputs_topics.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
-	app.Managers.DatabaseManager().Db.First(&space)
+	tx.First(&space)
 	topic := models.Topic{Id: utils.SecureUniqueId(app.AppId), Title: input.Title, Avatar: input.Avatar, SpaceId: space.Id}
-	app.Managers.DatabaseManager().Db.Create(&topic)
+	tx.Create(&topic)
 	app.Managers.MemoryManager().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
 	go app.Managers.PushManager().PushToGroup("topics/create", topic.SpaceId, updates_topics.Create{Topic: topic},
 		[]models.Client{
@@ -27,11 +28,11 @@ func create(app *runtime.App, input inputs_topics.CreateInput, info models.Info)
 	return outputs_topics.CreateOutput{Topic: topic}, nil
 }
 
-func update(app *runtime.App, input inputs_topics.UpdateInput, info models.Info) (any, error) {
+func update(app *runtime.App, tx *gorm.DB, input inputs_topics.UpdateInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
-	app.Managers.DatabaseManager().Db.First(&space)
+	tx.First(&space)
 	topic := models.Topic{Id: input.TopicId, Title: input.Title, Avatar: input.Avatar}
-	app.Managers.DatabaseManager().Db.Save(&topic)
+	tx.Save(&topic)
 	go app.Managers.PushManager().PushToGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: topic},
 		[]models.Client{
 			{UserId: info.User.Id},
@@ -39,12 +40,12 @@ func update(app *runtime.App, input inputs_topics.UpdateInput, info models.Info)
 	return outputs_topics.UpdateOutput{Topic: topic}, nil
 }
 
-func delete(app *runtime.App, input inputs_topics.DeleteInput, info models.Info) (any, error) {
+func delete(app *runtime.App, tx *gorm.DB, input inputs_topics.DeleteInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
-	app.Managers.DatabaseManager().Db.First(&space)
+	tx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
-	app.Managers.DatabaseManager().Db.First(&topic)
-	app.Managers.DatabaseManager().Db.Delete(&topic)
+	tx.First(&topic)
+	tx.Delete(&topic)
 	app.Managers.MemoryManager().Del(fmt.Sprintf("city::%s", topic.Id))
 	go app.Managers.PushManager().PushToGroup("topics/delete", topic.SpaceId, updates_topics.Update{Topic: topic},
 		[]models.Client{
@@ -53,16 +54,16 @@ func delete(app *runtime.App, input inputs_topics.DeleteInput, info models.Info)
 	return outputs_topics.DeleteOutput{Topic: topic}, nil
 }
 
-func get(app *runtime.App, input inputs_topics.GetInput, info models.Info) (any, error) {
+func get(app *runtime.App, tx *gorm.DB, input inputs_topics.GetInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
-	app.Managers.DatabaseManager().Db.First(&space)
+	tx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
-	app.Managers.DatabaseManager().Db.First(&topic)
+	tx.First(&topic)
 	if space.IsPublic {
 		return outputs_topics.GetOutput{Topic: topic}, nil
 	}
 	member := models.Member{}
-	err := app.Managers.DatabaseManager().Db.Where("space_id = ?", space.Id).Where("user_id = ?", info.User.Id).First(&member).Error
+	err := tx.Where("space_id = ?", space.Id).Where("user_id = ?", info.User.Id).First(&member).Error
 	if err != nil {
 		return nil, errors.New("access to space denied")
 	}
@@ -71,7 +72,7 @@ func get(app *runtime.App, input inputs_topics.GetInput, info models.Info) (any,
 
 var sendTemplate = "topics/send"
 
-func send(app *runtime.App, input inputs_topics.SendInput, info models.Info) (any, error) {
+func send(app *runtime.App, tx *gorm.DB, input inputs_topics.SendInput, info models.Info) (any, error) {
 	if input.Type == "broadcast" {
 		var p = updates_topics.Send{Action: "broadcast", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
 		app.Managers.PushManager().PushToGroup(sendTemplate, info.Member.SpaceId, p,
