@@ -3,7 +3,7 @@ package inputs_topics
 type SendInput struct {
 	Data     string `json:"data" validate:"required"`
 	RecvId   string `json:"recvId"`
-	MemberId string `json:"workerId"`
+	MemberId string `json:"memberId"`
 	SpaceId  string `json:"spaceId" validate:"required"`
 	TopicId  string `json:"topicId" validate:"required"`
 	Type     string `json:"type" validate:"required"`

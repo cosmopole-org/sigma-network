@@ -1,7 +1,7 @@
 package inputs_spaces
 
 type RemoveMemberInput struct {
-	UserId   string `json:"userId" validate:"required"`
+	MemberId string `json:"memberId" validate:"required"`
 	SpaceId  string `json:"spaceId" validate:"required"`
 }
 

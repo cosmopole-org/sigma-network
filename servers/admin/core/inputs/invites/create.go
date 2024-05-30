@@ -1,7 +1,7 @@
 package inputs_invites
 
 type CreateInput struct {
-	UserId  string `json:"humanId" validate:"required"`
+	UserId  string `json:"userId" validate:"required"`
 	SpaceId string `json:"spaceId" validate:"required"`
 }
 

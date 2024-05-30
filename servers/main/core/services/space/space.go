@@ -22,10 +22,30 @@ func addMember(app *runtime.App, tx *gorm.DB, input inputs_spaces.AddMemberInput
 	if err != nil {
 		return nil, err
 	}
-	member := models.Member{UserId: input.UserId, SpaceId: info.Member.SpaceId, TopicIds: "*", Metadata: ""}
+	member := models.Member{Id: utils.SecureUniqueId(app.AppId), UserId: input.UserId, SpaceId: info.Member.SpaceId, TopicIds: "*", Metadata: ""}
 	tx.Create(&member)
 	app.Managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	go app.Managers.PushManager().PushToGroup("workers/create", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member},
+	go app.Managers.PushManager().PushToGroup("spaces/addMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member},
+		[]models.Client{
+			{UserId: info.User.Id},
+		})
+	return outputs_spaces.AddMemberOutput{Member: member}, nil
+}
+
+func removeMember(app *runtime.App, tx *gorm.DB, input inputs_spaces.RemoveMemberInput, info models.Info) (any, error) {
+	admin := models.Admin{}
+	err := tx.Where("space_id = ?", info.Member.SpaceId).Where("user_id = ?", info.User.Id).First(&admin).Error
+	if err != nil {
+		return nil, err
+	}
+	member := models.Member{Id: input.MemberId}
+	err2 := tx.First(&member).Error
+	if err2 != nil {
+		return nil, err2
+	}
+	tx.Delete(&member)
+	app.Managers.MemoryManager().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
+	go app.Managers.PushManager().PushToGroup("spaces/removeMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member},
 		[]models.Client{
 			{UserId: info.User.Id},
 		})
@@ -50,7 +70,12 @@ func update(app *runtime.App, tx *gorm.DB, input inputs_spaces.UpdateInput, info
 	if err != nil {
 		return nil, err
 	}
-	space := models.Space{Id: input.SpaceId, Title: input.Title, Avatar: input.Avatar, Tag: input.Tag, IsPublic: input.IsPublic}
+	space := models.Space{Id: input.SpaceId}
+	tx.First(&space)
+	space.Title = input.Title
+	space.Avatar = input.Avatar
+	space.Tag = input.Tag
+	space.IsPublic = input.IsPublic
 	tx.Save(&space)
 	go app.Managers.PushManager().PushToGroup("spaces/update", space.Id, updates_spaces.Update{Space: space},
 		[]models.Client{
@@ -171,6 +196,14 @@ func CreateSpaceService(app *runtime.App, openToNet bool) {
 		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
 		true,
 		addMember,
+	))
+	app.Services.AddAction(runtime.CreateAction(
+		app,
+		"/spaces/removeMember",
+		runtime.CreateCk(true, true, false),
+		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		true,
+		removeMember,
 	))
 }
 

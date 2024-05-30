@@ -7,49 +7,8 @@
 	},
 	"item": [
 		{
-			"name": "humans",
+			"name": "users",
 			"item": [
-				{
-					"name": "signup",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"clientCode\", jsonData.pending.clientCode);",
-									"postman.setEnvironmentVariable(\"verifyCode\", jsonData.pending.verifyCode);"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan11933\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/humans/signup",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"humans",
-								"signup"
-							]
-						}
-					},
-					"response": []
-				},
 				{
 					"name": "authenticate",
 					"event": [
@@ -75,7 +34,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"keyhan1153\"\n}",
+							"raw": "{\n    \n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -83,99 +42,13 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/humans/authenticate",
+							"raw": "{{server}}/users/authenticate",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"humans",
+								"users",
 								"authenticate"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "verify",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"if (jsonData.session) {",
-									"    postman.setEnvironmentVariable(\"token\", jsonData.session.token);",
-									"    postman.setEnvironmentVariable(\"humanId\", jsonData.human.id);",
-									"}",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"clientCode\": \"{{clientCode}}\",\n    \"verifyCode\": \"{{verifyCode}}\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/humans/verify",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"humans",
-								"verify"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "complete",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"if (jsonData.session) {",
-									"    postman.setEnvironmentVariable(\"token\", jsonData.session.token);",
-									"    postman.setEnvironmentVariable(\"humanId\", jsonData.human.id);",
-									"}",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"clientCode\": \"{{clientCode}}\",\n    \"verifyCode\": \"{{verifyCode}}\",\n    \"firstName\": \"Keyhan\",\n    \"lastName\": \"Mohammadi\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/humans/complete",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"humans",
-								"complete"
 							]
 						}
 					},
@@ -206,7 +79,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"Tim\",\n    \"lastName\": \"Kasperian\"\n}",
+							"raw": "{\n    \"name\": \"Tim\",\n    \"avatar\": \"2\",\n    \"username\": \"kasperius3\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -214,13 +87,108 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/humans/update",
+							"raw": "{{server}}/users/update",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"humans",
+								"users",
 								"update"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/users/delete",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users",
+								"delete"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"if (jsonData.session) {",
+									"    postman.setEnvironmentVariable(\"token\", jsonData.session.token);",
+									"    postman.setEnvironmentVariable(\"humanId\", jsonData.user.id);",
+									"}",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"kasperius\",\n    \"secret\": \"123\",\n    \"name\": \"keyhan m\",\n    \"avatar\": \"1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/users/create",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"users",
+								"create"
 							]
 						}
 					},
@@ -243,12 +211,12 @@
 							}
 						],
 						"url": {
-							"raw": "{{server}}/humans/get?userId={{humanId}}",
+							"raw": "{{server}}/users/get?userId={{humanId}}",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"humans",
+								"users",
 								"get"
 							],
 							"query": [
@@ -264,20 +232,21 @@
 			]
 		},
 		{
-			"name": "towers",
+			"name": "spaces",
 			"item": [
 				{
-					"name": "create",
+					"name": "addMember",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"towerId\", jsonData.tower.id);",
+									"postman.setEnvironmentVariable(\"memberId\", jsonData.member.id);",
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -292,7 +261,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"test tower\",\n    \"avatarId\": 123,\n    \"isPublic\": true\n}",
+							"raw": "{\n    \"userId\": \"{{humanId}}\",\n    \"spaceId\": \"{{towerId}}\",\n    \"metadata\": \"empty\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -300,13 +269,61 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/towers/create",
+							"raw": "{{server}}/spaces/addMember",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"towers",
-								"create"
+								"spaces",
+								"addMember"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "removeMember",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"towerId\", jsonData.space.id);",
+									"postman.setEnvironmentVariable(\"memberId\", jsonData.member.id);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"memberId\": \"{{memberId}}\",\n    \"spaceId\": \"{{towerId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/spaces/removeMember",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"spaces",
+								"removeMember"
 							]
 						}
 					},
@@ -339,7 +356,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"towerId\": {{towerId}}\n}",
+							"raw": "{\n    \"spaceId\": \"{{towerId}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -347,12 +364,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/towers/join",
+							"raw": "{{server}}/spaces/join",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"towers",
+								"spaces",
 								"join"
 							]
 						}
@@ -368,7 +385,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -383,7 +401,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"towerId\": {{towerId}},\n    \"name\": \"test tower updated\",\n    \"avatarId\": 0,\n    \"isPublic\": true\n}",
+							"raw": "{\n    \"spaceId\": \"{{towerId}}\",\n    \"title\": \"test tower updated\",\n    \"avatar\": \"0\",\n    \"isPublic\": true,\n    \"tag\": \"kasperiusHome\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -391,12 +409,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/towers/update",
+							"raw": "{{server}}/spaces/update",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"towers",
+								"spaces",
 								"update"
 							]
 						}
@@ -412,7 +430,8 @@
 								"exec": [
 									""
 								],
-								"type": "text/javascript"
+								"type": "text/javascript",
+								"packages": {}
 							}
 						}
 					],
@@ -427,7 +446,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"towerId\": {{towerId}}\n}",
+							"raw": "{\n    \"spaceId\": \"{{towerId}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -435,12 +454,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/towers/delete",
+							"raw": "{{server}}/spaces/delete",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"towers",
+								"spaces",
 								"delete"
 							]
 						}
@@ -464,389 +483,17 @@
 							}
 						],
 						"url": {
-							"raw": "{{server}}/towers/get?towerId={{towerId}}",
+							"raw": "{{server}}/spaces/get?spaceId={{towerId}}",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"towers",
+								"spaces",
 								"get"
 							],
 							"query": [
 								{
-									"key": "towerId",
-									"value": "{{towerId}}"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "invites",
-			"item": [
-				{
-					"name": "create",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"inviteId\", jsonData.invite.id);",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"humanId\": {{humanId}},\n    \"towerId\": {{towerId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/invites/create",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"invites",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "accept",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"inviteId\": 8\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/invites/accept",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"invites",
-								"accept"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "decline",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"inviteId\": {{inviteId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/invites/decline",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"invites",
-								"decline"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "cancel",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"inviteId\": {{inviteId}},\n    \"towerId\": {{towerId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/invites/cancel",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"invites",
-								"cancel"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "rooms",
-			"item": [
-				{
-					"name": "create",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"roomId\", jsonData.room.id);",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"test room\",\n    \"avatarId\": 123,\n    \"towerId\": {{towerId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/rooms/create",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"rooms",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "update",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"roomId\": {{roomId}},\n    \"name\": \"test room updated\",\n    \"avatarId\": 12,\n    \"towerId\": {{towerId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/rooms/update",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"rooms",
-								"update"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "delete",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							},
-							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"roomId\": {{roomId}},\n    \"towerId\": {{towerId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/rooms/delete",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"rooms",
-								"delete"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "get",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{server}}/rooms/get?roomId={{roomId}}&towerId={{towerId}}",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"rooms",
-								"get"
-							],
-							"query": [
-								{
-									"key": "roomId",
-									"value": "{{roomId}}"
-								},
-								{
-									"key": "towerId",
+									"key": "spaceId",
 									"value": "{{towerId}}"
 								}
 							]
@@ -854,226 +501,6 @@
 					},
 					"response": []
 				},
-				{
-					"name": "send",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"type\": \"broadcast\",\n    \"workerId\": {{workerId}},\n    \"data\": \"{}\",\n    \"userId\": 61,\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/rooms/send",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"rooms",
-								"send"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "machines",
-			"item": [
-				{
-					"name": "create",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"machineId\", jsonData.machine.id);",
-									"postman.setEnvironmentVariable(\"machineToken\", jsonData.session.token);",
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"name\": \"test machine\",\n    \"avatarId\": 456\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/machines/create",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"machines",
-								"create"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "update",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"machineId\": {{machineId}},\n    \"name\": \"test machine updated\",\n    \"avatarId\": 0\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/machines/update",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"machines",
-								"update"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "delete",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"machineId\": {{machineId}}\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{server}}/machines/delete",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"machines",
-								"delete"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "get",
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "token",
-								"value": "{{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{server}}/machines/get?machineId={{machineId}}",
-							"host": [
-								"{{server}}"
-							],
-							"path": [
-								"machines",
-								"get"
-							],
-							"query": [
-								{
-									"key": "machineId",
-									"value": "{{machineId}}"
-								}
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "workers",
-			"item": [
 				{
 					"name": "create",
 					"event": [
@@ -1120,6 +547,245 @@
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "invites",
+			"item": [
+				{
+					"name": "create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"inviteId\", jsonData.invite.id);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{humanId}}\",\n    \"spaceId\": \"{{towerId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/invites/create",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"invites",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "accept",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inviteId\": \"{{inviteId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/invites/accept",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"invites",
+								"accept"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "decline",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inviteId\": \"{{inviteId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/invites/decline",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"invites",
+								"decline"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cancel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"inviteId\": \"{{inviteId}}\",\n    \"spaceId\": \"{{towerId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/invites/cancel",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"invites",
+								"cancel"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "topics",
+			"item": [
+				{
+					"name": "create",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"roomId\", jsonData.topic.id);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"test room\",\n    \"avatar\": \"123\",\n    \"spaceId\": \"{{towerId}}\",\n    \"metadata\": \"empty\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/topics/create",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"topics",
+								"create"
+							]
+						}
+					},
+					"response": []
 				},
 				{
 					"name": "update",
@@ -1142,11 +808,16 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "tower_id",
+								"value": "{{towerId}}",
+								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"metadata\": \"{ \\\"hello\\\": \\\"world 2\\\" }\",\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
+							"raw": "{\n    \"topicId\": \"{{roomId}}\",\n    \"title\": \"test room updated\",\n    \"avatar\": \"12\",\n    \"spaceId\": \"{{towerId}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1154,12 +825,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/workers/update",
+							"raw": "{{server}}/topics/update",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"workers",
+								"topics",
 								"update"
 							]
 						}
@@ -1191,7 +862,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"workerId\": {{workerId}},\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
+							"raw": "{\n    \"topicId\": \"{{roomId}}\",\n    \"spaceId\": \"{{towerId}}\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1199,12 +870,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/workers/delete",
+							"raw": "{{server}}/topics/delete",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"workers",
+								"topics",
 								"delete"
 							]
 						}
@@ -1223,23 +894,68 @@
 							}
 						],
 						"url": {
-							"raw": "{{server}}/workers/read?towerId={{towerId}}&roomId={{roomId}}",
+							"raw": "{{server}}/topics/get?topicId={{roomId}}&spaceId={{towerId}}",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"workers",
-								"read"
+								"topics",
+								"get"
 							],
 							"query": [
 								{
-									"key": "towerId",
-									"value": "{{towerId}}"
+									"key": "topicId",
+									"value": "{{roomId}}"
 								},
 								{
-									"key": "roomId",
-									"value": "{{roomId}}"
+									"key": "spaceId",
+									"value": "{{towerId}}"
 								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "send",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"broadcast\",\n    \"data\": \"{}\",\n    \"recvId\": \"{{humanId}}\",\n    \"spaceId\": \"{{towerId}}\",\n    \"topicId\": \"{{roomId}}\",\n    \"memberId\": \"{{memberId}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{server}}/topics/send",
+							"host": [
+								"{{server}}"
+							],
+							"path": [
+								"topics",
+								"send"
 							]
 						}
 					},

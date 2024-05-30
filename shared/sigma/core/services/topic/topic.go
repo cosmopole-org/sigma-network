@@ -31,7 +31,10 @@ func create(app *runtime.App, tx *gorm.DB, input inputs_topics.CreateInput, info
 func update(app *runtime.App, tx *gorm.DB, input inputs_topics.UpdateInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	tx.First(&space)
-	topic := models.Topic{Id: input.TopicId, Title: input.Title, Avatar: input.Avatar}
+	topic := models.Topic{Id: input.TopicId}
+	tx.First(&topic)
+	topic.Title = input.Title
+	topic.Avatar = input.Avatar
 	tx.Save(&topic)
 	go app.Managers.PushManager().PushToGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: topic},
 		[]models.Client{
@@ -44,7 +47,10 @@ func delete(app *runtime.App, tx *gorm.DB, input inputs_topics.DeleteInput, info
 	space := models.Space{Id: info.Member.SpaceId}
 	tx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
-	tx.First(&topic)
+	err := tx.First(&topic).Error
+	if err != nil {
+		return nil, err
+	}
 	tx.Delete(&topic)
 	app.Managers.MemoryManager().Del(fmt.Sprintf("city::%s", topic.Id))
 	go app.Managers.PushManager().PushToGroup("topics/delete", topic.SpaceId, updates_topics.Update{Topic: topic},
