@@ -1,4 +1,4 @@
-create function towers_get(humanid bigint, towerid bigint)
+create function spaces_get(humanid bigint, spaceid bigint)
 		returns table (
 			t_id         bigint,
 			t_name       text,
@@ -14,13 +14,13 @@ create function towers_get(humanid bigint, towerid bigint)
 			m_id         bigint;
 			org          text;
 		begin
-			select id, is_public, name, avatar_id, origin into t_id, t_i_p, t_name, t_avatar_id, org from tower where id = towerid limit 1;
+			select id, is_public, name, avatar_id, origin into t_id, t_i_p, t_name, t_avatar_id, org from space where id = spaceid limit 1;
 			if t_i_p = TRUE then				
 				return query select t_id, t_name, t_avatar_id, t_i_p, org;
 			else
-				select id into m_id from member where human_id = humanid and tower_id = towerid;
+				select id into m_id from member where human_id = humanid and space_id = spaceid;
 				if not found then
-					raise exception 'access to tower denied';
+					raise exception 'access to space denied';
 				else
 					return query select t_id, t_name, t_avatar_id, t_i_p, org;
 				end if;

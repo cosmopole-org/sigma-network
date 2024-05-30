@@ -1,4 +1,4 @@
-create function rooms_get(humanid bigint, towerid bigint, roomid bigint)
+create function topics_get(humanid bigint, spaceid bigint, topicid bigint)
 		returns table (
 			r_id         bigint,
 			r_name       text,
@@ -13,25 +13,25 @@ create function rooms_get(humanid bigint, towerid bigint, roomid bigint)
 			m_id         bigint;
 			org          text;
 		begin
-			select is_public into t_i_p from tower where id = towerid limit 1;
+			select is_public into t_i_p from space where id = spaceid limit 1;
 			if not found then
-				raise exception 'tower not found';
+				raise exception 'space not found';
 			else
 				if t_i_p = TRUE then
-					select id, name, avatar_id, origin into r_id, r_name, r_avatar_id, org from room where id = roomid and tower_id = towerid limit 1;
+					select id, name, avatar_id, origin into r_id, r_name, r_avatar_id, org from topic where id = topicid and space_id = spaceid limit 1;
 					if not found then
-						raise exception 'room not found';
+						raise exception 'topic not found';
 					else
 						return query select r_id, r_name, r_avatar_id, org;
 					end if;
 				else
-					select id into m_id from member where human_id = humanid and tower_id = towerid;
+					select id into m_id from member where human_id = humanid and space_id = spaceid;
 					if not found then
-						raise exception 'access to tower denied';
+						raise exception 'access to space denied';
 					else
-					    select id, name, avatar_id, origin into r_id, r_name, r_avatar_id, org from room where id = roomid and tower_id = towerid limit 1;
+					    select id, name, avatar_id, origin into r_id, r_name, r_avatar_id, org from topic where id = topicid and space_id = spaceid limit 1;
 						if not found then
-							raise exception 'room not found';
+							raise exception 'topic not found';
 						else
 							return query select r_id, r_name, r_avatar_id, org;
 						end if;

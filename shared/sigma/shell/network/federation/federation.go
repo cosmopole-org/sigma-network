@@ -3,11 +3,11 @@ package shell_federation
 import (
 	"encoding/json"
 	"sigma/main/core/models"
+	outputs_invites "sigma/main/core/outputs/invites"
+	outputs_spaces "sigma/main/core/outputs/spaces"
 	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	"strings"
-
-	pb "sigma/main/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -40,70 +40,53 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 	if payload.IsResponse {
 		dataArr := strings.Split(payload.Key, " ")
 		if dataArr[0] == "/invites/accept" || dataArr[0] == "/spaces/join" {
-			var member *pb.Member
+			var member *models.Member
 			if dataArr[0] == "/invites/accept" {
-				var memberRes pb.InviteAcceptOutput
+				var memberRes outputs_invites.AcceptOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
 					utils.Log(5, err2)
 					return
 				}
-				member = memberRes.Member
+				member = &memberRes.Member
 			} else if dataArr[0] == "/spaces/join" {
-				var memberRes pb.SpaceJoinOutput
+				var memberRes outputs_spaces.JoinOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
 					utils.Log(5, err2)
 					return
 				}
-				member = memberRes.Member
+				member = &memberRes.Member
 			}
 			if member != nil {
-				var query = `
-			insert into member
-			(
-				human_id,
-				space_id,
-				origin,
-				user_origin
-			) values (?, ?, ?, ?)
-			returning id;
-		`
-				var memberId int64
-				if err := fed.app.Managers.DatabaseManager().Db.Raw(
-					query, member.UserId, member.SpaceId, channelId, fed.app.AppId,
-				).Scan(&memberId); err != nil {
-					utils.Log(5, err)
-					return
-				}
-				fed.app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId, fed.app.AppId)
+				member.Id = utils.SecureUniqueId(fed.app.AppId) + "_" + channelId
+				fed.app.Managers.DatabaseManager().Db.Create(member)
+				fed.app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
 			}
 		}
-		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, fed.app.AppId, payload.Data, payload.RequestId, true)
+		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, payload.Data, payload.RequestId, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			fed.app.Managers.PushManager().PushToUser(payload.Key[len("update "):], payload.UserId, fed.app.AppId, payload.Data, "", true)
+			fed.app.Managers.PushManager().PushToUser(payload.Key[len("update "):], payload.UserId, payload.Data, "", true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			fed.app.Managers.PushManager().PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
+			fed.app.Managers.PushManager().PushToGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, payload.Exceptions)
 		} else {
 			action := fed.app.Services.GetAction(payload.Key)
 			check := action.Check
-			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, channelId, payload.SpaceId, payload.TopicId)
-			if check.Space && location.SpaceId == 0 {
+			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
+			if check.Space && location.SpaceId == "" {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
 					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
+			member := models.Member{}
+			fed.app.Managers.DatabaseManager().Db.Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member)
 			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Info{
-				UserId:     payload.UserId,
-				UserType:   "human",
-				SpaceId:    location.SpaceId,
-				TopicId:    location.TopicId,
-				WorkerId:   0,
-				UserOrigin: channelId,
+				User:   models.User{Id: payload.UserId},
+				Member: member,
 			})
 			if err != nil {
 				utils.Log(5, err)

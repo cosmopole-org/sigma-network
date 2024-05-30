@@ -1,14 +1,13 @@
 package shell_federation
 
 import (
-	"context"
 	"encoding/json"
 	"sigma/admin/core/models"
+	outputs_invites "sigma/admin/core/outputs/invites"
+	outputs_spaces "sigma/admin/core/outputs/spaces"
 	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 	"strings"
-
-	pb "sigma/admin/core/models/grpc"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -16,7 +15,7 @@ import (
 type FedNet struct {
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
-	app   *runtime.App
+	app         *runtime.App
 	fed         bool
 }
 
@@ -40,71 +39,54 @@ func (fed *FedNet) LoadFedNet(f *fiber.App) {
 func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 	if payload.IsResponse {
 		dataArr := strings.Split(payload.Key, " ")
-		if dataArr[0] == "/invites/accept" || dataArr[0] == "/towers/join" {
-			var member *pb.Member
+		if dataArr[0] == "/invites/accept" || dataArr[0] == "/spaces/join" {
+			var member *models.Member
 			if dataArr[0] == "/invites/accept" {
-				var memberRes pb.InviteAcceptOutput
+				var memberRes outputs_invites.AcceptOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
 					utils.Log(5, err2)
 					return
 				}
-				member = memberRes.Member
-			} else if dataArr[0] == "/towers/join" {
-				var memberRes pb.TowerJoinOutput
+				member = &memberRes.Member
+			} else if dataArr[0] == "/spaces/join" {
+				var memberRes outputs_spaces.JoinOutput
 				err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 				if err2 != nil {
 					utils.Log(5, err2)
 					return
 				}
-				member = memberRes.Member
+				member = &memberRes.Member
 			}
 			if member != nil {
-				var query = `
-			insert into member
-			(
-				human_id,
-				tower_id,
-				origin,
-				user_origin
-			) values ($1, $2, $3, $4)
-			returning id;
-		`
-				var memberId int64
-				if err := fed.app.Managers.DatabaseManager().Db.QueryRow(
-					context.Background(), query, member.HumanId, member.TowerId, channelId, fed.app.AppId,
-				).Scan(&memberId); err != nil {
-					utils.Log(5, err)
-					return
-				}
-				fed.app.Managers.PushManager().JoinGroup(member.TowerId, member.HumanId, fed.app.AppId)
+				member.Id = utils.SecureUniqueId(fed.app.AppId) + "_" + channelId
+				fed.app.Managers.DatabaseManager().Db.Create(member)
+				fed.app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
 			}
 		}
-		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, fed.app.AppId, payload.Data, payload.RequestId, true)
+		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, payload.Data, payload.RequestId, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			fed.app.Managers.PushManager().PushToUser(payload.Key[len("update "):], payload.UserId, fed.app.AppId, payload.Data, "", true)
+			fed.app.Managers.PushManager().PushToUser(payload.Key[len("update "):], payload.UserId, payload.Data, "", true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			fed.app.Managers.PushManager().PushToGroup(payload.Key[len("groupUpdate "):], payload.GroupId, payload.Data, payload.Exceptions)
+			fed.app.Managers.PushManager().PushToGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, payload.Exceptions)
 		} else {
 			action := fed.app.Services.GetAction(payload.Key)
 			check := action.Check
-			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, channelId, payload.TowerId, payload.RoomId)
-			if check.Tower && location.TowerId == 0 {
+			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
+			if check.Space && location.SpaceId == "" {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
 					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
 				return
 			}
-			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Assistant{
-				UserId:     payload.UserId,
-				UserType:   "human",
-				TowerId:    location.TowerId,
-				RoomId:     location.RoomId,
-				WorkerId:   0,
-				UserOrigin: channelId,
+			member := models.Member{}
+			fed.app.Managers.DatabaseManager().Db.Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member)
+			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Info{
+				User:   models.User{Id: payload.UserId},
+				Member: member,
 			})
 			if err != nil {
 				utils.Log(5, err)

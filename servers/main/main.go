@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
 )
 
 var quit = make(chan struct{})
@@ -33,10 +34,12 @@ func main() {
 		ReportCaller: false,
 	}
 
+	dsn := "host=localhost user=postgres password=postgres dbname=sigma3 port=5432 sslmode=disable"
+
 	sigmaApp := sigma.New(
 		os.Getenv("FED_ORIGIN"),
 		shell.Config{
-			DbUri:       os.Getenv("POSTGRES_URI"),
+			DbConn:      postgres.Open(dsn),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  os.Getenv("FEDERATIVE") == "true",

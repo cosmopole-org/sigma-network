@@ -26,11 +26,6 @@ func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) 
 			}
 			var lengthOfSubject = len(body)
 
-			originHeader := c.GetReqHeaders()["Origin"]
-			var origin = ""
-			if originHeader != nil {
-				origin = originHeader[0]
-			}
 			var token = ""
 			tokenHeader := c.GetReqHeaders()["Token"]
 			if tokenHeader != nil {
@@ -90,13 +85,7 @@ func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) 
 
 			if check.User {
 				var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
-				var creature = ""
-				if userType == 1 {
-					creature = "human"
-				} else if userType == 2 {
-					creature = "machine"
-				}
-				if userId > 0 {
+				if userId != "" {
 					if check.Space {
 						var spaceId interface{}
 						spaceId, tOk := data["spaceId"]
@@ -113,8 +102,8 @@ func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) 
 						if !wOk {
 							workerId = 0
 						}
-						var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, creature, origin, spaceId.(int64), topicId.(int64), workerId.(int64))
-						if location.SpaceId > 0 {
+						var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, spaceId.(string), topicId.(string), workerId.(string))
+						if location.SpaceId != "" {
 							return doAction()
 						} else {
 							return c.Status(fiber.StatusForbidden).JSON(utils.BuildErrorJson("access denied"))

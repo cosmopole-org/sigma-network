@@ -17,7 +17,7 @@ type Pusher struct {
 }
 
 func (p *Pusher) PushToUser(key string, userId string, data any, requestId string, alreadySerialized bool) {
-	userOrigin := strings.Split(userId, "@")[1]
+	userOrigin := strings.Split(userId, "_")[1]
 	if userOrigin == p.appId {
 		conn := p.Clients[userId]
 		if conn != nil {
@@ -73,7 +73,7 @@ func (p *Pusher) PushToGroup(key string, groupId string, data any, exceptions []
 		var foreignersMap = map[string][]models.Client{}
 		for t := range group.IterBuffered() {
 			userId := t.Val.UserId
-			userOrigin := strings.Split(userId, "@")[1]
+			userOrigin := strings.Split(userId, "_")[1]
 			if userOrigin == p.appId {
 				if !excepDict[t.Key] {
 					var conn = p.Clients[userId]
@@ -96,14 +96,14 @@ func (p *Pusher) PushToGroup(key string, groupId string, data any, exceptions []
 	}
 }
 
-func (p *Pusher) JoinGroup(groupId string, userId string, userOrigin string) {
+func (p *Pusher) JoinGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
 		g.Set(userId, models.Client{UserId: userId})
 	}
 }
 
-func (p *Pusher) LeaveGroup(groupId string, userId string, userOrigin string) {
+func (p *Pusher) LeaveGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
 		g.Remove(userId)

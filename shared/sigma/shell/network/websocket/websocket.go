@@ -51,7 +51,7 @@ func (ws *WsServer) EnableEndpoint(key string) {
 
 func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 	httpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
-		var uid int64 = 0
+		var uid string = ""
 		for {
 			_, p, err := conn.ReadMessage()
 			if err != nil {
@@ -87,7 +87,7 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 				}
 			}
 		}
-		if uid > 0 {
+		if uid != "" {
 			delete(ws.app.Managers.PushManager().Clients, uid)
 		}
 		utils.Log(5, "socket broken")

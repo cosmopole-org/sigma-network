@@ -13,7 +13,7 @@ type Sigma struct {
 
 func New(appId string, config shell.Config) *Sigma {
 	fedConnector := &shell.FedConnector{}
-	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbUri, config.MemUri, fedConnector.SendToFed, config.LogCb)
+	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbConn, config.MemUri, fedConnector.SendToFed, config.LogCb)
 	sh := shell.New(app, grpcModelLoader, config)
 	fedConnector.Shell = sh
 	s := &Sigma{

@@ -2,21 +2,22 @@ package pusher
 
 import (
 	"encoding/json"
-	"fmt"
 	"sigma/main/core/models"
 	"sigma/main/core/utils"
+	"strings"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
 
 type Pusher struct {
 	appId         string
-	Clients       map[int64]func([]byte)
-	Groups        *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, models.GroupMember]]
+	Clients       map[string]func([]byte)
+	Groups        *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, models.Client]]
 	ToOuterOrigin func(string, models.OriginPacket)
 }
 
-func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data any, requestId string, alreadySerialized bool) {
+func (p *Pusher) PushToUser(key string, userId string, data any, requestId string, alreadySerialized bool) {
+	userOrigin := strings.Split(userId, "_")[1]
 	if userOrigin == p.appId {
 		conn := p.Clients[userId]
 		if conn != nil {
@@ -49,10 +50,10 @@ func (p *Pusher) PushToUser(key string, userId int64, userOrigin string, data an
 	}
 }
 
-func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []models.GroupMember) {
+func (p *Pusher) PushToGroup(key string, groupId string, data any, exceptions []models.Client) {
 	var excepDict = map[string]bool{}
 	for _, exc := range exceptions {
-		excepDict[fmt.Sprintf("%d@%s", exc.UserId, exc.UserOrigin)] = true
+		excepDict[exc.UserId] = true
 	}
 	group, ok := p.RetriveGroup(groupId)
 	if ok {
@@ -69,10 +70,11 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []m
 			message = msg
 		}
 		var packet = []byte("update " + key + " " + string(message))
-		var foreignersMap = map[string][]models.GroupMember{}
+		var foreignersMap = map[string][]models.Client{}
 		for t := range group.IterBuffered() {
 			userId := t.Val.UserId
-			if t.Val.UserOrigin == p.appId {
+			userOrigin := strings.Split(userId, "_")[1]
+			if userOrigin == p.appId {
 				if !excepDict[t.Key] {
 					var conn = p.Clients[userId]
 					if conn != nil {
@@ -80,50 +82,50 @@ func (p *Pusher) PushToGroup(key string, groupId int64, data any, exceptions []m
 					}
 				}
 			} else {
-				if foreignersMap[t.Val.UserOrigin] == nil {
-					foreignersMap[t.Val.UserOrigin] = []models.GroupMember{}
+				if foreignersMap[userOrigin] == nil {
+					foreignersMap[userOrigin] = []models.Client{}
 				}
 				if excepDict[t.Key] {
-					foreignersMap[t.Val.UserOrigin] = append(foreignersMap[t.Val.UserOrigin], t.Val)
+					foreignersMap[userOrigin] = append(foreignersMap[userOrigin], t.Val)
 				}
 			}
 		}
 		for k, v := range foreignersMap {
-			p.ToOuterOrigin(k, models.OriginPacket{IsResponse: false, Key: "groupUpdate " + key, GroupId: groupId, Exceptions: v, Data: string(message)})
+			p.ToOuterOrigin(k, models.OriginPacket{IsResponse: false, Key: "groupUpdate " + key, SpaceId: groupId, Exceptions: v, Data: string(message)})
 		}
 	}
 }
 
-func (p *Pusher) JoinGroup(groupId int64, userId int64, userOrigin string) {
+func (p *Pusher) JoinGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Set(fmt.Sprintf("%d", userId)+"@"+userOrigin, models.GroupMember{UserId: userId, UserOrigin: userOrigin})
+		g.Set(userId, models.Client{UserId: userId})
 	}
 }
 
-func (p *Pusher) LeaveGroup(groupId int64, userId int64, userOrigin string) {
+func (p *Pusher) LeaveGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Remove(fmt.Sprintf("%d", userId) + "@" + userOrigin)
+		g.Remove(userId)
 	}
 }
 
-func (p *Pusher) RetriveGroup(groupId int64) (*cmap.ConcurrentMap[string, models.GroupMember], bool) {
-	ok := p.Groups.Has(fmt.Sprintf("%d", groupId))
+func (p *Pusher) RetriveGroup(groupId string) (*cmap.ConcurrentMap[string, models.Client], bool) {
+	ok := p.Groups.Has(groupId)
 	if !ok {
-		newMap := cmap.New[models.GroupMember]()
-		p.Groups.SetIfAbsent(fmt.Sprintf("%d", groupId), &newMap)
+		newMap := cmap.New[models.Client]()
+		p.Groups.SetIfAbsent(groupId, &newMap)
 	}
-	return p.Groups.Get(fmt.Sprintf("%d", groupId))
+	return p.Groups.Get(groupId)
 }
 
 func CreatePusher(appId string, toOuterOrigin func(string, models.OriginPacket)) *Pusher {
 	utils.Log(5, "running network...")
 	utils.LoadValidationSystem()
-	newMap := cmap.New[*cmap.ConcurrentMap[string, models.GroupMember]]()
+	newMap := cmap.New[*cmap.ConcurrentMap[string, models.Client]]()
 	return &Pusher{
 		appId:         appId,
-		Clients:       map[int64]func([]byte){},
+		Clients:       map[string]func([]byte){},
 		Groups:        &newMap,
 		ToOuterOrigin: toOuterOrigin,
 	}

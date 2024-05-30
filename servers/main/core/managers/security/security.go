@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sigma/main/core/managers/memory"
 	"sigma/main/core/utils"
-	"strconv"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,237 +16,146 @@ type AuthHolder struct {
 type LastPos struct {
 	UserId   int64
 	UserType int32
-	TowerId  int64
-	RoomId   int64
+	SpaceId  int64
+	TopicId  int64
 	WorkerId int64
 }
 
-var authCache = map[string]*LastPos{}
-
-func (sm *SecurityManager) AuthWithToken(token string) (int64, int32) {
+func (sm *SecurityManager) AuthWithToken(token string) (string, string) {
 	var auth = sm.memManager.Get("auth::" + token)
-	var userId int64 = 0
-	var userType int32 = 0
+	var userId string = ""
+	var userType string = ""
 	if auth != "" {
 		var dataParts = strings.Split(auth, "/")
-		i, err := strconv.ParseInt(dataParts[1], 10, 64)
-		if err != nil {
-			utils.Log(5, err)
-		} else {
-			userId = i
-		}
-		if dataParts[0] == "human" {
-			userType = 1
-		} else if dataParts[0] == "machine" {
-			userType = 2
-		}
+		userId = dataParts[1]
+		userType = dataParts[0]
 	}
-	authCache[token] = &LastPos{UserId: userId, UserType: userType, TowerId: 0, RoomId: 0, WorkerId: 0}
 	return userId, userType
 }
 
-func (sm *SecurityManager) Authenticate(headers map[string][]string, ctx *fiber.Ctx) (int64, string, string) {
+func (sm *SecurityManager) Authenticate(headers map[string][]string, ctx *fiber.Ctx) (string, string, string) {
 	if headers["Token"] == nil {
-		return 0, "", ""
+		return "", "", ""
 	}
 	var token = string(headers["Token"][0])
-	var id, creatureType = sm.AuthWithToken(token)
-	if id == 0 {
+	var userId, userType = sm.AuthWithToken(token)
+	if userId == "" {
 		ctx.Status(fiber.ErrForbidden.Code).JSON(utils.BuildErrorJson("token authentication failed"))
-		return 0, "", ""
+		return "", "", ""
 	} else {
-		if creatureType == 1 {
-			return id, "human", token
-		} else if creatureType == 2 {
-			return id, "machine", token
-		}
-		return 0, "", ""
+		return userId, userType, token
 	}
 }
 
 type Location struct {
-	TowerId  int64
-	RoomId   int64
-	WorkerId int64
+	SpaceId  string
+	TopicId  string
+	MemberId string
 }
 
-var memberTemplate = "member::%d::%d::%s"
-var cityTemplate = "city::%d"
+var memberTemplate = "member::%s::%s"
+var cityTemplate = "city::%s"
 
-func (sm *SecurityManager) AuthorizeFedHumanWithProcessed(humanId int64, userOrigin string, towerId int64, roomId int64) Location {
-	if towerId == 0 {
-		return Location{TowerId: 0, RoomId: 0}
+func (sm *SecurityManager) AuthorizeFedHumanWithProcessed(userId string, spaceId string, topicId string) Location {
+	if spaceId == "" {
+		return Location{SpaceId: "", TopicId: ""}
 	}
-	var towerIdStr = fmt.Sprintf("%d", towerId)
-	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, towerId, humanId, userOrigin))
-	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, roomId))
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
+	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, topicId))
 	if memberData != "" {
-		if cityData != "" && cityData == towerIdStr {
-			return Location{TowerId: towerId, RoomId: roomId}
+		if cityData != "" && cityData == spaceId {
+			return Location{SpaceId: spaceId, TopicId: topicId}
 		} else {
-			return Location{TowerId: towerId, RoomId: 0}
+			return Location{SpaceId: spaceId, TopicId: ""}
 		}
 	} else {
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
 }
 
-func (sm *SecurityManager) AuthorizeHumanWithProcessed(token string, humanId int64, userOrigin string, towerId int64, roomId int64) Location {
-	if towerId == 0 {
-		return Location{TowerId: 0, RoomId: 0}
+func (sm *SecurityManager) AuthorizeHumanWithProcessed(token string, userId string, spaceId string, topicId string) Location {
+	if spaceId == "" {
+		return Location{SpaceId: "", TopicId: ""}
 	}
-	var ac = authCache[token]
-	if ac != nil && ac.TowerId == towerId && ac.RoomId == roomId {
-		return Location{TowerId: towerId, RoomId: roomId}
-	}
-	var towerIdStr = fmt.Sprintf("%d", towerId)
-	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, towerId, humanId, userOrigin))
-	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, roomId))
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
+	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, topicId))
 	if memberData != "" {
-		if cityData != "" && cityData == towerIdStr {
-			authCache[token].TowerId = towerId
-			authCache[token].RoomId = roomId
-			return Location{TowerId: towerId, RoomId: roomId}
+		if cityData != "" && cityData == spaceId {
+			return Location{SpaceId: spaceId, TopicId: topicId}
 		} else {
-			authCache[token].TowerId = towerId
-			return Location{TowerId: towerId, RoomId: 0}
+			return Location{SpaceId: spaceId, TopicId: ""}
 		}
 	} else {
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
 }
 
-func (sm *SecurityManager) AuthorizeHuman(token string, humanId int64, headers map[string][]string) Location {
-	if headers["Tower_id"] == nil {
-		return Location{TowerId: 0, RoomId: 0}
+func (sm *SecurityManager) AuthorizeHuman(token string, userId string, headers map[string][]string) Location {
+	if headers["Space_id"] == nil {
+		return Location{SpaceId: "", TopicId: ""}
 	}
-	var towerId = string(headers["Tower_id"][0])
-	tid, err1 := strconv.ParseInt(towerId, 10, 64)
-	if err1 != nil {
-		utils.Log(5, err1)
-		return Location{TowerId: 0, RoomId: 0}
+	var spaceId = string(headers["Space_id"][0])
+	var topicId string = ""
+	if headers["Topic_id"] != nil {
+		topicId = string(headers["Topic_id"][0])
 	}
-	var roid int64 = 0
-	if headers["Room_id"] != nil {
-		rid, err1 := strconv.ParseInt(string(headers["Room_id"][0]), 10, 64)
-		if err1 != nil {
-			utils.Log(5, err1)
-		}
-		roid = rid
-	}
-	var ac = authCache[token]
-	if ac != nil && ac.TowerId == tid && ac.RoomId == roid {
-		return Location{TowerId: tid, RoomId: roid}
-	}
-	var uo = headers["Room_id"]
-	var memberData = sm.memManager.Get(fmt.Sprintf("member::%d::%d::%s", tid, humanId, uo))
-	var cityData = sm.memManager.Get(fmt.Sprintf("city::%d", roid))
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
+	var cityData = sm.memManager.Get(fmt.Sprintf("city::%s", topicId))
 	if memberData != "" {
-		if cityData != "" && cityData == towerId {
-			authCache[token].TowerId = tid
-			authCache[token].RoomId = roid
-			return Location{TowerId: tid, RoomId: roid}
+		if cityData != "" && cityData == spaceId {
+			return Location{SpaceId: spaceId, TopicId: topicId}
 		} else {
-			authCache[token].TowerId = tid
-			return Location{TowerId: tid, RoomId: 0}
+			return Location{SpaceId: spaceId, TopicId: ""}
 		}
 	} else {
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
 }
 
-func (sm *SecurityManager) AuthorizeMachineWithProcessed(token string, machineId int64, wid int64) Location {
-	if wid == 0 {
+func (sm *SecurityManager) AuthorizeMachineWithProcessed(token string, userId string, wid string) Location {
+	if wid == "" {
 		utils.Log(5, utils.BuildErrorJson("worker id is empty"))
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
-	var ac = authCache[token]
-	if ac != nil && ac.WorkerId == wid {
-		return Location{TowerId: ac.TowerId, RoomId: ac.RoomId}
-	}
-	var workerData = sm.memManager.Get(fmt.Sprintf("worker::%d", wid))
+	var workerData = sm.memManager.Get(fmt.Sprintf("worker::%s", wid))
 	if workerData != "" {
 		var dataParts = strings.Split(workerData, "/")
-		var rid = dataParts[0]
-		roomId, err2 := strconv.ParseInt(rid, 10, 64)
-		if err2 != nil {
-			utils.Log(5, err2)
-			return Location{TowerId: 0, RoomId: 0}
+		var topicId = dataParts[0]
+		var machId = dataParts[1]
+		if machId != userId {
+			return Location{SpaceId: "", TopicId: ""}
 		}
-		var mid = dataParts[1]
-		machId, err3 := strconv.ParseInt(mid, 10, 64)
-		if err3 != nil {
-			utils.Log(5, err3)
-			return Location{TowerId: 0, RoomId: 0}
+		var spaceId = sm.memManager.Get(fmt.Sprintf("city::%s", topicId))
+		if spaceId == "" {
+			return Location{SpaceId: "", TopicId: ""}
 		}
-		if machId != machineId {
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		var cityData = sm.memManager.Get(fmt.Sprintf("city::%s", rid))
-		if cityData == "" {
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
-		if err4 != nil {
-			utils.Log(5, err4)
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		authCache[token].TowerId = towerId
-		authCache[token].RoomId = roomId
-		authCache[token].WorkerId = wid
-		return Location{TowerId: towerId, RoomId: roomId, WorkerId: wid}
+		return Location{SpaceId: spaceId, TopicId: topicId, MemberId: wid}
 	} else {
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
 }
 
-func (sm *SecurityManager) AuthorizeMachine(token string, machineId int64, headers map[string][]string) Location {
-	wid, err1 := strconv.ParseInt(string(headers["worker_id"][0]), 10, 64)
-	if err1 != nil {
-		utils.Log(5, err1)
-		return Location{TowerId: 0, RoomId: 0}
-	}
-	var ac = authCache[token]
-	if ac != nil && ac.WorkerId == wid {
-		return Location{TowerId: ac.TowerId, RoomId: ac.RoomId}
-	}
-	var workerData = sm.memManager.Get(fmt.Sprintf("worker::%d", wid))
+func (sm *SecurityManager) AuthorizeMachine(token string, userId string, headers map[string][]string) Location {
+	wid := string(headers["worker_id"][0])
+	var workerData = sm.memManager.Get(fmt.Sprintf("worker::%s", wid))
 	if workerData != "" {
 		var dataParts = strings.Split(workerData, "/")
-		var rid = dataParts[0]
-		roomId, err2 := strconv.ParseInt(rid, 10, 64)
-		if err2 != nil {
-			utils.Log(5, err2)
-			return Location{TowerId: 0, RoomId: 0}
+		var topicId = dataParts[0]
+		var machId = dataParts[1]
+		if machId != userId {
+			return Location{SpaceId: "", TopicId: ""}
 		}
-		var mid = dataParts[1]
-		machId, err3 := strconv.ParseInt(mid, 10, 64)
-		if err3 != nil {
-			utils.Log(5, err3)
-			return Location{TowerId: 0, RoomId: 0}
+		var spaceId = sm.memManager.Get(fmt.Sprintf("city::%s", topicId))
+		if spaceId == "" {
+			return Location{SpaceId: "", TopicId: ""}
 		}
-		if machId != machineId {
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		var cityData = sm.memManager.Get(fmt.Sprintf("city::%s", rid))
-		if cityData == "" {
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		towerId, err4 := strconv.ParseInt(cityData, 10, 64)
-		if err4 != nil {
-			utils.Log(5, err4)
-			return Location{TowerId: 0, RoomId: 0}
-		}
-		authCache[token].TowerId = towerId
-		authCache[token].RoomId = roomId
-		authCache[token].WorkerId = wid
-		return Location{TowerId: towerId, RoomId: roomId, WorkerId: wid}
+		return Location{SpaceId: spaceId, TopicId: topicId, MemberId: wid}
 	} else {
-		return Location{TowerId: 0, RoomId: 0}
+		return Location{SpaceId: "", TopicId: ""}
 	}
 }
 
-func (sm *SecurityManager) HandleLocation(token string, userId int64, userType string, headers map[string][]string) Location {
+func (sm *SecurityManager) HandleLocation(token string, userId string, userType string, headers map[string][]string) Location {
 	var location Location
 	if userType == "human" {
 		location = sm.AuthorizeHuman(token, userId, headers)
@@ -257,10 +165,10 @@ func (sm *SecurityManager) HandleLocation(token string, userId int64, userType s
 	return location
 }
 
-func (sm *SecurityManager) HandleLocationWithProcessed(token string, userId int64, userType string, userOrigin string, towerId int64, roomId int64, workerId int64) Location {
+func (sm *SecurityManager) HandleLocationWithProcessed(token string, userId string, userType string, spaceId string, topicId string, workerId string) Location {
 	var location Location
 	if userType == "human" {
-		location = sm.AuthorizeHumanWithProcessed(token, userId, userOrigin, towerId, roomId)
+		location = sm.AuthorizeHumanWithProcessed(token, userId, spaceId, topicId)
 	} else {
 		location = sm.AuthorizeMachineWithProcessed(token, userId, workerId)
 	}

@@ -3,7 +3,7 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
-	"sigma/admin/core/dtos"
+	"sigma/admin/core/inputs"
 	"sigma/admin/core/models"
 	"sigma/admin/core/utils"
 
@@ -13,8 +13,8 @@ import (
 
 type Meta struct {
 	UserId  int64
-	TowerId int64
-	RoomId  int64
+	SpaceId int64
+	TopicId int64
 }
 
 type IError struct {
@@ -30,7 +30,7 @@ type Action struct {
 	Validate          bool
 	Process           func(*App, interface{}, string, string) (int, any, error)
 	ProcessHonestly   func(*App, interface{}, Meta) (int, any, error)
-	ProcessFederative func(*App, interface{}, models.Assistant) (int, any, error)
+	ProcessFederative func(*App, interface{}, models.Info) (int, any, error)
 }
 
 type Access struct {
@@ -43,8 +43,8 @@ type Access struct {
 
 type Check struct {
 	User  bool `json:"user" validate:"required"`
-	Tower bool `json:"tower" validate:"required"`
-	Room  bool `json:"room" validate:"required"`
+	Space bool `json:"space" validate:"required"`
+	Topic bool `json:"topic" validate:"required"`
 }
 
 type Services struct {
@@ -76,8 +76,8 @@ func AddGrpcLoader(fn func()) {
 	fn()
 }
 
-func CreateCk(user bool, tower bool, room bool) Check {
-	return Check{User: user, Tower: tower, Room: room}
+func CreateCk(user bool, space bool, topic bool) Check {
+	return Check{User: user, Space: space, Topic: topic}
 }
 
 func CreateAc(http bool, ws bool, grpc bool, fed bool, actionType string) Access {
@@ -85,7 +85,7 @@ func CreateAc(http bool, ws bool, grpc bool, fed bool, actionType string) Access
 }
 
 type PreFedPacket struct {
-	UserId int64
+	UserId string
 	Body   any
 }
 
@@ -96,19 +96,17 @@ type PluginFunction struct {
 	Access Access `json:"access" validate:"required"`
 }
 
-func CreateAction[T dtos.IDto](app *App, key string, check Check, access Access, Validate bool, callback func(*App, T, models.Assistant) (any, error)) *Action {
+func CreateAction[T inputs.IInput](app *App, key string, check Check, access Access, Validate bool, callback func(*App, T, models.Info) (any, error)) *Action {
 	return &Action{
 		Key:    key,
 		Access: access,
 		Check:  check,
 		Process: func(app *App, rawInput interface{}, token string, origin string) (int, any, error) {
 			data := new(T)
-			var ctx *fiber.Ctx
 			switch input := rawInput.(type) {
 			case string:
 				json.Unmarshal([]byte(input), data)
 			case *fiber.Ctx:
-				ctx = input
 				form, err := input.MultipartForm()
 				if err == nil {
 					utils.Log(5, form)
@@ -140,17 +138,13 @@ func CreateAction[T dtos.IDto](app *App, key string, check Check, access Access,
 			if !access.Fed || (origin == app.AppId) {
 				if check.User {
 					var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
-					var creature = ""
-					if userType == 1 {
-						creature = "human"
-					} else if userType == 2 {
-						creature = "machine"
-					}
-					if userId > 0 {
-						if check.Tower {
-							var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, creature, origin, (*data).GetTowerId(), (*data).GetRoomId(), (*data).GetWorkerId())
-							if location.TowerId > 0 {
-								result, err := callback(app, (*data), models.CreateAssistant(userId, origin, creature, location.TowerId, location.RoomId, location.WorkerId, ctx))
+					if userId != "" {
+						var user = models.User{Id: userId}
+						if check.Space {
+							var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
+							if location.SpaceId != "" {
+								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
+								result, err := callback(app, (*data), models.Info{User: user, Member: member})
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err
 								}
@@ -159,7 +153,7 @@ func CreateAction[T dtos.IDto](app *App, key string, check Check, access Access,
 								return fiber.StatusForbidden, nil, errors.New("access denied")
 							}
 						} else {
-							result, err := callback(app, *data, models.CreateAssistant(userId, origin, creature, 0, 0, userId, ctx))
+							result, err := callback(app, *data, models.Info{User: user})
 							if err != nil {
 								return fiber.ErrInternalServerError.Code, nil, err
 							}
@@ -169,7 +163,7 @@ func CreateAction[T dtos.IDto](app *App, key string, check Check, access Access,
 						return fiber.StatusForbidden, nil, errors.New("access denied")
 					}
 				} else {
-					result, err := callback(app, *data, models.CreateAssistant(0, "", "", 0, 0, 0, ctx))
+					result, err := callback(app, *data, models.Info{})
 					if err != nil {
 						return fiber.ErrInternalServerError.Code, nil, err
 					}
@@ -178,24 +172,28 @@ func CreateAction[T dtos.IDto](app *App, key string, check Check, access Access,
 			} else {
 				if check.User {
 					var userId, _ = app.Managers.SecurityManager().AuthWithToken(token)
-					if userId > 0 {
+					if userId != "" {
 						return -2, PreFedPacket{UserId: userId, Body: *data}, nil
 					} else {
 						return fiber.ErrInternalServerError.Code, nil, errors.New("access denied")
 					}
 				} else {
-					return -2, PreFedPacket{UserId: 0, Body: *data}, nil
+					return -2, PreFedPacket{UserId: "", Body: *data}, nil
 				}
 			}
 		},
 		ProcessHonestly: func(app *App, data interface{}, m Meta) (int, any, error) {
-			result, err := callback(app, data.(T), models.CreateAssistant(m.UserId, app.AppId, "human", m.TowerId, m.RoomId, 0, nil))
+			var user models.User
+			app.Managers.DatabaseManager().Db.First(&user, m.UserId)
+			var member models.Member
+			app.Managers.DatabaseManager().Db.Where("user_id=?", m.UserId).Where("space_id=?", m.SpaceId).First(&member)
+			result, err := callback(app, data.(T), models.Info{User: user, Member: member})
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}
 			return fiber.StatusOK, result, nil
 		},
-		ProcessFederative: func(app *App, data interface{}, a models.Assistant) (int, any, error) {
+		ProcessFederative: func(app *App, data interface{}, a models.Info) (int, any, error) {
 			result, err := callback(app, data.(T), a)
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err

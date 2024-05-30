@@ -14,8 +14,8 @@ type StorageManager struct {
 	base_manager.BaseManager
 }
 
-func (g *StorageManager) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, roomId int64, key string) error {
-	var dirPath = fmt.Sprintf("%s/%d", storageRoot, roomId)
+func (g *StorageManager) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, topicId int64, key string) error {
+	var dirPath = fmt.Sprintf("%s/%d", storageRoot, topicId)
 	os.MkdirAll(dirPath, os.ModePerm)
 	f, err := fh.Open()
 	if err != nil {

@@ -139,13 +139,11 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 				if check.User {
 					var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
 					if userId != "" {
-						var user models.User
-						app.Managers.DatabaseManager().Db.First(&user, userId)
+						var user = models.User{Id: userId}
 						if check.Space {
 							var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
 							if location.SpaceId != "" {
-								var member models.Member
-								app.Managers.DatabaseManager().Db.Where("user_id=?", userId).Where("space_id=?", location.SpaceId).First(&member)
+								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
 								result, err := callback(app, (*data), models.Info{User: user, Member: member})
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err

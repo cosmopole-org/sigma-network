@@ -63,7 +63,7 @@ func (hs *HttpServer) Enablendpoint(key string) {
 					utils.Log(5, err)
 					return c.Status(fiber.ErrInternalServerError.Code).JSON(utils.BuildErrorJson(err.Error()))
 				}
-				hs.SendToFed(org, models.OriginPacket{IsResponse: false, Key: key, UserId: result.(int64), SpaceId: result.(runtime.PreFedPacket).Body.(inputs.IInput).GetSpaceId(), TopicId: result.(runtime.PreFedPacket).Body.(inputs.IInput).GetTopicId(), Data: string(data), RequestId: requestId})
+				hs.SendToFed(org, models.OriginPacket{IsResponse: false, Key: key, UserId: result.(string), SpaceId: result.(runtime.PreFedPacket).Body.(inputs.IInput).GetSpaceId(), TopicId: result.(runtime.PreFedPacket).Body.(inputs.IInput).GetTopicId(), Data: string(data), RequestId: requestId})
 				return c.Status(fiber.StatusOK).JSON(models.ResponseSimpleMessage{Message: "request to federation queued successfully"})
 			} else if err != nil {
 				return c.Status(statusCode).JSON(utils.BuildErrorJson(err.Error()))

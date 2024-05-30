@@ -1,8 +1,7 @@
 package models
 
 type Invite struct {
-	Id         int64  `json:"id"`
-	HumanId    int64  `json:"humanId"`
-	TowerId    int64  `json:"towerId"`
-	UserOrigin string `json:"userOrigin"`
+	Id      string `json:"id" gorm:"primaryKey;column:id"`
+	UserId  string `json:"humanId" gorm:"column:user_id"`
+	SpaceId string `json:"spaceId" gorm:"column:space_id"`
 }

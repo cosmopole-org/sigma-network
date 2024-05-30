@@ -20,22 +20,7 @@ func (sm *SecurityManager) LoadAccess() {
 	var members []models.Member
 	sm.App.Managers.DatabaseManager().Db.Find(&members)
 	for _, member := range members {
-		sm.App.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId, member.UserOrigin)
-	}
-	var workers []models.Worker
-	sm.App.Managers.DatabaseManager().Db.Find(&workers)
-	topicSet := map[int64]int64{}
-	topicsArr := []int64{}
-	for _, worker := range workers {
-		topicsArr = append(topicsArr, worker.TopicId)
-	}
-	var topics []models.Topic
-	sm.App.Managers.DatabaseManager().Db.Table("topic").Where("id in (?)", topicsArr).Find(&topics)
-	for _, topic := range topics {
-		topicSet[topic.Id] = topic.SpaceId
-	}
-	for _, worker := range workers {
-		sm.App.Managers.PushManager().JoinGroup(topicSet[worker.TopicId], worker.UserId, worker.UserOrigin)
+		sm.App.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
 	}
 }
 

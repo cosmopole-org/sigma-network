@@ -40,10 +40,12 @@ func (s *Managers) SecurityManager() *security.SecurityManager {
 }
 
 func New(appId string, dialector gorm.Dialector, memUri string, storageRoot string, pusherConnector func(s string, op models.OriginPacket)) *Managers {
-	return &Managers{
+	mans := &Managers{
 		dbManager:   database.CreateDatabase(dialector),
 		memManager:  memory.CreateMemory(memUri),
 		crypManager: crypto.CreateCrypto(storageRoot),
 		pushManager: pusher.CreatePusher(appId, pusherConnector),
 	}
+	mans.secManager = security.New(mans.memManager)
+	return mans
 }

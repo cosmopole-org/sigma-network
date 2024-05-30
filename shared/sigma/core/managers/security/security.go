@@ -27,8 +27,8 @@ func (sm *SecurityManager) AuthWithToken(token string) (string, string) {
 	var userType string = ""
 	if auth != "" {
 		var dataParts = strings.Split(auth, "/")
-		userId = dataParts[0]
-		userType = dataParts[1]
+		userId = dataParts[1]
+		userType = dataParts[0]
 	}
 	return userId, userType
 }
@@ -53,38 +53,14 @@ type Location struct {
 	MemberId string
 }
 
-var memberTemplate = "member::%s::%s::%s"
+var memberTemplate = "member::%s::%s"
 var cityTemplate = "city::%s"
 
-func (sm *SecurityManager) AuthorizeFedHumanWithProcessed(uId string, spaceId string, topicId string) Location {
+func (sm *SecurityManager) AuthorizeFedHumanWithProcessed(userId string, spaceId string, topicId string) Location {
 	if spaceId == "" {
 		return Location{SpaceId: "", TopicId: ""}
 	}
-	userIdParts := strings.Split(uId, "@")
-	userId := userIdParts[0]
-	userOrigin := userIdParts[1]
-	var spaceIdStr = fmt.Sprintf("%s", spaceId)
-	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId, userOrigin))
-	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, topicId))
-	if memberData != "" {
-		if cityData != "" && cityData == spaceIdStr {
-			return Location{SpaceId: spaceId, TopicId: topicId}
-		} else {
-			return Location{SpaceId: spaceId, TopicId: ""}
-		}
-	} else {
-		return Location{SpaceId: "", TopicId: ""}
-	}
-}
-
-func (sm *SecurityManager) AuthorizeHumanWithProcessed(token string, uId string, spaceId string, topicId string) Location {
-	if spaceId == "" {
-		return Location{SpaceId: "", TopicId: ""}
-	}
-	userIdParts := strings.Split(uId, "@")
-	userId := userIdParts[0]
-	userOrigin := userIdParts[1]
-	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId, userOrigin))
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
 	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, topicId))
 	if memberData != "" {
 		if cityData != "" && cityData == spaceId {
@@ -97,7 +73,24 @@ func (sm *SecurityManager) AuthorizeHumanWithProcessed(token string, uId string,
 	}
 }
 
-func (sm *SecurityManager) AuthorizeHuman(token string, uId string, headers map[string][]string) Location {
+func (sm *SecurityManager) AuthorizeHumanWithProcessed(token string, userId string, spaceId string, topicId string) Location {
+	if spaceId == "" {
+		return Location{SpaceId: "", TopicId: ""}
+	}
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
+	var cityData = sm.memManager.Get(fmt.Sprintf(cityTemplate, topicId))
+	if memberData != "" {
+		if cityData != "" && cityData == spaceId {
+			return Location{SpaceId: spaceId, TopicId: topicId}
+		} else {
+			return Location{SpaceId: spaceId, TopicId: ""}
+		}
+	} else {
+		return Location{SpaceId: "", TopicId: ""}
+	}
+}
+
+func (sm *SecurityManager) AuthorizeHuman(token string, userId string, headers map[string][]string) Location {
 	if headers["Space_id"] == nil {
 		return Location{SpaceId: "", TopicId: ""}
 	}
@@ -106,10 +99,7 @@ func (sm *SecurityManager) AuthorizeHuman(token string, uId string, headers map[
 	if headers["Topic_id"] != nil {
 		topicId = string(headers["Topic_id"][0])
 	}
-	userIdParts := strings.Split(uId, "@")
-	userId := userIdParts[0]
-	userOrigin := userIdParts[1]
-	var memberData = sm.memManager.Get(fmt.Sprintf("member::%s::%s::%s", spaceId, userId, userOrigin))
+	var memberData = sm.memManager.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
 	var cityData = sm.memManager.Get(fmt.Sprintf("city::%s", topicId))
 	if memberData != "" {
 		if cityData != "" && cityData == spaceId {
@@ -122,7 +112,7 @@ func (sm *SecurityManager) AuthorizeHuman(token string, uId string, headers map[
 	}
 }
 
-func (sm *SecurityManager) AuthorizeMachineWithProcessed(token string, uId string, wid string) Location {
+func (sm *SecurityManager) AuthorizeMachineWithProcessed(token string, userId string, wid string) Location {
 	if wid == "" {
 		utils.Log(5, utils.BuildErrorJson("worker id is empty"))
 		return Location{SpaceId: "", TopicId: ""}
@@ -132,7 +122,7 @@ func (sm *SecurityManager) AuthorizeMachineWithProcessed(token string, uId strin
 		var dataParts = strings.Split(workerData, "/")
 		var topicId = dataParts[0]
 		var machId = dataParts[1]
-		if machId != uId {
+		if machId != userId {
 			return Location{SpaceId: "", TopicId: ""}
 		}
 		var spaceId = sm.memManager.Get(fmt.Sprintf("city::%s", topicId))

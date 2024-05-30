@@ -4,22 +4,22 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"os"
+
+	"github.com/google/uuid"
 )
 
-func SecureUniqueString(n int) (string, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return base64.URLEncoding.EncodeToString(b)[:n], nil
+func SecureUniqueString() string {
+	return uuid.New().String() + "-" + uuid.New().String()
+}
+
+func SecureUniqueId(fed string) string {
+	return uuid.New().String() + "@" + fed
 }
 
 func SecureKeyPairs(savePath string) ([]byte, []byte) {
-	
+
 	os.MkdirAll(savePath, os.ModePerm)
 
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -51,5 +51,5 @@ func SecureKeyPairs(savePath string) ([]byte, []byte) {
 	if err != nil {
 		panic(err)
 	}
-    return privateKeyPEM, publicKeyPEM
+	return privateKeyPEM, publicKeyPEM
 }

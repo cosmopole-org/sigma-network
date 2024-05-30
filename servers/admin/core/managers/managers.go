@@ -7,6 +7,8 @@ import (
 	"sigma/admin/core/managers/pusher"
 	"sigma/admin/core/managers/security"
 	"sigma/admin/core/models"
+
+	"gorm.io/gorm"
 )
 
 type Managers struct {
@@ -37,11 +39,13 @@ func (s *Managers) SecurityManager() *security.SecurityManager {
 	return s.secManager
 }
 
-func New(appId string, dbUri string, memUri string, storageRoot string, pusherConnector func(s string, op models.OriginPacket)) *Managers {
-	return &Managers{
-		dbManager:   database.CreateDatabase(dbUri),
+func New(appId string, dialector gorm.Dialector, memUri string, storageRoot string, pusherConnector func(s string, op models.OriginPacket)) *Managers {
+	mans := &Managers{
+		dbManager:   database.CreateDatabase(dialector),
 		memManager:  memory.CreateMemory(memUri),
 		crypManager: crypto.CreateCrypto(storageRoot),
 		pushManager: pusher.CreatePusher(appId, pusherConnector),
 	}
+	mans.secManager = security.New(mans.memManager)
+	return mans
 }

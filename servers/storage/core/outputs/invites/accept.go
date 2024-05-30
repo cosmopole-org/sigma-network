@@ -1,5 +1,7 @@
 package outputs_invites
 
+import "sigma/storage/core/models"
+
 type AcceptOutput struct {
-	Member any `json:"member"`
+	Member models.Member `json:"member"`
 }

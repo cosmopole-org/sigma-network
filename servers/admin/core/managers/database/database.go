@@ -1,44 +1,43 @@
 package database
 
 import (
-	"context"
+	"log"
 	"os"
 	"sigma/admin/core/utils"
+	"time"
 
-	"github.com/jackc/pgx/v4/log/logrusadapter"
-	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Database struct {
-	Db *pgxpool.Pool
+	Db *gorm.DB
 }
 
-func (d Database) GetDb() *pgxpool.Pool {
+func (d Database) GetDb() *gorm.DB {
 	return d.Db
 }
 
-func CreateDatabase(uri string) *Database {
+func CreateDatabase(dialector gorm.Dialector) *Database {
 	utils.Log(5, "connecting to database...")
 	dbInstance := &Database{}
-	config2, err3 := pgxpool.ParseConfig(uri)
-	if err3 != nil {
-		utils.Log(5, "Unable to parse config: %v\n", err3)
+	newLogger := logger.New(
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		logger.Config{
+			SlowThreshold:             time.Second,   // Slow SQL threshold
+			LogLevel:                  logger.Silent, // Log level
+			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      true,          // Don't include params in the SQL log
+			Colorful:                  true,          // Disable color
+		},
+	)
+	db, err := gorm.Open(dialector, &gorm.Config{
+		Logger: newLogger,
+	})
+	if err != nil {
+		panic("failed to connect database")
 	}
-	var logrusLogger = &logrus.Logger{
-		Out:          os.Stderr,
-		Formatter:    new(logrus.JSONFormatter),
-		Hooks:        make(logrus.LevelHooks),
-		Level:        logrus.InfoLevel,
-		ExitFunc:     os.Exit,
-		ReportCaller: false,
-	}
-	config2.ConnConfig.Logger = logrusadapter.NewLogger(logrusLogger)
-	conn2, err4 := pgxpool.ConnectConfig(context.Background(), config2)
-	if err4 != nil {
-		utils.Log(5, "Unable to connect to database: %v\n", err4)
-	}
-	dbInstance.Db = conn2
+	dbInstance.Db = db
 	return dbInstance
 }
 
@@ -48,10 +47,5 @@ func (db *Database) ExecuteSqlFile(path string) {
 		panic(ioErr.Error())
 	}
 	sqlText := string(c)
-	result4, err4 := db.GetDb().Exec(context.Background(), string(sqlText))
-	if err4 != nil {
-		utils.Log(5, err4)
-	} else {
-		utils.Log(5, result4)
-	}
+	db.GetDb().Raw(string(sqlText))
 }

@@ -10,6 +10,7 @@ import (
 	"sigma/admin/shell/services"
 
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 var wellKnownServers = []string{
@@ -32,7 +33,7 @@ type ServersOutput struct {
 }
 
 type Config struct {
-	DbUri       string
+	DbConn      gorm.Dialector
 	MemUri      string
 	StorageRoot string
 	Federation  bool
@@ -75,6 +76,6 @@ type FedConnector struct {
 	Shell *Shell
 }
 
-func (f *FedConnector) SendToFed (s string, op models.OriginPacket) {
+func (f *FedConnector) SendToFed(s string, op models.OriginPacket) {
 	f.Shell.Managers().NetManager().FedNet.SendInFederation(s, op)
 }

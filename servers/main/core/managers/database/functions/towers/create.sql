@@ -1,4 +1,4 @@
-create or replace function towers_create(humanid bigint, tname varchar(100), tavatarid bigint, ispublic boolean, org text)
+create or replace function spaces_create(humanid bigint, tname varchar(100), tavatarid bigint, ispublic boolean, org text)
 		returns table (
 			m_id 	     bigint,
 			t_id	     bigint
@@ -7,7 +7,7 @@ create or replace function towers_create(humanid bigint, tname varchar(100), tav
 			t_id	     bigint;
 			m_id         bigint;
 		begin
-			insert into tower
+			insert into space
 			(
 				name,
 				avatar_id,
@@ -19,7 +19,7 @@ create or replace function towers_create(humanid bigint, tname varchar(100), tav
 			insert into member
 			(
 				human_id,
-				tower_id,
+				space_id,
 				origin,
 				user_origin
 			) values (humanid, t_id, org, org)

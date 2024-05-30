@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"sigma/admin/core/dtos"
+	"sigma/admin/core/inputs"
 	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 	"strings"
@@ -25,7 +25,7 @@ type GrpcServer struct {
 	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
 
-func CreateConverter[T dtos.IDto](key string) func(interface{}) (any, error) {
+func CreateConverter[T inputs.IInput](key string) func(interface{}) (any, error) {
 	return func(i interface{}) (any, error) {
 		body := new(T)
 		err := mapstructure.Decode(i, body)
