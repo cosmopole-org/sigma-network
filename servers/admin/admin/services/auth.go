@@ -13,35 +13,34 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
 type AuthService struct {
 	managers *managers.Managers
 }
 
-func (authS *AuthService) signin(app *runtime.App, tx *gorm.DB, input inputs_auth.SigninDto, info coreModels.Info) (any, error) {
+func (authS *AuthService) signin(control *runtime.Control, input inputs_auth.SigninDto, info coreModels.Info) (any, error) {
 	god := adminModels.God{}
-	err := tx.Where("username = ?", input.Username).Where("password = ?", input.Password).First(&god).Error
+	err := control.Trx.Where("username = ?", input.Username).Where("password = ?", input.Password).First(&god).Error()
 	if err != nil {
 		return nil, err
 	}
 	session := coreModels.Session{}
-	tx.Where("user_id = ?", god.UserId).First(&session)
+	control.Trx.Where("user_id = ?", god.UserId).First(&session)
 	return outputs_auth.SigninOutput{Token: session.Token}, nil
 }
 
-func (authS *AuthService) updatePass(app *runtime.App, tx *gorm.DB, input inputs_auth.UpdatePassDto, info coreModels.Info) (any, error) {
+func (authS *AuthService) updatePass(control *runtime.Control, input inputs_auth.UpdatePassDto, info coreModels.Info) (any, error) {
 	if len(input.Password) == 0 {
 		return outputs_auth.UpdatePassOutput{}, errors.New("error: invalid password")
 	}
 	god := adminModels.God{}
-	err := tx.Where("user_id = ?", info.User.Id).First(&god).Error
+	err := control.Trx.Where("user_id = ?", info.User.Id).First(&god).Error()
 	if err != nil {
 		return nil, err
 	}
 	god.Password = input.Password
-	tx.Save(&god)
+	control.Trx.Save(&god)
 	return outputs_auth.UpdatePassOutput{}, nil
 }
 

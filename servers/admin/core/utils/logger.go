@@ -1,5 +1,7 @@
 package utils
 
+import "log"
+
 var logCb func(uint32, ...interface{})
 
 func RegisterLoggerCallback(lcb func(uint32, ...interface{})) {
@@ -7,5 +9,9 @@ func RegisterLoggerCallback(lcb func(uint32, ...interface{})) {
 }
 
 func Log(level uint32, content ...interface{}) {
-	logCb(level, content...)
+	if logCb == nil {
+		log.Println(level, content)
+	} else {
+		logCb(level, content...)
+	}
 }

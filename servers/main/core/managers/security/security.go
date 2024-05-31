@@ -2,7 +2,11 @@ package security
 
 import (
 	"fmt"
+	"sigma/main/core/managers/crypto"
 	"sigma/main/core/managers/memory"
+	"sigma/main/core/managers/pusher"
+	"sigma/main/core/managers/storage"
+	"sigma/main/core/models"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -19,6 +23,20 @@ type LastPos struct {
 	SpaceId  int64
 	TopicId  int64
 	WorkerId int64
+}
+
+func (sm *SecurityManager) LoadKeys() {
+	if sm.cryptoManager.FetchKeyPair("server_key") == nil {
+		sm.cryptoManager.GenerateSecureKeyPair("server_key")
+	}
+}
+
+func (sm *SecurityManager) LoadAccess() {
+	var members []models.Member
+	sm.stoManager.Find(&members)
+	for _, member := range members {
+		sm.pushManager.JoinGroup(member.SpaceId, member.UserId)
+	}
 }
 
 func (sm *SecurityManager) AuthWithToken(token string) (string, string) {
@@ -176,9 +194,12 @@ func (sm *SecurityManager) HandleLocationWithProcessed(token string, userId stri
 }
 
 type SecurityManager struct {
-	memManager *memory.Memory
+	stoManager    storage.IGlobStorage
+	memManager    memory.IMemory
+	cryptoManager *crypto.Crypto
+	pushManager   *pusher.Pusher
 }
 
-func New(memManager *memory.Memory) *SecurityManager {
-	return &SecurityManager{memManager: memManager}
+func New(stoManager storage.IGlobStorage, memManager memory.IMemory, cryptoManager *crypto.Crypto, pushManager *pusher.Pusher) *SecurityManager {
+	return &SecurityManager{stoManager: stoManager, memManager: memManager, cryptoManager: cryptoManager, pushManager: pushManager}
 }

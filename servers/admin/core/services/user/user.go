@@ -3,6 +3,7 @@ package services_user
 import (
 	"fmt"
 	inputs_users "sigma/admin/core/inputs/users"
+	"sigma/admin/core/managers"
 	"sigma/admin/core/models"
 	outputs_users "sigma/admin/core/outputs/users"
 	"sigma/admin/core/runtime"
@@ -10,62 +11,67 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
-func authenticate(app *runtime.App, tx *gorm.DB, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
-	_, res, _ := app.Services.CallActionHonestly("/users/get", tx, inputs_users.GetInput{UserId: info.User.Id}, runtime.Meta{UserId: "", SpaceId: "", TopicId: ""})
+type UserService struct {
+	managers managers.ICoreManagers
+}
+
+func (s *UserService) authenticate(control *runtime.Control, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
+	_, res, _ := control.Services.CallActionInternally("/users/get", control, inputs_users.GetInput{UserId: info.User.Id}, runtime.Meta{UserId: "", SpaceId: "", TopicId: ""})
 	return outputs_users.AuthenticateOutput{Authenticated: true, User: res.(outputs_users.GetOutput).User}, nil
 }
 
-func create(app *runtime.App, tx *gorm.DB, input inputs_users.CreateInput, info models.Info) (any, error) {
+func (s *UserService) create(control *runtime.Control, input inputs_users.CreateInput, info models.Info) (any, error) {
 	token := utils.SecureUniqueString()
-	user := models.User{Id: utils.SecureUniqueId(app.AppId), Type: "human", Username: input.Username + "@" + app.AppId, Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
-	tx.Create(&user)
-	session := models.Session{Id: utils.SecureUniqueId(app.AppId), Token: token, UserId: user.Id}
-	tx.Create(&session)
-	app.Managers.MemoryManager().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
+	user := models.User{Id: utils.SecureUniqueId(control.AppId), Type: "human", Username: input.Username + "@" + control.AppId, Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
+	control.Trx.Create(&user)
+	session := models.Session{Id: utils.SecureUniqueId(control.AppId), Token: token, UserId: user.Id}
+	control.Trx.Create(&session)
+	s.managers.MemoryManager().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
 	return outputs_users.CreateOutput{User: user, Session: session}, nil
 }
 
-func update(app *runtime.App, tx *gorm.DB, input inputs_users.UpdateInput, info models.Info) (any, error) {
+func (s *UserService) update(control *runtime.Control, input inputs_users.UpdateInput, info models.Info) (any, error) {
 	user := models.User{Id: info.User.Id}
-	tx.First(&user)
+	control.Trx.First(&user)
 	user.Name = input.Name
 	user.Avatar = input.Avatar
-	user.Username = input.Username
-	tx.Save(&user)
+	user.Username = input.Username + "@" + control.AppId
+	control.Trx.Save(&user)
 	return outputs_users.UpdateOutput{
 		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar},
 	}, nil
 }
 
-func get(app *runtime.App, tx *gorm.DB, input inputs_users.GetInput, info models.Info) (any, error) {
+func (s *UserService) get(control *runtime.Control, input inputs_users.GetInput, info models.Info) (any, error) {
 	user := models.User{Id: input.UserId}
-	err := tx.First(&user).Error
+	err := control.Trx.First(&user).Error()
 	return outputs_users.GetOutput{User: user}, err
 }
 
-func delete(app *runtime.App, tx *gorm.DB, input inputs_users.DeleteInput, info models.Info) (any, error) {
+func (s *UserService) delete(control *runtime.Control, input inputs_users.DeleteInput, info models.Info) (any, error) {
 	user := models.User{Id: info.User.Id}
-	err := tx.First(&user).Error
+	err := control.Trx.First(&user).Error()
 	if err != nil {
 		return nil, err
 	}
 	sessions := []models.Session{}
-	tx.Where("user_id = ?", user.Id).Find(&sessions)
+	control.Trx.Where("user_id = ?", user.Id).Find(&sessions)
 	for _, session := range sessions {
-		app.Managers.MemoryManager().Del("auth::" + session.Token)
-		tx.Delete(&session)
+		s.managers.MemoryManager().Del("auth::" + session.Token)
+		control.Trx.Delete(&session)
 	}
-	tx.Delete(&user)
+	control.Trx.Delete(&user)
 	return outputs_users.DeleteOutput{User: user}, nil
 }
 
-func CreateUserService(app *runtime.App, openToNet bool) {
+func CreateUserService(app *runtime.App) {
 
-	app.Managers.DatabaseManager().Db.AutoMigrate(&models.Session{})
-	app.Managers.DatabaseManager().Db.AutoMigrate(&models.User{})
+	service := &UserService{managers: app.Managers}
+
+	app.Managers.StorageManager().AutoMigrate(&models.Session{})
+	app.Managers.StorageManager().AutoMigrate(&models.User{})
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,
@@ -73,39 +79,39 @@ func CreateUserService(app *runtime.App, openToNet bool) {
 		runtime.CreateCk(true, false, false),
 		runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
-		authenticate,
+		service.authenticate,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/users/create",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
 		true,
-		create,
+		service.create,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/users/update",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPut),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPut),
 		true,
-		update,
+		service.update,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/users/delete",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodDelete),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodDelete),
 		true,
-		delete,
+		service.delete,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/users/get",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
 		true,
-		get,
+		service.get,
 	))
 }
 

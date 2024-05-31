@@ -2,11 +2,13 @@ package shell_federation
 
 import (
 	"encoding/json"
+	"sigma/admin/core/managers/pusher"
 	"sigma/admin/core/models"
 	outputs_invites "sigma/admin/core/outputs/invites"
 	outputs_spaces "sigma/admin/core/outputs/spaces"
 	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
+	storage_manager "sigma/admin/shell/managers/storage"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -16,6 +18,8 @@ type FedNet struct {
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
 	app         *runtime.App
+	stoManager  *storage_manager.StorageManager
+	pushManager *pusher.Pusher
 	fed         bool
 }
 
@@ -60,17 +64,17 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 			}
 			if member != nil {
 				member.Id = utils.SecureUniqueId(fed.app.AppId) + "_" + channelId
-				fed.app.Managers.DatabaseManager().Db.Create(member)
-				fed.app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
+				fed.stoManager.CreateTrx().Create(member).Commit()
+				fed.pushManager.JoinGroup(member.SpaceId, member.UserId)
 			}
 		}
-		fed.app.Managers.PushManager().PushToUser(payload.Key, payload.UserId, payload.Data, payload.RequestId, true)
+		fed.pushManager.PushToUser(payload.Key, payload.UserId, payload.Data, payload.RequestId, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			fed.app.Managers.PushManager().PushToUser(payload.Key[len("update "):], payload.UserId, payload.Data, "", true)
+			fed.pushManager.PushToUser(payload.Key[len("update "):], payload.UserId, payload.Data, "", true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			fed.app.Managers.PushManager().PushToGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, payload.Exceptions)
+			fed.pushManager.PushToGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, payload.Exceptions)
 		} else {
 			action := fed.app.Services.GetAction(payload.Key)
 			check := action.Check
@@ -83,8 +87,8 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 				return
 			}
 			member := models.Member{}
-			fed.app.Managers.DatabaseManager().Db.Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member)
-			_, res, err := action.ProcessFederative(fed.app, payload.Data, models.Info{
+			fed.stoManager.CreateTrx().Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member).Commit()
+			_, res, err := action.ProcessFederative(fed.app.GenControl(), payload.Data, models.Info{
 				User:   models.User{Id: payload.UserId},
 				Member: member,
 			})

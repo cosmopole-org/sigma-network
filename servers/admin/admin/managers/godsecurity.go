@@ -18,36 +18,35 @@ type Security struct {
 
 func (a *Security) SetGodEmails(gods []*adminModels.God) {
 	a.gods = gods
-	a.app.Managers.DatabaseManager().Db.AutoMigrate(&adminModels.God{})
+	control := a.app.GenControl()
+	control.Trx.AutoMigrate(&adminModels.God{})
 	var auth = map[string]string{}
 	for _, g := range gods {
 		god := adminModels.God{}
-		err := a.app.Managers.DatabaseManager().Db.Where("username = ?", g.Username).First(&god).Error
+		err := control.Trx.Where("username = ?", g.Username).First(&god).Error
 		token := ""
 		userId := ""
 		password := ""
 		username := ""
 		if err != nil {
-			tx := a.app.Managers.DatabaseManager().Db.Begin()
 			g.Username += ("@" + a.app.AppId)
 			user := coreModels.User{Id: utils.SecureUniqueId(a.app.AppId), Type: "human", Username: g.Username, Name: g.Name, Avatar: "empty", Secret: utils.SecureUniqueString()}
-			tx.Create(&user)
+			control.Trx.Create(&user)
 			g.Id = utils.SecureUniqueId(a.app.AppId)
 			g.UserId = user.Id
 			g.Password = user.Secret
-			tx.Create(&g)
+			control.Trx.Create(&g)
 			session := coreModels.Session{Id: utils.SecureUniqueId(a.app.AppId), UserId: user.Id, Token: utils.SecureUniqueString()}
-			tx.Create(&session)
-			tx.Commit()
+			control.Trx.Create(&session)
 			userId = user.Id
 			username = user.Username
 			password = user.Secret
 			token = session.Token
 		} else {
 			user := coreModels.User{}
-			a.app.Managers.DatabaseManager().Db.Where("username = ?", god.Username).First(&user)
+			control.Trx.Where("username = ?", god.Username).First(&user)
 			session := coreModels.Session{}
-			a.app.Managers.DatabaseManager().Db.Where("user_id = ?", user.Id).First(&session)
+			control.Trx.Where("user_id = ?", user.Id).First(&session)
 			userId = user.Id
 			username = user.Username
 			password = god.Password
@@ -56,6 +55,7 @@ func (a *Security) SetGodEmails(gods []*adminModels.God) {
 		a.app.Managers.MemoryManager().Put("auth::"+token, fmt.Sprintf("human/%s", userId))
 		auth[username] = password
 	}
+	control.Trx.Commit()	
 	str, err := json.Marshal(auth)
 	if err != nil {
 		log.Println(err)

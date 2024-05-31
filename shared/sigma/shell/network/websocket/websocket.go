@@ -37,7 +37,7 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 
 func (ws *WsServer) EnableEndpoint(key string) {
 	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		statusCode, res, err := ws.app.Services.CallAction(key, nil, rawBody, token, origin)
+		statusCode, res, err := ws.app.Services.CallAction(key, rawBody, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	inputs_invites "sigma/storage/core/inputs/invites"
+	"sigma/storage/core/managers"
 	"sigma/storage/core/models"
 	outputs_invites "sigma/storage/core/outputs/invites"
 	"sigma/storage/core/runtime"
@@ -12,130 +13,135 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
-func create(app *runtime.App, tx *gorm.DB, input inputs_invites.CreateInput, info models.Info) (any, error) {
+type InviteService struct {
+	managers managers.ICoreManagers
+}
+
+func (s *InviteService) create(control *runtime.Control, input inputs_invites.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: input.SpaceId}
-	err := tx.First(&space).Error
+	err := control.Trx.First(&space).Error()
 	if err != nil {
 		return nil, err
 	}
-	invite := models.Invite{Id: utils.SecureUniqueId(app.AppId), UserId: input.UserId, SpaceId: input.SpaceId}
-	err2 := tx.Create(&invite).Error
+	invite := models.Invite{Id: utils.SecureUniqueId(control.AppId), UserId: input.UserId, SpaceId: input.SpaceId}
+	err2 := control.Trx.Create(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
-	go app.Managers.PushManager().PushToUser("invites/create", input.UserId, updates_invites.Create{Invite: invite}, "", false)
+	go s.managers.PushManager().PushToUser("invites/create", input.UserId, updates_invites.Create{Invite: invite}, "", false)
 	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
-func cancel(app *runtime.App, tx *gorm.DB, input inputs_invites.CancelInput, info models.Info) (any, error) {
+func (s *InviteService) cancel(control *runtime.Control, input inputs_invites.CancelInput, info models.Info) (any, error) {
 	admin := models.Admin{UserId: info.User.Id, SpaceId: input.SpaceId}
-	err := tx.First(&admin).Error
+	err := control.Trx.First(&admin).Error()
 	if err != nil {
 		return nil, err
 	}
 	invite := models.Invite{Id: input.InviteId}
-	err2 := tx.First(&invite).Error
+	err2 := control.Trx.First(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
 	if invite.SpaceId != input.SpaceId {
 		return nil, errors.New("invite not found")
 	}
-	err3 := tx.Delete(&invite).Error
+	err3 := control.Trx.Delete(&invite).Error()
 	if err3 != nil {
 		return nil, err3
 	}
-	go app.Managers.PushManager().PushToUser("invites/cancel", invite.UserId, updates_invites.Cancel{Invite: invite}, "", false)
+	go s.managers.PushManager().PushToUser("invites/cancel", invite.UserId, updates_invites.Cancel{Invite: invite}, "", false)
 	return outputs_invites.CancelOutput{Invite: invite}, nil
 }
 
 var memberTemplate = "member::%s::%s"
 
-func accept(app *runtime.App, tx *gorm.DB, input inputs_invites.AcceptInput, info models.Info) (any, error) {
+func (s *InviteService) accept(control *runtime.Control, input inputs_invites.AcceptInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
-	err := tx.First(&invite).Error
+	err := control.Trx.First(&invite).Error()
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != info.User.Id {
 		return nil, errors.New("invite not found")
 	}
-	err2 := tx.Delete(&invite).Error
+	err2 := control.Trx.Delete(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
-	member := models.Member{Id: utils.SecureUniqueId(app.AppId), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
-	tx.Create(&member)
-	app.Managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
-	app.Managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
+	control.Trx.Create(&member)
+	s.managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
+	s.managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	admins := []models.Admin{}
-	tx.Where("space_id = ?", invite.SpaceId).Find(&admins)
+	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go app.Managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: invite}, "", false)
+		go s.managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: invite}, "", false)
 	}
-	go app.Managers.PushManager().PushToGroup("invites/accept", invite.SpaceId, updates_invites.Accept{Invite: invite}, []models.Client{})
+	go s.managers.PushManager().PushToGroup("invites/accept", invite.SpaceId, updates_invites.Accept{Invite: invite}, []models.Client{})
 	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
-func decline(app *runtime.App, tx *gorm.DB, input inputs_invites.DeclineInput, info models.Info) (any, error) {
+func (s *InviteService) decline(control *runtime.Control, input inputs_invites.DeclineInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
-	err := tx.First(&invite).Error
+	err := control.Trx.First(&invite).Error()
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != info.User.Id {
 		return nil, errors.New("invite not found")
 	}
-	err2 := tx.Delete(&invite).Error
+	err2 := control.Trx.Delete(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
 	admins := []models.Admin{}
-	tx.Where("space_id = ?", invite.SpaceId).Find(&admins)
+	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go app.Managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: &invite}, "", false)
+		go s.managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: &invite}, "", false)
 	}
 	return outputs_invites.DeclineOutput{}, nil
 }
 
-func CreateInviteService(app *runtime.App, openToNet bool) {
+func CreateInviteService(app *runtime.App) {
 
-	app.Managers.DatabaseManager().Db.AutoMigrate(&models.Invite{})
+	service := &InviteService{managers: app.Managers}
+
+	app.Managers.StorageManager().AutoMigrate(&models.Invite{})
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/invites/create",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
 		true,
-		create,
+		service.create,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/invites/cancel",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
 		true,
-		cancel,
+		service.cancel,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/invites/accept",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
 		true,
-		accept,
+		service.accept,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/invites/decline",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
 		true,
-		decline,
+		service.decline,
 	))
 }
 

@@ -1,9 +1,11 @@
 package sigma
 
 import (
-	builder "sigma/admin/core"
+	core "sigma/admin/core"
 	"sigma/admin/core/runtime"
 	"sigma/admin/shell"
+	memory_manager "sigma/admin/shell/managers/memory"
+	storage_manager "sigma/admin/shell/managers/storage"
 )
 
 type Sigma struct {
@@ -11,16 +13,34 @@ type Sigma struct {
 	Shell *shell.Shell
 }
 
-func New(appId string, config shell.Config) *Sigma {
-	fedConnector := &shell.FedConnector{}
-	app, grpcModelLoader := builder.BuildApp(appId, config.StorageRoot, config.CoreAccess, config.DbConn, config.MemUri, fedConnector.SendToFed, config.LogCb)
-	sh := shell.New(app, grpcModelLoader, config)
-	fedConnector.Shell = sh
-	s := &Sigma{
-		Core: app,
-		Shell: sh,
+func (s *Sigma) generateControl() *runtime.Control {
+	return &runtime.Control{
+		AppId:       s.Core.AppId,
+		StorageRoot: s.Core.StorageRoot,
+		Trx:         s.Shell.Managers().StorageManager().CreateTrx(),
+		Services:    s.Core.Services,
 	}
-	s.connectServicesToNet()
+}
+
+func New(appId string, config shell.Config) *Sigma {
+	s := &Sigma{}
+	//sigma-shell level managers
+	fedConnector := &shell.FedConnector{}
+	stoManager := storage_manager.CreateDatabase(config.DbConn)
+	memManager := memory_manager.CreateMemory(config.MemUri)
+	// core
+	app, grpcModelLoader := core.New(appId, config.StorageRoot, config.CoreAccess, stoManager, memManager, s.generateControl, fedConnector.SendToFed, config.LogCb)
+	// shell
+	sh := shell.New(app, stoManager, grpcModelLoader, config)
+	// connect wires
+	fedConnector.Shell = sh
+	s.Core = app
+	s.Shell = sh
+	// load core services
+	app.LoadCoreServices()
+	// connect sigma whole services to net based on coreAccess flag
+	sh.ConnectServicesToNet()
+	// sigma ready
 	return s
 }
 
@@ -33,13 +53,3 @@ func (s *Sigma) ConnectToNetwork(ports map[string]int) {
 	}
 }
 
-func (s *Sigma) connectServicesToNet() {
-	for _, v := range s.Core.Services.Actions {
-		s.Shell.Managers().NetManager().SwitchNetAccessByAction(
-			v,
-			func(i interface{}) (any, error) {
-				return nil, nil
-			},
-		)
-	}
-}

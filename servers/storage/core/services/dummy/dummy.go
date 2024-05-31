@@ -7,17 +7,16 @@ import (
 	"sigma/storage/core/runtime"
 
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
-func CreateDummyService(app *runtime.App, openToNet bool) {
+func CreateDummyService(app *runtime.App) {
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/api/hello",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *runtime.App, tx *gorm.DB, d inputs.HelloInput, info models.Info) (any, error) {
+		func(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
 			return `{ "hello": "world" }`, nil
 		},
 	))
@@ -25,9 +24,9 @@ func CreateDummyService(app *runtime.App, openToNet bool) {
 		app,
 		"/api/ping",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
 		true,
-		func(app *runtime.App, tx *gorm.DB, d inputs.HelloInput, info models.Info) (any, error) {
+		func(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
 			return os.Getenv("MAIN_PORT"), nil
 		},
 	))

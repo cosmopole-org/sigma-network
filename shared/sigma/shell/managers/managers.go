@@ -1,58 +1,53 @@
 package managers
 
 import (
+	coreManagers "sigma/main/core/managers"
+	"sigma/main/core/managers/storage"
 	"sigma/main/core/runtime"
+	file_manager "sigma/main/shell/managers/files"
 	network_manager "sigma/main/shell/managers/network"
-	security_manager "sigma/main/shell/managers/security"
-	storage_manager "sigma/main/shell/managers/storage"
 	wasm_manager "sigma/main/shell/managers/wasm"
 )
 
+type IShellManagers interface {
+	coreManagers.ICoreManagers
+	FileManager() *file_manager.FileManager
+	NetManager() *network_manager.NetManager
+	WasmManager() *wasm_manager.WasmManager
+}
+
 type Managers struct {
-	Federative      bool
-	netManager      *network_manager.NetManager
-	wasmManager     *wasm_manager.WasmManager
-	securityManager *security_manager.SecurityManager
-	storageManager  *storage_manager.StorageManager
+	coreManagers.ICoreManagers
+	Federative     bool
+	storageManager storage.IGlobStorage
+	netManager     *network_manager.NetManager
+	wasmManager    *wasm_manager.WasmManager
+	fileManager    *file_manager.FileManager
 }
 
-func (s *Managers) PutStorageManager(nm *storage_manager.StorageManager) {
-	s.storageManager = nm
-}
-
-func (s *Managers) StorageManager() *storage_manager.StorageManager {
+func (s *Managers) StorageManager() storage.IGlobStorage {
 	return s.storageManager
 }
 
-func (s *Managers) PutNetManager(nm *network_manager.NetManager) {
-	s.netManager = nm
+func (s *Managers) FileManager() *file_manager.FileManager {
+	return s.fileManager
 }
 
 func (s *Managers) NetManager() *network_manager.NetManager {
 	return s.netManager
 }
 
-func (s *Managers) PutWasmManager(wm *wasm_manager.WasmManager) {
-	s.wasmManager = wm
-}
-
 func (s *Managers) WasmManager() *wasm_manager.WasmManager {
 	return s.wasmManager
 }
 
-func (s *Managers) PutSecurityManager(sm *security_manager.SecurityManager) {
-	s.securityManager = sm
-}
-
-func (s *Managers) SecurityManager() *security_manager.SecurityManager {
-	return s.securityManager
-}
-
-func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *Managers {
-	return &Managers{
-		securityManager: security_manager.New(sc),
-		netManager:      network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),
-		wasmManager:     wasm_manager.New(sc),
-		storageManager:  storage_manager.New(sc),
+func New(sc *runtime.App, storage storage.IGlobStorage, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed bool) *Managers {
+	mans := Managers{
+		ICoreManagers: sc.Managers,
+		netManager:    network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),
+		wasmManager:   wasm_manager.New(sc),
+		fileManager:   file_manager.New(sc),
+		storageManager: storage,
 	}
+	return &mans
 }

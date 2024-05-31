@@ -2,6 +2,7 @@ package services_auth
 
 import (
 	inputs_auth "sigma/main/core/inputs/auth"
+	"sigma/main/core/managers"
 	"sigma/main/core/models"
 	outputs_auth "sigma/main/core/outputs/auth"
 	"sigma/main/core/runtime"
@@ -9,35 +10,41 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
-	"gorm.io/gorm"
 )
 
-func getServerPublicKey(app *runtime.App, tx *gorm.DB, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
-	return &outputs_auth.GetServerKeyOutput{PublicKey: string(app.Managers.CryptoManager().FetchKeyPair("server_key")[1])}, nil
+type AuthService struct {
+	managers managers.ICoreManagers
 }
 
-func getServersMap(app *runtime.App, tx *gorm.DB, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
+func (s *AuthService) getServerPublicKey(control *runtime.Control, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
+	return &outputs_auth.GetServerKeyOutput{PublicKey: string(s.managers.CryptoManager().FetchKeyPair("server_key")[1])}, nil
+}
+
+func (s *AuthService) getServersMap(control *runtime.Control, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
 	return outputs_auth.GetServersMapOutput{
 		Servers: network_store.WellKnownServers,
 	}, nil
 }
 
-func CreateAuthService(app *runtime.App, openToNet bool) {
+func CreateAuthService(app *runtime.App) {
+
+	service := &AuthService{managers: app.Managers}
+
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/auths/getServerPublicKey",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
 		true,
-		getServerPublicKey,
+		service.getServerPublicKey,
 	))
 	app.Services.AddAction(runtime.CreateAction(
 		app,
 		"/auths/getServersMap",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(openToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
 		true,
-		getServersMap,
+		service.getServersMap,
 	))
 }
 

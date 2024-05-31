@@ -2,6 +2,7 @@ package shell
 
 import (
 	"net"
+	"sigma/storage/core/managers/storage"
 	"sigma/storage/core/models"
 	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
@@ -19,9 +20,21 @@ var wellKnownServers = []string{
 }
 
 type Shell struct {
+	app         *runtime.App
 	managers    *mans.Managers
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
+}
+
+func (s *Shell) ConnectServicesToNet() {
+	for _, v := range s.app.Services.Actions {
+		s.Managers().NetManager().SwitchNetAccessByAction(
+			v,
+			func(i interface{}) (any, error) {
+				return nil, nil
+			},
+		)
+	}
 }
 
 func (s *Shell) Managers() *mans.Managers {
@@ -62,10 +75,10 @@ func (s *Shell) loadWellknownServers() {
 	utils.Log(5)
 }
 
-func New(app *runtime.App, grpcModelLoader func(*grpc.Server), config Config) *Shell {
-	sh := &Shell{}
+func New(app *runtime.App, storage storage.IGlobStorage, grpcModelLoader func(*grpc.Server), config Config) *Shell {
+	sh := &Shell{app: app}
 	sh.loadWellknownServers()
-	sh.managers = mans.New(app, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
+	sh.managers = mans.New(app, storage, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
 	sh.managers.NetManager().HttpServer.AddMiddleware(middlewares_wasm.WasmMiddleware(app, sh.managers))
 	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
 	services.CreateWasmPluggerService(app, sh.managers)

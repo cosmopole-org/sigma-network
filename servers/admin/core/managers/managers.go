@@ -2,28 +2,34 @@ package managers
 
 import (
 	"sigma/admin/core/managers/crypto"
-	"sigma/admin/core/managers/database"
 	"sigma/admin/core/managers/memory"
 	"sigma/admin/core/managers/pusher"
 	"sigma/admin/core/managers/security"
+	"sigma/admin/core/managers/storage"
 	"sigma/admin/core/models"
-
-	"gorm.io/gorm"
 )
 
+type ICoreManagers interface {
+	StorageManager() storage.IGlobStorage
+	MemoryManager() memory.IMemory
+	PushManager() *pusher.Pusher
+	CryptoManager() *crypto.Crypto
+	SecurityManager() *security.SecurityManager
+}
+
 type Managers struct {
-	dbManager   *database.Database
-	memManager  *memory.Memory
+	stoManager  storage.IGlobStorage
+	memManager  memory.IMemory
 	pushManager *pusher.Pusher
 	crypManager *crypto.Crypto
 	secManager  *security.SecurityManager
 }
 
-func (s *Managers) DatabaseManager() *database.Database {
-	return s.dbManager
+func (s *Managers) StorageManager() storage.IGlobStorage {
+	return s.stoManager
 }
 
-func (s *Managers) MemoryManager() *memory.Memory {
+func (s *Managers) MemoryManager() memory.IMemory {
 	return s.memManager
 }
 
@@ -39,13 +45,13 @@ func (s *Managers) SecurityManager() *security.SecurityManager {
 	return s.secManager
 }
 
-func New(appId string, dialector gorm.Dialector, memUri string, storageRoot string, pusherConnector func(s string, op models.OriginPacket)) *Managers {
+func New(appId string, storageRoot string, stoManager storage.IGlobStorage, memManager memory.IMemory, pusherConnector func(s string, op models.OriginPacket)) ICoreManagers {
 	mans := &Managers{
-		dbManager:   database.CreateDatabase(dialector),
-		memManager:  memory.CreateMemory(memUri),
 		crypManager: crypto.CreateCrypto(storageRoot),
 		pushManager: pusher.CreatePusher(appId, pusherConnector),
+		stoManager: stoManager,
+		memManager: memManager,
 	}
-	mans.secManager = security.New(mans.memManager)
+	mans.secManager = security.New(mans.stoManager, mans.memManager, mans.crypManager, mans.pushManager)
 	return mans
 }

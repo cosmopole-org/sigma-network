@@ -3,13 +3,14 @@ package runtime
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"sigma/admin/core/inputs"
+	"sigma/admin/core/managers/storage"
 	"sigma/admin/core/models"
 	"sigma/admin/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
-	"gorm.io/gorm"
 )
 
 type Meta struct {
@@ -24,14 +25,21 @@ type IError struct {
 	Value string
 }
 
+type Control struct {
+	AppId       string
+	StorageRoot string
+	Trx         storage.IStorage
+	Services    *Services
+}
+
 type Action struct {
 	Key               string
 	Check             Check
 	Access            Access
 	Validate          bool
-	Process           func(*App, *gorm.DB, interface{}, string, string) (int, any, error)
-	ProcessHonestly   func(*App, *gorm.DB, interface{}, Meta) (int, any, error)
-	ProcessFederative func(*App, interface{}, models.Info) (int, any, error)
+	Process           func(*Control, interface{}, string, string) (int, any, error)
+	ProcessInternally func(*Control, interface{}, Meta) (int, any, error)
+	ProcessFederative func(*Control, interface{}, models.Info) (int, any, error)
 }
 
 type Access struct {
@@ -53,44 +61,22 @@ type Services struct {
 	Actions map[string]*Action
 }
 
-func (ss *Services) CallAction(key string, tx *gorm.DB, input interface{}, token string, origin string) (int, any, error) {
-	trxLocal := false
-	trx := tx
-	if trx == nil {
-		trxLocal = true
-		trx = ss.app.Managers.DatabaseManager().Db.Begin()
-	}
-	trx.SavePoint("beforeStep")
-	statusCode, res, err := ss.Actions[key].Process(ss.app, trx, input, token, origin)
+func (ss *Services) CallAction(key string, input interface{}, token string, origin string) (int, any, error) {
+	control := ss.app.GenControl()
+	statusCode, res, err := ss.Actions[key].Process(control, input, token, origin)
 	if err != nil {
-		if trxLocal {
-			trx.Rollback()
-		} else {
-			trx.RollbackTo("beforeStep")
-		}
-	} else if trxLocal {
-		trx.Commit()
+		control.Trx.Rollback()
+	} else {
+		control.Trx.Commit()
 	}
 	return statusCode, res, err
 }
 
-func (ss *Services) CallActionHonestly(key string, tx *gorm.DB, input interface{}, m Meta) (int, any, error) {
-	trxLocal := false
-	trx := tx
-	if trx == nil {
-		trxLocal = true
-		trx = ss.app.Managers.DatabaseManager().Db.Begin()
-	}
-	trx.SavePoint("beforeStep")
-	statusCode, res, err := ss.Actions[key].ProcessHonestly(ss.app, trx, input, m)
+func (ss *Services) CallActionInternally(key string, control *Control, input interface{}, m Meta) (int, any, error) {
+	control.Trx.SavePoint("beforeStep")
+	statusCode, res, err := ss.Actions[key].ProcessInternally(control, input, m)
 	if err != nil {
-		if trxLocal {
-			trx.Rollback()
-		} else {
-			trx.RollbackTo("beforeStep")
-		}
-	} else if trxLocal {
-		trx.Commit()
+		control.Trx.RollbackTo("beforeStep")
 	}
 	return statusCode, res, err
 }
@@ -131,12 +117,12 @@ type PluginFunction struct {
 	Access Access `json:"access" validate:"required"`
 }
 
-func CreateAction[T inputs.IInput](app *App, key string, check Check, access Access, Validate bool, callback func(*App, *gorm.DB, T, models.Info) (any, error)) *Action {
+func CreateAction[T inputs.IInput](app *App, key string, check Check, access Access, Validate bool, callback func(*Control, T, models.Info) (any, error)) *Action {
 	return &Action{
 		Key:    key,
 		Access: access,
 		Check:  check,
-		Process: func(app *App, tx *gorm.DB, rawInput interface{}, token string, origin string) (int, any, error) {
+		Process: func(control *Control, rawInput interface{}, token string, origin string) (int, any, error) {
 			data := new(T)
 			switch input := rawInput.(type) {
 			case string:
@@ -179,7 +165,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 							var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
 							if location.SpaceId != "" {
 								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
-								result, err := callback(app, tx, (*data), models.Info{User: user, Member: member})
+								result, err := callback(control, (*data), models.Info{User: user, Member: member})
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err
 								}
@@ -188,7 +174,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 								return fiber.StatusForbidden, nil, errors.New("access denied")
 							}
 						} else {
-							result, err := callback(app, tx, *data, models.Info{User: user})
+							result, err := callback(control, *data, models.Info{User: user})
 							if err != nil {
 								return fiber.ErrInternalServerError.Code, nil, err
 							}
@@ -198,7 +184,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 						return fiber.StatusForbidden, nil, errors.New("access denied")
 					}
 				} else {
-					result, err := callback(app, tx, *data, models.Info{})
+					result, err := callback(control, *data, models.Info{})
 					if err != nil {
 						return fiber.ErrInternalServerError.Code, nil, err
 					}
@@ -217,23 +203,26 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 				}
 			}
 		},
-		ProcessHonestly: func(app *App, tx *gorm.DB, data interface{}, m Meta) (int, any, error) {
+		ProcessInternally: func(control *Control, data interface{}, m Meta) (int, any, error) {
 			user := models.User{Id: m.UserId}
 			member := models.Member{UserId: user.Id, SpaceId: m.SpaceId, TopicIds: m.TopicId, Metadata: ""}
-			result, err := callback(app, tx, data.(T), models.Info{User: user, Member: member})
+			result, err := callback(control, data.(T), models.Info{User: user, Member: member})
+			fmt.Println()
+			fmt.Println(result,err)
+			fmt.Println()
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
 			}
 			return fiber.StatusOK, result, nil
 		},
-		ProcessFederative: func(app *App, data interface{}, a models.Info) (int, any, error) {
-			tx := app.Managers.DatabaseManager().Db.Begin()
-			result, err := callback(app, tx, data.(T), a)
+		ProcessFederative: func(control *Control, data interface{}, a models.Info) (int, any, error) {
+			control.Trx.Begin()
+			result, err := callback(control, data.(T), a)
 			if err != nil {
-				tx.Rollback()
+				control.Trx.Rollback()
 				return fiber.ErrInternalServerError.Code, nil, err
 			}
-			tx.Commit()
+			control.Trx.Commit()
 			return fiber.StatusOK, result, nil
 		},
 	}
