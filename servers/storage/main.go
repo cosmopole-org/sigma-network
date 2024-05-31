@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
 )
 
 var quit = make(chan struct{})
@@ -37,12 +38,12 @@ func main() {
 	storageApp := storage_builder.BuildStorage(
 		os.Getenv("FED_ORIGIN"),
 		shell.Config{
-			DbUri:       os.Getenv("POSTGRES_URI"),
+			DbConn:      postgres.Open(os.Getenv("DB_URI")),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  os.Getenv("FEDERATIVE") == "true",
 			CoreAccess:  false,
-			MaxReqSize: 1000 * 1024 * 1024,
+			MaxReqSize:  1000 * 1024 * 1024,
 			LogCb: func(u uint32, i ...interface{}) {
 				logrusLogger.Logln(logrus.DebugLevel)
 			},

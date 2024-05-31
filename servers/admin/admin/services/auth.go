@@ -1,50 +1,48 @@
 package services
 
 import (
-	"context"
 	"errors"
-	"log"
 	"sigma/admin/shell/managers"
 
-	dtos_auth "sigma/admin/admin/dtos/auth"
+	inputs_auth "sigma/admin/admin/inputs/auth"
+	outputs_auth "sigma/admin/admin/outputs/auth"
 
-	"sigma/admin/core/models"
-	pb "sigma/admin/core/models/grpc"
+	adminModels "sigma/admin/admin/models"
+	coreModels "sigma/admin/core/models"
 	"sigma/admin/core/runtime"
 
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc"
+	"gorm.io/gorm"
 )
 
 type AuthService struct {
 	managers *managers.Managers
 }
 
-func (authS *AuthService) signin(app *runtime.App, input dtos_auth.SigninDto, assistant models.Assistant) (any, error) {
-	var query = `select * from humans_signin($1, $2)`
-	var token string
-	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.Email, input.Password,
-	).Scan(&token); err != nil {
-		log.Println(err)
-		return &pb.AdminSigninOutput{}, err
+func (authS *AuthService) signin(app *runtime.App, tx *gorm.DB, input inputs_auth.SigninDto, info coreModels.Info) (any, error) {
+	god := adminModels.God{}
+	err := tx.Where("username = ?", input.Username).Where("password = ?", input.Password).First(&god).Error
+	if err != nil {
+		return nil, err
 	}
-	return &pb.AdminSigninOutput{Token: token}, nil
+	session := coreModels.Session{}
+	tx.Where("user_id = ?", god.UserId).First(&session)
+	return outputs_auth.SigninOutput{Token: session.Token}, nil
 }
 
-func (authS *AuthService) updatePass(app *runtime.App, input dtos_auth.UpdatePassDto, assistant models.Assistant) (any, error) {
+func (authS *AuthService) updatePass(app *runtime.App, tx *gorm.DB, input inputs_auth.UpdatePassDto, info coreModels.Info) (any, error) {
 	if len(input.Password) == 0 {
-		return &pb.AdminUpdatePassOutput{}, errors.New("error: invalid password")
+		return outputs_auth.UpdatePassOutput{}, errors.New("error: invalid password")
 	}
-	var query = `update admin set password = $1 where human_id = $2 returning true;`
-	var result bool
-	if err := app.Managers.DatabaseManager().Db.QueryRow(
-		context.Background(), query, input.Password, assistant.UserId,
-	).Scan(&result); err != nil {
-		log.Println(err)
-		return &pb.AdminUpdatePassOutput{}, err
+	god := adminModels.God{}
+	err := tx.Where("user_id = ?", info.User.Id).First(&god).Error
+	if err != nil {
+		return nil, err
 	}
-	return &pb.AdminUpdatePassOutput{}, nil
+	god.Password = input.Password
+	tx.Save(&god)
+	return outputs_auth.UpdatePassOutput{}, nil
 }
 
 func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
@@ -52,14 +50,6 @@ func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
 	authS := &AuthService{
 		managers: mans,
 	}
-
-	// tables
-	sc.Managers.DatabaseManager().ExecuteSqlFile("admin/database/tables/admin.sql")
-
-	// Functions
-	sc.Managers.DatabaseManager().ExecuteSqlFile("admin/database/functions/admins/signin.sql")
-
-	// Methods
 
 	signInAction := runtime.CreateAction(
 		sc,
@@ -85,8 +75,8 @@ func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
 }
 
 func LoadAuthGrpcService(gs *grpc.Server) {
-	type server struct {
-		pb.UnimplementedAdminServiceServer
-	}
-	pb.RegisterAdminServiceServer(gs, &server{})
+	// type server struct {
+	// 	pb.UnimplementedAdminServiceServer
+	// }
+	// pb.RegisterAdminServiceServer(gs, &server{})
 }

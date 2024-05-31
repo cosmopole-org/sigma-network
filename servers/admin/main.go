@@ -9,6 +9,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
+	"gorm.io/driver/postgres"
 )
 
 var quit = make(chan struct{})
@@ -37,7 +38,7 @@ func main() {
 	adminApp := admin_builder.BuildAdmin(
 		os.Getenv("FED_ORIGIN"),
 		sigma.Config{
-			DbUri:       os.Getenv("POSTGRES_URI"),
+			DbConn:      postgres.Open(os.Getenv("DB_URI")),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  false,
@@ -46,11 +47,11 @@ func main() {
 				logrusLogger.Logln(logrus.DebugLevel)
 			},
 		},
-		[]models.Admin{
-			{Email: "mani@midopia.com", FirstName: "mani", LastName: "shabanzadeh"},
-			{Email: "aras@midopia.com", FirstName: "aras", LastName: "mehranfar"},
-			{Email: "shahin@midopia.com", FirstName: "shahin", LastName: "charkhosht"},
-			{Email: "amir@midopia.com", FirstName: "amir", LastName: "ebadi"},
+		[]*models.God{
+			{Username: "mani", Name: "mani shabanzadeh"},
+			{Username: "aras", Name: "aras mehranfar"},
+			{Username: "shahin", Name: "shahin charkhosht"},
+			{Username: "amir", Name: "amir ebadi"},
 		},
 	)
 

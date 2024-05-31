@@ -2,23 +2,22 @@ package dtos_storage
 
 type DownloadDto struct {
 	FileKey string `json:"fileKey" validate:"required"`
-	TowerId int64  `json:"towerId" validate:"required"`
-	RoomId  int64  `json:"roomId" validate:"required"`
+	SpaceId string `json:"spaceId" validate:"required"`
+	TopicId string `json:"topicId" validate:"required"`
 }
 
 func (d DownloadDto) GetData() any {
 	return "dummy"
 }
 
-func (d DownloadDto) GetTowerId() int64 {
-	return d.TowerId
+func (d DownloadDto) GetSpaceId() string {
+	return d.SpaceId
 }
 
-func (d DownloadDto) GetRoomId() int64 {
-	return d.RoomId
+func (d DownloadDto) GetTopicId() string {
+	return d.TopicId
 }
 
-func (d DownloadDto) GetWorkerId() int64 {
-	return d.RoomId
+func (d DownloadDto) GetMemberId() string {
+	return ""
 }
-

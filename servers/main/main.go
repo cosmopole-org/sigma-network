@@ -34,12 +34,10 @@ func main() {
 		ReportCaller: false,
 	}
 
-	dsn := "host=localhost user=postgres password=postgres dbname=sigma3 port=5432 sslmode=disable"
-
 	sigmaApp := sigma.New(
 		os.Getenv("FED_ORIGIN"),
 		shell.Config{
-			DbConn:      postgres.Open(dsn),
+			DbConn:      postgres.Open(os.Getenv("DB_URI")),
 			MemUri:      os.Getenv("REDIS_URI"),
 			StorageRoot: os.Getenv("STORAGE_ROOT_PATH"),
 			Federation:  os.Getenv("FEDERATIVE") == "true",

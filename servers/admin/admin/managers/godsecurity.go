@@ -1,44 +1,60 @@
 package godsecurity
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
-	"sigma/admin/admin/models"
+	adminModels "sigma/admin/admin/models"
+	coreModels "sigma/admin/core/models"
 	"sigma/admin/core/runtime"
 	"sigma/admin/core/utils"
 )
 
 type Security struct {
 	app  *runtime.App
-	gods []models.Admin
+	gods []*adminModels.God
 }
 
-func (a *Security) SetGodEmails(gods []models.Admin) {
+func (a *Security) SetGodEmails(gods []*adminModels.God) {
 	a.gods = gods
-	a.app.Managers.DatabaseManager().ExecuteSqlFile("admin/database/functions/admins/gods.sql")
+	a.app.Managers.DatabaseManager().Db.AutoMigrate(&adminModels.God{})
 	var auth = map[string]string{}
 	for _, g := range gods {
-		var query = `select * from humans_create_gods($1, $2, $3, $4, $5)`
-		var t string
-		var humanId int64
-		token, err := utils.SecureUniqueString(32)
+		god := adminModels.God{}
+		err := a.app.Managers.DatabaseManager().Db.Where("username = ?", g.Username).First(&god).Error
+		token := ""
+		userId := ""
+		password := ""
+		username := ""
 		if err != nil {
-			log.Println(err)
-			continue
+			tx := a.app.Managers.DatabaseManager().Db.Begin()
+			g.Username += ("@" + a.app.AppId)
+			user := coreModels.User{Id: utils.SecureUniqueId(a.app.AppId), Type: "human", Username: g.Username, Name: g.Name, Avatar: "empty", Secret: utils.SecureUniqueString()}
+			tx.Create(&user)
+			g.Id = utils.SecureUniqueId(a.app.AppId)
+			g.UserId = user.Id
+			g.Password = user.Secret
+			tx.Create(&g)
+			session := coreModels.Session{Id: utils.SecureUniqueId(a.app.AppId), UserId: user.Id, Token: utils.SecureUniqueString()}
+			tx.Create(&session)
+			tx.Commit()
+			userId = user.Id
+			username = user.Username
+			password = user.Secret
+			token = session.Token
+		} else {
+			user := coreModels.User{}
+			a.app.Managers.DatabaseManager().Db.Where("username = ?", god.Username).First(&user)
+			session := coreModels.Session{}
+			a.app.Managers.DatabaseManager().Db.Where("user_id = ?", user.Id).First(&session)
+			userId = user.Id
+			username = user.Username
+			password = god.Password
+			token = session.Token
 		}
-		if err2 := a.app.Managers.DatabaseManager().GetDb().QueryRow(
-			context.Background(), query, g.Email, g.FirstName, g.LastName, token, a.app.AppId,
-		).Scan(
-			&humanId, &t,
-		); err2 != nil {
-			log.Println(err2)
-			continue
-		}
-		a.app.Managers.MemoryManager().Put("auth::"+t, fmt.Sprintf("human/%d", humanId))
-		auth[g.Email] = t
+		a.app.Managers.MemoryManager().Put("auth::"+token, fmt.Sprintf("human/%s", userId))
+		auth[username] = password
 	}
 	str, err := json.Marshal(auth)
 	if err != nil {
@@ -53,24 +69,24 @@ func (a *Security) SetGodEmails(gods []models.Admin) {
 		log.Println(err2)
 	}
 }
-func (a *Security) IsGodEmail(email string) bool {
+func (a *Security) IsGodUsername(userId string) bool {
 	for _, a := range a.gods {
-		if a.Email == email {
+		if a.UserId == userId {
 			return true
 		}
 	}
 	return false
 }
-func (a *Security) GetGodByEmail(email string) *models.Admin {
+func (a *Security) GetGodByUsername(username string) *adminModels.God {
 	for _, a := range a.gods {
-		if a.Email == email {
-			return &a
+		if a.Username == username {
+			return a
 		}
 	}
 	return nil
 }
 
-func CreateSecurity(sc *runtime.App, gods []models.Admin) *Security {
+func CreateSecurity(sc *runtime.App, gods []*adminModels.God) *Security {
 	s := &Security{app: sc}
 	log.Println("creating security...")
 	s.SetGodEmails(gods)

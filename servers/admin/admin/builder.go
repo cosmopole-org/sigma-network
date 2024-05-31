@@ -13,7 +13,7 @@ type Admin struct {
 	Sigma       *sigma.Sigma
 }
 
-func BuildAdmin(appId string, config shell.Config, gods []models.Admin) *Admin {
+func BuildAdmin(appId string, config shell.Config, gods []*models.God) *Admin {
 	sigmaApp := sigma.New(
 		appId,
 		config,
