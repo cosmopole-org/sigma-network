@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	inputs_invites "sigma/main/core/inputs/invites"
-	"sigma/main/core/managers"
 	"sigma/main/core/models"
 	outputs_invites "sigma/main/core/outputs/invites"
 	"sigma/main/core/runtime"
+	"sigma/main/core/tools"
 	updates_invites "sigma/main/core/updates/invites"
 	"sigma/main/core/utils"
 
@@ -16,7 +16,7 @@ import (
 )
 
 type InviteService struct {
-	managers managers.ICoreManagers
+	tools tools.ICoreTools
 }
 
 func (s *InviteService) create(control *runtime.Control, input inputs_invites.CreateInput, info models.Info) (any, error) {
@@ -30,7 +30,7 @@ func (s *InviteService) create(control *runtime.Control, input inputs_invites.Cr
 	if err2 != nil {
 		return nil, err2
 	}
-	go s.managers.PushManager().PushToUser("invites/create", input.UserId, updates_invites.Create{Invite: invite}, "", false)
+	go s.tools.Signaler().SignalUser("invites/create", "", input.UserId, updates_invites.Create{Invite: invite}, true)
 	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
@@ -52,7 +52,7 @@ func (s *InviteService) cancel(control *runtime.Control, input inputs_invites.Ca
 	if err3 != nil {
 		return nil, err3
 	}
-	go s.managers.PushManager().PushToUser("invites/cancel", invite.UserId, updates_invites.Cancel{Invite: invite}, "", false)
+	go s.tools.Signaler().SignalUser("invites/cancel", "", invite.UserId, updates_invites.Cancel{Invite: invite}, true)
 	return outputs_invites.CancelOutput{Invite: invite}, nil
 }
 
@@ -73,14 +73,14 @@ func (s *InviteService) accept(control *runtime.Control, input inputs_invites.Ac
 	}
 	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
 	control.Trx.Create(&member)
-	s.managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
-	s.managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	s.tools.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	s.tools.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	admins := []models.Admin{}
 	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go s.managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: invite}, "", false)
+		go s.tools.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: invite}, true)
 	}
-	go s.managers.PushManager().PushToGroup("invites/accept", invite.SpaceId, updates_invites.Accept{Invite: invite}, []models.Client{})
+	go s.tools.Signaler().SignalGroup("spaces/userJoined", invite.SpaceId, updates_invites.Accept{Invite: invite}, true, []string{})
 	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
@@ -100,16 +100,16 @@ func (s *InviteService) decline(control *runtime.Control, input inputs_invites.D
 	admins := []models.Admin{}
 	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go s.managers.PushManager().PushToUser("invites/accept", admin.UserId, updates_invites.Accept{Invite: &invite}, "", false)
+		go s.tools.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: &invite}, true)
 	}
 	return outputs_invites.DeclineOutput{}, nil
 }
 
 func CreateInviteService(app *runtime.App) {
 
-	service := &InviteService{managers: app.Managers}
+	service := &InviteService{tools: app.Tools}
 
-	app.Managers.StorageManager().AutoMigrate(&models.Invite{})
+	app.Tools.Storage().AutoMigrate(&models.Invite{})
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,

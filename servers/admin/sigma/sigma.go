@@ -1,11 +1,8 @@
 package sigma
 
 import (
-	core "sigma/admin/core"
 	"sigma/admin/core/runtime"
 	"sigma/admin/shell"
-	memory_manager "sigma/admin/shell/managers/memory"
-	storage_manager "sigma/admin/shell/managers/storage"
 )
 
 type Sigma struct {
@@ -13,43 +10,23 @@ type Sigma struct {
 	Shell *shell.Shell
 }
 
-func (s *Sigma) generateControl() *runtime.Control {
-	return &runtime.Control{
-		AppId:       s.Core.AppId,
-		StorageRoot: s.Core.StorageRoot,
-		Trx:         s.Shell.Managers().StorageManager().CreateTrx(),
-		Services:    s.Core.Services,
-	}
-}
-
 func New(appId string, config shell.Config) *Sigma {
-	s := &Sigma{}
-	//sigma-shell level managers
-	fedConnector := &shell.FedConnector{}
-	stoManager := storage_manager.CreateDatabase(config.DbConn)
-	memManager := memory_manager.CreateMemory(config.MemUri)
-	// core
-	app, grpcModelLoader := core.New(appId, config.StorageRoot, config.CoreAccess, stoManager, memManager, s.generateControl, fedConnector.SendToFed, config.LogCb)
 	// shell
-	sh := shell.New(app, stoManager, grpcModelLoader, config)
-	// connect wires
-	fedConnector.Shell = sh
-	s.Core = app
-	s.Shell = sh
-	// load core services
-	app.LoadCoreServices()
-	// connect sigma whole services to net based on coreAccess flag
-	sh.ConnectServicesToNet()
+	sh := shell.New(appId, config)
+	// create sigma
+	s := &Sigma{Shell: sh, Core: sh.Core()}
+	// connect whole sigma services to net based on coreAccess flag
+	sh.ConnectServicesToNetAdapter()
 	// sigma ready
 	return s
 }
 
-func (s *Sigma) ConnectToNetwork(ports map[string]int) {
+func (s *Sigma) RunNetwork(ports map[string]int) {
 	if ports["http"] > 0 {
-		s.Shell.Managers().NetManager().HttpServer.Listen(ports["http"])
+		s.Shell.Tools().Net().HttpServer.Listen(ports["http"])
 	}
 	if ports["grpc"] > 0 {
-		s.Shell.Managers().NetManager().GrpcServer.Listen(ports["grpc"])
+		s.Shell.Tools().Net().GrpcServer.Listen(ports["grpc"])
 	}
 }
 

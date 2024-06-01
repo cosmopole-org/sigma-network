@@ -2,22 +2,21 @@ package services_auth
 
 import (
 	inputs_auth "sigma/admin/core/inputs/auth"
-	"sigma/admin/core/managers"
+	"sigma/admin/core/tools"
 	"sigma/admin/core/models"
 	outputs_auth "sigma/admin/core/outputs/auth"
 	"sigma/admin/core/runtime"
 	network_store "sigma/admin/shell/network"
 
 	"github.com/gofiber/fiber/v2"
-	"google.golang.org/grpc"
 )
 
 type AuthService struct {
-	managers managers.ICoreManagers
+	tools tools.ICoreTools
 }
 
 func (s *AuthService) getServerPublicKey(control *runtime.Control, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
-	return &outputs_auth.GetServerKeyOutput{PublicKey: string(s.managers.CryptoManager().FetchKeyPair("server_key")[1])}, nil
+	return &outputs_auth.GetServerKeyOutput{PublicKey: string(s.tools.Crypto().FetchKeyPair("server_key")[1])}, nil
 }
 
 func (s *AuthService) getServersMap(control *runtime.Control, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
@@ -28,7 +27,7 @@ func (s *AuthService) getServersMap(control *runtime.Control, input inputs_auth.
 
 func CreateAuthService(app *runtime.App) {
 
-	service := &AuthService{managers: app.Managers}
+	service := &AuthService{tools: app.Tools}
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,
@@ -46,11 +45,4 @@ func CreateAuthService(app *runtime.App) {
 		true,
 		service.getServersMap,
 	))
-}
-
-func LoadAuthGrpcService(grpcServer *grpc.Server) {
-	// type server struct {
-	// 	pb.UnimplementedAuthServiceServer
-	// }
-	// pb.RegisterAuthServiceServer(grpcServer, &server{})
 }

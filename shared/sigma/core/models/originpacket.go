@@ -8,5 +8,5 @@ type OriginPacket struct {
 	RequestId  string
 	Data       string
 	IsResponse bool
-	Exceptions []Client
+	Exceptions []string
 }

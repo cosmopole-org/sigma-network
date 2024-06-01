@@ -3,45 +3,40 @@ package middlewares_wasm
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 
 	"sigma/main/core/runtime"
-	"sigma/main/core/utils"
-	"sigma/main/shell/managers"
+	"sigma/main/shell/tools"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) error {
-	return func(c *fiber.Ctx) error {
-		path := c.Path()
-		vm, ok := mans.WasmManager().PluginVms[path]
+func WasmMiddleware(app *runtime.App, mans tools.IShellTools) func(key string, packetId string, input interface{}, token string, origin string) (int, any, error) {
+	return func(key string, packetId string, rawInput interface{}, token string, origin string) (int, any, error) {
+		path := key
+		vm, ok := mans.Wasm().PluginVms[path]
 		if ok {
-			meta := mans.WasmManager().PluginMetas[path]
+			meta := mans.Wasm().PluginMetas[path]
 			var body = ""
-			if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
-				body = string(c.BodyRaw())
-			} else if meta.Access.ActionType == "GET" {
-				dictStr, _ := json.Marshal(c.AllParams())
-				body = string(dictStr)
+			switch input := rawInput.(type) {
+			case string:
+				body = input
+			case *fiber.Ctx:
+				if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
+					body = string(input.BodyRaw())
+				} else if meta.Access.ActionType == "GET" {
+					dictStr, _ := json.Marshal(input.AllParams())
+					body = string(dictStr)
+				}
+			default:
+				//pass
 			}
-			var lengthOfSubject = len(body)
 
-			var token = ""
-			tokenHeader := c.GetReqHeaders()["Token"]
-			if tokenHeader != nil {
-				token = tokenHeader[0]
-			}
+			var lengthOfSubject = len(body)
 
 			var check = meta.Check
 
-			var data = map[string]interface{}{}
-			if meta.Access.ActionType == "POST" || meta.Access.ActionType == "PUT" || meta.Access.ActionType == "DELETE" {
-				c.BodyParser(&data)
-			} else if meta.Access.ActionType == "GET" {
-				c.ParamsParser(&data)
-			}
-
-			doAction := func() error {
+			doAction := func() (int, any, error) {
 				var key = meta.Key
 				var lengthOfKey = len(meta.Key)
 
@@ -80,44 +75,52 @@ func WasmMiddleware(app *runtime.App, mans *managers.Managers) func(*fiber.Ctx) 
 				var output map[string]interface{}
 				json.Unmarshal(memData, &output)
 
-				return c.Status(fiber.StatusOK).JSON(output)
+				return fiber.StatusOK, output, nil
 			}
 
 			if check.User {
-				var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
+				var userId, userType = app.Tools.Security().AuthWithToken(token)
 				if userId != "" {
 					if check.Space {
+						var inputMap map[string]string
+						json.Unmarshal([]byte(body), inputMap)
 						var spaceId interface{}
-						spaceId, tOk := data["spaceId"]
+						sId, tOk := inputMap["spaceId"]
 						if !tOk {
-							spaceId = 0
+							spaceId = ""
+						} else {
+							spaceId = sId
 						}
 						var topicId interface{}
-						topicId, rOk := data["topicId"]
+						tId, rOk := inputMap["topicId"]
 						if !rOk {
-							topicId = 0
+							topicId = ""
+						} else {
+							topicId = tId
 						}
-						var workerId interface{}
-						workerId, wOk := data["workerId"]
+						var memberId interface{}
+						mId, wOk := inputMap["memberId"]
 						if !wOk {
-							workerId = 0
+							memberId = ""
+						} else {
+							memberId = mId
 						}
-						var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, spaceId.(string), topicId.(string), workerId.(string))
+						var location = app.Tools.Security().HandleLocationWithProcessed(token, userId, userType, spaceId.(string), topicId.(string), memberId.(string))
 						if location.SpaceId != "" {
 							return doAction()
 						} else {
-							return c.Status(fiber.StatusForbidden).JSON(utils.BuildErrorJson("access denied"))
+							return fiber.StatusForbidden, nil, errors.New("access denied")
 						}
 					} else {
 						return doAction()
 					}
 				} else {
-					return c.Status(fiber.StatusForbidden).JSON(utils.BuildErrorJson("access denied"))
+					return fiber.StatusForbidden, nil, errors.New("access denied")
 				}
 			} else {
 				return doAction()
 			}
 		}
-		return c.Next()
+		return -3, nil, nil
 	}
 }

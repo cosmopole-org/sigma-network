@@ -3,7 +3,7 @@ package services_user
 import (
 	"fmt"
 	inputs_users "sigma/storage/core/inputs/users"
-	"sigma/storage/core/managers"
+	"sigma/storage/core/tools"
 	"sigma/storage/core/models"
 	outputs_users "sigma/storage/core/outputs/users"
 	"sigma/storage/core/runtime"
@@ -14,7 +14,7 @@ import (
 )
 
 type UserService struct {
-	managers managers.ICoreManagers
+	tools tools.ICoreTools
 }
 
 func (s *UserService) authenticate(control *runtime.Control, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
@@ -28,7 +28,7 @@ func (s *UserService) create(control *runtime.Control, input inputs_users.Create
 	control.Trx.Create(&user)
 	session := models.Session{Id: utils.SecureUniqueId(control.AppId), Token: token, UserId: user.Id}
 	control.Trx.Create(&session)
-	s.managers.MemoryManager().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
+	s.tools.Cache().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
 	return outputs_users.CreateOutput{User: user, Session: session}, nil
 }
 
@@ -59,7 +59,7 @@ func (s *UserService) delete(control *runtime.Control, input inputs_users.Delete
 	sessions := []models.Session{}
 	control.Trx.Where("user_id = ?", user.Id).Find(&sessions)
 	for _, session := range sessions {
-		s.managers.MemoryManager().Del("auth::" + session.Token)
+		s.tools.Cache().Del("auth::" + session.Token)
 		control.Trx.Delete(&session)
 	}
 	control.Trx.Delete(&user)
@@ -68,10 +68,10 @@ func (s *UserService) delete(control *runtime.Control, input inputs_users.Delete
 
 func CreateUserService(app *runtime.App) {
 
-	service := &UserService{managers: app.Managers}
+	service := &UserService{tools: app.Tools}
 
-	app.Managers.StorageManager().AutoMigrate(&models.Session{})
-	app.Managers.StorageManager().AutoMigrate(&models.User{})
+	app.Tools.Storage().AutoMigrate(&models.Session{})
+	app.Tools.Storage().AutoMigrate(&models.User{})
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,

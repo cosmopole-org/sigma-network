@@ -8,7 +8,7 @@ import (
 	"sigma/storage/core/models"
 	outputs "sigma/storage/core/outputs"
 	"sigma/storage/core/runtime"
-	"sigma/storage/shell/managers"
+	"sigma/storage/shell/tools"
 	dtos_storage "sigma/storage/storage/dtos/storage"
 	outputs_storage "sigma/storage/storage/outputs/storage"
 
@@ -16,14 +16,14 @@ import (
 )
 
 type StorageService struct {
-	managers *managers.Managers
+	tools tools.IShellTools
 }
 
 func (ss *StorageService) UploadFile(control *runtime.Control, input dtos_storage.UploadDto, info models.Info) (any, error) {
 	if !((len(input.Data) == 1) && (len(input.DataKey) == 1)) {
 		return outputs_storage.Binary{}, errors.New("we need 1 file and 1 file key")
 	}
-	if err := ss.managers.FileManager().SaveFileToStorage(control.StorageRoot, input.Data[0], info.Member.TopicIds, input.DataKey[0]); err != nil {
+	if err := ss.tools.File().SaveFileToStorage(control.StorageRoot, input.Data[0], info.Member.TopicIds, input.DataKey[0]); err != nil {
 		log.Println(err)
 		return outputs_storage.Binary{}, err
 	}
@@ -39,10 +39,10 @@ func (ss *StorageService) DownloadFile(control *runtime.Control, input dtos_stor
 	}
 }
 
-func CreateStorageService(sc *runtime.App, mans *managers.Managers) {
+func CreateStorageService(sc *runtime.App, tools tools.IShellTools) {
 
 	storageS := &StorageService{
-		managers: mans,
+		tools: tools,
 	}
 
 	// Methods
@@ -55,7 +55,7 @@ func CreateStorageService(sc *runtime.App, mans *managers.Managers) {
 		storageS.UploadFile,
 	)
 	sc.Services.AddAction(uploadAction)
-	storageS.managers.NetManager().SwitchNetAccessByAction(uploadAction, func(i interface{}) (any, error) { return nil, nil })
+	storageS.tools.Net().SwitchNetAccessByAction(uploadAction, func(i interface{}) (any, error) { return nil, nil })
 
 	downloadAction := runtime.CreateAction(
 		sc,
@@ -66,5 +66,5 @@ func CreateStorageService(sc *runtime.App, mans *managers.Managers) {
 		storageS.DownloadFile,
 	)
 	sc.Services.AddAction(downloadAction)
-	storageS.managers.NetManager().SwitchNetAccessByAction(downloadAction, func(i interface{}) (any, error) { return nil, nil })
+	storageS.tools.Net().SwitchNetAccessByAction(downloadAction, func(i interface{}) (any, error) { return nil, nil })
 }

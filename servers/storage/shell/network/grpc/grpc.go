@@ -42,7 +42,7 @@ func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (an
 		if err0 != nil {
 			return nil, "error", err0
 		}
-		statusCode, res, err := gs.app.Services.CallAction(key, data, token, origin)
+		statusCode, res, err := gs.app.Services.CallAction(key, requestId, data, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {

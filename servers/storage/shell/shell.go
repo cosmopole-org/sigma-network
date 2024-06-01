@@ -2,15 +2,16 @@ package shell
 
 import (
 	"net"
-	"sigma/storage/core/managers/storage"
-	"sigma/storage/core/models"
+	core "sigma/storage/core"
 	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
-	mans "sigma/storage/shell/managers"
 	middlewares_wasm "sigma/storage/shell/middlewares"
+	shell_federation "sigma/storage/shell/network/federation"
 	"sigma/storage/shell/services"
+	tools "sigma/storage/shell/tools"
+	memory_manager "sigma/storage/shell/tools/memory"
+	storage_manager "sigma/storage/shell/tools/storage"
 
-	"google.golang.org/grpc"
 	"gorm.io/gorm"
 )
 
@@ -20,15 +21,15 @@ var wellKnownServers = []string{
 }
 
 type Shell struct {
-	app         *runtime.App
-	managers    *mans.Managers
+	core        *runtime.App
+	tools       tools.IShellTools
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
 }
 
-func (s *Shell) ConnectServicesToNet() {
-	for _, v := range s.app.Services.Actions {
-		s.Managers().NetManager().SwitchNetAccessByAction(
+func (s *Shell) ConnectServicesToNetAdapter() {
+	for _, v := range s.core.Services.Actions {
+		s.tools.Net().SwitchNetAccessByAction(
 			v,
 			func(i interface{}) (any, error) {
 				return nil, nil
@@ -37,8 +38,12 @@ func (s *Shell) ConnectServicesToNet() {
 	}
 }
 
-func (s *Shell) Managers() *mans.Managers {
-	return s.managers
+func (s *Shell) Tools() tools.IShellTools {
+	return s.tools
+}
+
+func (s *Shell) Core() *runtime.App {
+	return s.core
 }
 
 type ServersOutput struct {
@@ -75,20 +80,25 @@ func (s *Shell) loadWellknownServers() {
 	utils.Log(5)
 }
 
-func New(app *runtime.App, storage storage.IGlobStorage, grpcModelLoader func(*grpc.Server), config Config) *Shell {
-	sh := &Shell{app: app}
+func (sh *Shell) installCore(c *runtime.App) {
+	sh.core = c
+}
+
+func New(appId string, config Config) *Shell {
+	// create shell ref
+	sh := &Shell{}
+	// create shell-core tools
+	storage := storage_manager.CreateDatabase(config.DbConn)
+	cache := memory_manager.CreateMemory(config.MemUri)
+	fed := shell_federation.CreateFederation()
+	// create core
+	co := core.New(appId, config.StorageRoot, config.CoreAccess, storage, cache, fed, config.LogCb)
+	sh.installCore(co)
 	sh.loadWellknownServers()
-	sh.managers = mans.New(app, storage, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, config.Federation)
-	sh.managers.NetManager().HttpServer.AddMiddleware(middlewares_wasm.WasmMiddleware(app, sh.managers))
-	grpcModelLoader(sh.Managers().NetManager().GrpcServer.Server)
-	services.CreateWasmPluggerService(app, sh.managers)
+	sh.tools = tools.New(co, storage, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
+	fed.Run(co, sh.ipToHostMap, sh.hostToIpMap)
+	co.Services.PutMiddleware(middlewares_wasm.WasmMiddleware(co, sh.tools))
+	co.LoadCoreServices()
+	services.CreateWasmPluggerService(co, sh.tools)
 	return sh
-}
-
-type FedConnector struct {
-	Shell *Shell
-}
-
-func (f *FedConnector) SendToFed(s string, op models.OriginPacket) {
-	f.Shell.Managers().NetManager().FedNet.SendInFederation(s, op)
 }

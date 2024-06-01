@@ -1,13 +1,21 @@
 package runtime
 
-import "sigma/main/core/managers"
+import "sigma/main/core/tools"
 
 type App struct {
 	AppId            string
-	Managers         managers.ICoreManagers
+	Tools            tools.ICoreTools
 	Services         *Services
 	StorageRoot      string
 	CoreAccess       bool
-	GenControl       func() *Control
 	LoadCoreServices func()
+}
+
+func (app *App) GenerateControl() *Control {
+	return &Control{
+		AppId: app.AppId,
+		StorageRoot: app.StorageRoot,
+		Services: app.Services,
+		Trx: app.Tools.Storage().CreateTrx(),
+	}
 }

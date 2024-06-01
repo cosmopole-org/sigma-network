@@ -48,7 +48,7 @@ func main() {
 		},
 	)
 
-	sigmaApp.ConnectToNetwork(map[string]int{"http": int(port)})
+	sigmaApp.RunNetwork(map[string]int{"http": int(port)})
 
 	<-quit
 }

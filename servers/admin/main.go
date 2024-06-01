@@ -55,7 +55,7 @@ func main() {
 		},
 	)
 
-	adminApp.Sigma.ConnectToNetwork(map[string]int{
+	adminApp.Sigma.RunNetwork(map[string]int{
 		"http": int(port),
 	})
 

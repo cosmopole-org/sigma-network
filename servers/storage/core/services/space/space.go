@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	inputs_spaces "sigma/storage/core/inputs/spaces"
-	"sigma/storage/core/managers"
 	"sigma/storage/core/models"
 	outputs_spaces "sigma/storage/core/outputs/spaces"
 	"sigma/storage/core/runtime"
+	"sigma/storage/core/tools"
 	updates_spaces "sigma/storage/core/updates/spaces"
 	"sigma/storage/core/utils"
 
@@ -16,7 +16,7 @@ import (
 )
 
 type SpaceService struct {
-	managers managers.ICoreManagers
+	tools tools.ICoreTools
 }
 
 const memberTemplate = "member::%s::%s"
@@ -28,11 +28,8 @@ func (s *SpaceService) addMember(control *runtime.Control, input inputs_spaces.A
 	}
 	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: input.UserId, SpaceId: info.Member.SpaceId, TopicIds: "*", Metadata: ""}
 	control.Trx.Create(&member)
-	s.managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	go s.managers.PushManager().PushToGroup("spaces/addMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member},
-		[]models.Client{
-			{UserId: info.User.Id},
-		})
+	s.tools.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	go s.tools.Signaler().SignalGroup("spaces/addMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
 	return outputs_spaces.AddMemberOutput{Member: member}, nil
 }
 
@@ -48,11 +45,8 @@ func (s *SpaceService) removeMember(control *runtime.Control, input inputs_space
 		return nil, err2
 	}
 	control.Trx.Delete(&member)
-	s.managers.MemoryManager().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
-	go s.managers.PushManager().PushToGroup("spaces/removeMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member},
-		[]models.Client{
-			{UserId: info.User.Id},
-		})
+	s.tools.Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
+	go s.tools.Signaler().SignalGroup("spaces/removeMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
 	return outputs_spaces.AddMemberOutput{Member: member}, nil
 }
 
@@ -63,8 +57,8 @@ func (s *SpaceService) create(control *runtime.Control, input inputs_spaces.Crea
 	control.Trx.Create(&member)
 	admin := models.Admin{Id: utils.SecureUniqueId(control.AppId), UserId: info.User.Id, SpaceId: space.Id, Role: "creator"}
 	control.Trx.Create(&admin)
-	s.managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
-	s.managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	s.tools.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	s.tools.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	return outputs_spaces.CreateOutput{Space: space, Member: member}, nil
 }
 
@@ -81,10 +75,7 @@ func (s *SpaceService) update(control *runtime.Control, input inputs_spaces.Upda
 	space.Tag = input.Tag + "@" + control.AppId
 	space.IsPublic = input.IsPublic
 	control.Trx.Save(&space)
-	go s.managers.PushManager().PushToGroup("spaces/update", space.Id, updates_spaces.Update{Space: space},
-		[]models.Client{
-			{UserId: info.User.Id},
-		})
+	go s.tools.Signaler().SignalGroup("spaces/update", space.Id, updates_spaces.Update{Space: space}, true, []string{info.User.Id})
 	return outputs_spaces.UpdateOutput{Space: space}, nil
 }
 
@@ -103,10 +94,7 @@ func (s *SpaceService) delete(control *runtime.Control, input inputs_spaces.Dele
 		return nil, err2
 	}
 	control.Trx.Delete(&space)
-	go s.managers.PushManager().PushToGroup("spaces/delete", space.Id, updates_spaces.Update{Space: space},
-		[]models.Client{
-			{UserId: info.User.Id},
-		})
+	go s.tools.Signaler().SignalGroup("spaces/delete", space.Id, updates_spaces.Delete{Space: space}, true, []string{info.User.Id})
 	return outputs_spaces.DeleteOutput{Space: space}, nil
 }
 
@@ -138,22 +126,19 @@ func (s *SpaceService) join(control *runtime.Control, input inputs_spaces.JoinIn
 	if err2 != nil {
 		return nil, err2
 	}
-	s.managers.PushManager().JoinGroup(member.SpaceId, member.UserId)
-	s.managers.MemoryManager().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	go s.managers.PushManager().PushToGroup("spaces/join", member.SpaceId, updates_spaces.Join{Member: member},
-		[]models.Client{
-			{UserId: member.UserId},
-		})
+	s.tools.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	s.tools.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	go s.tools.Signaler().SignalGroup("spaces/join", member.SpaceId, updates_spaces.Join{Member: member}, true, []string{member.UserId})
 	return outputs_spaces.JoinOutput{Member: member}, nil
 }
 
 func CreateSpaceService(app *runtime.App) {
 
-	service := SpaceService{managers: app.Managers}
+	service := SpaceService{tools: app.Tools}
 
-	app.Managers.StorageManager().AutoMigrate(&models.Space{})
-	app.Managers.StorageManager().AutoMigrate(&models.Member{})
-	app.Managers.StorageManager().AutoMigrate(&models.Admin{})
+	app.Tools.Storage().AutoMigrate(&models.Space{})
+	app.Tools.Storage().AutoMigrate(&models.Member{})
+	app.Tools.Storage().AutoMigrate(&models.Admin{})
 
 	app.Services.AddAction(runtime.CreateAction(
 		app,

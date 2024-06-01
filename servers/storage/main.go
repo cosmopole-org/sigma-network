@@ -50,7 +50,7 @@ func main() {
 		},
 	)
 
-	storageApp.Sigma.ConnectToNetwork(map[string]int{"http": int(port)})
+	storageApp.Sigma.RunNetwork(map[string]int{"http": int(port)})
 
 	<-quit
 }

@@ -19,7 +19,7 @@ type WebsocketAnswer struct {
 }
 
 type WsServer struct {
-	app *runtime.App
+	app       *runtime.App
 	Endpoints map[string]func(string, string, string, string) (any, string, error)
 }
 
@@ -37,7 +37,7 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 
 func (ws *WsServer) EnableEndpoint(key string) {
 	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		statusCode, res, err := ws.app.Services.CallAction(key, rawBody, token, origin)
+		statusCode, res, err := ws.app.Services.CallAction(key, requestId, rawBody, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -63,10 +63,13 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			if uri == "authenticate" {
 				var token = splittedMsg[1]
 				var requestId = splittedMsg[2]
-				userId, _ := ws.app.Managers.SecurityManager().AuthWithToken(token)
+				userId, _ := ws.app.Tools.Security().AuthWithToken(token)
 				uid = userId
-				ws.app.Managers.PushManager().Clients[userId] = func(b []byte) {
-					conn.WriteMessage(websocket.TextMessage, b)
+				ws.app.Tools.Signaler().Listeners[userId] = &models.Listener{
+					Id: userId,
+					Signal: func(b any) {
+						conn.WriteMessage(websocket.TextMessage, b.([]byte))
+					},
 				}
 				AnswerSocket(conn, "response", requestId, models.ResponseSimpleMessage{Message: "authenticated"})
 			} else {
@@ -88,7 +91,7 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			}
 		}
 		if uid != "" {
-			delete(ws.app.Managers.PushManager().Clients, uid)
+			delete(ws.app.Tools.Signaler().Listeners, uid)
 		}
 		utils.Log(5, "socket broken")
 	}))

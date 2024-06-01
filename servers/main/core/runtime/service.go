@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sigma/main/core/inputs"
-	"sigma/main/core/managers/storage"
 	"sigma/main/core/models"
+	"sigma/main/core/tools/storage"
 	"sigma/main/core/utils"
 
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +28,7 @@ type IError struct {
 type Control struct {
 	AppId       string
 	StorageRoot string
-	Trx         storage.IStorage
+	Trx         storage.ITrx
 	Services    *Services
 }
 
@@ -57,13 +57,33 @@ type Check struct {
 }
 
 type Services struct {
-	app     *App
-	Actions map[string]*Action
+	app         *App
+	Actions     map[string]*Action
+	Middlewares []func(key string, packetId string, input interface{}, token string, origin string) (int, any, error)
 }
 
-func (ss *Services) CallAction(key string, input interface{}, token string, origin string) (int, any, error) {
-	control := ss.app.GenControl()
+func (ss *Services) PutMiddleware(mw func(key string, packetId string, input interface{}, token string, origin string) (int, any, error)) {
+	ss.Middlewares = append(ss.Middlewares, mw)
+}
+
+func (ss *Services) CallAction(key string, packetId string, input interface{}, token string, origin string) (int, any, error) {
+	for _, mw := range ss.Middlewares {
+		statusCode, result, err := mw(key, packetId, input, token, origin)
+		if statusCode == -3 {
+			continue
+		} else {
+			return statusCode, result, err
+		}
+	}
+	control := ss.app.GenerateControl()
 	statusCode, res, err := ss.Actions[key].Process(control, input, token, origin)
+	if statusCode == -2 {
+		data, err := json.Marshal(res.(PreFedPacket).Body)
+		if err != nil {
+			utils.Log(5, err)
+		}
+		ss.app.Tools.Federation().SendInFederation(origin, models.OriginPacket{IsResponse: false, Key: key, UserId: res.(PreFedPacket).UserId, SpaceId: res.(PreFedPacket).Body.(inputs.IInput).GetSpaceId(), TopicId: res.(PreFedPacket).Body.(inputs.IInput).GetTopicId(), Data: string(data), RequestId: packetId})
+	}
 	if err != nil {
 		control.Trx.Rollback()
 	} else {
@@ -158,11 +178,11 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			}
 			if !access.Fed || (origin == app.AppId) {
 				if check.User {
-					var userId, userType = app.Managers.SecurityManager().AuthWithToken(token)
+					var userId, userType = app.Tools.Security().AuthWithToken(token)
 					if userId != "" {
 						var user = models.User{Id: userId}
 						if check.Space {
-							var location = app.Managers.SecurityManager().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
+							var location = app.Tools.Security().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
 							if location.SpaceId != "" {
 								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
 								result, err := callback(control, (*data), models.Info{User: user, Member: member})
@@ -192,7 +212,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 				}
 			} else {
 				if check.User {
-					var userId, _ = app.Managers.SecurityManager().AuthWithToken(token)
+					var userId, _ = app.Tools.Security().AuthWithToken(token)
 					if userId != "" {
 						return -2, PreFedPacket{UserId: userId, Body: *data}, nil
 					} else {
@@ -208,7 +228,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			member := models.Member{UserId: user.Id, SpaceId: m.SpaceId, TopicIds: m.TopicId, Metadata: ""}
 			result, err := callback(control, data.(T), models.Info{User: user, Member: member})
 			fmt.Println()
-			fmt.Println(result,err)
+			fmt.Println(result, err)
 			fmt.Println()
 			if err != nil {
 				return fiber.ErrInternalServerError.Code, nil, err
@@ -216,7 +236,6 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			return fiber.StatusOK, result, nil
 		},
 		ProcessFederative: func(control *Control, data interface{}, a models.Info) (int, any, error) {
-			control.Trx.Begin()
 			result, err := callback(control, data.(T), a)
 			if err != nil {
 				control.Trx.Rollback()

@@ -2,7 +2,7 @@ package services
 
 import (
 	"errors"
-	"sigma/admin/shell/managers"
+	"sigma/admin/shell/tools"
 
 	inputs_auth "sigma/admin/admin/inputs/auth"
 	outputs_auth "sigma/admin/admin/outputs/auth"
@@ -16,7 +16,7 @@ import (
 )
 
 type AuthService struct {
-	managers *managers.Managers
+	tools tools.IShellTools
 }
 
 func (authS *AuthService) signin(control *runtime.Control, input inputs_auth.SigninDto, info coreModels.Info) (any, error) {
@@ -44,10 +44,10 @@ func (authS *AuthService) updatePass(control *runtime.Control, input inputs_auth
 	return outputs_auth.UpdatePassOutput{}, nil
 }
 
-func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
+func CreateAuthService(sc *runtime.App, tools tools.IShellTools) {
 
 	authS := &AuthService{
-		managers: mans,
+		tools: tools,
 	}
 
 	signInAction := runtime.CreateAction(
@@ -59,7 +59,7 @@ func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
 		authS.signin,
 	)
 	sc.Services.AddAction(signInAction)
-	authS.managers.NetManager().SwitchNetAccessByAction(signInAction, func(i interface{}) (any, error) { return nil, nil })
+	authS.tools.Net().SwitchNetAccessByAction(signInAction, func(i interface{}) (any, error) { return nil, nil })
 
 	updatePassAction := runtime.CreateAction(
 		sc,
@@ -70,7 +70,7 @@ func CreateAuthService(sc *runtime.App, mans *managers.Managers) {
 		authS.updatePass,
 	)
 	sc.Services.AddAction(updatePassAction)
-	authS.managers.NetManager().SwitchNetAccessByAction(updatePassAction, func(i interface{}) (any, error) { return nil, nil })
+	authS.tools.Net().SwitchNetAccessByAction(updatePassAction, func(i interface{}) (any, error) { return nil, nil })
 }
 
 func LoadAuthGrpcService(gs *grpc.Server) {

@@ -1,7 +1,7 @@
 package admin_builder
 
 import (
-	godsecurity "sigma/admin/admin/managers"
+	godsecurity "sigma/admin/admin/tools"
 	"sigma/admin/admin/models"
 	"sigma/admin/admin/services"
 	"sigma/admin/shell"
@@ -22,7 +22,7 @@ func BuildAdmin(appId string, config shell.Config, gods []*models.God) *Admin {
 		Sigma: sigmaApp,
 	}
 	admin.GodSecurity = godsecurity.CreateSecurity(sigmaApp.Core, gods)
-	services.CreateAuthService(sigmaApp.Core, sigmaApp.Shell.Managers())
-	services.LoadAuthGrpcService(sigmaApp.Shell.Managers().NetManager().GrpcServer.Server)
+	services.CreateAuthService(sigmaApp.Core, sigmaApp.Shell.Tools())
+	services.LoadAuthGrpcService(sigmaApp.Shell.Tools().Net().GrpcServer.Server)
 	return admin
 }

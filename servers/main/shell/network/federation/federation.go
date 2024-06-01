@@ -2,13 +2,13 @@ package shell_federation
 
 import (
 	"encoding/json"
-	"sigma/main/core/managers/pusher"
+	"sigma/main/core/tools/signaler"
 	"sigma/main/core/models"
 	outputs_invites "sigma/main/core/outputs/invites"
 	outputs_spaces "sigma/main/core/outputs/spaces"
 	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
-	storage_manager "sigma/main/shell/managers/storage"
+	storage_manager "sigma/main/shell/tools/storage"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +19,7 @@ type FedNet struct {
 	hostToIpMap map[string]string
 	app         *runtime.App
 	stoManager  *storage_manager.StorageManager
-	pushManager *pusher.Pusher
+	pushManager *signaler.Signaler
 	fed         bool
 }
 
@@ -68,17 +68,17 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 				fed.pushManager.JoinGroup(member.SpaceId, member.UserId)
 			}
 		}
-		fed.pushManager.PushToUser(payload.Key, payload.UserId, payload.Data, payload.RequestId, true)
+		fed.pushManager.SignalUser(payload.Key, payload.RequestId, payload.UserId, payload.Data, true)
 	} else {
 		dataArr := strings.Split(payload.Key, " ")
 		if len(dataArr) > 0 && (dataArr[0] == "update") {
-			fed.pushManager.PushToUser(payload.Key[len("update "):], payload.UserId, payload.Data, "", true)
+			fed.pushManager.SignalUser(payload.Key[len("update "):], "", payload.UserId, payload.Data, true)
 		} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-			fed.pushManager.PushToGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, payload.Exceptions)
+			fed.pushManager.SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
 		} else {
 			action := fed.app.Services.GetAction(payload.Key)
 			check := action.Check
-			location := fed.app.Managers.SecurityManager().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
+			location := fed.app.Tools.Security().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
 			if check.Space && location.SpaceId == "" {
 				errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 				if err2 == nil {
@@ -88,7 +88,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 			}
 			member := models.Member{}
 			fed.stoManager.CreateTrx().Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member).Commit()
-			_, res, err := action.ProcessFederative(fed.app.GenControl(), payload.Data, models.Info{
+			_, res, err := action.ProcessFederative(fed.app.GenerateControl(), payload.Data, models.Info{
 				User:   models.User{Id: payload.UserId},
 				Member: member,
 			})
@@ -131,6 +131,12 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 	}
 }
 
-func New(sc *runtime.App, ip2host map[string]string, host2ip map[string]string, fed bool) *FedNet {
-	return &FedNet{app: sc, ipToHostMap: ip2host, hostToIpMap: host2ip, fed: fed}
+func (fed *FedNet) Run(sc *runtime.App, ip2host map[string]string, host2ip map[string]string)  {
+	fed.app = sc
+	fed.ipToHostMap = ip2host
+	fed.hostToIpMap = host2ip
+}
+
+func CreateFederation() *FedNet {
+	return &FedNet{}
 }
