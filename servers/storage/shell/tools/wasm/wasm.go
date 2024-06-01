@@ -8,12 +8,14 @@ import (
 	"sigma/storage/core/runtime"
 	"sigma/storage/core/utils"
 	base_manager "sigma/storage/shell/tools/base"
+	network_manager "sigma/storage/shell/tools/network"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
 )
 
 type WasmManager struct {
 	base_manager.BaseManager
+	netTool     *network_manager.NetManager
 	PluginVms   map[string]*wasmedge.VM
 	PluginMetas map[string]runtime.PluginFunction
 }
@@ -72,6 +74,7 @@ func (wm *WasmManager) Plug(wasmFilePath string, meta []runtime.PluginFunction) 
 		}
 		wm.PluginVms[f.Path] = vm
 		wm.PluginMetas[f.Path] = f
+		wm.netTool.HttpServer.AllowToPass(f.Path)
 	}
 }
 
@@ -185,13 +188,15 @@ func (wm *WasmManager) loadWasmModules() {
 				}
 				wm.PluginVms[f.Path] = vm
 				wm.PluginMetas[f.Path] = f
+				wm.netTool.HttpServer.AllowToPass(f.Path)
 			}
 		}
 	}
 }
 
-func New(sc *runtime.App) *WasmManager {
+func New(sc *runtime.App, netTool *network_manager.NetManager) *WasmManager {
 	wm := &WasmManager{
+		netTool:     netTool,
 		PluginVms:   make(map[string]*wasmedge.VM),
 		PluginMetas: make(map[string]runtime.PluginFunction),
 	}

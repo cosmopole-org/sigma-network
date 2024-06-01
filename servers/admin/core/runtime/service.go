@@ -137,7 +137,7 @@ type PluginFunction struct {
 	Access Access `json:"access" validate:"required"`
 }
 
-func CreateAction[T inputs.IInput](app *App, key string, check Check, access Access, Validate bool, callback func(*Control, T, models.Info) (any, error)) *Action {
+func CreateAction[T inputs.IInput](app *App, key string, check Check, access Access, validate bool, callback func(*Control, T, models.Info) (any, error)) *Action {
 	return &Action{
 		Key:    key,
 		Access: access,
@@ -158,6 +158,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 					for k, v := range form.File {
 						formData[k] = v[0]
 					}
+					fmt.Println(formData)
 					mapstructure.Decode(formData, data)
 				} else {
 					if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
@@ -169,9 +170,11 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			default:
 				//pass
 			}
-			err := ValidateInput(*data)
-			if err != nil {
-				return fiber.ErrBadRequest.Code, nil, err
+			if validate {
+				err := ValidateInput(*data)
+				if err != nil {
+					return fiber.ErrBadRequest.Code, nil, err
+				}
 			}
 			if origin == "" {
 				origin = app.AppId

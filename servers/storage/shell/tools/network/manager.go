@@ -45,7 +45,7 @@ func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map
 	nm := &NetManager{}
 	nm.App = sc
 	nm.FedNet = fed
-	nm.HttpServer = shell_http.New(sc, maxReqSize, nm.FedNet.SendInFederation)
+	nm.HttpServer = shell_http.New(sc, maxReqSize)
 	nm.WsServer = shell_websocket.New(sc, nm.HttpServer)
 	nm.GrpcServer = shell_grpc.New(sc)
 	nm.FedNet.LoadFedNet(nm.HttpServer.Server)

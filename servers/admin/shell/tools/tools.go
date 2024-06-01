@@ -41,8 +41,8 @@ func New(sc *runtime.App, storage storage.IStorage, maxReqSize int, ip2host map[
 	mans := Tools{
 		ICoreTools:     sc.Tools,
 		netManager:     network_manager.New(sc, maxReqSize, ip2host, host2ip, fed),
-		wasmManager:    wasm_manager.New(sc),
 		fileManager:    file_manager.New(sc),
 	}
+	mans.wasmManager = wasm_manager.New(sc, mans.netManager)
 	return &mans
 }

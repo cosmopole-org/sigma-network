@@ -80,25 +80,43 @@ func (s *Shell) loadWellknownServers() {
 	utils.Log(5)
 }
 
-func (sh *Shell) installCore(c *runtime.App) {
-	sh.core = c
+func (sh *Shell) loaShellServices() {
+	services.CreateWasmPluggerService(sh.core, sh.tools)
+}
+
+func (sh *Shell) install(co *runtime.App, storage *storage_manager.StorageManager, fed *shell_federation.FedNet, maxReqSize int) {
+	sh.core = co
+	sh.tools = tools.New(co, storage, maxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
+	sh.loadWellknownServers()
+	sh.loaShellServices()
+}
+
+type ShellCoreTools struct {
+	storage    *storage_manager.StorageManager
+	cache      *memory_manager.MemoryManager
+	federation *shell_federation.FedNet
+}
+
+func createShellCoreServices(dbConn gorm.Dialector, redisUri string) *ShellCoreTools {
+	shellCoreTools := &ShellCoreTools{}
+	shellCoreTools.storage = storage_manager.CreateDatabase(dbConn)
+	shellCoreTools.cache = memory_manager.CreateMemory(redisUri)
+	shellCoreTools.federation = shell_federation.CreateFederation()
+	return shellCoreTools
 }
 
 func New(appId string, config Config) *Shell {
-	// create shell ref
+	// create shell
 	sh := &Shell{}
 	// create shell-core tools
-	storage := storage_manager.CreateDatabase(config.DbConn)
-	cache := memory_manager.CreateMemory(config.MemUri)
-	fed := shell_federation.CreateFederation()
+	scTools := createShellCoreServices(config.DbConn, config.MemUri)
 	// create core
-	co := core.New(appId, config.StorageRoot, config.CoreAccess, storage, cache, fed, config.LogCb)
-	sh.installCore(co)
-	sh.loadWellknownServers()
-	sh.tools = tools.New(co, storage, config.MaxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
-	fed.Run(co, sh.ipToHostMap, sh.hostToIpMap)
+	co := core.New(appId, config.StorageRoot, config.CoreAccess, scTools.storage, scTools.cache, scTools.federation, config.LogCb)
+	// install shell on core
+	sh.install(co, scTools.storage, scTools.federation, config.MaxReqSize)
+	// setup federation
+	scTools.federation.Setup(co, scTools.storage, sh.tools.Signaler(), sh.ipToHostMap, sh.hostToIpMap)
+	// insert middlewares
 	co.Services.PutMiddleware(middlewares_wasm.WasmMiddleware(co, sh.tools))
-	co.LoadCoreServices()
-	services.CreateWasmPluggerService(co, sh.tools)
 	return sh
 }

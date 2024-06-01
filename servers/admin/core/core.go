@@ -1,4 +1,4 @@
-package builder
+package core
 
 import (
 	"sigma/admin/core/runtime"
@@ -26,6 +26,7 @@ func New(appId string, storageRoot string, openToNet bool, stoManager storage.IS
 	}
 	a.LoadCoreServices = func() { loadCoreServices(a) }
 	a.Services = runtime.CreateServices(a)
+	loadCoreServices(a)
 	return a
 }
 

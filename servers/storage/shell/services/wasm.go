@@ -53,7 +53,7 @@ func CreateWasmPluggerService(sc *runtime.App, mans tools.IShellTools) {
 			"/external/plug",
 			runtime.CreateCk(true, false, false),
 			runtime.CreateAc(true, true, false, false, fiber.MethodPost),
-			true,
+			false,
 			wasmS.plug,
 		),
 	)
