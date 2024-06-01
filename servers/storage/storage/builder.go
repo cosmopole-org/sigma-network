@@ -18,6 +18,6 @@ func BuildStorage(appId string, config shell.Config) *Storage {
 	storage := &Storage{
 		Sigma: sigmaApp,
 	}
-	services.CreateStorageService(sigmaApp.Core, sigmaApp.Shell.Tools())
+	services.CreateStorageService(sigmaApp.Shell.Toolbox())
 	return storage
 }

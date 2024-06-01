@@ -10,9 +10,9 @@ import (
 )
 
 type HttpServer struct {
-	app     *runtime.App
-	allowed map[string]bool
-	Server  *fiber.App
+	sigmaCore *runtime.App
+	allowed   map[string]bool
+	Server    *fiber.App
 }
 
 type EmptySuccessResponse struct {
@@ -35,11 +35,11 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	if requestIdHeader != nil {
 		requestId = requestIdHeader[0]
 	}
-	org := hs.app.AppId
+	org := hs.sigmaCore.AppId
 	if origin != "" {
 		org = origin
 	}
-	statusCode, result, err := hs.app.Services.CallAction(c.Path(), requestId, c, token, org)
+	statusCode, result, err := hs.sigmaCore.Services().CallAction(c.Path(), requestId, c, token, org)
 	if statusCode == fiber.StatusOK {
 		return HandleResutOfFunc(c, result)
 	} else if err != nil {
@@ -49,7 +49,7 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 }
 
 func (hs *HttpServer) Listen(port int) {
-	hs.Server.Use(func (c *fiber.Ctx) error {
+	hs.Server.Use(func(c *fiber.Ctx) error {
 		if hs.allowed[c.Path()] {
 			return hs.handleRequest(c)
 		}
@@ -61,10 +61,8 @@ func (hs *HttpServer) Listen(port int) {
 
 func (hs *HttpServer) Enablendpoint(key string) {
 	layers := []fiber.Handler{}
-	layers = append(layers,
-		hs.handleRequest,
-	)
-	hs.Server.Add(hs.app.Services.GetAction(key).Access.ActionType, key, layers...)
+	layers = append(layers, hs.handleRequest)
+	hs.Server.Add(hs.sigmaCore.Services().GetAction(key).Access.ActionType, key, layers...)
 }
 
 func HandleResutOfFunc(c *fiber.Ctx, result any) error {
@@ -86,8 +84,8 @@ func (hs *HttpServer) AllowToPass(key string) {
 
 func New(sc *runtime.App, maxReqSize int) *HttpServer {
 	if maxReqSize > 0 {
-		return &HttpServer{app: sc, allowed: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
+		return &HttpServer{sigmaCore: sc, allowed: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
 	} else {
-		return &HttpServer{app: sc, allowed: map[string]bool{}, Server: fiber.New()}
+		return &HttpServer{sigmaCore: sc, allowed: map[string]bool{}, Server: fiber.New()}
 	}
 }

@@ -3,11 +3,12 @@ package sigma
 import (
 	"sigma/admin/core/runtime"
 	"sigma/admin/shell"
+	app_l2 "sigma/admin/shell/shell"
 )
 
 type Sigma struct {
 	Core  *runtime.App
-	Shell *shell.Shell
+	Shell *app_l2.Shell
 }
 
 func New(appId string, config shell.Config) *Sigma {
@@ -23,10 +24,10 @@ func New(appId string, config shell.Config) *Sigma {
 
 func (s *Sigma) RunNetwork(ports map[string]int) {
 	if ports["http"] > 0 {
-		s.Shell.Tools().Net().HttpServer.Listen(ports["http"])
+		s.Shell.Toolbox().Net().HttpServer.Listen(ports["http"])
 	}
 	if ports["grpc"] > 0 {
-		s.Shell.Tools().Net().GrpcServer.Listen(ports["grpc"])
+		s.Shell.Toolbox().Net().GrpcServer.Listen(ports["grpc"])
 	}
 }
 

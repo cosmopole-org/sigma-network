@@ -16,7 +16,7 @@ import (
 )
 
 type AuthService struct {
-	tools tools.IShellTools
+	toolbox *tools.Toolbox
 }
 
 func (authS *AuthService) signin(control *runtime.Control, input inputs_auth.SigninDto, info coreModels.Info) (any, error) {
@@ -44,33 +44,33 @@ func (authS *AuthService) updatePass(control *runtime.Control, input inputs_auth
 	return outputs_auth.UpdatePassOutput{}, nil
 }
 
-func CreateAuthService(sc *runtime.App, tools tools.IShellTools) {
+func CreateAuthService(toolbox *tools.Toolbox) {
 
 	authS := &AuthService{
-		tools: tools,
+		toolbox: toolbox,
 	}
 
 	signInAction := runtime.CreateAction(
-		sc,
+		toolbox.App,
 		"/auths/signin",
 		runtime.CreateCk(false, false, false),
 		runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		authS.signin,
 	)
-	sc.Services.AddAction(signInAction)
-	authS.tools.Net().SwitchNetAccessByAction(signInAction, func(i interface{}) (any, error) { return nil, nil })
+	toolbox.Services().AddAction(signInAction)
+	toolbox.Net().SwitchNetAccessByAction(signInAction, func(i interface{}) (any, error) { return nil, nil })
 
 	updatePassAction := runtime.CreateAction(
-		sc,
+		toolbox.App,
 		"/auths/updatePass",
 		runtime.CreateCk(true, false, false),
 		runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		authS.updatePass,
 	)
-	sc.Services.AddAction(updatePassAction)
-	authS.tools.Net().SwitchNetAccessByAction(updatePassAction, func(i interface{}) (any, error) { return nil, nil })
+	toolbox.Services().AddAction(updatePassAction)
+	toolbox.Net().SwitchNetAccessByAction(updatePassAction, func(i interface{}) (any, error) { return nil, nil })
 }
 
 func LoadAuthGrpcService(gs *grpc.Server) {

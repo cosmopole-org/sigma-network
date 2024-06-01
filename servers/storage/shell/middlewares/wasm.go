@@ -5,18 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 
-	"sigma/storage/core/runtime"
 	"sigma/storage/shell/tools"
 
 	"github.com/gofiber/fiber/v2"
 )
 
-func WasmMiddleware(app *runtime.App, mans tools.IShellTools) func(key string, packetId string, input interface{}, token string, origin string) (int, any, error) {
+func WasmMiddleware(toolbox *tools.Toolbox) func(key string, packetId string, input interface{}, token string, origin string) (int, any, error) {
 	return func(key string, packetId string, rawInput interface{}, token string, origin string) (int, any, error) {
 		path := key
-		vm, ok := mans.Wasm().PluginVms[path]
+		vm, ok := toolbox.Wasm().PluginVms[path]
 		if ok {
-			meta := mans.Wasm().PluginMetas[path]
+			meta := toolbox.Wasm().PluginMetas[path]
 			var body = ""
 			switch input := rawInput.(type) {
 			case string:
@@ -79,7 +78,7 @@ func WasmMiddleware(app *runtime.App, mans tools.IShellTools) func(key string, p
 			}
 
 			if check.User {
-				var userId, userType = app.Tools.Security().AuthWithToken(token)
+				var userId, userType = toolbox.Security().AuthWithToken(token)
 				if userId != "" {
 					if check.Space {
 						var inputMap map[string]string
@@ -105,7 +104,7 @@ func WasmMiddleware(app *runtime.App, mans tools.IShellTools) func(key string, p
 						} else {
 							memberId = mId
 						}
-						var location = app.Tools.Security().HandleLocationWithProcessed(token, userId, userType, spaceId.(string), topicId.(string), memberId.(string))
+						var location = toolbox.Security().HandleLocationWithProcessed(token, userId, userType, spaceId.(string), topicId.(string), memberId.(string))
 						if location.SpaceId != "" {
 							return doAction()
 						} else {

@@ -16,14 +16,14 @@ import (
 )
 
 type StorageService struct {
-	tools tools.IShellTools
+	toolbox *tools.Toolbox
 }
 
 func (ss *StorageService) UploadFile(control *runtime.Control, input dtos_storage.UploadDto, info models.Info) (any, error) {
 	if !((len(input.Data) == 1) && (len(input.DataKey) == 1)) {
 		return outputs_storage.Binary{}, errors.New("we need 1 file and 1 file key")
 	}
-	if err := ss.tools.File().SaveFileToStorage(control.StorageRoot, input.Data[0], info.Member.TopicIds, input.DataKey[0]); err != nil {
+	if err := ss.toolbox.File().SaveFileToStorage(control.StorageRoot, input.Data[0], info.Member.TopicIds, input.DataKey[0]); err != nil {
 		log.Println(err)
 		return outputs_storage.Binary{}, err
 	}
@@ -39,32 +39,32 @@ func (ss *StorageService) DownloadFile(control *runtime.Control, input dtos_stor
 	}
 }
 
-func CreateStorageService(sc *runtime.App, tools tools.IShellTools) {
+func CreateStorageService(toolbox *tools.Toolbox) {
 
 	storageS := &StorageService{
-		tools: tools,
+		toolbox: toolbox,
 	}
 
 	// Methods
 	uploadAction := runtime.CreateAction(
-		sc,
+		toolbox.App,
 		"/storages/upload",
 		runtime.CreateCk(true, true, true),
 		runtime.CreateAc(true, true, false, false, fiber.MethodPost),
 		true,
 		storageS.UploadFile,
 	)
-	sc.Services.AddAction(uploadAction)
-	storageS.tools.Net().SwitchNetAccessByAction(uploadAction, func(i interface{}) (any, error) { return nil, nil })
+	toolbox.Services().AddAction(uploadAction)
+	toolbox.Net().SwitchNetAccessByAction(uploadAction, func(i interface{}) (any, error) { return nil, nil })
 
 	downloadAction := runtime.CreateAction(
-		sc,
+		toolbox.App,
 		"/storages/download",
 		runtime.CreateCk(true, true, true),
 		runtime.CreateAc(true, true, false, false, fiber.MethodGet),
 		true,
 		storageS.DownloadFile,
 	)
-	sc.Services.AddAction(downloadAction)
-	storageS.tools.Net().SwitchNetAccessByAction(downloadAction, func(i interface{}) (any, error) { return nil, nil })
+	toolbox.Services().AddAction(downloadAction)
+	toolbox.Net().SwitchNetAccessByAction(downloadAction, func(i interface{}) (any, error) { return nil, nil })
 }

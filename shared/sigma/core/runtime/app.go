@@ -1,21 +1,56 @@
 package runtime
 
-import "sigma/main/core/tools"
+import (
+	"sigma/main/core/adapters"
+	"sigma/main/core/security"
+	"sigma/main/core/signaler"
+)
 
 type App struct {
-	AppId            string
-	Tools            tools.ICoreTools
-	Services         *Services
-	StorageRoot      string
-	CoreAccess       bool
-	LoadCoreServices func()
+	AppId     string
+	OpenToNet bool
+	services  *Services
+	signaler  *signaler.Signaler
+	security  *security.Security
+	adapters  adapters.ICoreAdapters
+}
+
+func (app *App) Services() *Services {
+	return app.services
+}
+
+func (app *App) PutServices(ss *Services) {
+	app.services = ss
+}
+
+func (app *App) PutAdapters(ss adapters.ICoreAdapters) {
+	app.adapters = ss
+}
+
+func (app *App) PutSignaler(ss *signaler.Signaler) {
+	app.signaler = ss
+}
+
+func (app *App) PutSecurity(ss *security.Security) {
+	app.security = ss
+}
+
+func (app *App) Signaler() *signaler.Signaler {
+	return app.signaler
+}
+
+func (app *App) Security() *security.Security {
+	return app.security
+}
+
+func (app *App) Adapters() adapters.ICoreAdapters {
+	return app.adapters
 }
 
 func (app *App) GenerateControl() *Control {
 	return &Control{
-		AppId: app.AppId,
-		StorageRoot: app.StorageRoot,
-		Services: app.Services,
-		Trx: app.Tools.Storage().CreateTrx(),
+		AppId:    app.AppId,
+		Services: app.services,
+		Trx:      app.adapters.Storage().CreateTrx(),
 	}
 }

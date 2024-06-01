@@ -174,7 +174,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"kasperius\",\n    \"secret\": \"123\",\n    \"name\": \"keyhan m\",\n    \"avatar\": \"1\"\n}",
+							"raw": "{\n    \"username\": \"kasperius2\",\n    \"secret\": \"124\",\n    \"name\": \"keyhan mo\",\n    \"avatar\": \"2\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -509,7 +509,7 @@
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"workerId\", jsonData.worker.id);",
+									"postman.setEnvironmentVariable(\"towerId\", jsonData.space.id);",
 									""
 								],
 								"type": "text/javascript",
@@ -528,7 +528,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"machineId\": {{machineId}},\n    \"metadata\": \"{}\",\n    \"towerId\": {{towerId}},\n    \"roomId\": {{roomId}}\n}",
+							"raw": "{\n    \"spaceId\": \"{{towerId}}\",\n    \"title\": \"test tower\",\n    \"avatar\": \"0\",\n    \"isPublic\": true,\n    \"tag\": \"kasperiusHome\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -536,12 +536,12 @@
 							}
 						},
 						"url": {
-							"raw": "{{server}}/workers/create",
+							"raw": "{{server}}/spaces/create",
 							"host": [
 								"{{server}}"
 							],
 							"path": [
-								"workers",
+								"spaces",
 								"create"
 							]
 						}
@@ -1081,7 +1081,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"amir@midopia.com\",\n    \"password\": \"Qz5-JiweDjp_jvaMGQbGtJz4DmZwBN5K\"\n}",
+							"raw": "{\n    \"username\": \"amir@sigma\",\n    \"password\": \"2ada25e2-5d4f-4bc4-bbb6-45e8a61d61f4-e1e2257e-829e-4e63-ab79-9d47048a4aba\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1126,7 +1126,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"password\": \"Qz5-JiweDjp_jvaMGQbGtJz4DmZwBN5K\"\n}",
+							"raw": "{\n    \"password\": \"2ada25e2-5d4f-4bc4-bbb6-45e8a61d61f4-e1e2257e-829e-4e63-ab79-9d47048a4aba\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1261,7 +1261,7 @@
 							"formdata": [
 								{
 									"key": "key",
-									"value": "6",
+									"value": "9",
 									"type": "text"
 								},
 								{

@@ -3,7 +3,7 @@ package storage_manager
 import (
 	"log"
 	"os"
-	"sigma/storage/core/tools/storage"
+	"sigma/storage/core/adapters/storage"
 	"sigma/storage/core/utils"
 	"time"
 
@@ -12,84 +12,88 @@ import (
 )
 
 type StorageManager struct {
-	Db *gorm.DB
+	storageRoot string
+	db          *gorm.DB
 }
 
+func (sm *StorageManager) StorageRoot() string {
+	return sm.storageRoot
+}
 func (sm *StorageManager) Create(args ...interface{}) storage.IStorage {
-	sm.Db.Create(args[0])
+	sm.db.Create(args[0])
 	return sm
 }
 func (sm *StorageManager) Save(args ...interface{}) storage.IStorage {
-	sm.Db.Save(args[0])
+	sm.db.Save(args[0])
 	return sm
 }
 func (sm *StorageManager) Delete(args ...interface{}) storage.IStorage {
 	if len(args) > 1 {
-		sm.Db.Delete(args[0], args[1:]...)
+		sm.db.Delete(args[0], args[1:]...)
 	} else {
-		sm.Db.Delete(args[0])
+		sm.db.Delete(args[0])
 	}
 	return sm
 }
 func (sm *StorageManager) Find(args ...interface{}) storage.IStorage {
 	if len(args) > 1 {
-		sm.Db.Find(args[0], args[1:]...)
+		sm.db.Find(args[0], args[1:]...)
 	} else {
-		sm.Db.Find(args[0])
+		sm.db.Find(args[0])
 	}
 	return sm
 }
 func (sm *StorageManager) Where(args ...interface{}) storage.IStorage {
 	if len(args) > 1 {
-		sm.Db.Where(args[0], args[1:]...)
+		sm.db.Where(args[0], args[1:]...)
 	} else {
-		sm.Db.Where(args[0])
+		sm.db.Where(args[0])
 	}
 	return sm
 }
 func (sm *StorageManager) Select(args ...interface{}) storage.IStorage {
 	if len(args) > 1 {
-		sm.Db.Select(args[0], args[1:]...)
+		sm.db.Select(args[0], args[1:]...)
 	} else {
-		sm.Db.Select(args[0])
+		sm.db.Select(args[0])
 	}
 	return sm
 }
 func (sm *StorageManager) Begin(args ...interface{}) storage.IStorage {
-	sm.Db.Begin()
+	sm.db.Begin()
 	return sm
 }
 func (sm *StorageManager) Commit(args ...interface{}) storage.IStorage {
-	sm.Db.Commit()
+	sm.db.Commit()
 	return sm
 }
 func (sm *StorageManager) SavePoint(args ...interface{}) storage.IStorage {
-	sm.Db.SavePoint(args[0].(string))
+	sm.db.SavePoint(args[0].(string))
 	return sm
 }
 func (sm *StorageManager) Rollback(args ...interface{}) storage.IStorage {
-	sm.Db.Rollback()
+	sm.db.Rollback()
 	return sm
 }
 func (sm *StorageManager) RollbackTo(args ...interface{}) storage.IStorage {
-	sm.Db.RollbackTo(args[0].(string))
+	sm.db.RollbackTo(args[0].(string))
 	return sm
 }
 func (sm *StorageManager) First(args ...interface{}) storage.IStorage {
 	if len(args) > 1 {
-		sm.Db.First(args[0], args[1:]...)
+		sm.db.First(args[0], args[1:]...)
 	} else {
-		sm.Db.First(args[0])
+		sm.db.First(args[0])
 	}
 	return sm
 }
 func (sm *StorageManager) AutoMigrate(args ...interface{}) storage.IStorage {
-	sm.Db.AutoMigrate(args...)
+	sm.db.AutoMigrate(args...)
 	return sm
 }
 
 func (s *StorageManager) CreateTrx() storage.ITrx {
-	trx := s.Db.Begin()
+	trx := s.db.Begin()
 	return &TrxWrapper{trx: trx}
 }
 
@@ -179,11 +183,11 @@ func CreateDatabase(dialector gorm.Dialector) *StorageManager {
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
 		logger.Config{
-			SlowThreshold:             time.Second,   // Slow SQL threshold
+			SlowThreshold:             time.Second, // Slow SQL threshold
 			LogLevel:                  logger.Info, // Log level
-			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
-			ParameterizedQueries:      true,          // Don't include params in the SQL log
-			Colorful:                  false,          // Disable color
+			IgnoreRecordNotFoundError: true,        // Ignore ErrRecordNotFound error for logger
+			ParameterizedQueries:      true,        // Don't include params in the SQL log
+			Colorful:                  false,       // Disable color
 		},
 	)
 	db, err := gorm.Open(dialector, &gorm.Config{
@@ -192,5 +196,5 @@ func CreateDatabase(dialector gorm.Dialector) *StorageManager {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return &StorageManager{Db: db}
+	return &StorageManager{db: db}
 }

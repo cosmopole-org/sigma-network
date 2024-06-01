@@ -7,8 +7,8 @@ import (
 	"sigma/storage/core/runtime"
 
 	inputs_external "sigma/storage/core/inputs/external"
-	tools "sigma/storage/shell/tools"
 	outputs_external "sigma/storage/shell/outputs/external"
+	tools "sigma/storage/shell/tools"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -22,7 +22,7 @@ type WasmManager struct {
 const pluginsTemplateName = "/plugins/"
 
 type WasmService struct {
-	managers tools.IShellTools
+	toolbox *tools.Toolbox
 }
 
 func (w *WasmService) plug(control *runtime.Control, input inputs_external.PlugInput, info models.Info) (any, error) {
@@ -32,24 +32,24 @@ func (w *WasmService) plug(control *runtime.Control, input inputs_external.PlugI
 		return outputs_external.PlugInput{}, err
 	}
 
-	w.managers.File().SaveFileToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
-	w.managers.File().SaveDataToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
+	w.toolbox.File().SaveFileToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
+	w.toolbox.File().SaveDataToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
-	w.managers.Wasm().Plug(control.StorageRoot+pluginsTemplateName+input.Key+"/module.wasm", meta)
+	w.toolbox.Wasm().Plug(control.StorageRoot+pluginsTemplateName+input.Key+"/module.wasm", meta)
 
 	return outputs_external.PlugInput{}, nil
 }
 
-func CreateWasmPluggerService(sc *runtime.App, mans tools.IShellTools) {
+func CreateWasmPluggerService(toolbox *tools.Toolbox) {
 
 	wasmS := &WasmService{
-		managers: mans,
+		toolbox: toolbox,
 	}
 
 	// Methods
-	sc.Services.AddAction(
+	toolbox.Services().AddAction(
 		runtime.CreateAction(
-			sc,
+			toolbox.App,
 			"/external/plug",
 			runtime.CreateCk(true, false, false),
 			runtime.CreateAc(true, true, false, false, fiber.MethodPost),

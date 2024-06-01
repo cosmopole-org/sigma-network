@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"sigma/admin/core/inputs"
 	"sigma/admin/core/models"
-	"sigma/admin/core/tools/storage"
+	"sigma/admin/core/adapters/storage"
 	"sigma/admin/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 )
+
+const accessDeniedError = "access denied"
 
 type Meta struct {
 	UserId  string
@@ -82,7 +84,7 @@ func (ss *Services) CallAction(key string, packetId string, input interface{}, t
 		if err != nil {
 			utils.Log(5, err)
 		}
-		ss.app.Tools.Federation().SendInFederation(origin, models.OriginPacket{IsResponse: false, Key: key, UserId: res.(PreFedPacket).UserId, SpaceId: res.(PreFedPacket).Body.(inputs.IInput).GetSpaceId(), TopicId: res.(PreFedPacket).Body.(inputs.IInput).GetTopicId(), Data: string(data), RequestId: packetId})
+		ss.app.Adapters().Federation().SendInFederation(origin, models.OriginPacket{IsResponse: false, Key: key, UserId: res.(PreFedPacket).UserId, SpaceId: res.(PreFedPacket).Body.(inputs.IInput).GetSpaceId(), TopicId: res.(PreFedPacket).Body.(inputs.IInput).GetTopicId(), Data: string(data), RequestId: packetId})
 	}
 	if err != nil {
 		control.Trx.Rollback()
@@ -181,11 +183,11 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			}
 			if !access.Fed || (origin == app.AppId) {
 				if check.User {
-					var userId, userType = app.Tools.Security().AuthWithToken(token)
+					var userId, userType = app.Security().AuthWithToken(token)
 					if userId != "" {
 						var user = models.User{Id: userId}
 						if check.Space {
-							var location = app.Tools.Security().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
+							var location = app.Security().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
 							if location.SpaceId != "" {
 								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
 								result, err := callback(control, (*data), models.Info{User: user, Member: member})
@@ -194,7 +196,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 								}
 								return fiber.StatusOK, result, nil
 							} else {
-								return fiber.StatusForbidden, nil, errors.New("access denied")
+								return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
 							}
 						} else {
 							result, err := callback(control, *data, models.Info{User: user})
@@ -204,7 +206,7 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 							return fiber.StatusOK, result, nil
 						}
 					} else {
-						return fiber.StatusForbidden, nil, errors.New("access denied")
+						return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
 					}
 				} else {
 					result, err := callback(control, *data, models.Info{})
@@ -215,11 +217,11 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 				}
 			} else {
 				if check.User {
-					var userId, _ = app.Tools.Security().AuthWithToken(token)
+					var userId, _ = app.Security().AuthWithToken(token)
 					if userId != "" {
 						return -2, PreFedPacket{UserId: userId, Body: *data}, nil
 					} else {
-						return fiber.ErrInternalServerError.Code, nil, errors.New("access denied")
+						return fiber.ErrInternalServerError.Code, nil, errors.New(accessDeniedError)
 					}
 				} else {
 					return -2, PreFedPacket{UserId: "", Body: *data}, nil

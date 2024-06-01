@@ -20,7 +20,7 @@ import (
 )
 
 type GrpcServer struct {
-	app       *runtime.App
+	sigmaCore       *runtime.App
 	Server    *grpc.Server
 	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
@@ -42,7 +42,7 @@ func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (an
 		if err0 != nil {
 			return nil, "error", err0
 		}
-		statusCode, res, err := gs.app.Services.CallAction(key, requestId, data, token, origin)
+		statusCode, res, err := gs.sigmaCore.Services().CallAction(key, requestId, data, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -112,7 +112,7 @@ func (gs *GrpcServer) Listen(port int) {
 }
 
 func New(sc *runtime.App) *GrpcServer {
-	gs := &GrpcServer{app: sc, Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
+	gs := &GrpcServer{sigmaCore: sc, Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(gs.serverInterceptor),
 	)

@@ -22,7 +22,7 @@ func BuildAdmin(appId string, config shell.Config, gods []*models.God) *Admin {
 		Sigma: sigmaApp,
 	}
 	admin.GodSecurity = godsecurity.CreateSecurity(sigmaApp.Core, gods)
-	services.CreateAuthService(sigmaApp.Core, sigmaApp.Shell.Tools())
-	services.LoadAuthGrpcService(sigmaApp.Shell.Tools().Net().GrpcServer.Server)
+	services.CreateAuthService(sigmaApp.Shell.Toolbox())
+	services.LoadAuthGrpcService(sigmaApp.Shell.Toolbox().Net().GrpcServer.Server)
 	return admin
 }

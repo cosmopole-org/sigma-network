@@ -10,21 +10,21 @@ import (
 )
 
 func CreateDummyService(app *runtime.App) {
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/api/hello",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		func(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
 			return `{ "hello": "world" }`, nil
 		},
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/api/ping",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		func(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
 			return os.Getenv("MAIN_PORT"), nil

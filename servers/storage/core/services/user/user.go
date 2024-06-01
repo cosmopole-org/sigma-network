@@ -3,7 +3,6 @@ package services_user
 import (
 	"fmt"
 	inputs_users "sigma/storage/core/inputs/users"
-	"sigma/storage/core/tools"
 	"sigma/storage/core/models"
 	outputs_users "sigma/storage/core/outputs/users"
 	"sigma/storage/core/runtime"
@@ -14,7 +13,7 @@ import (
 )
 
 type UserService struct {
-	tools tools.ICoreTools
+	app *runtime.App
 }
 
 func (s *UserService) authenticate(control *runtime.Control, input inputs_users.AuthenticateInput, info models.Info) (any, error) {
@@ -28,7 +27,7 @@ func (s *UserService) create(control *runtime.Control, input inputs_users.Create
 	control.Trx.Create(&user)
 	session := models.Session{Id: utils.SecureUniqueId(control.AppId), Token: token, UserId: user.Id}
 	control.Trx.Create(&session)
-	s.tools.Cache().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
+	s.app.Adapters().Cache().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
 	return outputs_users.CreateOutput{User: user, Session: session}, nil
 }
 
@@ -59,7 +58,7 @@ func (s *UserService) delete(control *runtime.Control, input inputs_users.Delete
 	sessions := []models.Session{}
 	control.Trx.Where("user_id = ?", user.Id).Find(&sessions)
 	for _, session := range sessions {
-		s.tools.Cache().Del("auth::" + session.Token)
+		s.app.Adapters().Cache().Del("auth::" + session.Token)
 		control.Trx.Delete(&session)
 	}
 	control.Trx.Delete(&user)
@@ -68,12 +67,12 @@ func (s *UserService) delete(control *runtime.Control, input inputs_users.Delete
 
 func CreateUserService(app *runtime.App) {
 
-	service := &UserService{tools: app.Tools}
+	service := &UserService{app: app}
 
-	app.Tools.Storage().AutoMigrate(&models.Session{})
-	app.Tools.Storage().AutoMigrate(&models.User{})
+	app.Adapters().Storage().AutoMigrate(&models.Session{})
+	app.Adapters().Storage().AutoMigrate(&models.User{})
 
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/users/authenticate",
 		runtime.CreateCk(true, false, false),
@@ -81,35 +80,35 @@ func CreateUserService(app *runtime.App) {
 		true,
 		service.authenticate,
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/users/create",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
 		true,
 		service.create,
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/users/update",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodPut),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPut),
 		true,
 		service.update,
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/users/delete",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodDelete),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodDelete),
 		true,
 		service.delete,
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/users/get",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		service.get,
 	))

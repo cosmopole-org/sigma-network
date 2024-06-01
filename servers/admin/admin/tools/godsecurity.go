@@ -23,7 +23,7 @@ func (a *Security) SetGodEmails(gods []*adminModels.God) {
 	var auth = map[string]string{}
 	for _, g := range gods {
 		god := adminModels.God{}
-		err := control.Trx.Where("username = ?", g.Username).First(&god).Error
+		err := control.Trx.Where("username = ?", g.Username).First(&god).Error()
 		token := ""
 		userId := ""
 		password := ""
@@ -52,7 +52,7 @@ func (a *Security) SetGodEmails(gods []*adminModels.God) {
 			password = god.Password
 			token = session.Token
 		}
-		a.app.Tools.Cache().Put("auth::"+token, fmt.Sprintf("human/%s", userId))
+		a.app.Adapters().Cache().Put("auth::"+token, fmt.Sprintf("human/%s", userId))
 		auth[username] = password
 	}
 	control.Trx.Commit()	
@@ -62,8 +62,8 @@ func (a *Security) SetGodEmails(gods []*adminModels.God) {
 		return
 	}
 	log.Println(string(str))
-	os.MkdirAll(a.app.StorageRoot, os.ModePerm)
-	var filePath = fmt.Sprintf("%s/gods.txt", a.app.StorageRoot)
+	os.MkdirAll(a.app.Adapters().Storage().StorageRoot(), os.ModePerm)
+	var filePath = fmt.Sprintf("%s/gods.txt", a.app.Adapters().Storage().StorageRoot())
 	err2 := os.WriteFile(filePath, str, 0644)
 	if err2 != nil {
 		log.Println(err2)

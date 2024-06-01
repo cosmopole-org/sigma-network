@@ -19,7 +19,7 @@ type WebsocketAnswer struct {
 }
 
 type WsServer struct {
-	app       *runtime.App
+	sigmaCore *runtime.App
 	Endpoints map[string]func(string, string, string, string) (any, string, error)
 }
 
@@ -37,7 +37,7 @@ func AnswerSocket(conn *websocket.Conn, t string, requestId string, answer any) 
 
 func (ws *WsServer) EnableEndpoint(key string) {
 	ws.Endpoints[key] = func(rawBody string, token string, origin string, requestId string) (any, string, error) {
-		statusCode, res, err := ws.app.Services.CallAction(key, requestId, rawBody, token, origin)
+		statusCode, res, err := ws.sigmaCore.Services().CallAction(key, requestId, rawBody, token, origin)
 		if statusCode == fiber.StatusOK {
 			return res, "response", nil
 		} else if statusCode == -2 {
@@ -63,9 +63,9 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			if uri == "authenticate" {
 				var token = splittedMsg[1]
 				var requestId = splittedMsg[2]
-				userId, _ := ws.app.Tools.Security().AuthWithToken(token)
+				userId, _ := ws.sigmaCore.Security().AuthWithToken(token)
 				uid = userId
-				ws.app.Tools.Signaler().Listeners[userId] = &models.Listener{
+				ws.sigmaCore.Signaler().Listeners[userId] = &models.Listener{
 					Id: userId,
 					Signal: func(b any) {
 						conn.WriteMessage(websocket.TextMessage, b.([]byte))
@@ -91,14 +91,14 @@ func (ws *WsServer) Load(httpServer *shell_http.HttpServer) {
 			}
 		}
 		if uid != "" {
-			delete(ws.app.Tools.Signaler().Listeners, uid)
+			delete(ws.sigmaCore.Signaler().Listeners, uid)
 		}
 		utils.Log(5, "socket broken")
 	}))
 }
 
 func New(sc *runtime.App, httpServer *shell_http.HttpServer) *WsServer {
-	ws := &WsServer{app: sc, Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
+	ws := &WsServer{sigmaCore: sc, Endpoints: make(map[string]func(string, string, string, string) (any, string, error))}
 	ws.Load(httpServer)
 	return ws
 }

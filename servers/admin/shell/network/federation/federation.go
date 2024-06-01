@@ -6,9 +6,7 @@ import (
 	outputs_invites "sigma/admin/core/outputs/invites"
 	outputs_spaces "sigma/admin/core/outputs/spaces"
 	"sigma/admin/core/runtime"
-	"sigma/admin/core/tools/signaler"
 	"sigma/admin/core/utils"
-	storage_manager "sigma/admin/shell/tools/storage"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -17,9 +15,7 @@ import (
 type FedNet struct {
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
-	app         *runtime.App
-	stoManager  *storage_manager.StorageManager
-	sigManager  *signaler.Signaler
+	sigmaCore   *runtime.App
 	fed         bool
 }
 
@@ -66,22 +62,22 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 					member = &memberRes.Member
 				}
 				if member != nil {
-					member.Id = utils.SecureUniqueId(fed.app.AppId) + "_" + channelId
-					fed.stoManager.CreateTrx().Create(member).Commit()
-					fed.sigManager.JoinGroup(member.SpaceId, member.UserId)
+					member.Id = utils.SecureUniqueId(fed.sigmaCore.AppId) + "_" + channelId
+					fed.sigmaCore.Adapters().Storage().CreateTrx().Create(member).Commit()
+					fed.sigmaCore.Signaler().JoinGroup(member.SpaceId, member.UserId)
 				}
 			}
-			fed.sigManager.SignalUser(payload.Key, payload.RequestId, payload.UserId, payload.Data, true)
+			fed.sigmaCore.Signaler().SignalUser(payload.Key, payload.RequestId, payload.UserId, payload.Data, true)
 		} else {
 			dataArr := strings.Split(payload.Key, " ")
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
-				fed.sigManager.SignalUser(payload.Key[len("update "):], "", payload.UserId, payload.Data, true)
+				fed.sigmaCore.Signaler().SignalUser(payload.Key[len("update "):], "", payload.UserId, payload.Data, true)
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-				fed.sigManager.SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
+				fed.sigmaCore.Signaler().SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
 			} else {
-				action := fed.app.Services.GetAction(payload.Key)
+				action := fed.sigmaCore.Services().GetAction(payload.Key)
 				check := action.Check
-				location := fed.app.Tools.Security().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
+				location := fed.sigmaCore.Security().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
 				if check.Space && location.SpaceId == "" {
 					errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
 					if err2 == nil {
@@ -90,8 +86,8 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 					return
 				}
 				member := models.Member{}
-				fed.stoManager.CreateTrx().Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member).Commit()
-				_, res, err := action.ProcessFederative(fed.app.GenerateControl(), payload.Data, models.Info{
+				fed.sigmaCore.Adapters().Storage().CreateTrx().Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member).Commit()
+				_, res, err := action.ProcessFederative(fed.sigmaCore.GenerateControl(), payload.Data, models.Info{
 					User:   models.User{Id: payload.UserId},
 					Member: member,
 				})
@@ -135,10 +131,8 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 	}
 }
 
-func (fed *FedNet) Setup(sc *runtime.App, storage *storage_manager.StorageManager, signaler *signaler.Signaler, ip2host map[string]string, host2ip map[string]string) {
-	fed.app = sc
-	fed.stoManager = storage
-	fed.sigManager = signaler
+func (fed *FedNet) Setup(sc *runtime.App, ip2host map[string]string, host2ip map[string]string) {
+	fed.sigmaCore = sc
 	fed.ipToHostMap = ip2host
 	fed.hostToIpMap = host2ip
 	fed.fed = true

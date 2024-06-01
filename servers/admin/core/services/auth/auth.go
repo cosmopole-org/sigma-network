@@ -2,7 +2,6 @@ package services_auth
 
 import (
 	inputs_auth "sigma/admin/core/inputs/auth"
-	"sigma/admin/core/tools"
 	"sigma/admin/core/models"
 	outputs_auth "sigma/admin/core/outputs/auth"
 	"sigma/admin/core/runtime"
@@ -12,11 +11,11 @@ import (
 )
 
 type AuthService struct {
-	tools tools.ICoreTools
+	app *runtime.App	
 }
 
 func (s *AuthService) getServerPublicKey(control *runtime.Control, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
-	return &outputs_auth.GetServerKeyOutput{PublicKey: string(s.tools.Crypto().FetchKeyPair("server_key")[1])}, nil
+	return &outputs_auth.GetServerKeyOutput{PublicKey: string(s.app.Security().FetchKeyPair("server_key")[1])}, nil
 }
 
 func (s *AuthService) getServersMap(control *runtime.Control, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
@@ -27,21 +26,21 @@ func (s *AuthService) getServersMap(control *runtime.Control, input inputs_auth.
 
 func CreateAuthService(app *runtime.App) {
 
-	service := &AuthService{tools: app.Tools}
+	service := &AuthService{app: app}
 
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/auths/getServerPublicKey",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		service.getServerPublicKey,
 	))
-	app.Services.AddAction(runtime.CreateAction(
+	app.Services().AddAction(runtime.CreateAction(
 		app,
 		"/auths/getServersMap",
 		runtime.CreateCk(false, false, false),
-		runtime.CreateAc(app.CoreAccess, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		service.getServersMap,
 	))
