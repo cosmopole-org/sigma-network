@@ -267,11 +267,13 @@ func (sm *Security) HandleLocationWithProcessed(token string, userId string, use
 }
 
 func New(storageRoot string, storageManager storage.IStorage, cacheManager cache.ICache, sigManager *signaler.Signaler) *Security {
-	return &Security{
+	s := &Security{
 		storageManager: storageManager,
 		cacheManager: cacheManager,
 		sigManager: sigManager,
 		storageRoot: storageRoot,
 		keys: make(map[string][][]byte),
 	}
+	s.LoadKeys()
+	return s
 }

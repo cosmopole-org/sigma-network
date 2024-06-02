@@ -11,7 +11,7 @@ import (
 
 type HttpServer struct {
 	sigmaCore *runtime.App
-	allowed   map[string]bool
+	shadows   map[string]bool
 	Server    *fiber.App
 }
 
@@ -49,8 +49,11 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 }
 
 func (hs *HttpServer) Listen(port int) {
+	hs.Server.Get("/", func(c *fiber.Ctx) error {
+		return c.Status(fiber.StatusOK).Send([]byte("hello world"))
+	})
 	hs.Server.Use(func(c *fiber.Ctx) error {
-		if hs.allowed[c.Path()] {
+		if hs.shadows[c.Path()] {
 			return hs.handleRequest(c)
 		}
 		return c.Next()
@@ -78,14 +81,14 @@ func HandleResutOfFunc(c *fiber.Ctx, result any) error {
 	}
 }
 
-func (hs *HttpServer) AllowToPass(key string) {
-	hs.allowed[key] = true
+func (hs *HttpServer) AddShadow(key string) {
+	hs.shadows[key] = true
 }
 
 func New(sc *runtime.App, maxReqSize int) *HttpServer {
 	if maxReqSize > 0 {
-		return &HttpServer{sigmaCore: sc, allowed: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
+		return &HttpServer{sigmaCore: sc, shadows: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
 	} else {
-		return &HttpServer{sigmaCore: sc, allowed: map[string]bool{}, Server: fiber.New()}
+		return &HttpServer{sigmaCore: sc, shadows: map[string]bool{}, Server: fiber.New()}
 	}
 }

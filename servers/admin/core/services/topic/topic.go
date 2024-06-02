@@ -15,16 +15,17 @@ import (
 )
 
 type TopicService struct {
-	app *runtime.App
+	App *runtime.App
 }
 
-func (s *TopicService) create(control *runtime.Control, input inputs_topics.CreateInput, info models.Info) (any, error) {
+// Create /topics/create check [ true true false ] access [ true false false false POST ]
+func (s *TopicService) Create(control *runtime.Control, input inputs_topics.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	control.Trx.First(&space)
 	topic := models.Topic{Id: utils.SecureUniqueId(control.AppId), Title: input.Title, Avatar: input.Avatar, SpaceId: space.Id}
 	control.Trx.Create(&topic)
-	s.app.Adapters().Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
-	go s.app.Signaler().SignalGroup("topics/create", topic.SpaceId, updates_topics.Create{Topic: topic}, true, []string{info.User.Id})
+	s.App.Adapters().Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
+	go s.App.Signaler().SignalGroup("topics/create", topic.SpaceId, updates_topics.Create{Topic: topic}, true, []string{info.User.Id})
 	return outputs_topics.CreateOutput{Topic: topic}, nil
 }
 
@@ -36,7 +37,7 @@ func (s *TopicService) update(control *runtime.Control, input inputs_topics.Upda
 	topic.Title = input.Title
 	topic.Avatar = input.Avatar
 	control.Trx.Save(&topic)
-	go s.app.Signaler().SignalGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: topic}, true, []string{info.User.Id})
+	go s.App.Signaler().SignalGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: topic}, true, []string{info.User.Id})
 	return outputs_topics.UpdateOutput{Topic: topic}, nil
 }
 
@@ -49,8 +50,8 @@ func (s *TopicService) delete(control *runtime.Control, input inputs_topics.Dele
 		return nil, err
 	}
 	control.Trx.Delete(&topic)
-	s.app.Adapters().Cache().Del(fmt.Sprintf("city::%s", topic.Id))
-	go s.app.Signaler().SignalGroup("topics/delete", topic.SpaceId, updates_topics.Delete{Topic: topic}, true, []string{info.User.Id})
+	s.App.Adapters().Cache().Del(fmt.Sprintf("city::%s", topic.Id))
+	go s.App.Signaler().SignalGroup("topics/delete", topic.SpaceId, updates_topics.Delete{Topic: topic}, true, []string{info.User.Id})
 	return outputs_topics.DeleteOutput{Topic: topic}, nil
 }
 
@@ -75,62 +76,54 @@ var sendTemplate = "topics/send"
 func (s *TopicService) send(control *runtime.Control, input inputs_topics.SendInput, info models.Info) (any, error) {
 	if input.Type == "broadcast" {
 		var p = updates_topics.Send{Action: "broadcast", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
-		s.app.Signaler().SignalGroup(sendTemplate, info.Member.SpaceId, p, true, []string{info.User.Id})
+		s.App.Signaler().SignalGroup(sendTemplate, info.Member.SpaceId, p, true, []string{info.User.Id})
 		return outputs_topics.SendOutput{Passed: true}, nil
 	} else if input.Type == "single" {
-		memberData := s.app.Adapters().Cache().Get(fmt.Sprintf("member::%s::%s", info.Member.SpaceId, input.RecvId))
+		memberData := s.App.Adapters().Cache().Get(fmt.Sprintf("member::%s::%s", info.Member.SpaceId, input.RecvId))
 		if memberData == "true" {
 			var p = updates_topics.Send{Action: "single", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
-			s.app.Signaler().SignalUser(sendTemplate, "", input.RecvId, p, true)
+			s.App.Signaler().SignalUser(sendTemplate, "", input.RecvId, p, true)
 			return outputs_topics.SendOutput{Passed: true}, nil
 		}
 	}
 	return outputs_topics.SendOutput{Passed: false}, nil
 }
 
-func CreateTopicService(app *runtime.App) {
+func CreateTopicService(App *runtime.App) {
 
-	service := &TopicService{app: app}
+	service := &TopicService{App: App}
 
-	app.Adapters().Storage().AutoMigrate(&models.Topic{})
+	App.Adapters().Storage().AutoMigrate(&models.Topic{})
 
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/topics/create",
-		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.create,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/topics/update",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPut),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodPut),
 		true,
 		service.update,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/topics/delete",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodDelete),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodDelete),
 		true,
 		service.delete,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/topics/get",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		service.get,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/topics/send",
 		runtime.CreateCk(true, true, true),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodPost),
 		true,
 		service.send,
 	))

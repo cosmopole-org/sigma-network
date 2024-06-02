@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
+	"sigma/main/core/adapters/storage"
 	"sigma/main/core/inputs"
 	"sigma/main/core/models"
-	"sigma/main/core/adapters/storage"
 	"sigma/main/core/utils"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
@@ -66,6 +68,151 @@ type Services struct {
 
 func (ss *Services) PutMiddleware(mw func(key string, packetId string, input interface{}, token string, origin string) (int, any, error)) {
 	ss.Middlewares = append(ss.Middlewares, mw)
+}
+
+func (ss *Services) PlugService(service interface{}) {
+	actions := ExtractService(ss.app, service)
+	for i := 0; i < len(actions); i++ {
+		ss.AddAction(&actions[i])
+	}
+}
+
+func ExtractService(app *App, service interface{}) []Action {
+	funcsList := []Action{}
+	t := reflect.TypeOf(service)
+	for i := 0; i < t.NumMethod(); i++ {
+		m := t.Method(i)
+		actionFunc := func(c *Control, input interface{}, info models.Info) (any, error) {
+			result := m.Func.Call(
+				[]reflect.Value{
+					reflect.ValueOf(service),
+					reflect.ValueOf(c),
+					reflect.ValueOf(input).Elem(),
+					reflect.ValueOf(info),
+				},
+			)
+			res := result[0].Interface()
+			if result[1].Interface() != nil {
+				return res, result[1].Interface().(error)
+			} else {
+				return res, nil
+			}
+		}
+		key, check, access := extractActionMetadata(m.Func)
+		validate := true
+		action := Action{
+			Key:      key,
+			Check:    check,
+			Access:   access,
+			Validate: true,
+			Process: func(control *Control, rawInput interface{}, token string, origin string) (int, any, error) {
+				var data = reflect.New(m.Func.Type().In(2)).Interface()
+				switch input := rawInput.(type) {
+				case string:
+					json.Unmarshal([]byte(input), data)
+				case *fiber.Ctx:
+					form, err := input.MultipartForm()
+					if err == nil {
+						utils.Log(5, form)
+						var formData = map[string]any{}
+						for k, v := range form.Value {
+							formData[k] = v[0]
+						}
+						for k, v := range form.File {
+							formData[k] = v[0]
+						}
+						mapstructure.Decode(formData, data)
+					} else {
+						if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
+							input.BodyParser(data)
+						} else if access.ActionType == "GET" {
+							input.QueryParser(data)
+						}
+					}
+				default:
+					//pass
+				}
+				fmt.Println(data)
+				if validate {
+					err := ValidateInput(data)
+					if err != nil {
+						return fiber.ErrBadRequest.Code, nil, err
+					}
+				}
+				if origin == "" {
+					origin = app.AppId
+				}
+				if !access.Fed || (origin == app.AppId) {
+					if check.User {
+						var userId, userType = app.Security().AuthWithToken(token)
+						if userId != "" {
+							var user = models.User{Id: userId}
+							if check.Space {
+								var location = app.Security().HandleLocationWithProcessed(token, userId, userType, (data).(inputs.IInput).GetSpaceId(), (data).(inputs.IInput).GetTopicId(), (data).(inputs.IInput).GetMemberId())
+								if location.SpaceId != "" {
+									var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
+									result, err := actionFunc(control, data, models.Info{User: user, Member: member})
+									if err != nil {
+										return fiber.ErrInternalServerError.Code, nil, err
+									}
+									return fiber.StatusOK, result, nil
+								} else {
+									return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
+								}
+							} else {
+								result, err := actionFunc(control, data, models.Info{User: user})
+								if err != nil {
+									return fiber.ErrInternalServerError.Code, nil, err
+								}
+								return fiber.StatusOK, result, nil
+							}
+						} else {
+							return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
+						}
+					} else {
+						result, err := actionFunc(control, data, models.Info{})
+						if err != nil {
+							return fiber.ErrInternalServerError.Code, nil, err
+						}
+						return fiber.StatusOK, result, nil
+					}
+				} else {
+					if check.User {
+						var userId, _ = app.Security().AuthWithToken(token)
+						if userId != "" {
+							return -2, PreFedPacket{UserId: userId, Body: data}, nil
+						} else {
+							return fiber.ErrInternalServerError.Code, nil, errors.New(accessDeniedError)
+						}
+					} else {
+						return -2, PreFedPacket{UserId: "", Body: data}, nil
+					}
+				}
+			},
+		}
+		funcsList = append(funcsList, action)
+	}
+	return funcsList
+}
+
+func extractActionMetadata(function reflect.Value) (string, Check, Access) {
+	var ts = strings.Split(utils.FuncDescription(function), " ")
+	var tokens = []string{}
+	for _, token := range ts {
+		if len(strings.Trim(token, " ")) > 0 {
+			tokens = append(tokens, token)
+		}
+	}
+	var key = tokens[0]
+	var check Check
+	var access Access
+	if tokens[1] == "check" && tokens[2] == "[" && tokens[6] == "]" {
+		check = Check{User: tokens[3] == "true", Space: tokens[4] == "true", Topic: tokens[5] == "true"}
+		if tokens[7] == "access" && tokens[8] == "[" && tokens[14] == "]" {
+			access = Access{Http: tokens[9] == "true", Ws: tokens[10] == "true", Grpc: tokens[11] == "true", Fed: tokens[12] == "true", ActionType: tokens[13]}
+		}
+	}
+	return key, check, access
 }
 
 func (ss *Services) CallAction(key string, packetId string, input interface{}, token string, origin string) (int, any, error) {
@@ -253,8 +400,9 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 }
 
 func CreateServices(a *App) *Services {
-	return &Services{
+	ss := &Services{
 		app:     a,
 		Actions: map[string]*Action{},
 	}
+	return ss
 }

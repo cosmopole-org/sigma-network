@@ -174,7 +174,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"kasperius2\",\n    \"secret\": \"124\",\n    \"name\": \"keyhan mo\",\n    \"avatar\": \"2\"\n}",
+							"raw": "{\n    \"username\": \"kasperius2\",\n    \"secret\": \"124\",\n    \"name\": \"keyhan moh2\",\n    \"avatar\": \"2\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -202,11 +202,6 @@
 							{
 								"key": "token",
 								"value": "{{token}}",
-								"type": "text"
-							},
-							{
-								"key": "origin",
-								"value": "cosmopole.liara.run",
 								"type": "text"
 							}
 						],
@@ -528,7 +523,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"spaceId\": \"{{towerId}}\",\n    \"title\": \"test tower\",\n    \"avatar\": \"0\",\n    \"isPublic\": true,\n    \"tag\": \"kasperiusHome\"\n}",
+							"raw": "{\n    \"spaceId\": \"{{towerId}}\",\n    \"title\": \"test tower 2\",\n    \"avatar\": \"0\",\n    \"isPublic\": true,\n    \"tag\": \"kasperiusHome\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1346,19 +1341,13 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{server}}/api/hello?name=keyhan",
+					"raw": "{{server}}/api/hello",
 					"host": [
 						"{{server}}"
 					],
 					"path": [
 						"api",
 						"hello"
-					],
-					"query": [
-						{
-							"key": "name",
-							"value": "keyhan"
-						}
 					]
 				}
 			},

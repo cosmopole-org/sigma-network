@@ -74,7 +74,7 @@ func (wm *WasmManager) Plug(wasmFilePath string, meta []runtime.PluginFunction) 
 		}
 		wm.PluginVms[f.Path] = vm
 		wm.PluginMetas[f.Path] = f
-		wm.netTool.HttpServer.AllowToPass(f.Path)
+		wm.netTool.HttpServer.AddShadow(f.Path)
 	}
 }
 
@@ -188,7 +188,7 @@ func (wm *WasmManager) loadWasmModules() {
 				}
 				wm.PluginVms[f.Path] = vm
 				wm.PluginMetas[f.Path] = f
-				wm.netTool.HttpServer.AllowToPass(f.Path)
+				wm.netTool.HttpServer.AddShadow(f.Path)
 			}
 		}
 	}

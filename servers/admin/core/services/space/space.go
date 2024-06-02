@@ -15,7 +15,7 @@ import (
 )
 
 type SpaceService struct {
-	app *runtime.App
+	App *runtime.App
 }
 
 const memberTemplate = "member::%s::%s"
@@ -27,8 +27,8 @@ func (s *SpaceService) addMember(control *runtime.Control, input inputs_spaces.A
 	}
 	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: input.UserId, SpaceId: info.Member.SpaceId, TopicIds: "*", Metadata: ""}
 	control.Trx.Create(&member)
-	s.app.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	go s.app.Signaler().SignalGroup("spaces/addMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
+	s.App.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	go s.App.Signaler().SignalGroup("spaces/addMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
 	return outputs_spaces.AddMemberOutput{Member: member}, nil
 }
 
@@ -44,24 +44,26 @@ func (s *SpaceService) removeMember(control *runtime.Control, input inputs_space
 		return nil, err2
 	}
 	control.Trx.Delete(&member)
-	s.app.Adapters().Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
-	go s.app.Signaler().SignalGroup("spaces/removeMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
+	s.App.Adapters().Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
+	go s.App.Signaler().SignalGroup("spaces/removeMember", info.Member.SpaceId, updates_spaces.AddMember{SpaceId: info.Member.SpaceId, Member: info.Member}, true, []string{info.User.Id})
 	return outputs_spaces.AddMemberOutput{Member: member}, nil
 }
 
-func (s *SpaceService) create(control *runtime.Control, input inputs_spaces.CreateInput, info models.Info) (any, error) {
+// Create /spaces/create check [ true false false ] access [ true false false false POST ]
+func (s *SpaceService) Create(control *runtime.Control, input inputs_spaces.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: utils.SecureUniqueId(control.AppId), Tag: input.Tag + "@" + control.AppId, Title: input.Title, Avatar: input.Avatar, IsPublic: input.IsPublic}
 	control.Trx.Create(&space)
 	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: info.User.Id, SpaceId: space.Id, TopicIds: "*", Metadata: ""}
 	control.Trx.Create(&member)
 	admin := models.Admin{Id: utils.SecureUniqueId(control.AppId), UserId: info.User.Id, SpaceId: space.Id, Role: "creator"}
 	control.Trx.Create(&admin)
-	s.app.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	s.app.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	s.App.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	s.App.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	return outputs_spaces.CreateOutput{Space: space, Member: member}, nil
 }
 
-func (s *SpaceService) update(control *runtime.Control, input inputs_spaces.UpdateInput, info models.Info) (any, error) {
+// Update /spaces/update check [ true false false ] access [ true false false false PUT ]
+func (s *SpaceService) Update(control *runtime.Control, input inputs_spaces.UpdateInput, info models.Info) (any, error) {
 	admin := models.Admin{}
 	err := control.Trx.Where("user_id=?", info.User.Id).Where("space_id=?", input.SpaceId).First(&admin).Error()
 	if err != nil {
@@ -74,7 +76,7 @@ func (s *SpaceService) update(control *runtime.Control, input inputs_spaces.Upda
 	space.Tag = input.Tag + "@" + control.AppId
 	space.IsPublic = input.IsPublic
 	control.Trx.Save(&space)
-	go s.app.Signaler().SignalGroup("spaces/update", space.Id, updates_spaces.Update{Space: space}, true, []string{info.User.Id})
+	go s.App.Signaler().SignalGroup("spaces/update", space.Id, updates_spaces.Update{Space: space}, true, []string{info.User.Id})
 	return outputs_spaces.UpdateOutput{Space: space}, nil
 }
 
@@ -93,7 +95,7 @@ func (s *SpaceService) delete(control *runtime.Control, input inputs_spaces.Dele
 		return nil, err2
 	}
 	control.Trx.Delete(&space)
-	go s.app.Signaler().SignalGroup("spaces/delete", space.Id, updates_spaces.Delete{Space: space}, true, []string{info.User.Id})
+	go s.App.Signaler().SignalGroup("spaces/delete", space.Id, updates_spaces.Delete{Space: space}, true, []string{info.User.Id})
 	return outputs_spaces.DeleteOutput{Space: space}, nil
 }
 
@@ -125,73 +127,57 @@ func (s *SpaceService) join(control *runtime.Control, input inputs_spaces.JoinIn
 	if err2 != nil {
 		return nil, err2
 	}
-	s.app.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	s.app.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	go s.app.Signaler().SignalGroup("spaces/join", member.SpaceId, updates_spaces.Join{Member: member}, true, []string{member.UserId})
+	s.App.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	s.App.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	go s.App.Signaler().SignalGroup("spaces/join", member.SpaceId, updates_spaces.Join{Member: member}, true, []string{member.UserId})
 	return outputs_spaces.JoinOutput{Member: member}, nil
 }
 
-func CreateSpaceService(app *runtime.App) {
+func CreateSpaceService(App *runtime.App) {
 
-	service := SpaceService{app: app}
+	service := SpaceService{App: App}
 
-	app.Adapters().Storage().AutoMigrate(&models.Space{})
-	app.Adapters().Storage().AutoMigrate(&models.Member{})
-	app.Adapters().Storage().AutoMigrate(&models.Admin{})
+	App.Adapters().Storage().AutoMigrate(&models.Space{})
+	App.Adapters().Storage().AutoMigrate(&models.Member{})
+	App.Adapters().Storage().AutoMigrate(&models.Admin{})
 
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/spaces/create",
-		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.create,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/spaces/update",
-		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPut),
-		true,
-		service.update,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/spaces/delete",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodDelete),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodDelete),
 		true,
 		service.delete,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/spaces/get",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodGet),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodGet),
 		true,
 		service.get,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/spaces/join",
 		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodPost),
 		true,
 		service.join,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/spaces/addMember",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodPost),
 		true,
 		service.addMember,
 	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
+	App.Services().AddAction(runtime.CreateAction(
+		App,
 		"/spaces/removeMember",
 		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
+		runtime.CreateAc(App.OpenToNet, true, false, false, fiber.MethodPost),
 		true,
 		service.removeMember,
 	))
