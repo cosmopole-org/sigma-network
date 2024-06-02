@@ -2,8 +2,8 @@ package signaler
 
 import (
 	"encoding/json"
-	"sigma/main/core/models"
 	"sigma/main/core/adapters/federation"
+	"sigma/main/core/models"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -14,11 +14,34 @@ const groupUpdatePrefix = "groupUpdate "
 const updatePrefix = "update "
 const responsePrefix = "response "
 
+type Group struct {
+	Points   *cmap.ConcurrentMap[string, string]
+	Listener *models.Listener
+	Override bool
+}
+
 type Signaler struct {
-	appId      string
-	Listeners  map[string]*models.Listener
-	Groups     *cmap.ConcurrentMap[string, *cmap.ConcurrentMap[string, string]]
-	Federation federation.IFederation
+	appId          string
+	Listeners      map[string]*models.Listener
+	Groups         *cmap.ConcurrentMap[string, *Group]
+	GlobalBridge   *models.GlobalListener
+	LGroupDisabled bool
+	Federation     federation.IFederation
+}
+
+func (p *Signaler) ListenToSingle(listener *models.Listener) {
+	p.Listeners[listener.Id] = listener
+}
+
+func (p *Signaler) ListenToGroup(listener *models.Listener, overrideFunctionaly bool) {
+	g, _ := p.RetriveGroup(listener.Id)
+	g.Listener = listener
+	g.Override = overrideFunctionaly
+}
+
+func (p *Signaler) BrdigeGlobally(listener *models.GlobalListener, overrideFunctionaly bool) {
+	p.LGroupDisabled = true
+	p.GlobalBridge = listener
 }
 
 func (p *Signaler) SignalUser(key string, respondToId string, listenerId string, data any, pack bool) {
@@ -42,7 +65,7 @@ func (p *Signaler) SignalUser(key string, respondToId string, listenerId string,
 				if len(respondToId) > 0 {
 					listener.Signal([]byte(responsePrefix + respondToId + " " + message))
 				} else {
-					listener.Signal([]byte(updatePrefix+ key + " " + message))
+					listener.Signal([]byte(updatePrefix + key + " " + message))
 				}
 			} else {
 				listener.Signal(data)
@@ -90,15 +113,20 @@ func (p *Signaler) SignalGroup(key string, groupId string, data any, pack bool, 
 		} else {
 			packet = data
 		}
+		if group.Override {
+			group.Listener.Signal(packet)
+		}
 		var foreignersMap = map[string][]string{}
-		for t := range group.IterBuffered() {
+		for t := range group.Points.IterBuffered() {
 			userId := t.Val
 			userOrigin := strings.Split(userId, "@")[1]
 			if userOrigin == p.appId {
-				if !excepDict[t.Key] {
-					var listener = p.Listeners[userId]
-					if listener != nil {
-						listener.Signal(packet)
+				if !p.LGroupDisabled || !group.Override {
+					if !excepDict[t.Key] {
+						var listener = p.Listeners[userId]
+						if listener != nil {
+							listener.Signal(packet)
+						}
 					}
 				}
 			} else {
@@ -131,22 +159,23 @@ func (p *Signaler) SignalGroup(key string, groupId string, data any, pack bool, 
 func (p *Signaler) JoinGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Set(userId, userId)
+		g.Points.Set(userId, userId)
 	}
 }
 
 func (p *Signaler) LeaveGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
-		g.Remove(userId)
+		g.Points.Remove(userId)
 	}
 }
 
-func (p *Signaler) RetriveGroup(groupId string) (*cmap.ConcurrentMap[string, string], bool) {
+func (p *Signaler) RetriveGroup(groupId string) (*Group, bool) {
 	ok := p.Groups.Has(groupId)
 	if !ok {
 		newMap := cmap.New[string]()
-		p.Groups.SetIfAbsent(groupId, &newMap)
+		group := &Group{Points: &newMap, Listener: nil, Override: false}
+		p.Groups.SetIfAbsent(groupId, group)
 	}
 	return p.Groups.Get(groupId)
 }
@@ -154,11 +183,13 @@ func (p *Signaler) RetriveGroup(groupId string) (*cmap.ConcurrentMap[string, str
 func CreateSignaler(appId string, federation federation.IFederation) *Signaler {
 	utils.Log(5, "creating signaler...")
 	utils.LoadValidationSystem()
-	newMap := cmap.New[*cmap.ConcurrentMap[string, string]]()
+	newMap := cmap.New[*Group]()
 	return &Signaler{
-		appId:      appId,
-		Listeners:  map[string]*models.Listener{},
-		Groups:     &newMap,
-		Federation: federation,
+		appId:          appId,
+		Listeners:      map[string]*models.Listener{},
+		Groups:         &newMap,
+		LGroupDisabled: false,
+		Federation:     federation,
+		GlobalBridge:   nil,
 	}
 }

@@ -29,5 +29,7 @@ func (s *Sigma) RunNetwork(ports map[string]int) {
 	if ports["grpc"] > 0 {
 		s.Shell.Toolbox().Net().GrpcServer.Listen(ports["grpc"])
 	}
+	if ports["push"] > 0 {
+		s.Shell.Toolbox().Net().PusherServer.Listen(ports["push"])
+	}
 }
-

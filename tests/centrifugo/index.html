@@ -1,0 +1,26 @@
+<html>
+
+<head>
+  <title>Centrifugo quick start</title>
+</head>
+
+<body>
+  <div id="counter">-</div>
+  <script src="https://unpkg.com/centrifuge@5.0.1/dist/centrifuge.js"></script>
+  <script type="text/javascript">
+    const container = document.getElementById('counter');
+
+    const centrifuge = new Centrifuge('ws://127.0.0.1:4500/connection/websocket', {
+      token: "518cee3a-239d-4af8-a02e-bebaf95f7902-b642bea8-4ea4-4e5f-80c5-132bd6e13cff"
+    });
+
+    centrifuge.on('publication', function (ctx) {
+      console.log(ctx.channel, ctx.data);
+    });
+
+    centrifuge.connect();
+
+  </script>
+</body>
+
+</html>

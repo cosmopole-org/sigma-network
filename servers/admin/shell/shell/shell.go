@@ -67,7 +67,7 @@ func (sh *Shell) loaShellServices() {
 }
 
 func (sh *Shell) Install(co *runtime.App, storage *storage_manager.StorageManager, fed *shell_federation.FedNet, maxReqSize int, wks []string) {
-	sh.toolbox = tools.New(co, storage, maxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
+	sh.toolbox = tools.New(co, maxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
 	sh.loadWellknownServers(wks)
 	sh.loaShellServices()
 	fed.Setup(co, sh.ipToHostMap, sh.hostToIpMap)
