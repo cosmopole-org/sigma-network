@@ -26,7 +26,7 @@ func New(appId string, config Config) *app_l2.Shell {
 	// create shell
 	sh := &app_l2.Shell{}
 	// create shell-core tools
-	scTools := app_l2.CreateShellCoreServices(config.DbConn, config.MemUri)
+	scTools := app_l2.CreateShellCoreServices(config.DbConn, config.StorageRoot, config.MemUri)
 	// create core
 	co := core.New(appId, config.StorageRoot, config.CoreAccess, scTools.Storage, scTools.Cache, scTools.Federation, config.LogCb)
 	// install shell on core

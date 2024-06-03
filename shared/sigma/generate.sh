@@ -3,6 +3,8 @@
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
+go run ./build/build.go "core" "/home/keyhan/MyWorkspace/sigma/shared/sigma/core/services" "shell" "/home/keyhan/MyWorkspace/sigma/shared/sigma/shell/services"
+
 rm -r ../../servers/main/core
 rm -r ../../servers/main/shell
 rm -r ../../servers/main/sigma

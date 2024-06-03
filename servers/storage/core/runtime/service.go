@@ -81,8 +81,8 @@ func (ss *Services) PlugService(service interface{}) {
 	}
 }
 
-func ExtractFunction[T inputs.IInput](app *App, actionFunc func(*Control, T, models.Info) (any, error)) *Action {
-	key, check, access := extractActionMetadata(actionFunc)
+func ExtractFunction[T inputs.IInput](app *App, service interface{}, actionFunc func(*Control, T, models.Info) (any, error)) *Action {
+	key, check, access := extractActionMetadata(service, actionFunc)
 	validate := true
 	action := &Action{
 		Key:      key,
@@ -197,8 +197,8 @@ func ExtractFunction[T inputs.IInput](app *App, actionFunc func(*Control, T, mod
 	return action
 }
 
-func extractActionMetadata(function interface{}) (string, Check, Access) {
-	var ts = strings.Split(utils.FuncDescription(function), " ")
+func extractActionMetadata(service interface{}, function interface{}) (string, Check, Access) {
+	var ts = strings.Split(utils.FuncDescription(service, function), " ")
 	var tokens = []string{}
 	for _, token := range ts {
 		if len(strings.Trim(token, " ")) > 0 {

@@ -5,14 +5,20 @@ import (
 	"sigma/main/core/adapters/cache"
 	"sigma/main/core/adapters/federation"
 	"sigma/main/core/adapters/storage"
-	controllers_auth "sigma/main/core/services/auth"
-	controllers_dummy "sigma/main/core/services/dummy"
-	controllers_user "sigma/main/core/services/user"
-	controllers_invite "sigma/main/core/services/invite"
-	controllers_space "sigma/main/core/services/space"
-	controllers_topic "sigma/main/core/services/topic"
 	"sigma/main/core/runtime"
 	"sigma/main/core/security"
+	actions_auth "sigma/main/core/services/actions/auth"
+	actions_dummy "sigma/main/core/services/actions/dummy"
+	actions_invite "sigma/main/core/services/actions/invite"
+	actions_space "sigma/main/core/services/actions/space"
+	actions_topic "sigma/main/core/services/actions/topic"
+	actions_user "sigma/main/core/services/actions/user"
+	pluggers_auth "sigma/main/core/services/pluggers/auth"
+	pluggers_dummy "sigma/main/core/services/pluggers/dummy"
+	pluggers_invite "sigma/main/core/services/pluggers/invite"
+	pluggers_space "sigma/main/core/services/pluggers/space"
+	pluggers_topic "sigma/main/core/services/pluggers/topic"
+	pluggers_user "sigma/main/core/services/pluggers/user"
 	"sigma/main/core/signaler"
 	"sigma/main/core/utils"
 )
@@ -30,10 +36,10 @@ func New(appId string, storageRoot string, openToNet bool, stoManager storage.IS
 }
 
 func loadCoreServices(app *runtime.App) {
-	app.Services().PlugService(&controllers_auth.Controller{App: app})
-	app.Services().PlugService(&controllers_dummy.Controller{App: app})
-	app.Services().PlugService(&controllers_user.Controller{App: app})
-	app.Services().PlugService(&controllers_invite.Controller{App: app})
-	app.Services().PlugService(&controllers_space.Controller{App: app})
-	app.Services().PlugService(&controllers_topic.Controller{App: app})
+	app.Services().PlugService(pluggers_auth.New(app, &actions_auth.AuthActions{App: app}))
+	app.Services().PlugService(pluggers_dummy.New(app, &actions_dummy.DummyActions{App: app}))
+	app.Services().PlugService(pluggers_user.New(app, &actions_user.UserActions{App: app}))
+	app.Services().PlugService(pluggers_invite.New(app, &actions_invite.InviteActions{App: app}))
+	app.Services().PlugService(pluggers_space.New(app, &actions_space.SpaceActions{App: app}))
+	app.Services().PlugService(pluggers_topic.New(app, &actions_topic.TopicActions{App: app}))
 }

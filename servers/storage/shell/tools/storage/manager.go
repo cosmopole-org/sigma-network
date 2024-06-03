@@ -178,7 +178,7 @@ func (sm *TrxWrapper) AutoMigrate(args ...interface{}) storage.ITrx {
 	return sm
 }
 
-func CreateDatabase(dialector gorm.Dialector) *StorageManager {
+func CreateDatabase(storageRoot string, dialector gorm.Dialector) *StorageManager {
 	utils.Log(5, "connecting to database...")
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
@@ -196,5 +196,5 @@ func CreateDatabase(dialector gorm.Dialector) *StorageManager {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return &StorageManager{db: db}
+	return &StorageManager{db: db, storageRoot: storageRoot}
 }

@@ -5,7 +5,8 @@ import (
 	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	shell_federation "sigma/main/shell/network/federation"
-	"sigma/main/shell/services"
+	actions_wasm "sigma/main/shell/services/actions/wasm"
+	pluggers_wasm "sigma/main/shell/services/pluggers/wasm"
 	tools "sigma/main/shell/tools"
 	memory_manager "sigma/main/shell/tools/memory"
 	storage_manager "sigma/main/shell/tools/storage"
@@ -63,7 +64,7 @@ func (s *Shell) loadWellknownServers(wellKnownServers []string) {
 }
 
 func (sh *Shell) loaShellServices() {
-	services.CreateWasmPluggerService(sh.toolbox)
+	sh.toolbox.Services().PlugService(pluggers_wasm.New(sh.Core(), actions_wasm.New(sh.toolbox)))
 }
 
 func (sh *Shell) Install(co *runtime.App, storage *storage_manager.StorageManager, fed *shell_federation.FedNet, maxReqSize int, wks []string) {
@@ -79,9 +80,9 @@ type ShellCoreTools struct {
 	Federation *shell_federation.FedNet
 }
 
-func CreateShellCoreServices(dbConn gorm.Dialector, redisUri string) *ShellCoreTools {
+func CreateShellCoreServices(dbConn gorm.Dialector, storageRoot string, redisUri string) *ShellCoreTools {
 	shellCoreTools := &ShellCoreTools{}
-	shellCoreTools.Storage = storage_manager.CreateDatabase(dbConn)
+	shellCoreTools.Storage = storage_manager.CreateDatabase(storageRoot, dbConn)
 	shellCoreTools.Cache = memory_manager.CreateMemory(redisUri)
 	shellCoreTools.Federation = shell_federation.CreateFederation()
 	return shellCoreTools
