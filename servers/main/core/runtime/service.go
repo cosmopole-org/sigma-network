@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"sigma/main/core/adapters/storage"
 	"sigma/main/core/inputs"
 	"sigma/main/core/models"
@@ -65,6 +66,19 @@ type Services struct {
 
 func (ss *Services) PutMiddleware(mw func(key string, packetId string, input interface{}, token string, origin string) (int, any, error)) {
 	ss.Middlewares = append(ss.Middlewares, mw)
+}
+
+func (ss *Services) PlugService(service interface{}) {
+	s := reflect.TypeOf(service)
+	for i := 0; i < s.NumMethod(); i++ {
+		f := s.Method(i)
+		if f.Name == "Install" {
+			f.Func.Call([]reflect.Value{reflect.ValueOf(service)})
+		} else {
+			result := f.Func.Call([]reflect.Value{reflect.ValueOf(service)})
+			ss.AddAction(result[0].Interface().(*Action))
+		}
+	}
 }
 
 func ExtractFunction[T inputs.IInput](app *App, actionFunc func(*Control, T, models.Info) (any, error)) *Action {
@@ -385,23 +399,6 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			return fiber.StatusOK, result, nil
 		},
 	}
-}
-
-type Test struct {
-	Message string `json:"message"`
-}
-
-func (d Test) GetData() any {
-	return "dummy"
-}
-func (d Test) GetSpaceId() string {
-	return ""
-}
-func (d Test) GetTopicId() string {
-	return ""
-}
-func (d Test) GetMemberId() string {
-	return ""
 }
 
 func CreateServices(a *App) *Services {

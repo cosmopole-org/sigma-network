@@ -5,14 +5,14 @@ import (
 	"sigma/main/core/adapters/cache"
 	"sigma/main/core/adapters/federation"
 	"sigma/main/core/adapters/storage"
+	controllers_auth "sigma/main/core/services/auth"
+	controllers_dummy "sigma/main/core/services/dummy"
+	controllers_user "sigma/main/core/services/user"
+	controllers_invite "sigma/main/core/services/invite"
+	controllers_space "sigma/main/core/services/space"
+	controllers_topic "sigma/main/core/services/topic"
 	"sigma/main/core/runtime"
 	"sigma/main/core/security"
-	services_auth "sigma/main/core/services/auth"
-	services_dummy "sigma/main/core/services/dummy"
-	services_invite "sigma/main/core/services/invite"
-	services_space "sigma/main/core/services/space"
-	services_topic "sigma/main/core/services/topic"
-	services_user "sigma/main/core/services/user"
 	"sigma/main/core/signaler"
 	"sigma/main/core/utils"
 )
@@ -30,10 +30,10 @@ func New(appId string, storageRoot string, openToNet bool, stoManager storage.IS
 }
 
 func loadCoreServices(app *runtime.App) {
-	services_auth.Run(app)
-	services_dummy.Run(app)
-	services_user.Run(app)
-	services_invite.Run(app)
-	services_space.Run(app)
-	services_topic.Run(app)
+	app.Services().PlugService(&controllers_auth.Controller{App: app})
+	app.Services().PlugService(&controllers_dummy.Controller{App: app})
+	app.Services().PlugService(&controllers_user.Controller{App: app})
+	app.Services().PlugService(&controllers_invite.Controller{App: app})
+	app.Services().PlugService(&controllers_space.Controller{App: app})
+	app.Services().PlugService(&controllers_topic.Controller{App: app})
 }

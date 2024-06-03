@@ -1,27 +1,22 @@
-package services_dummy
+package controllers_dummy
 
 import (
-	"os"
-	"sigma/main/core/inputs"
-	"sigma/main/core/models"
 	"sigma/main/core/runtime"
+	services_dummy "sigma/main/core/actions/dummy"
 )
 
-type DummyService struct {
+type Controller struct {
 	App *runtime.App
 }
 
-// Hello /api/hello check [ false false false ] access [ true false false false GET ]
-func Hello(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
-	return `{ "hello": "world" }`, nil
+func (c *Controller) Hello() *runtime.Action {
+	return runtime.ExtractFunction(c.App, services_dummy.Hello)
 }
 
-// Ping /api/ping check [ false false false ] access [ true false false false GET ]
-func Ping(control *runtime.Control, d inputs.HelloInput, info models.Info) (any, error) {
-	return os.Getenv("MAIN_PORT"), nil
+func (c *Controller) Ping() *runtime.Action {
+	return runtime.ExtractFunction(c.App, services_dummy.Ping)
 }
 
-func Run(app *runtime.App) {
-	app.Services().AddAction(runtime.ExtractFunction(app, Hello))
-	app.Services().AddAction(runtime.ExtractFunction(app, Ping))
+func (c *Controller) Install() {
+	// pass
 }
