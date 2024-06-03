@@ -9,18 +9,13 @@ import (
 	"sigma/main/core/runtime"
 	updates_invites "sigma/main/core/updates/invites"
 	"sigma/main/core/utils"
-
-	"github.com/gofiber/fiber/v2"
-	"google.golang.org/grpc"
 )
 
 const inviteNotFoundError = "invite not found"
+var memberTemplate = "member::%s::%s"
 
-type InviteService struct {
-	app *runtime.App
-}
-
-func (s *InviteService) create(control *runtime.Control, input inputs_invites.CreateInput, info models.Info) (any, error) {
+// Create /invites/create check [ true true false ] access [ true false false false POST ]
+func Create(control *runtime.Control, input inputs_invites.CreateInput, info models.Info) (any, error) {
 	space := models.Space{Id: input.SpaceId}
 	err := control.Trx.First(&space).Error()
 	if err != nil {
@@ -31,11 +26,12 @@ func (s *InviteService) create(control *runtime.Control, input inputs_invites.Cr
 	if err2 != nil {
 		return nil, err2
 	}
-	go s.app.Signaler().SignalUser("invites/create", "", input.UserId, updates_invites.Create{Invite: invite}, true)
+	go control.Signaler().SignalUser("invites/create", "", input.UserId, updates_invites.Create{Invite: invite}, true)
 	return outputs_invites.CreateOutput{Invite: invite}, nil
 }
 
-func (s *InviteService) cancel(control *runtime.Control, input inputs_invites.CancelInput, info models.Info) (any, error) {
+// Cancel /invites/cancel check [ true true false ] access [ true false false false POST ]
+func Cancel(control *runtime.Control, input inputs_invites.CancelInput, info models.Info) (any, error) {
 	admin := models.Admin{UserId: info.User.Id, SpaceId: input.SpaceId}
 	err := control.Trx.First(&admin).Error()
 	if err != nil {
@@ -53,13 +49,12 @@ func (s *InviteService) cancel(control *runtime.Control, input inputs_invites.Ca
 	if err3 != nil {
 		return nil, err3
 	}
-	go s.app.Signaler().SignalUser("invites/cancel", "", invite.UserId, updates_invites.Cancel{Invite: invite}, true)
+	go control.Signaler().SignalUser("invites/cancel", "", invite.UserId, updates_invites.Cancel{Invite: invite}, true)
 	return outputs_invites.CancelOutput{Invite: invite}, nil
 }
 
-var memberTemplate = "member::%s::%s"
-
-func (s *InviteService) accept(control *runtime.Control, input inputs_invites.AcceptInput, info models.Info) (any, error) {
+// Accept /invites/accept check [ true false false ] access [ true false false false POST ]
+func Accept(control *runtime.Control, input inputs_invites.AcceptInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
 	err := control.Trx.First(&invite).Error()
 	if err != nil {
@@ -74,18 +69,19 @@ func (s *InviteService) accept(control *runtime.Control, input inputs_invites.Ac
 	}
 	member := models.Member{Id: utils.SecureUniqueId(control.AppId), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
 	control.Trx.Create(&member)
-	s.app.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	s.app.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	control.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	control.Adapters().Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	admins := []models.Admin{}
 	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go s.app.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: invite}, true)
+		go control.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: invite}, true)
 	}
-	go s.app.Signaler().SignalGroup("spaces/userJoined", invite.SpaceId, updates_invites.Accept{Invite: invite}, true, []string{})
+	go control.Signaler().SignalGroup("spaces/userJoined", invite.SpaceId, updates_invites.Accept{Invite: invite}, true, []string{})
 	return outputs_invites.AcceptOutput{Member: member}, nil
 }
 
-func (s *InviteService) decline(control *runtime.Control, input inputs_invites.DeclineInput, info models.Info) (any, error) {
+// Decline /invites/decline check [ true false false ] access [ true false false false POST ]
+func Decline(control *runtime.Control, input inputs_invites.DeclineInput, info models.Info) (any, error) {
 	invite := models.Invite{Id: input.InviteId}
 	err := control.Trx.First(&invite).Error()
 	if err != nil {
@@ -101,54 +97,16 @@ func (s *InviteService) decline(control *runtime.Control, input inputs_invites.D
 	admins := []models.Admin{}
 	control.Trx.Where("space_id = ?", invite.SpaceId).Find(&admins)
 	for _, admin := range admins {
-		go s.app.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: &invite}, true)
+		go control.Signaler().SignalUser("invites/accept", "", admin.UserId, updates_invites.Accept{Invite: &invite}, true)
 	}
 	return outputs_invites.DeclineOutput{}, nil
 }
 
-func CreateInviteService(app *runtime.App) {
 
-	service := &InviteService{app: app}
-
+func Run(app *runtime.App) {
 	app.Adapters().Storage().AutoMigrate(&models.Invite{})
-
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/invites/create",
-		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.create,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/invites/cancel",
-		runtime.CreateCk(true, true, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.cancel,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/invites/accept",
-		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.accept,
-	))
-	app.Services().AddAction(runtime.CreateAction(
-		app,
-		"/invites/decline",
-		runtime.CreateCk(true, false, false),
-		runtime.CreateAc(app.OpenToNet, true, false, false, fiber.MethodPost),
-		true,
-		service.decline,
-	))
-}
-
-func LoadInviteGrpcService(grpcServer *grpc.Server) {
-	// type server struct {
-	// 	pb.UnimplementedInviteServiceServer
-	// }
-	// pb.RegisterInviteServiceServer(grpcServer, &server{})
+	app.Services().AddAction(runtime.ExtractFunction(app, Create))
+	app.Services().AddAction(runtime.ExtractFunction(app, Cancel))
+	app.Services().AddAction(runtime.ExtractFunction(app, Accept))
+	app.Services().AddAction(runtime.ExtractFunction(app, Decline))
 }

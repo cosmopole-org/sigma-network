@@ -49,8 +49,7 @@ func (app *App) Adapters() adapters.ICoreAdapters {
 
 func (app *App) GenerateControl() *Control {
 	return &Control{
-		AppId:    app.AppId,
-		Services: app.services,
-		Trx:      app.adapters.Storage().CreateTrx(),
+		App: app,
+		Trx: app.adapters.Storage().CreateTrx(),
 	}
 }

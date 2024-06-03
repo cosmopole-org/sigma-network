@@ -21,9 +21,9 @@ func FuncName(f interface{}) string {
 }
 
 // Get description of a func
-func FuncDescription(f reflect.Value) string {
-	fileName, _ := runtime.FuncForPC(f.Pointer()).FileLine(0)
-	funcName := FuncName(f.Interface())
+func FuncDescription(f interface{}) string {
+	fileName, _ := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).FileLine(0)
+	funcName := FuncName(f)
 	fset := token.NewFileSet()
 
 	// Parse src

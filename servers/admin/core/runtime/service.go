@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"reflect"
 	"sigma/admin/core/adapters/storage"
 	"sigma/admin/core/inputs"
 	"sigma/admin/core/models"
@@ -30,10 +29,8 @@ type IError struct {
 }
 
 type Control struct {
-	AppId       string
-	StorageRoot string
-	Trx         storage.ITrx
-	Services    *Services
+	*App
+	Trx storage.ITrx
 }
 
 type Action struct {
@@ -70,132 +67,123 @@ func (ss *Services) PutMiddleware(mw func(key string, packetId string, input int
 	ss.Middlewares = append(ss.Middlewares, mw)
 }
 
-func (ss *Services) PlugService(service interface{}) {
-	actions := ExtractService(ss.app, service)
-	for i := 0; i < len(actions); i++ {
-		ss.AddAction(&actions[i])
-	}
-}
-
-func ExtractService(app *App, service interface{}) []Action {
-	funcsList := []Action{}
-	t := reflect.TypeOf(service)
-	for i := 0; i < t.NumMethod(); i++ {
-		m := t.Method(i)
-		actionFunc := func(c *Control, input interface{}, info models.Info) (any, error) {
-			result := m.Func.Call(
-				[]reflect.Value{
-					reflect.ValueOf(service),
-					reflect.ValueOf(c),
-					reflect.ValueOf(input).Elem(),
-					reflect.ValueOf(info),
-				},
-			)
-			res := result[0].Interface()
-			if result[1].Interface() != nil {
-				return res, result[1].Interface().(error)
-			} else {
-				return res, nil
+func ExtractFunction[T inputs.IInput](app *App, actionFunc func(*Control, T, models.Info) (any, error)) *Action {
+	key, check, access := extractActionMetadata(actionFunc)
+	validate := true
+	action := &Action{
+		Key:      key,
+		Check:    check,
+		Access:   access,
+		Validate: true,
+		Process: func(control *Control, rawInput interface{}, token string, origin string) (int, any, error) {
+			data := new(T)
+			switch input := rawInput.(type) {
+			case string:
+				json.Unmarshal([]byte(input), data)
+			case *fiber.Ctx:
+				form, err := input.MultipartForm()
+				if err == nil {
+					utils.Log(5, form)
+					var formData = map[string]any{}
+					for k, v := range form.Value {
+						formData[k] = v[0]
+					}
+					for k, v := range form.File {
+						formData[k] = v[0]
+					}
+					mapstructure.Decode(formData, data)
+				} else {
+					if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
+						input.BodyParser(data)
+					} else if access.ActionType == "GET" {
+						input.QueryParser(data)
+					}
+				}
+			default:
+				//pass
 			}
-		}
-		key, check, access := extractActionMetadata(m.Func)
-		validate := true
-		action := Action{
-			Key:      key,
-			Check:    check,
-			Access:   access,
-			Validate: true,
-			Process: func(control *Control, rawInput interface{}, token string, origin string) (int, any, error) {
-				var data = reflect.New(m.Func.Type().In(2)).Interface()
-				switch input := rawInput.(type) {
-				case string:
-					json.Unmarshal([]byte(input), data)
-				case *fiber.Ctx:
-					form, err := input.MultipartForm()
-					if err == nil {
-						utils.Log(5, form)
-						var formData = map[string]any{}
-						for k, v := range form.Value {
-							formData[k] = v[0]
-						}
-						for k, v := range form.File {
-							formData[k] = v[0]
-						}
-						mapstructure.Decode(formData, data)
-					} else {
-						if access.ActionType == "POST" || access.ActionType == "PUT" || access.ActionType == "DELETE" {
-							input.BodyParser(data)
-						} else if access.ActionType == "GET" {
-							input.QueryParser(data)
-						}
-					}
-				default:
-					//pass
+			if validate {
+				err := ValidateInput(data)
+				if err != nil {
+					return fiber.ErrBadRequest.Code, nil, err
 				}
-				fmt.Println(data)
-				if validate {
-					err := ValidateInput(data)
-					if err != nil {
-						return fiber.ErrBadRequest.Code, nil, err
-					}
-				}
-				if origin == "" {
-					origin = app.AppId
-				}
-				if !access.Fed || (origin == app.AppId) {
-					if check.User {
-						var userId, userType = app.Security().AuthWithToken(token)
-						if userId != "" {
-							var user = models.User{Id: userId}
-							if check.Space {
-								var location = app.Security().HandleLocationWithProcessed(token, userId, userType, (data).(inputs.IInput).GetSpaceId(), (data).(inputs.IInput).GetTopicId(), (data).(inputs.IInput).GetMemberId())
-								if location.SpaceId != "" {
-									var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
-									result, err := actionFunc(control, data, models.Info{User: user, Member: member})
-									if err != nil {
-										return fiber.ErrInternalServerError.Code, nil, err
-									}
-									return fiber.StatusOK, result, nil
-								} else {
-									return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
-								}
-							} else {
-								result, err := actionFunc(control, data, models.Info{User: user})
+			}
+			if origin == "" {
+				origin = app.AppId
+			}
+			if !access.Fed || (origin == app.AppId) {
+				if check.User {
+					var userId, userType = app.Security().AuthWithToken(token)
+					if userId != "" {
+						var user = models.User{Id: userId}
+						if check.Space {
+							var location = app.Security().HandleLocationWithProcessed(token, userId, userType, (*data).GetSpaceId(), (*data).GetTopicId(), (*data).GetMemberId())
+							if location.SpaceId != "" {
+								var member = models.Member{SpaceId: location.SpaceId, TopicIds: location.TopicId, Metadata: "", UserId: userId}
+								result, err := actionFunc(control, *data, models.Info{User: user, Member: member})
 								if err != nil {
 									return fiber.ErrInternalServerError.Code, nil, err
 								}
 								return fiber.StatusOK, result, nil
+							} else {
+								return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
 							}
 						} else {
-							return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
+							result, err := actionFunc(control, *data, models.Info{User: user})
+							if err != nil {
+								return fiber.ErrInternalServerError.Code, nil, err
+							}
+							return fiber.StatusOK, result, nil
 						}
 					} else {
-						result, err := actionFunc(control, data, models.Info{})
-						if err != nil {
-							return fiber.ErrInternalServerError.Code, nil, err
-						}
-						return fiber.StatusOK, result, nil
+						return fiber.StatusForbidden, nil, errors.New(accessDeniedError)
 					}
 				} else {
-					if check.User {
-						var userId, _ = app.Security().AuthWithToken(token)
-						if userId != "" {
-							return -2, PreFedPacket{UserId: userId, Body: data}, nil
-						} else {
-							return fiber.ErrInternalServerError.Code, nil, errors.New(accessDeniedError)
-						}
-					} else {
-						return -2, PreFedPacket{UserId: "", Body: data}, nil
+					result, err := actionFunc(control, *data, models.Info{})
+					if err != nil {
+						return fiber.ErrInternalServerError.Code, nil, err
 					}
+					return fiber.StatusOK, result, nil
 				}
-			},
-		}
-		funcsList = append(funcsList, action)
+			} else {
+				if check.User {
+					var userId, _ = app.Security().AuthWithToken(token)
+					if userId != "" {
+						return -2, PreFedPacket{UserId: userId, Body: data}, nil
+					} else {
+						return fiber.ErrInternalServerError.Code, nil, errors.New(accessDeniedError)
+					}
+				} else {
+					return -2, PreFedPacket{UserId: "", Body: data}, nil
+				}
+			}
+		},
+		ProcessInternally: func(control *Control, data interface{}, m Meta) (int, any, error) {
+			user := models.User{Id: m.UserId}
+			member := models.Member{UserId: user.Id, SpaceId: m.SpaceId, TopicIds: m.TopicId, Metadata: ""}
+			result, err := actionFunc(control, data.(T), models.Info{User: user, Member: member})
+			fmt.Println()
+			fmt.Println(result, err)
+			fmt.Println()
+			if err != nil {
+				return fiber.ErrInternalServerError.Code, nil, err
+			}
+			return fiber.StatusOK, result, nil
+		},
+		ProcessFederative: func(control *Control, data interface{}, a models.Info) (int, any, error) {
+			result, err := actionFunc(control, data.(T), a)
+			if err != nil {
+				control.Trx.Rollback()
+				return fiber.ErrInternalServerError.Code, nil, err
+			}
+			control.Trx.Commit()
+			return fiber.StatusOK, result, nil
+		},
 	}
-	return funcsList
+	return action
 }
 
-func extractActionMetadata(function reflect.Value) (string, Check, Access) {
+func extractActionMetadata(function interface{}) (string, Check, Access) {
 	var ts = strings.Split(utils.FuncDescription(function), " ")
 	var tokens = []string{}
 	for _, token := range ts {
@@ -397,6 +385,23 @@ func CreateAction[T inputs.IInput](app *App, key string, check Check, access Acc
 			return fiber.StatusOK, result, nil
 		},
 	}
+}
+
+type Test struct {
+	Message string `json:"message"`
+}
+
+func (d Test) GetData() any {
+	return "dummy"
+}
+func (d Test) GetSpaceId() string {
+	return ""
+}
+func (d Test) GetTopicId() string {
+	return ""
+}
+func (d Test) GetMemberId() string {
+	return ""
 }
 
 func CreateServices(a *App) *Services {

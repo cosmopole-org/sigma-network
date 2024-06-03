@@ -30,13 +30,10 @@ func New(appId string, storageRoot string, openToNet bool, stoManager storage.IS
 }
 
 func loadCoreServices(app *runtime.App) {
-	app.Services().PlugService(&services_auth.AuthService{App: app})
-	app.Services().PlugService(&services_dummy.DummyService{App: app})
-	app.Services().PlugService(&services_user.UserService{App: app})
-	app.Services().PlugService(&services_space.SpaceService{App: app})
-	app.Services().PlugService(&services_topic.TopicService{App: app})
-	services_user.CreateUserService(app)
-	services_invite.CreateInviteService(app)
-	services_space.CreateSpaceService(app)
-	services_topic.CreateTopicService(app)
+	services_auth.Run(app)
+	services_dummy.Run(app)
+	services_user.Run(app)
+	services_invite.Run(app)
+	services_space.Run(app)
+	services_topic.Run(app)
 }

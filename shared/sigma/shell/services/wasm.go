@@ -32,10 +32,10 @@ func (w *WasmService) plug(control *runtime.Control, input inputs_external.PlugI
 		return outputs_external.PlugInput{}, err
 	}
 
-	w.toolbox.File().SaveFileToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
-	w.toolbox.File().SaveDataToGlobalStorage(control.StorageRoot+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
+	w.toolbox.File().SaveFileToGlobalStorage(control.Adapters().Storage().StorageRoot()+pluginsTemplateName+input.Key, input.File, "module.wasm", true)
+	w.toolbox.File().SaveDataToGlobalStorage(control.Adapters().Storage().StorageRoot()+pluginsTemplateName+input.Key, []byte(input.Meta), "meta.txt", true)
 
-	w.toolbox.Wasm().Plug(control.StorageRoot+pluginsTemplateName+input.Key+"/module.wasm", meta)
+	w.toolbox.Wasm().Plug(control.Adapters().Storage().StorageRoot()+pluginsTemplateName+input.Key+"/module.wasm", meta)
 
 	return outputs_external.PlugInput{}, nil
 }
