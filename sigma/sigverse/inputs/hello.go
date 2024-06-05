@@ -1,6 +1,8 @@
 package inputs
 
-type HelloInput struct{}
+type HelloInput struct {
+	Name string `json:"name"`
+}
 
 func (d HelloInput) GetData() any {
 	return "dummy"

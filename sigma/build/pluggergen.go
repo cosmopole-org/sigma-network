@@ -21,6 +21,8 @@ func main() {
 		import (
 			"reflect"
 			"sigma/sigma/abstract"
+			module_logger "sigma/sigma/core/module/logger"
+
 		`
 		entries, err := os.ReadDir(actionsFolder)
 		if err != nil {
@@ -39,7 +41,7 @@ func main() {
 		code += `
 		)
 
-		func PlugThePlugger(layer abstract.ILayer, plugger interface{}, logger abstract.ILogger, core abstract.ICore) {
+		func PlugThePlugger(layer abstract.ILayer, plugger interface{}) {
 			s := reflect.TypeOf(plugger)
 			for i := 0; i < s.NumMethod(); i++ {
 				f := s.Method(i)
@@ -48,16 +50,16 @@ func main() {
 				} else {
 					result := f.Func.Call([]reflect.Value{reflect.ValueOf(plugger)})
 					action := result[0].Interface().(abstract.IAction)
-					layer.Actor().InjectAction(action, logger, core)
+					layer.Actor().InjectAction(action)
 				}
 			}
 		}
 	
-		func PlugAll(layer abstract.ILayer, logger abstract.ILogger, core abstract.ICore) {
+		func PlugAll(layer abstract.ILayer, logger *module_logger.Logger, core abstract.ICore) {
 		`
 		for _, serviceName := range serviceNames {
 			code += `
-				PlugThePlugger(layer, plugger_` + serviceName + `.New(&action_` + serviceName + `.Actions{Layer: layer}), logger, core)
+				PlugThePlugger(layer, plugger_` + serviceName + `.New(&action_` + serviceName + `.Actions{Layer: layer}, logger, core))
 			`
 		}
 		code += `
@@ -107,6 +109,7 @@ func build(serviceName string, serviceRoot string) {
 	import (
 		"sigma/sigma/abstract"
 		"sigma/sigma/utils"
+		module_logger "sigma/sigma/core/module/logger"
 		actions "sigma/sigverse/actions/` + serviceName + `"
 	)
 	
@@ -130,9 +133,9 @@ func build(serviceName string, serviceRoot string) {
 		// pass
 	}
 	
-	func New(actions *actions.Actions, Logger *module_logger.Logger, core abstract.ICore) *Plugger {
+	func New(actions *actions.Actions, logger *module_logger.Logger, core abstract.ICore) *Plugger {
 		id := "` + serviceName + `"
-		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: Logger}
+		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: logger}
 	}
 	`
 	writeToFile(resultFolder+"/"+serviceName+".go", code)

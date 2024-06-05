@@ -72,14 +72,15 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	}
 	var layerNum = 0
 	layerNumHeader := c.GetReqHeaders()["Layer"]
-	if layerNumHeader != nil {
-		ln, err := strconv.ParseInt(layerNumHeader[0], 10, 32)
-		if err != nil {
-			hs.logger.Println(err)
-			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
-		}
-		layerNum = int(ln)
+	if layerNumHeader == nil {
+		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
 	}
+	ln, err := strconv.ParseInt(layerNumHeader[0], 10, 32)
+	if err != nil {
+		hs.logger.Println(err)
+		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
+	}
+	layerNum = int(ln)
 	org := hs.sigmaCore.Id()
 	if origin != "" {
 		org = origin
@@ -95,7 +96,7 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("input parsing error"))
 	}
 	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input)
-	if statusCode == fiber.StatusOK {
+	if statusCode == 1 {
 		return handleResultOfFunc(c, result)
 	} else if err != nil {
 		return c.Status(statusCode).JSON(modulemodel.BuildErrorJson(err.Error()))
@@ -108,10 +109,7 @@ func (hs *HttpServer) Listen(port int) {
 		return c.Status(fiber.StatusOK).Send([]byte("hello world"))
 	})
 	hs.Server.Use(func(c *fiber.Ctx) error {
-		if hs.shadows[c.Path()] {
-			return hs.handleRequest(c)
-		}
-		return c.Next()
+		return hs.handleRequest(c)
 	})
 	hs.logger.Println("Listening to rest port ", port, "...")
 	go func() {

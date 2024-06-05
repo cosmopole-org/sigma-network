@@ -10,7 +10,11 @@ import (
 	layer1 "sigma/sigma/layer1/layer"
 	layer2 "sigma/sigma/layer2/layer"
 	layer3 "sigma/sigma/layer3/layer"
+	module_model "sigma/sigma/layer3/model"
+	plugger_sigverse "sigma/sigverse/main"
 )
+
+var noExit = make(chan int)
 
 func main() {
 
@@ -41,5 +45,12 @@ func main() {
 			[]string{},
 		},
 	)
-	//pluggersigverse.PlugAll(app.Get(1), logger, app)
+	plugger_sigverse.PlugAll(app.Get(1), logger, app)
+	abstract.UseToolbox[*module_model.ToolboxL3](app.Get(3).Tools()).Net().Run(
+		map[string]int{
+			"http": 9010,
+		},
+	)
+
+	<-noExit
 }

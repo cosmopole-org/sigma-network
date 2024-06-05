@@ -29,3 +29,18 @@ func NewNetwork(
 	}
 	return net
 }
+
+func (net *Network) Run(ports map[string]int) {
+	httpPort, ok := ports["http"]
+	if ok {
+		net.Http.Listen(httpPort)
+	}
+	pushPort, ok2 := ports["push"]
+	if ok2 {
+		net.Push.Listen(pushPort)
+	}
+	grpcPort, ok3 := ports["grpc"]
+	if ok3 {
+		net.Grpc.Listen(grpcPort)
+	}
+}

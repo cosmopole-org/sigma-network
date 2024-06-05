@@ -4,6 +4,7 @@
 	import (
 		"sigma/sigma/abstract"
 		"sigma/sigma/utils"
+		module_logger "sigma/sigma/core/module/logger"
 		actions "sigma/sigverse/actions/test"
 	)
 	
@@ -22,8 +23,8 @@
 		// pass
 	}
 	
-	func New(actions *actions.Actions, Logger *module_logger.Logger, core abstract.ICore) *Plugger {
+	func New(actions *actions.Actions, logger *module_logger.Logger, core abstract.ICore) *Plugger {
 		id := "test"
-		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: Logger}
+		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: logger}
 	}
 	

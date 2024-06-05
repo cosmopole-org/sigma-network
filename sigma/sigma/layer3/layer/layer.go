@@ -35,7 +35,8 @@ func (l *Layer) ForFill(core abstract.ICore, args ...interface{}) {
 	layer1Toolbox := abstract.UseToolbox[*toolbox.ToolboxL1](core.Get(1).Tools())
 	net := tool_net.NewNetwork(core, l.logger, layer1Toolbox.Cache(), layer1Toolbox.Signaler())
 	net.Fed = l.federation
-	l.toolbox = net
+	tb := modulemodel.NewTools(net)
+	l.toolbox = tb
 }
 
 func (l *Layer) Index() int {
