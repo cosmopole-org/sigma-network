@@ -12,15 +12,15 @@ import (
 func main() {
 	args := os.Args[1:]
 	for i := 0; i < len(args); i++ {
-		if i % 2 == 0 {
-			actionsFolder := args[i + 1] + "/actions"
+		if i%2 == 0 {
+			actionsFolder := args[i+1] + "/actions"
 			entries, err := os.ReadDir(actionsFolder)
 			if err != nil {
 				log.Fatal(err)
 			}
 			for _, e := range entries {
 				fmt.Println(e.Name())
-				build(e.Name(), args[i + 1], args[i])
+				build(e.Name(), args[i+1], args[i])
 			}
 		}
 	}
@@ -61,7 +61,7 @@ func build(serviceName string, serviceRoot string, layer string) {
 	
 	type Plugger struct {
 		Id      *string
-		App     *runtime.App
+		App     *layer1_app.App
 		Actions *actions_` + serviceName + `.` + strings.ToUpper(serviceName[:1]) + serviceName[1:] + `Actions
 	}
 	`
@@ -78,7 +78,7 @@ func build(serviceName string, serviceRoot string, layer string) {
 		// pass
 	}
 	
-	func New(app *runtime.App, actions *actions_` + serviceName + `.` + strings.ToUpper(serviceName[:1]) + serviceName[1:] + `Actions) *Plugger {
+	func New(app *layer1_app.App, actions *actions_` + serviceName + `.` + strings.ToUpper(serviceName[:1]) + serviceName[1:] + `Actions) *Plugger {
 		id := "` + serviceName + `"
 		return &Plugger{Id: &id, App: app, Actions: actions}
 	}

@@ -1,4 +1,4 @@
-package module_actor_model
+package actor
 
 import (
 	"encoding/json"
@@ -46,4 +46,13 @@ func (a *SecureAction) SecurelyAct(layer abstract.ILayer, token string, origin s
 	}
 	toolbox.Federation().SendInFederation(origin, modulemodel.OriginPacket{IsResponse: false, Key: a.Key(), UserId: userId, SpaceId: input.GetSpaceId(), TopicId: input.GetTopicId(), Data: string(data), RequestId: packetId})
 	return 1, modulemodel.ResponseSimpleMessage{Message: "request sent to federation"}, nil
+}
+
+func (a *SecureAction) SecurelyActFed(layer abstract.ILayer, userId string, input abstract.IInput) (int, any, error) {
+	success, info := a.Guard.ValidateByUserId(userId, input.GetSpaceId(), input.GetTopicId())
+	if !success {
+		return -1, nil, nil
+	}
+	s := layer.Sb().NewState(info)
+	return a.Act(s, input)
 }

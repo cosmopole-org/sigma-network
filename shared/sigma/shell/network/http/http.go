@@ -3,14 +3,13 @@ package shell_http
 import (
 	"fmt"
 	"sigma/main/core/outputs"
-	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type HttpServer struct {
-	sigmaCore *runtime.App
+	sigmaCore *layer1_app.App
 	shadows   map[string]bool
 	Server    *fiber.App
 }
@@ -85,7 +84,7 @@ func (hs *HttpServer) AddShadow(key string) {
 	hs.shadows[key] = true
 }
 
-func New(sc *runtime.App, maxReqSize int) *HttpServer {
+func New(sc *layer1_app.App, maxReqSize int) *HttpServer {
 	if maxReqSize > 0 {
 		return &HttpServer{sigmaCore: sc, shadows: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
 	} else {

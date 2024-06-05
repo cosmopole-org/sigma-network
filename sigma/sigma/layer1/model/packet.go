@@ -1,4 +1,4 @@
-package models
+package module_model
 
 type Packet struct {
 	Origin string `json:"origin"`

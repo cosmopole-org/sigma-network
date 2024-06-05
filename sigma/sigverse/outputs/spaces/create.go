@@ -1,8 +1,10 @@
 package outputs_spaces
 
-import "sigma/main/core/models"
+import (
+	"sigma/sigverse/model"
+)
 
 type CreateOutput struct {
-	Space  models.Space  `json:"space"`
-	Member models.Member `json:"member"`
+	Space  model.Space  `json:"space"`
+	Member model.Member `json:"member"`
 }

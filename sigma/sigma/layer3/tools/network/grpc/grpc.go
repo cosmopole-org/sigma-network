@@ -1,16 +1,16 @@
-package shell_grpc
+package net_grpc
 
 import (
 	"context"
 	"errors"
 	"fmt"
 	"net"
-	"sigma/main/core/inputs"
-	"sigma/main/core/runtime"
-	"sigma/main/core/utils"
+	"sigma/sigma/abstract"
+	modulelogger "sigma/sigma/core/module/logger"
+	moduleactormodel "sigma/sigma/layer1/module/actor"
+	"strconv"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"github.com/mitchellh/mapstructure"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,38 +20,18 @@ import (
 )
 
 type GrpcServer struct {
-	sigmaCore       *runtime.App
+	sigmaCore abstract.ICore
 	Server    *grpc.Server
-	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
+	logger    *modulelogger.Logger
 }
 
-func CreateConverter[T inputs.IInput](key string) func(interface{}) (any, error) {
-	return func(i interface{}) (any, error) {
-		body := new(T)
-		err := mapstructure.Decode(i, body)
-		if err != nil {
-			return nil, errors.New("invalid input format")
-		}
-		return *body, nil
+func ParseInput[T abstract.IInput](i interface{}) (abstract.IInput, error) {
+	body := new(T)
+	err := mapstructure.Decode(i, body)
+	if err != nil {
+		return nil, errors.New("invalid input format")
 	}
-}
-
-func (gs *GrpcServer) EnableEndpoint(key string, converter func(interface{}) (any, error)) {
-	gs.Endpoints[key] = func(rawBody interface{}, token string, origin string, requestId string) (any, string, error) {
-		data, err0 := converter(rawBody)
-		if err0 != nil {
-			return nil, "error", err0
-		}
-		statusCode, res, err := gs.sigmaCore.Services().CallAction(key, requestId, data, token, origin)
-		if statusCode == fiber.StatusOK {
-			return res, "response", nil
-		} else if statusCode == -2 {
-			return res, "noaction", nil
-		} else if err != nil {
-			return nil, "error", errors.New(res.(utils.Error).Message)
-		}
-		return nil, "", nil
-	}
+	return *body, nil
 }
 
 func (gs *GrpcServer) serverInterceptor(
@@ -69,7 +49,7 @@ func (gs *GrpcServer) serverInterceptor(
 	if len(fmArr) != 2 {
 		return nil, status.Errorf(codes.InvalidArgument, "Wrong path format")
 	}
-	action := "/" + strings.ToLower(fmArr[1][0:len(fmArr[1])-len("Service")]) + "s" + "/" + keyArr[2]
+	key := "/" + strings.ToLower(fmArr[1][0:len(fmArr[1])-len("Service")]) + "s" + "/" + keyArr[2]
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Errorf(codes.Unauthenticated, "Metadata not provided")
@@ -89,30 +69,48 @@ func (gs *GrpcServer) serverInterceptor(
 		return nil, status.Errorf(codes.Unauthenticated, "RequestId is not supplied")
 	}
 	requestId := reqIdHeader[0]
-	endpoint, ok := gs.Endpoints[action]
-	if ok {
-		res, _, err := endpoint(req, token, origin, requestId)
-		if err != nil {
-			return nil, status.Errorf(codes.Unauthenticated, err.Error())
-		} else {
-			return res, nil
-		}
+	layerHeader, ok := md["layer"]
+	if !ok {
+		return nil, status.Errorf(codes.Unauthenticated, "layer is not supplied")
+	}
+	layerNumStr := layerHeader[0]
+	layerNum, err := strconv.Atoi(layerNumStr)
+	if err != nil {
+		gs.logger.Println(err)
+	}
+	layer := gs.sigmaCore.Get(layerNum)
+	action := layer.Actor().FetchAction(key)
+	if action == nil {
+		return nil, status.Errorf(codes.NotFound, "action not found")
+	}
+	input, err := action.(*moduleactormodel.SecureAction).ParseInput("grpc", req)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, err.Error())
+	}
+	res, _, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, origin, requestId, input)
+	if err != nil {
+		return nil, status.Errorf(codes.Unauthenticated, err.Error())
 	} else {
-		return nil, status.Errorf(codes.Unauthenticated, "endpoint not found")
+		return res, nil
 	}
 }
 
 func (gs *GrpcServer) Listen(port int) {
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
-		utils.Log(5, "failed to listen grpc: %v", err)
+		gs.logger.Println("failed to listen grpc: %v", err)
 	}
-	utils.Log(5, "server listening at %v", lis.Addr())
-	go gs.Server.Serve(lis)
+	gs.logger.Println("server listening at %v", lis.Addr())
+	go func() {
+		err := gs.Server.Serve(lis)
+		if err != nil {
+			gs.logger.Println(err)
+		}
+	}()
 }
 
-func New(sc *runtime.App) *GrpcServer {
-	gs := &GrpcServer{sigmaCore: sc, Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
+func New(core abstract.ICore, logger *modulelogger.Logger) *GrpcServer {
+	gs := &GrpcServer{sigmaCore: core, logger: logger}
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(gs.serverInterceptor),
 	)

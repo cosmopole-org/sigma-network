@@ -1,27 +1,23 @@
 package module_model
 
 import (
-	"sigma/main/sigma/abstract"
-	"sigma/main/sigma/layer1/adapters"
+	"sigma/sigma/abstract"
+	modulemodel "sigma/sigma/layer1/module/state"
 )
 
-type StateL1 struct {
-	info abstract.IInfo
-	trx  adapters.ITrx
+type StateL2 struct {
+	*modulemodel.StateL1
 }
 
-func (s *StateL1) Info() abstract.IInfo {
-	return s.info
+type StateBuilder2 struct {
+	layer  abstract.ILayer
+	bottom abstract.IStateBuilder
 }
 
-func (s *StateL1) Trx() adapters.ITrx {
-	return s.trx
+func NewStateBuilder(layer abstract.ILayer, bottom abstract.IStateBuilder) abstract.IStateBuilder {
+	return &StateBuilder2{layer: layer, bottom: bottom}
 }
 
-func (s *StateL1) Dummy() {
-	// pass
-}
-
-func NewState(info abstract.IInfo, trx adapters.ITrx) *StateL1 {
-	return &StateL1{info: info, trx: trx}
+func (sb *StateBuilder2) NewState(args ...interface{}) abstract.IState {
+	return &StateL2{sb.bottom.NewState(args[0]).(*modulemodel.StateL1)}
 }

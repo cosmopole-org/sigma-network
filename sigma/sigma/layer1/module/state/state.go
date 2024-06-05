@@ -1,4 +1,4 @@
-package module_model
+package module_state
 
 import (
 	"sigma/sigma/abstract"
@@ -34,5 +34,5 @@ func NewStateBuilder(layer abstract.ILayer, bottom abstract.IStateBuilder) abstr
 
 func (sb *StateBuilder1) NewState(args ...interface{}) abstract.IState {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](sb.layer.Tools())
-	return &StateL1{info: args[0].(abstract.IInfo), trx: toolbox.storage.CreateTrx()}
+	return &StateL1{info: args[0].(abstract.IInfo), trx: toolbox.Storage().CreateTrx()}
 }

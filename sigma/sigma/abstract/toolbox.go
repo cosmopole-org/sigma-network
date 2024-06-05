@@ -1,7 +1,8 @@
 package abstract
 
-type IActor interface {
-	InjectAction(IAction)
-	InjectService(interface{})
-	FetchAction(string) IAction
+type IToolbox interface {
+}
+
+func UseToolbox[T IToolbox](t any) T {
+	return t.(T)
 }

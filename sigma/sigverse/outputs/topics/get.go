@@ -1,6 +1,8 @@
 package outputs_topics
 
-import "sigma/main/core/models"
+import (
+	models "sigma/sigverse/model"
+)
 
 type GetOutput struct {
 	Topic models.Topic `json:"topic"`

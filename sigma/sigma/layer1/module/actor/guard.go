@@ -1,4 +1,4 @@
-package module_actor_model
+package actor
 
 import moduleactormodel "sigma/sigma/core/module/actor/model"
 
@@ -16,6 +16,6 @@ func (g *Guard) ValidateByToken(token string, spaceId string, topicId string) (b
 	return true, moduleactormodel.NewInfo("123", spaceId, topicId)
 }
 
-func (g *Guard) ValidateByUserId(token string, spaceId string, topicId string) (bool, *moduleactormodel.Info) {
+func (g *Guard) ValidateByUserId(userId string, spaceId string, topicId string) (bool, *moduleactormodel.Info) {
 	return true, moduleactormodel.NewInfo("123", spaceId, topicId)
 }

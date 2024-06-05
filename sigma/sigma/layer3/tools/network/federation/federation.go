@@ -1,41 +1,89 @@
-package shell_federation
+package net_federation
 
 import (
 	"encoding/json"
-	"sigma/main/core/models"
-	outputs_invites "sigma/main/core/outputs/invites"
-	outputs_spaces "sigma/main/core/outputs/spaces"
-	"sigma/main/core/runtime"
-	"sigma/main/core/utils"
+	"errors"
+	"net"
+	"sigma/sigma/abstract"
+	module_logger "sigma/sigma/core/module/logger"
+	"sigma/sigma/layer1/adapters"
+	models "sigma/sigma/layer1/model"
+	module_actor_model "sigma/sigma/layer1/module/actor"
+	"sigma/sigma/layer1/tools/signaler"
+	"sigma/sigma/utils/crypto"
+	"sigma/sigma/utils/ip"
+	"sigma/sigverse/model"
+	outputs_invites "sigma/sigverse/outputs/invites"
+	outputs_spaces "sigma/sigverse/outputs/spaces"
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type FedNet struct {
+	sigmaCore   abstract.ICore
+	storage     adapters.IStorage
+	signaler    *signaler.Signaler
+	logger      *module_logger.Logger
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
-	sigmaCore   *runtime.App
 	fed         bool
 }
 
-func (fed *FedNet) LoadFedNet(f *fiber.App) {
+func FirstStageBackFill(core abstract.ICore, wellKnownServers []string, logger *module_logger.Logger) adapters.IFederation {
+	fed := &FedNet{sigmaCore: core, logger: logger}
+	fed.ipToHostMap = map[string]string{}
+	fed.hostToIpMap = map[string]string{}
+	for _, domain := range wellKnownServers {
+		ipAddr := ""
+		ips, _ := net.LookupIP(domain)
+		for _, ip := range ips {
+			if ipv4 := ip.To4(); ipv4 != nil {
+				ipAddr = ipv4.String()
+				break
+			}
+		}
+		fed.ipToHostMap[ipAddr] = domain
+		fed.hostToIpMap[domain] = ipAddr
+	}
+	logger.Println()
+	logger.Println(fed.hostToIpMap)
+	logger.Println()
+	return fed
+}
+
+func (fed *FedNet) SecondStageForFill(f *fiber.App, storage adapters.IStorage, signaler *signaler.Signaler) adapters.IFederation {
+	fed.storage = storage
+	fed.signaler = signaler
 	if fed.fed {
 		f.Post("/api/federation", func(c *fiber.Ctx) error {
 			var pack models.OriginPacket
-			c.BodyParser(&pack)
-			ip := utils.FromRequest(c.Context())
+			err := c.BodyParser(&pack)
+			if err != nil {
+				return c.Status(fiber.StatusBadRequest).JSON(models.BuildErrorJson(err.Error()))
+			}
+			ip := realip.FromRequest(c.Context())
 			hostName, ok := fed.ipToHostMap[ip]
-			utils.Log(5, "packet from ip: [", ip, "] and hostname: [", hostName, "]")
+			fed.logger.Println("packet from ip: [", ip, "] and hostname: [", hostName, "]")
 			if ok {
 				fed.HandlePacket(hostName, pack)
 				return c.Status(fiber.StatusOK).JSON(models.ResponseSimpleMessage{Message: "federation packet received"})
 			} else {
-				utils.Log(5, "hostname not known")
+				fed.logger.Println("hostname not known")
 				return c.Status(fiber.StatusOK).JSON(models.ResponseSimpleMessage{Message: "hostname not known"})
 			}
 		})
 	}
+	return fed
+}
+
+func ParseInput[T abstract.IInput](i string) (abstract.IInput, error) {
+	body := new(T)
+	err := json.Unmarshal([]byte(i), body)
+	if err != nil {
+		return nil, errors.New("invalid input format")
+	}
+	return *body, nil
 }
 
 func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
@@ -43,12 +91,12 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 		if payload.IsResponse {
 			dataArr := strings.Split(payload.Key, " ")
 			if dataArr[0] == "/invites/accept" || dataArr[0] == "/spaces/join" {
-				var member *models.Member
+				var member *model.Member
 				if dataArr[0] == "/invites/accept" {
 					var memberRes outputs_invites.AcceptOutput
 					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 					if err2 != nil {
-						utils.Log(5, err2)
+						fed.logger.Println(err2)
 						return
 					}
 					member = &memberRes.Member
@@ -56,44 +104,40 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 					var memberRes outputs_spaces.JoinOutput
 					err2 := json.Unmarshal([]byte(payload.Data), &memberRes)
 					if err2 != nil {
-						utils.Log(5, err2)
+						fed.logger.Println(err2)
 						return
 					}
 					member = &memberRes.Member
 				}
 				if member != nil {
-					member.Id = utils.SecureUniqueId(fed.sigmaCore.AppId) + "_" + channelId
-					fed.sigmaCore.Adapters().Storage().CreateTrx().Create(member).Commit()
-					fed.sigmaCore.Signaler().JoinGroup(member.SpaceId, member.UserId)
+					member.Id = crypto.SecureUniqueId(fed.sigmaCore.Id()) + "_" + channelId
+					fed.storage.CreateTrx().Create(member).Commit()
+					fed.signaler.JoinGroup(member.SpaceId, member.UserId)
 				}
 			}
-			fed.sigmaCore.Signaler().SignalUser(payload.Key, payload.RequestId, payload.UserId, payload.Data, true)
+			fed.signaler.SignalUser(payload.Key, payload.RequestId, payload.UserId, payload.Data, true)
 		} else {
 			dataArr := strings.Split(payload.Key, " ")
 			if len(dataArr) > 0 && (dataArr[0] == "update") {
-				fed.sigmaCore.Signaler().SignalUser(payload.Key[len("update "):], "", payload.UserId, payload.Data, true)
+				fed.signaler.SignalUser(payload.Key[len("update "):], "", payload.UserId, payload.Data, true)
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
-				fed.sigmaCore.Signaler().SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
+				fed.signaler.SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
 			} else {
-				action := fed.sigmaCore.Services().GetAction(payload.Key)
-				check := action.Check
-				location := fed.sigmaCore.Security().AuthorizeFedHumanWithProcessed(payload.UserId, payload.SpaceId, payload.TopicId)
-				if check.Space && location.SpaceId == "" {
-					errPack, err2 := json.Marshal(utils.BuildErrorJson("access denied"))
-					if err2 == nil {
-						fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
-					}
-					return
+				layer := fed.sigmaCore.Get(payload.Layer)
+				action := layer.Actor().FetchAction(payload.Key)
+				if action == nil {
+					errPack, _ := json.Marshal(models.BuildErrorJson("action not found"))
+					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 				}
-				member := models.Member{}
-				fed.sigmaCore.Adapters().Storage().CreateTrx().Where("space_id = ?", location.SpaceId).Where("user_id = ?", payload.UserId).First(&member).Commit()
-				_, res, err := action.ProcessFederative(fed.sigmaCore.GenerateControl(), payload.Data, models.Info{
-					User:   models.User{Id: payload.UserId},
-					Member: member,
-				})
+				input, err := action.(*module_actor_model.SecureAction).ParseInput("fed", payload.Data)
 				if err != nil {
-					utils.Log(5, err)
-					errPack, err2 := json.Marshal(utils.BuildErrorJson(err.Error()))
+					errPack, _ := json.Marshal(models.BuildErrorJson("input could not be parsed"))
+					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+				}
+				_, res, err := action.(*module_actor_model.SecureAction).SecurelyActFed(layer, payload.UserId, input)
+				if err != nil {
+					fed.logger.Println(err)
+					errPack, err2 := json.Marshal(models.BuildErrorJson(err.Error()))
 					if err2 == nil {
 						fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 					}
@@ -101,8 +145,8 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 				}
 				packet, err3 := json.Marshal(res)
 				if err3 != nil {
-					utils.Log(5, err3)
-					errPack, err2 := json.Marshal(utils.BuildErrorJson(err3.Error()))
+					fed.logger.Println(err3)
+					errPack, err2 := json.Marshal(models.BuildErrorJson(err3.Error()))
 					if err2 == nil {
 						fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
 					}
@@ -120,24 +164,12 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 		if ok {
 			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
 			if err != nil {
-				utils.Log(5, "could not send: status: %d error: %v", statusCode, err)
-				utils.Log(5)
+				fed.logger.Println("could not send: status: %d error: %v", statusCode, err)
 			} else {
-				utils.Log(5, "packet sent successfully. status: ", statusCode)
+				fed.logger.Println("packet sent successfully. status: ", statusCode)
 			}
 		} else {
-			utils.Log(5, "state org not found")
+			fed.logger.Println("state org not found")
 		}
 	}
-}
-
-func (fed *FedNet) Setup(sc *runtime.App, ip2host map[string]string, host2ip map[string]string) {
-	fed.sigmaCore = sc
-	fed.ipToHostMap = ip2host
-	fed.hostToIpMap = host2ip
-	fed.fed = true
-}
-
-func CreateFederation() *FedNet {
-	return &FedNet{}
 }

@@ -11,10 +11,11 @@ import (
 
 type NetManager struct {
 	base_manager.BaseManager
-	HttpServer *shell_http.HttpServer
-	PusherServer   *shell_pusher.PusherServer
-	GrpcServer *shell_grpc.GrpcServer
-	FedNet     *shell_federation.FedNet
+	HttpServer   *shell_http.HttpServer
+	PusherServer *shell_pusher.PusherServer
+	GrpcServer   *shell_grpc.GrpcServer
+	FedNet       *shell_federation.FedNet
+	listenPool   map[string]func(int)
 }
 
 func (nm *NetManager) SwitchNetAccess(key string, http bool, pusher bool, grpc bool, converter func(interface{}) (any, error)) {
@@ -41,7 +42,7 @@ func (nm *NetManager) SwitchNetAccessByAction(action *runtime.Action, converter 
 	}
 }
 
-func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed *shell_federation.FedNet) *NetManager {
+func New(sc *layer1_app.App, maxReqSize int, ip2host map[string]string, host2ip map[string]string, fed *shell_federation.FedNet) *NetManager {
 	nm := &NetManager{}
 	nm.App = sc
 	nm.FedNet = fed
@@ -49,5 +50,10 @@ func New(sc *runtime.App, maxReqSize int, ip2host map[string]string, host2ip map
 	nm.PusherServer = shell_pusher.New(sc)
 	nm.GrpcServer = shell_grpc.New(sc)
 	nm.FedNet.LoadFedNet(nm.HttpServer.Server)
+	nm.listenPool = map[string]func(int){
+		"http": nm.HttpServer.Listen,
+		"grpc": nm.GrpcServer.Listen,
+		"push": nm.PusherServer.Listen,
+	}
 	return nm
 }

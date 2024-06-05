@@ -1,4 +1,4 @@
-module sigma/main
+module sigma
 
 go 1.21
 

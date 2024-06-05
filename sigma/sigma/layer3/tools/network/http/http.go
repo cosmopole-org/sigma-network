@@ -1,22 +1,57 @@
-package shell_http
+package net_http
 
 import (
 	"fmt"
-	"sigma/main/core/outputs"
-	"sigma/main/core/runtime"
-	"sigma/main/core/utils"
+	"github.com/mitchellh/mapstructure"
+	"sigma/sigma/abstract"
+	modulelogger "sigma/sigma/core/module/logger"
+	modulemodel "sigma/sigma/layer1/model"
+	moduleactormodel "sigma/sigma/layer1/module/actor"
+	"strconv"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 type HttpServer struct {
-	sigmaCore *runtime.App
+	sigmaCore abstract.ICore
 	shadows   map[string]bool
 	Server    *fiber.App
+	logger    *modulelogger.Logger
 }
 
 type EmptySuccessResponse struct {
 	Success bool `json:"success"`
+}
+
+func ParseInput[T abstract.IInput](c *fiber.Ctx) (T, error) {
+	data := new(T)
+	form, err := c.MultipartForm()
+	if err == nil {
+		var formData = map[string]any{}
+		for k, v := range form.Value {
+			formData[k] = v[0]
+		}
+		for k, v := range form.File {
+			formData[k] = v[0]
+		}
+		err := mapstructure.Decode(formData, data)
+		if err != nil {
+			return *data, err
+		}
+	} else {
+		if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "DELETE" {
+			err := c.BodyParser(data)
+			if err != nil {
+				return *data, err
+			}
+		} else if c.Method() == "GET" {
+			err := c.QueryParser(data)
+			if err != nil {
+				return *data, err
+			}
+		}
+	}
+	return *data, nil
 }
 
 func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
@@ -35,15 +70,35 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	if requestIdHeader != nil {
 		requestId = requestIdHeader[0]
 	}
-	org := hs.sigmaCore.AppId
+	var layerNum = 0
+	layerNumHeader := c.GetReqHeaders()["Layer"]
+	if layerNumHeader != nil {
+		ln, err := strconv.ParseInt(layerNumHeader[0], 10, 32)
+		if err != nil {
+			hs.logger.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
+		}
+		layerNum = int(ln)
+	}
+	org := hs.sigmaCore.Id()
 	if origin != "" {
 		org = origin
 	}
-	statusCode, result, err := hs.sigmaCore.Services().CallAction(c.Path(), requestId, c, token, org)
+	layer := hs.sigmaCore.Get(layerNum)
+	action := layer.Actor().FetchAction(c.Path())
+	if action == nil {
+		return c.Status(fiber.StatusNotFound).JSON(modulemodel.BuildErrorJson("action not found"))
+	}
+	input, err2 := action.(*moduleactormodel.SecureAction).ParseInput("http", c)
+	if err2 != nil {
+		hs.logger.Println(err2)
+		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("input parsing error"))
+	}
+	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input)
 	if statusCode == fiber.StatusOK {
-		return HandleResutOfFunc(c, result)
+		return handleResultOfFunc(c, result)
 	} else if err != nil {
-		return c.Status(statusCode).JSON(utils.BuildErrorJson(err.Error()))
+		return c.Status(statusCode).JSON(modulemodel.BuildErrorJson(err.Error()))
 	}
 	return c.Status(statusCode).JSON(result)
 }
@@ -58,19 +113,18 @@ func (hs *HttpServer) Listen(port int) {
 		}
 		return c.Next()
 	})
-	utils.Log(5, "Listening to rest port ", port, "...")
-	go hs.Server.Listen(fmt.Sprintf(":%d", port))
+	hs.logger.Println("Listening to rest port ", port, "...")
+	go func() {
+		err := hs.Server.Listen(fmt.Sprintf(":%d", port))
+		if err != nil {
+			hs.logger.Println(err)
+		}
+	}()
 }
 
-func (hs *HttpServer) Enablendpoint(key string) {
-	layers := []fiber.Handler{}
-	layers = append(layers, hs.handleRequest)
-	hs.Server.Add(hs.sigmaCore.Services().GetAction(key).Access.ActionType, key, layers...)
-}
-
-func HandleResutOfFunc(c *fiber.Ctx, result any) error {
+func handleResultOfFunc(c *fiber.Ctx, result any) error {
 	switch result := result.(type) {
-	case outputs.Command:
+	case modulemodel.Command:
 		if result.Value == "sendFile" {
 			return c.Status(fiber.StatusOK).SendFile(result.Data)
 		} else {
@@ -85,10 +139,10 @@ func (hs *HttpServer) AddShadow(key string) {
 	hs.shadows[key] = true
 }
 
-func New(sc *runtime.App, maxReqSize int) *HttpServer {
+func New(core abstract.ICore, logger *modulelogger.Logger, maxReqSize int) *HttpServer {
 	if maxReqSize > 0 {
-		return &HttpServer{sigmaCore: sc, shadows: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
+		return &HttpServer{sigmaCore: core, logger: logger, shadows: map[string]bool{}, Server: fiber.New(fiber.Config{BodyLimit: maxReqSize})}
 	} else {
-		return &HttpServer{sigmaCore: sc, shadows: map[string]bool{}, Server: fiber.New()}
+		return &HttpServer{sigmaCore: core, logger: logger, shadows: map[string]bool{}, Server: fiber.New()}
 	}
 }

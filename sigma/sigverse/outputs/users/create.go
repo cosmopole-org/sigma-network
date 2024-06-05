@@ -1,8 +1,10 @@
 package outputs_users
 
-import "sigma/main/core/models"
+import (
+	"sigma/sigverse/model"
+)
 
 type CreateOutput struct {
-	User    models.User    `json:"user"`
-	Session models.Session `json:"session"`
+	User    model.User    `json:"user"`
+	Session model.Session `json:"session"`
 }

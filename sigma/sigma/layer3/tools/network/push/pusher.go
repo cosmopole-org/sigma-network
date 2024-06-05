@@ -1,15 +1,19 @@
-package shell_pusher
+package net_pusher
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"sigma/main/core/models"
-	"sigma/main/core/runtime"
-	"sigma/main/core/utils"
+	"sigma/sigma/abstract"
+	modulelogger "sigma/sigma/core/module/logger"
+	"sigma/sigma/layer1/adapters"
+	models "sigma/sigma/layer1/model"
+	moduleactormodel "sigma/sigma/layer1/module/actor"
+	"sigma/sigma/layer1/tools/signaler"
 	"strconv"
 	"strings"
 	"time"
@@ -18,11 +22,12 @@ import (
 )
 
 type PusherServer struct {
-	sigmaCore     *runtime.App
+	sigmaCore     abstract.ICore
 	node          *centrifuge.Node
 	mux           *http.ServeMux
 	endpoints     map[string]bool
 	userIdToToken map[string]string
+	logger        *modulelogger.Logger
 }
 
 func handleLog(e centrifuge.LogEntry) {
@@ -34,40 +39,55 @@ func (pt *PusherServer) Node() *centrifuge.Node {
 }
 
 func (pt *PusherServer) Listen(port int) {
-	go http.ListenAndServe(fmt.Sprintf(":%d", port), pt.mux)
+	go func() {
+		err := http.ListenAndServe(fmt.Sprintf(":%d", port), pt.mux)
+		if err != nil {
+			pt.logger.Println(err)
+		}
+	}()
+}
+
+func ParseInput[T abstract.IInput](i string) (abstract.IInput, error) {
+	body := new(T)
+	err := json.Unmarshal([]byte(i), body)
+	if err != nil {
+		return nil, errors.New("invalid input format")
+	}
+	return *body, nil
 }
 
 func (pt *PusherServer) EnableEndpoint(key string) {
 	pt.endpoints[key] = true
 }
 
-func PrepareAnswer(answer any) []byte {
+func (pt *PusherServer) PrepareAnswer(answer any) []byte {
 	answerBytes, err0 := json.Marshal(answer)
 	if err0 != nil {
-		utils.Log(5, err0)
+		pt.logger.Println(err0)
 		return nil
 	}
 	return answerBytes
 }
 
-func New(sigmaCore *runtime.App) *PusherServer {
+func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache, signaler *signaler.Signaler) *PusherServer {
 	pusher := &PusherServer{
-		sigmaCore:     sigmaCore,
+		sigmaCore:     core,
 		endpoints:     make(map[string]bool),
 		userIdToToken: make(map[string]string),
+		logger:        logger,
 	}
-	utils.Log(5, "creating pusher tool...")
+	logger.Println("creating pusher tool...")
 	node, _ := centrifuge.New(centrifuge.Config{
 		LogLevel:       centrifuge.LogLevelInfo,
 		LogHandler:     handleLog,
 		HistoryMetaTTL: 24 * time.Hour,
 	})
 	node.OnConnecting(func(ctx context.Context, e centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
-		userDataPrts := strings.Split(pusher.sigmaCore.Adapters().Cache().Get("auth::"+e.Token), "/")
-		if len(userDataPrts) != 2 {
+		userDataParts := strings.Split(cache.Get("auth::"+e.Token), "/")
+		if len(userDataParts) != 2 {
 			return centrifuge.ConnectReply{}, centrifuge.DisconnectInvalidToken
 		}
-		userId := userDataPrts[1]
+		userId := userDataParts[1]
 		if userId == "" {
 			return centrifuge.ConnectReply{}, centrifuge.DisconnectInvalidToken
 		}
@@ -94,10 +114,13 @@ func New(sigmaCore *runtime.App) *PusherServer {
 		transport := client.Transport()
 		log.Printf("[user %s] connected via %s with protocol: %s", client.UserID(), transport.Name(), transport.Protocol())
 
-		pusher.sigmaCore.Signaler().ListenToSingle(&models.Listener{
+		signaler.ListenToSingle(&models.Listener{
 			Id: client.UserID(),
 			Signal: func(b any) {
-				pusher.node.Publish("#"+client.UserID(), b.([]byte))
+				_, err := pusher.node.Publish("#"+client.UserID(), b.([]byte))
+				if err != nil {
+					return
+				}
 			},
 		})
 
@@ -122,7 +145,7 @@ func New(sigmaCore *runtime.App) *PusherServer {
 
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
 			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
-			userDataPrts := strings.Split(pusher.sigmaCore.Adapters().Cache().Get("auth::"+e.Token), "/")
+			userDataPrts := strings.Split(cache.Get("auth::"+e.Token), "/")
 			if len(userDataPrts) != 2 {
 				cb(centrifuge.RefreshReply{}, centrifuge.DisconnectInvalidToken)
 			}
@@ -148,17 +171,32 @@ func New(sigmaCore *runtime.App) *PusherServer {
 			var raw = string(e.Data)
 			var splittedMsg = strings.Split(raw, " ")
 			var origin = splittedMsg[0]
-			var body = strings.TrimPrefix(raw[len(origin):], " ")
-			accepted := pusher.endpoints[e.Method]
-			if accepted {
-				res, _, err := pusher.sigmaCore.Services().CallAction(e.Method, "", body, pusher.userIdToToken[client.UserID()], origin)
-				if err != nil {
-					cb(centrifuge.RPCReply{Data: PrepareAnswer(utils.BuildErrorJson(err.Error()))}, nil)
-				} else {
-					cb(centrifuge.RPCReply{Data: PrepareAnswer(res)}, nil)
-				}
-			} else {
+			var packetId = splittedMsg[1]
+			var layerNumStr = splittedMsg[2]
+			layerNum, err := strconv.Atoi(layerNumStr)
+			if err != nil {
+				logger.Println(err)
+				cb(centrifuge.RPCReply{}, centrifuge.ErrorBadRequest)
+				return
+			}
+			var body = strings.TrimPrefix(raw[len(origin)+len(packetId)+1+len(layerNumStr)+1:], " ")
+			layer := core.Get(layerNum)
+			action := layer.Actor().FetchAction(e.Method)
+			if action == nil {
 				cb(centrifuge.RPCReply{}, centrifuge.ErrorMethodNotFound)
+				return
+			}
+			input, err := action.(*moduleactormodel.SecureAction).ParseInput("pusher", body)
+			if err != nil {
+				pusher.logger.Println(err)
+				cb(centrifuge.RPCReply{}, centrifuge.ErrorBadRequest)
+				return
+			}
+			res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, pusher.userIdToToken[client.UserID()], origin, packetId, input)
+			if err2 != nil {
+				cb(centrifuge.RPCReply{Data: pusher.PrepareAnswer(models.BuildErrorJson(err2.Error()))}, nil)
+			} else {
+				cb(centrifuge.RPCReply{Data: pusher.PrepareAnswer(res)}, nil)
 			}
 		})
 
@@ -188,9 +226,12 @@ func New(sigmaCore *runtime.App) *PusherServer {
 		log.Fatal(err)
 	}
 
-	pusher.sigmaCore.Signaler().BrdigeGlobally(&models.GlobalListener{
+	signaler.BrdigeGlobally(&models.GlobalListener{
 		Signal: func(groupId string, b any) {
-			pusher.node.Publish(groupId, b.([]byte))
+			_, err := pusher.node.Publish(groupId, b.([]byte))
+			if err != nil {
+				return
+			}
 		},
 	}, true)
 

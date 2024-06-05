@@ -1,4 +1,4 @@
-package module_model
+package model
 
 type Space struct {
 	Id       string `json:"id" gorm:"primaryKey;column:id"`

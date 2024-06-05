@@ -5,7 +5,6 @@ import (
 	"sigma/main/core/models"
 	outputs_invites "sigma/main/core/outputs/invites"
 	outputs_spaces "sigma/main/core/outputs/spaces"
-	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -15,7 +14,7 @@ import (
 type FedNet struct {
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
-	sigmaCore   *runtime.App
+	sigmaCore   *layer1_app.App
 	fed         bool
 }
 
@@ -131,7 +130,7 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 	}
 }
 
-func (fed *FedNet) Setup(sc *runtime.App, ip2host map[string]string, host2ip map[string]string) {
+func (fed *FedNet) Setup(sc *layer1_app.App, ip2host map[string]string, host2ip map[string]string) {
 	fed.sigmaCore = sc
 	fed.ipToHostMap = ip2host
 	fed.hostToIpMap = host2ip

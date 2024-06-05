@@ -1,4 +1,4 @@
-package tool_security
+package security
 
 import (
 	"crypto/rand"
@@ -10,8 +10,11 @@ import (
 	modulelogger "sigma/sigma/core/module/logger"
 	"sigma/sigma/layer1/adapters"
 	models "sigma/sigma/layer1/model"
-	//"sigma/core/signaler"
-	"sigma/sigma/utils"
+	"sigma/sigma/layer1/tools/signaler"
+	"sigma/sigma/utils/crypto"
+	"sigma/sigma/utils/vaidate"
+	"sigma/sigverse/model"
+
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
@@ -74,7 +77,7 @@ func (sm *Security) LoadKeys() {
 }
 
 func (sm *Security) GenerateSecureKeyPair(tag string) {
-	var priKey, pubKey = utils.SecureKeyPairs(sm.storageRoot + "/" + keysFolderName + "/" + tag)
+	var priKey, pubKey = crypto.SecureKeyPairs(sm.storageRoot + "/" + keysFolderName + "/" + tag)
 	sm.keys[tag] = [][]byte{priKey, pubKey}
 }
 
@@ -115,7 +118,7 @@ func (sm *Security) Decrypt(tag string, cipherText string) string {
 }
 
 func (sm *Security) LoadAccess() {
-	var members []models.Member
+	var members []model.Member
 	sm.storage.Find(&members)
 	for _, member := range members {
 		sm.signaler.JoinGroup(member.SpaceId, member.UserId)
@@ -141,7 +144,7 @@ func (sm *Security) Authenticate(headers map[string][]string, ctx *fiber.Ctx) (s
 	var token = string(headers["Token"][0])
 	var userId, userType = sm.AuthWithToken(token)
 	if userId == "" {
-		ctx.Status(fiber.ErrForbidden.Code).JSON(utils.BuildErrorJson("token authentication failed"))
+		_ = ctx.Status(fiber.ErrForbidden.Code).JSON(models.BuildErrorJson("token authentication failed"))
 		return "", "", ""
 	} else {
 		return userId, userType, token
@@ -206,7 +209,7 @@ func (sm *Security) AuthorizeHuman(token string, userId string, headers map[stri
 
 func (sm *Security) AuthorizeMachineWithProcessed(token string, userId string, wid string) Location {
 	if wid == "" {
-		sm.logger.Println(utils.BuildErrorJson("worker id is empty"))
+		sm.logger.Println(models.BuildErrorJson("worker id is empty"))
 		return Location{SpaceId: "", TopicId: ""}
 	}
 	var workerData = sm.cache.Get(fmt.Sprintf("worker::%s", wid))
@@ -268,6 +271,7 @@ func (sm *Security) HandleLocationWithProcessed(token string, userId string, use
 }
 
 func New(storageRoot string, storage adapters.IStorage, cache adapters.ICache, signaler *signaler.Signaler) *Security {
+	vaidate.LoadValidationSystem()
 	s := &Security{
 		storage:     storage,
 		cache:       cache,

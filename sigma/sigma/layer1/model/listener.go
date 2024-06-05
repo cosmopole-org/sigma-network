@@ -1,4 +1,4 @@
-package models
+package module_model
 
 type Listener struct {
 	Id     string

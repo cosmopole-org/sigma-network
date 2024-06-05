@@ -1,6 +1,8 @@
 package outputs_users
 
-import "sigma/main/core/models"
+import (
+	models "sigma/sigverse/model"
+)
 
 type AuthenticateOutput struct {
 	Authenticated bool        `json:"authenticated"`

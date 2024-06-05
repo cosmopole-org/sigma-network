@@ -6,7 +6,6 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
-	"sigma/main/core/runtime"
 	base_manager "sigma/main/shell/tools/base"
 )
 
@@ -86,7 +85,7 @@ func (g *FileManager) SaveDataToGlobalStorage(storageRoot string, data []byte, k
 	return nil
 }
 
-func New(sc *runtime.App) *FileManager {
+func New(sc *layer1_app.App) *FileManager {
 	sm := &FileManager{}
 	sm.App = sc
 	return sm

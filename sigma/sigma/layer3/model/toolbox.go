@@ -1,26 +1,21 @@
 package module_model
 
 import (
-	"sigma/sigma/layer1/adapters"
+	toolnet "sigma/sigma/layer3/tools/network"
 )
 
-type ToolboxL1 struct {
-	storage adapters.IStorage
-	cache   adapters.ICache
+type ToolboxL3 struct {
+	net *toolnet.Network
 }
 
-func (s *ToolboxL1) Storage() adapters.IStorage {
-	return s.storage
+func (s *ToolboxL3) Net() *toolnet.Network {
+	return s.net
 }
 
-func (s *ToolboxL1) Cache() adapters.ICache {
-	return s.cache
-}
-
-func (s *ToolboxL1) Dummy() {
+func (s *ToolboxL3) Dummy() {
 	// pass
 }
 
-func NewTools(storage adapters.IStorage, cache adapters.ICache) *ToolboxL1 {
-	return &ToolboxL1{storage: storage, cache: cache}
+func NewTools(net *toolnet.Network) *ToolboxL3 {
+	return &ToolboxL3{net: net}
 }

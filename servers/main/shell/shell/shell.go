@@ -43,25 +43,7 @@ type ServersOutput struct {
 	Map map[string]bool `json:"map"`
 }
 
-func (s *Shell) loadWellknownServers(wellKnownServers []string) {
-	s.ipToHostMap = map[string]string{}
-	s.hostToIpMap = map[string]string{}
-	for _, domain := range wellKnownServers {
-		ipAddr := ""
-		ips, _ := net.LookupIP(domain)
-		for _, ip := range ips {
-			if ipv4 := ip.To4(); ipv4 != nil {
-				ipAddr = ipv4.String()
-				break
-			}
-		}
-		s.ipToHostMap[ipAddr] = domain
-		s.hostToIpMap[domain] = ipAddr
-	}
-	utils.Log(5)
-	utils.Log(5, s.hostToIpMap)
-	utils.Log(5)
-}
+
 
 func (sh *Shell) loaShellServices() {
 	sh.toolbox.Services().PlugService(pluggers_wasm.New(sh.Core(), actions_wasm.New(sh.toolbox)))

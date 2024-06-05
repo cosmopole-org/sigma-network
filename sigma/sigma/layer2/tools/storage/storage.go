@@ -1,9 +1,10 @@
-package io_storage
+package tool_storage
 
 import (
 	"log"
 	"os"
-	adapters "sigma/main/sigma/layer1/adapters"
+	modulelogger "sigma/sigma/core/module/logger"
+	"sigma/sigma/layer1/adapters"
 	"time"
 
 	"gorm.io/gorm"
@@ -11,6 +12,7 @@ import (
 )
 
 type StorageManager struct {
+	logger      *modulelogger.Logger
 	storageRoot string
 	db          *gorm.DB
 }
@@ -91,8 +93,8 @@ func (sm *StorageManager) AutoMigrate(args ...interface{}) adapters.IStorage {
 	return sm
 }
 
-func (s *StorageManager) CreateTrx() adapters.ITrx {
-	trx := s.db.Begin()
+func (sm *StorageManager) CreateTrx() adapters.ITrx {
+	trx := sm.db.Begin()
 	return &TrxWrapper{trx: trx}
 }
 
@@ -177,10 +179,10 @@ func (sm *TrxWrapper) AutoMigrate(args ...interface{}) adapters.ITrx {
 	return sm
 }
 
-func NewStorage(storageRoot string, dialector gorm.Dialector) *StorageManager {
-	log.Println("connecting to database...")
+func NewStorage(logger2 *modulelogger.Logger, storageRoot string, dialector gorm.Dialector) *StorageManager {
+	logger2.Println("connecting to database...")
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		log.New(os.Stdout, "\r\n", log.LstdFlags), // tools writer
 		logger.Config{
 			SlowThreshold:             time.Second, // Slow SQL threshold
 			LogLevel:                  logger.Info, // Log level
@@ -195,5 +197,5 @@ func NewStorage(storageRoot string, dialector gorm.Dialector) *StorageManager {
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return &StorageManager{db: db, storageRoot: storageRoot}
+	return &StorageManager{db: db, storageRoot: storageRoot, logger: logger2}
 }

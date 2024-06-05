@@ -1,6 +1,8 @@
 package outputs_spaces
 
-import "sigma/main/core/models"
+import (
+	models "sigma/sigverse/model"
+)
 
 type DeleteOutput struct {
 	Space models.Space `json:"space"`

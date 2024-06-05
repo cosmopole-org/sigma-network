@@ -2,7 +2,6 @@ package app_l2
 
 import (
 	"net"
-	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	shell_federation "sigma/main/shell/network/federation"
 	actions_wasm "sigma/main/shell/services/actions/wasm"
@@ -15,7 +14,7 @@ import (
 )
 
 type Shell struct {
-	toolbox       *tools.Toolbox
+	toolbox     *tools.Toolbox
 	ipToHostMap map[string]string
 	hostToIpMap map[string]string
 }
@@ -35,7 +34,7 @@ func (s *Shell) Toolbox() *tools.Toolbox {
 	return s.toolbox
 }
 
-func (s *Shell) Core() *runtime.App {
+func (s *Shell) Core() *layer1_app.App {
 	return s.toolbox.App
 }
 
@@ -67,7 +66,7 @@ func (sh *Shell) loaShellServices() {
 	sh.toolbox.Services().PlugService(pluggers_wasm.New(sh.Core(), actions_wasm.New(sh.toolbox)))
 }
 
-func (sh *Shell) Install(co *runtime.App, storage *storage_manager.StorageManager, fed *shell_federation.FedNet, maxReqSize int, wks []string) {
+func (sh *Shell) Install(co *layer1_app.App, storage *storage_manager.StorageManager, fed *shell_federation.FedNet, maxReqSize int, wks []string) {
 	sh.toolbox = tools.New(co, maxReqSize, sh.ipToHostMap, sh.hostToIpMap, fed)
 	sh.loadWellknownServers(wks)
 	sh.loaShellServices()

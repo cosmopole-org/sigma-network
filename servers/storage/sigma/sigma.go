@@ -6,30 +6,34 @@ import (
 	app_l2 "sigma/storage/shell/shell"
 )
 
-type Sigma struct {
+type Internal struct {
 	Core  *runtime.App
 	Shell *app_l2.Shell
+}
+
+type Sigma struct {
+	Internal *Internal
 }
 
 func New(appId string, config shell.Config) *Sigma {
 	// shell
 	sh := shell.New(appId, config)
 	// create sigma
-	s := &Sigma{Shell: sh, Core: sh.Core()}
+	s := &Sigma{&Internal{Shell: sh, Core: sh.Core()}}
 	// connect whole sigma services to net based on coreAccess flag
 	sh.ConnectServicesToNetAdapter()
 	// sigma ready
 	return s
 }
 
-func (s *Sigma) RunNetwork(ports map[string]int) {
-	if ports["http"] > 0 {
-		s.Shell.Toolbox().Net().HttpServer.Listen(ports["http"])
+func (s *Sigma) RunNetProtocol(protocol string, port int) {
+	if protocol == "http" {
+		s.Internal.Shell.Toolbox().Net().HttpServer.Listen(port)
 	}
-	if ports["grpc"] > 0 {
-		s.Shell.Toolbox().Net().GrpcServer.Listen(ports["grpc"])
+	if protocol == "grpc" {
+		s.Internal.Shell.Toolbox().Net().GrpcServer.Listen(port)
 	}
-	if ports["push"] > 0 {
-		s.Shell.Toolbox().Net().PusherServer.Listen(ports["push"])
+	if protocol == "push" {
+		s.Internal.Shell.Toolbox().Net().PusherServer.Listen(port)
 	}
 }

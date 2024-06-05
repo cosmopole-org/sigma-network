@@ -1,7 +1,7 @@
 package module_model
 
 import (
-	"sigma/main/sigma/layer1/adapters"
+	"sigma/sigma/layer1/adapters"
 )
 
 type ToolboxL1 struct {

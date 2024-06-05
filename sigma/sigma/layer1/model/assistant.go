@@ -1,6 +1,8 @@
-package models
+package module_model
+
+import "sigma/sigverse/model"
 
 type Info struct {
-	User   User
-	Member Member
+	User   model.User
+	Member model.Member
 }

@@ -1,5 +1,6 @@
 package abstract
 
-type IState interface {
-
+type IInput interface {
+	GetSpaceId() string
+	GetTopicId() string
 }

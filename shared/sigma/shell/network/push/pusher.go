@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"sigma/main/core/models"
-	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	"strconv"
 	"strings"
@@ -18,7 +17,7 @@ import (
 )
 
 type PusherServer struct {
-	sigmaCore     *runtime.App
+	sigmaCore     *layer1_app.App
 	node          *centrifuge.Node
 	mux           *http.ServeMux
 	endpoints     map[string]bool
@@ -50,7 +49,7 @@ func PrepareAnswer(answer any) []byte {
 	return answerBytes
 }
 
-func New(sigmaCore *runtime.App) *PusherServer {
+func New(sigmaCore *layer1_app.App) *PusherServer {
 	pusher := &PusherServer{
 		sigmaCore:     sigmaCore,
 		endpoints:     make(map[string]bool),

@@ -43,12 +43,13 @@ func main() {
 			Federation:  os.Getenv("FEDERATIVE") == "true",
 			CoreAccess:  os.Getenv("CORE_ACCESSIBLE") == "true",
 			LogCb: func(u uint32, i ...interface{}) {
-				logrusLogger.Logln(logrus.DebugLevel)
+				logrusLogger.Logln(logrus.DebugLevel, i...)
 			},
 		},
 	)
 
-	sigmaApp.RunNetwork(map[string]int{"http": int(port), "push": 4500})
+	sigmaApp.RunNetProtocol("http", int(port))
+	sigmaApp.RunNetProtocol("push", 4500)
 
 	<-quit
 }

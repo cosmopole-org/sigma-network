@@ -1,5 +1,10 @@
 package abstract
 
-type ILayer interface {
-
+type ICore interface {
+	Id() string
+	Layers() []ILayer
+	Load([]ILayer, []interface{})
+	Push(ILayer)
+	Get(int) ILayer
+	Utils() IUtils
 }

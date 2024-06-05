@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"sigma/main/core/inputs"
-	"sigma/main/core/runtime"
 	"sigma/main/core/utils"
 	"strings"
 
@@ -20,7 +19,7 @@ import (
 )
 
 type GrpcServer struct {
-	sigmaCore       *runtime.App
+	sigmaCore *layer1_app.App
 	Server    *grpc.Server
 	Endpoints map[string]func(interface{}, string, string, string) (any, string, error)
 }
@@ -111,7 +110,7 @@ func (gs *GrpcServer) Listen(port int) {
 	go gs.Server.Serve(lis)
 }
 
-func New(sc *runtime.App) *GrpcServer {
+func New(sc *layer1_app.App) *GrpcServer {
 	gs := &GrpcServer{sigmaCore: sc, Endpoints: make(map[string]func(interface{}, string, string, string) (any, string, error))}
 	grpcServer := grpc.NewServer(
 		grpc.UnaryInterceptor(gs.serverInterceptor),

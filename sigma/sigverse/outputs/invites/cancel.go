@@ -1,6 +1,8 @@
 package outputs_invites
 
-import "sigma/main/core/models"
+import (
+	models "sigma/sigverse/model"
+)
 
 type CancelOutput struct {
 	Invite models.Invite `json:"invite"`

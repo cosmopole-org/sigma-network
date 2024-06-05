@@ -1,19 +1,36 @@
 package layer
 
 import (
-	"sigma/main/sigma/abstract"
-	moduleactor "sigma/main/sigma/core/module/actor"
-	"sigma/main/sigma/layer1/adapters"
-	modulemodel "sigma/main/sigma/layer1/model"
+	"gorm.io/gorm"
+	"sigma/sigma/abstract"
+	moduleactor "sigma/sigma/core/module/actor"
+	modulelogger "sigma/sigma/core/module/logger"
+	modulemodel "sigma/sigma/layer1/module/state"
+	toolcache "sigma/sigma/layer2/tools/cache"
+	toolstorage "sigma/sigma/layer2/tools/storage"
 )
 
 type Layer struct {
-	actor   abstract.IActor
-	toolbox abstract.IToolbox
+	actor        abstract.IActor
+	toolbox      abstract.IToolbox
+	stateBuilder abstract.IStateBuilder
 }
 
-func NewLayer1(storage adapters.IStorage, cache adapters.ICache) abstract.ILayer {
-	return &Layer{moduleactor.NewActor(), modulemodel.NewTools(storage, cache)}
+func New() abstract.ILayer {
+	return &Layer{actor: moduleactor.NewActor()}
+}
+
+func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{} {
+	return []interface{}{
+		args[0],
+		toolstorage.NewStorage(args[0].(*modulelogger.Logger), args[1].(string), args[2].(gorm.Dialector)),
+		toolcache.NewCache(args[0].(*modulelogger.Logger), args[3].(string)),
+		args[4],
+	}
+}
+
+func (l *Layer) ForFill(core abstract.ICore, args ...interface{}) {
+	// pass
 }
 
 func (l *Layer) Index() int {
@@ -26,4 +43,13 @@ func (l *Layer) Actor() abstract.IActor {
 
 func (l *Layer) Tools() abstract.IToolbox {
 	return l.toolbox
+}
+
+func (l *Layer) Sb() abstract.IStateBuilder {
+	return l.stateBuilder
+}
+
+func (l *Layer) InitSb(bottom abstract.IStateBuilder) abstract.IStateBuilder {
+	l.stateBuilder = modulemodel.NewStateBuilder(l, bottom)
+	return l.stateBuilder
 }
