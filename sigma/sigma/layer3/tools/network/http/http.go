@@ -1,12 +1,14 @@
 package net_http
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
 	modulemodel "sigma/sigma/layer1/model"
 	moduleactormodel "sigma/sigma/layer1/module/actor"
+	"sigma/sigma/layer2/tools/wasm/model"
 	"strconv"
 
 	"github.com/gofiber/fiber/v2"
@@ -39,19 +41,29 @@ func ParseInput[T abstract.IInput](c *fiber.Ctx) (T, error) {
 			return *data, err
 		}
 	} else {
-		if c.Method() == "POST" || c.Method() == "PUT" || c.Method() == "DELETE" {
-			err := c.BodyParser(data)
-			if err != nil {
-				return *data, err
-			}
-		} else if c.Method() == "GET" {
+		if c.Method() == "GET" {
 			err := c.QueryParser(data)
 			if err != nil {
 				return *data, err
 			}
 		}
+		err := c.BodyParser(data)
+		if err != nil {
+			return *data, err
+		}
 	}
 	return *data, nil
+}
+
+func parseGlobally(c *fiber.Ctx) (abstract.IInput, error) {
+	if c.Method() == "GET" {
+		params, err := json.Marshal(c.AllParams())
+		if err != nil {
+			return nil, err
+		}
+		return model.WasmInput{Data: string(params)}, nil
+	}
+	return model.WasmInput{Data: string(c.BodyRaw())}, nil
 }
 
 func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
@@ -90,10 +102,20 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	if action == nil {
 		return c.Status(fiber.StatusNotFound).JSON(modulemodel.BuildErrorJson("action not found"))
 	}
-	input, err2 := action.(*moduleactormodel.SecureAction).ParseInput("http", c)
-	if err2 != nil {
-		hs.logger.Println(err2)
-		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("input parsing error"))
+	var input abstract.IInput
+	if action.(*moduleactormodel.SecureAction).HasGlobalParser() {
+		input, err = parseGlobally(c)
+		if err != nil {
+			hs.logger.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson(err.Error()))
+		}
+	} else {
+		i, err2 := action.(*moduleactormodel.SecureAction).ParseInput("http", c)
+		if err2 != nil {
+			hs.logger.Println(err2)
+			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("input parsing error"))
+		}
+		input = i
 	}
 	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input)
 	if statusCode == 1 {

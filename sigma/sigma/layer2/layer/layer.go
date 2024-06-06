@@ -6,6 +6,7 @@ import (
 	moduleactor "sigma/sigma/core/module/actor"
 	modulelogger "sigma/sigma/core/module/logger"
 	modulemodel "sigma/sigma/layer1/module/state"
+	module_model "sigma/sigma/layer2/model"
 	toolcache "sigma/sigma/layer2/tools/cache"
 	toolstorage "sigma/sigma/layer2/tools/storage"
 )
@@ -21,10 +22,13 @@ func New() abstract.ILayer {
 }
 
 func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{} {
+	storage := toolstorage.NewStorage(args[0].(*modulelogger.Logger), args[1].(string), args[2].(gorm.Dialector))
+	cache := toolcache.NewCache(args[0].(*modulelogger.Logger), args[3].(string))
+	l.toolbox = module_model.NewTools(core, args[0].(*modulelogger.Logger), args[1].(string), storage, cache)
 	return []interface{}{
 		args[0],
-		toolstorage.NewStorage(args[0].(*modulelogger.Logger), args[1].(string), args[2].(gorm.Dialector)),
-		toolcache.NewCache(args[0].(*modulelogger.Logger), args[3].(string)),
+		storage,
+		cache,
 		args[4],
 	}
 }

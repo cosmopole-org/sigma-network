@@ -1,4 +1,4 @@
-package wasm
+package model
 
 type WasmInput struct {
 	Data string

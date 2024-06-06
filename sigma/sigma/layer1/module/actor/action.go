@@ -22,6 +22,10 @@ func NewSecureAction(action abstract.IAction, guard *Guard, core abstract.ICore,
 	return &SecureAction{action, core, guard, logger, parsers}
 }
 
+func (a *SecureAction) HasGlobalParser() bool {
+	return a.Parsers["*"] != nil
+}
+
 func (a *SecureAction) ParseInput(protocol string, raw interface{}) (abstract.IInput, error) {
 	return a.Parsers[protocol](raw)
 }

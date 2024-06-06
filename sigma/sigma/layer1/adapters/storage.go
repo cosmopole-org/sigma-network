@@ -15,6 +15,7 @@ type IStorage interface {
 
 type ITrx interface {
 	Error() error
+	Use()
 	Create(...interface{}) ITrx
 	Save(...interface{}) ITrx
 	Delete(...interface{}) ITrx

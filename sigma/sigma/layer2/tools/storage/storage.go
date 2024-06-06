@@ -94,88 +94,86 @@ func (sm *StorageManager) AutoMigrate(args ...interface{}) adapters.IStorage {
 }
 
 func (sm *StorageManager) CreateTrx() adapters.ITrx {
-	trx := sm.db.Begin()
-	return &TrxWrapper{trx: trx}
+	return &TrxWrapper{db: sm.db}
 }
 
 type TrxWrapper struct {
-	trx *gorm.DB
+	db  *gorm.DB
 	err error
 }
 
 func (sm *TrxWrapper) Error() error {
 	return sm.err
 }
+func (sm *TrxWrapper) Use() {
+	sm.db = sm.db.Begin()
+}
 func (sm *TrxWrapper) Create(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.Create(args[0]).Error
+	sm.err = sm.db.Create(args[0]).Error
 	return sm
 }
 func (sm *TrxWrapper) Save(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.Save(args[0]).Error
+	sm.err = sm.db.Save(args[0]).Error
 	return sm
 }
 func (sm *TrxWrapper) Delete(args ...interface{}) adapters.ITrx {
 	if len(args) > 1 {
-		sm.err = sm.trx.Delete(args[0], args[1:]...).Error
+		sm.err = sm.db.Delete(args[0], args[1:]...).Error
 	} else {
-		sm.err = sm.trx.Delete(args[0]).Error
+		sm.err = sm.db.Delete(args[0]).Error
 	}
 	return sm
 }
 func (sm *TrxWrapper) Find(args ...interface{}) adapters.ITrx {
 	if len(args) > 1 {
-		sm.err = sm.trx.Find(args[0], args[1:]...).Error
+		sm.err = sm.db.Find(args[0], args[1:]...).Error
 	} else {
-		sm.err = sm.trx.Find(args[0]).Error
+		sm.err = sm.db.Find(args[0]).Error
 	}
 	return sm
 }
 func (sm *TrxWrapper) Where(args ...interface{}) adapters.ITrx {
 	if len(args) > 1 {
-		sm.err = sm.trx.Where(args[0], args[1:]...).Error
+		sm.err = sm.db.Where(args[0], args[1:]...).Error
 	} else {
-		sm.err = sm.trx.Where(args[0]).Error
+		sm.err = sm.db.Where(args[0]).Error
 	}
 	return sm
 }
 func (sm *TrxWrapper) Select(args ...interface{}) adapters.ITrx {
 	if len(args) > 1 {
-		sm.err = sm.trx.Select(args[0], args[1:]...).Error
+		sm.err = sm.db.Select(args[0], args[1:]...).Error
 	} else {
-		sm.err = sm.trx.Select(args[0]).Error
+		sm.err = sm.db.Select(args[0]).Error
 	}
 	return sm
 }
-func (sm *TrxWrapper) Begin(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.Begin().Error
-	return sm
-}
 func (sm *TrxWrapper) Commit(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.Commit().Error
+	sm.err = sm.db.Commit().Error
 	return sm
 }
 func (sm *TrxWrapper) SavePoint(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.SavePoint(args[0].(string)).Error
+	sm.err = sm.db.SavePoint(args[0].(string)).Error
 	return sm
 }
 func (sm *TrxWrapper) Rollback(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.Rollback().Error
+	sm.err = sm.db.Rollback().Error
 	return sm
 }
 func (sm *TrxWrapper) RollbackTo(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.RollbackTo(args[0].(string)).Error
+	sm.err = sm.db.RollbackTo(args[0].(string)).Error
 	return sm
 }
 func (sm *TrxWrapper) First(args ...interface{}) adapters.ITrx {
 	if len(args) > 1 {
-		sm.err = sm.trx.First(args[0], args[1:]...).Error
+		sm.err = sm.db.First(args[0], args[1:]...).Error
 	} else {
-		sm.err = sm.trx.First(args[0]).Error
+		sm.err = sm.db.First(args[0]).Error
 	}
 	return sm
 }
 func (sm *TrxWrapper) AutoMigrate(args ...interface{}) adapters.ITrx {
-	sm.err = sm.trx.AutoMigrate(args...)
+	sm.err = sm.db.AutoMigrate(args...)
 	return sm
 }
 

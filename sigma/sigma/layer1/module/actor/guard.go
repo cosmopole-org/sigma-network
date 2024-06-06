@@ -3,9 +3,9 @@ package actor
 import moduleactormodel "sigma/sigma/core/module/actor/model"
 
 type Guard struct {
-	IsUser    bool
-	IsInSpace bool
-	IsInTopic bool
+	IsUser    bool `json:"isUser"`
+	IsInSpace bool `json:"isInSpace"`
+	IsInTopic bool `json:"isInTopic"`
 }
 
 func (g *Guard) ValidateOnlyToken(token string) (bool, string) {
