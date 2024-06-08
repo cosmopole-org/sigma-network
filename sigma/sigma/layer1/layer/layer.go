@@ -10,6 +10,7 @@ import (
 )
 
 type Layer struct {
+	core         abstract.ICore
 	actor        abstract.IActor
 	toolbox      abstract.IToolbox
 	stateBuilder abstract.IStateBuilder
@@ -19,7 +20,12 @@ func New() abstract.ILayer {
 	return &Layer{actor: moduleactor.NewActor()}
 }
 
+func (l *Layer) Core() abstract.ICore {
+	return l.core
+}
+
 func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{} {
+	l.core = core
 	l.toolbox = toolbox.NewTools(core.Id(), args[0].(*module_logger.Logger), args[1].(adapters.IStorage), args[2].(adapters.ICache), args[3].(adapters.IFederation))
 	return []interface{}{}
 }

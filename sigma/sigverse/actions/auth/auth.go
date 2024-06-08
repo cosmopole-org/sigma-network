@@ -1,23 +1,25 @@
 package actions_auth
 
 import (
-	inputs_auth "sigma/main/layer1/inputs/auth"
-	"sigma/main/layer1/models"
-	outputs_auth "sigma/main/layer1/outputs/auth"
-	core "sigma/main/layer1/runtime"
-	network_store "sigma/main/shell/network"
+	"sigma/sigma/abstract"
+	tb "sigma/sigma/layer1/module/toolbox"
+	modulemodel "sigma/sigma/layer3/model"
+	inputsauth "sigma/sigverse/inputs/auth"
+	outputsauth "sigma/sigverse/outputs/auth"
 )
 
 type AuthActions struct {
-	layer *core.Layer1Context
+	layer abstract.ILayer
 }
 
 // GetServerPublicKey /auths/getServerPublicKey check [ false false false ] access [ true false false false GET ]
-func (a *AuthActions) GetServerPublicKey(state models.ISigmaStatePool, input inputs_auth.GetServerKeyInput, info models.Info) (any, error) {
-	return &outputs_auth.GetServerKeyOutput{PublicKey: string(Security().FetchKeyPair("server_key")[1])}, nil
+func (a *AuthActions) GetServerPublicKey(_ abstract.IState, _ inputsauth.GetServerKeyInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.layer.Tools())
+	return &outputsauth.GetServerKeyOutput{PublicKey: string(toolbox.Security().FetchKeyPair("server_key")[1])}, nil
 }
 
 // GetServersMap /auths/getServersMap check [ false false false ] access [ true false false false GET ]
-func (a *AuthActions) GetServersMap(state models.ISigmaStatePool, input inputs_auth.GetServersMapInput, info models.Info) (any, error) {
-	return outputs_auth.GetServersMapOutput{Servers: network_store.WellKnownServers}, nil
+func (a *AuthActions) GetServersMap(_ abstract.IState, _ inputsauth.GetServersMapInput) (any, error) {
+	toolbox := abstract.UseToolbox[*modulemodel.ToolboxL3](a.layer.Core().Get(3).Tools())
+	return outputsauth.GetServersMapOutput{Servers: toolbox.Net().Fed.WellKnownServers()}, nil
 }

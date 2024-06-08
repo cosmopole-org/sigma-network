@@ -3,7 +3,6 @@ package actions_topic
 import (
 	"errors"
 	"fmt"
-	inputs_topics "sigma/main/core/inputs/topics"
 	"sigma/main/core/models"
 	outputs_topics "sigma/main/core/outputs/topics"
 	"sigma/main/core/runtime"
@@ -18,7 +17,7 @@ type TopicActions struct {
 }
 
 // Create /topics/create check [ true true false ] access [ true false false false POST ]
-func (a *TopicActions) Create(state sigmastate.ISigmaStatePool, input inputs_topics.CreateInput, info models.Info) (any, error) {
+func (a *TopicActions) Create(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	context.Trx.First(&space)
 	topic := models.Topic{Id: utils.SecureUniqueId(context.AppId), Title: input.Title, Avatar: input.Avatar, SpaceId: space.Id}
@@ -29,7 +28,7 @@ func (a *TopicActions) Create(state sigmastate.ISigmaStatePool, input inputs_top
 }
 
 // Update /topics/update check [ true true false ] access [ true false false false PUT ]
-func (a *TopicActions) Update(state sigmastate.ISigmaStatePool, input inputs_topics.UpdateInput, info models.Info) (any, error) {
+func (a *TopicActions) Update(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	context.Trx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
@@ -42,7 +41,7 @@ func (a *TopicActions) Update(state sigmastate.ISigmaStatePool, input inputs_top
 }
 
 // Delete /topics/delete check [ true true false ] access [ true false false false DELETE ]
-func (a *TopicActions) Delete(state sigmastate.ISigmaStatePool, input inputs_topics.DeleteInput, info models.Info) (any, error) {
+func (a *TopicActions) Delete(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	context.Trx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
@@ -57,7 +56,7 @@ func (a *TopicActions) Delete(state sigmastate.ISigmaStatePool, input inputs_top
 }
 
 // Get /topics/get check [ true true false ] access [ true false false false GET ]
-func (a *TopicActions) Get(state sigmastate.ISigmaStatePool, input inputs_topics.GetInput, info models.Info) (any, error) {
+func (a *TopicActions) Get(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: info.Member.SpaceId}
 	context.Trx.First(&space)
 	topic := models.Topic{Id: input.TopicId}
@@ -74,7 +73,7 @@ func (a *TopicActions) Get(state sigmastate.ISigmaStatePool, input inputs_topics
 }
 
 // Send /topics/send check [ true true true ] access [ true false false false POST ]
-func (a *TopicActions) Send(state sigmastate.ISigmaStatePool, input inputs_topics.SendInput, info models.Info) (any, error) {
+func (a *TopicActions) Send(s abstract.IState, input inputs_*.*) (any, error) {
 	if input.Type == "broadcast" {
 		var p = updates_topics.Send{Action: "broadcast", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
 		context.Signaler().SignalGroup(sendTemplate, info.Member.SpaceId, p, true, []string{info.User.Id})

@@ -21,17 +21,18 @@ import (
 )
 
 type FedNet struct {
-	sigmaCore   abstract.ICore
-	storage     adapters.IStorage
-	signaler    *signaler.Signaler
-	logger      *module_logger.Logger
-	ipToHostMap map[string]string
-	hostToIpMap map[string]string
-	fed         bool
+	sigmaCore        abstract.ICore
+	storage          adapters.IStorage
+	signaler         *signaler.Signaler
+	logger           *module_logger.Logger
+	ipToHostMap      map[string]string
+	hostToIpMap      map[string]string
+	wellKnownServers []string
+	fed              bool
 }
 
 func FirstStageBackFill(core abstract.ICore, wellKnownServers []string, logger *module_logger.Logger) adapters.IFederation {
-	fed := &FedNet{sigmaCore: core, logger: logger}
+	fed := &FedNet{sigmaCore: core, logger: logger, wellKnownServers: wellKnownServers}
 	fed.ipToHostMap = map[string]string{}
 	fed.hostToIpMap = map[string]string{}
 	for _, domain := range wellKnownServers {
@@ -172,4 +173,8 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 			fed.logger.Println("state org not found")
 		}
 	}
+}
+
+func (fed *FedNet) WellKnownServers() []string {
+	return fed.wellKnownServers
 }

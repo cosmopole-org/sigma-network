@@ -1,6 +1,7 @@
 package abstract
 
 type ILayer interface {
+	Core() ICore
 	Index() int
 	Actor() IActor
 	Tools() IToolbox

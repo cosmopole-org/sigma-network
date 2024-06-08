@@ -3,7 +3,6 @@ package actions_space
 import (
 	"errors"
 	"fmt"
-	inputs_spaces "sigma/main/core/inputs/spaces"
 	"sigma/main/core/models"
 	outputs_spaces "sigma/main/core/outputs/spaces"
 	"sigma/main/core/runtime"
@@ -18,7 +17,7 @@ type SpaceActions struct {
 }
 
 // AddMember /spaces/addMember check [ true true false ] access [ true false false false POST ]
-func (a *SpaceActions) AddMember(state sigmastate.ISigmaStatePool, input inputs_spaces.AddMemberInput, info models.Info) (any, error) {
+func (a *SpaceActions) AddMember(s abstract.IState, input inputs_*.*) (any, error) {
 	err := context.Trx.First(&models.User{Id: input.UserId}).Error()
 	if err != nil {
 		return nil, err
@@ -31,7 +30,7 @@ func (a *SpaceActions) AddMember(state sigmastate.ISigmaStatePool, input inputs_
 }
 
 // RemoveMember /spaces/removeMember check [ true true false ] access [ true false false false POST ]
-func (a *SpaceActions) RemoveMember(state sigmastate.ISigmaStatePool, input inputs_spaces.RemoveMemberInput, info models.Info) (any, error) {
+func (a *SpaceActions) RemoveMember(s abstract.IState, input inputs_*.*) (any, error) {
 	admin := models.Admin{}
 	err := context.Trx.Where("space_id = ?", info.Member.SpaceId).Where("user_id = ?", info.User.Id).First(&admin).Error()
 	if err != nil {
@@ -49,7 +48,7 @@ func (a *SpaceActions) RemoveMember(state sigmastate.ISigmaStatePool, input inpu
 }
 
 // Create /spaces/create check [ true false false ] access [ true false false false POST ]
-func (a *SpaceActions) Create(state sigmastate.ISigmaStatePool, input inputs_spaces.CreateInput, info models.Info) (any, error) {
+func (a *SpaceActions) Create(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: utils.SecureUniqueId(context.AppId), Tag: input.Tag + "@" + context.AppId, Title: input.Title, Avatar: input.Avatar, IsPublic: input.IsPublic}
 	context.Trx.Create(&space)
 	member := models.Member{Id: utils.SecureUniqueId(context.AppId), UserId: info.User.Id, SpaceId: space.Id, TopicIds: "*", Metadata: ""}
@@ -62,7 +61,7 @@ func (a *SpaceActions) Create(state sigmastate.ISigmaStatePool, input inputs_spa
 }
 
 // Update /spaces/update check [ true false false ] access [ true false false false PUT ]
-func (a *SpaceActions) Update(state sigmastate.ISigmaStatePool, input inputs_spaces.UpdateInput, info models.Info) (any, error) {
+func (a *SpaceActions) Update(s abstract.IState, input inputs_*.*) (any, error) {
 	admin := models.Admin{}
 	err := context.Trx.Where("user_id=?", info.User.Id).Where("space_id=?", input.SpaceId).First(&admin).Error()
 	if err != nil {
@@ -80,7 +79,7 @@ func (a *SpaceActions) Update(state sigmastate.ISigmaStatePool, input inputs_spa
 }
 
 // Delete /spaces/delete check [ true false false ] access [ true false false false DELETE ]
-func (a *SpaceActions) Delete(state sigmastate.ISigmaStatePool, input inputs_spaces.DeleteInput, info models.Info) (any, error) {
+func (a *SpaceActions) Delete(s abstract.IState, input inputs_*.*) (any, error) {
 	admin := models.Admin{}
 	err := context.Trx.Where("user_id=?", info.User.Id).Where("space_id=?", input.SpaceId).First(&admin).Error()
 	if err != nil {
@@ -100,7 +99,7 @@ func (a *SpaceActions) Delete(state sigmastate.ISigmaStatePool, input inputs_spa
 }
 
 // Get /spaces/get check [ true false false ] access [ true false false false GET ]
-func (a *SpaceActions) Get(state sigmastate.ISigmaStatePool, input inputs_spaces.GetInput, info models.Info) (any, error) {
+func (a *SpaceActions) Get(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: input.SpaceId}
 	context.Trx.First(&space)
 	if space.IsPublic {
@@ -115,7 +114,7 @@ func (a *SpaceActions) Get(state sigmastate.ISigmaStatePool, input inputs_spaces
 }
 
 // Join /spaces/join check [ true false false ] access [ true false false false POST ]
-func (a *SpaceActions) Join(state sigmastate.ISigmaStatePool, input inputs_spaces.JoinInput, info models.Info) (any, error) {
+func (a *SpaceActions) Join(s abstract.IState, input inputs_*.*) (any, error) {
 	space := models.Space{Id: input.SpaceId}
 	err := context.Trx.First(&space).Error()
 	if err != nil {
