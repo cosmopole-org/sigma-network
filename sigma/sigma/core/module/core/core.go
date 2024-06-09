@@ -42,7 +42,11 @@ func (c *Core) Load(layers []abstract.ILayer, args []interface{}) {
 	var sb abstract.IStateBuilder
 	for i := 0; i < len(layers); i++ {
 		sb = layers[i].InitSb(sb)
-		layers[i].ForFill(c)
+		if i > 0 {
+			layers[i].ForFill(c, layers[i-1].Tools())
+		} else {
+			layers[i].ForFill(c)
+		}
 	}
 }
 

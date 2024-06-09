@@ -31,7 +31,7 @@ func main() {
 		var serviceNames []string
 		for _, e := range entries {
 			serviceName := e.Name()
-			build(serviceName, serviceRoot)
+			build(pluggerName, serviceName, serviceRoot)
 			serviceNames = append(serviceNames, serviceName)
 			code += `
 			plugger_` + serviceName + ` "sigma/` + pluggerName + `/pluggers/` + serviceName + `"
@@ -74,7 +74,7 @@ func main() {
 	}
 }
 
-func build(serviceName string, serviceRoot string) {
+func build(pluggerName string, serviceName string, serviceRoot string) {
 
 	var sourcePath = serviceRoot + "/actions/" + serviceName + "/" + serviceName + ".go"
 	var resultFolder = serviceRoot + "/pluggers/" + serviceName
@@ -110,7 +110,7 @@ func build(serviceName string, serviceRoot string) {
 		"sigma/sigma/abstract"
 		"sigma/sigma/utils"
 		module_logger "sigma/sigma/core/module/logger"
-		actions "sigma/sigverse/actions/` + serviceName + `"
+		actions "sigma/` + pluggerName + `/actions/` + serviceName + `"
 	)
 	
 	type Plugger struct {

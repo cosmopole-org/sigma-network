@@ -46,6 +46,7 @@ func ParseInput[T abstract.IInput](c *fiber.Ctx) (T, error) {
 			if err != nil {
 				return *data, err
 			}
+			return *data, nil
 		}
 		err := c.BodyParser(data)
 		if err != nil {

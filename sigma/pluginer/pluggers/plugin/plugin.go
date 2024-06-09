@@ -1,11 +1,11 @@
 
-	package plugger_test
+	package plugger_plugin
 
 	import (
 		"sigma/sigma/abstract"
 		"sigma/sigma/utils"
 		module_logger "sigma/sigma/core/module/logger"
-		actions "sigma/sigverse/actions/test"
+		actions "sigma/pluginer/actions/plugin"
 	)
 	
 	type Plugger struct {
@@ -15,8 +15,8 @@
 		Core abstract.ICore
 	}
 	
-		func (c *Plugger) Hello() abstract.IAction {
-			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Hello)
+		func (c *Plugger) Plug() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Plug)
 		}
 		
 	func (c *Plugger) Install() {
@@ -24,7 +24,7 @@
 	}
 	
 	func New(actions *actions.Actions, logger *module_logger.Logger, core abstract.ICore) *Plugger {
-		id := "test"
+		id := "plugin"
 		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: logger}
 	}
 	

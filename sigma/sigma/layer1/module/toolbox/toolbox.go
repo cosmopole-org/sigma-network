@@ -7,6 +7,14 @@ import (
 	"sigma/sigma/layer1/tools/signaler"
 )
 
+type IToolboxL1 interface {
+	Storage() adapters.IStorage
+	Cache() adapters.ICache
+	Federation() adapters.IFederation
+	Security() *security.Security
+	Signaler() *signaler.Signaler
+}
+
 type ToolboxL1 struct {
 	storage    adapters.IStorage
 	cache      adapters.ICache
@@ -40,5 +48,7 @@ func (s *ToolboxL1) Dummy() {
 }
 
 func NewTools(appId string, logger *module_logger.Logger, storage adapters.IStorage, cache adapters.ICache, federation adapters.IFederation) *ToolboxL1 {
-	return &ToolboxL1{storage: storage, cache: cache, federation: federation, signaler: signaler.NewSignaler(appId, logger, federation)}
+	sig := signaler.NewSignaler(appId, logger, federation)
+	sec := security.New(storage.StorageRoot(), storage, cache, sig)
+	return &ToolboxL1{storage: storage, cache: cache, federation: federation, signaler: sig, security: sec}
 }

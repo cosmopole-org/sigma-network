@@ -3,88 +3,109 @@ package actions_topic
 import (
 	"errors"
 	"fmt"
-	"sigma/main/core/models"
-	outputs_topics "sigma/main/core/outputs/topics"
-	"sigma/main/core/runtime"
-	updates_topics "sigma/main/core/updates/topics"
-	"sigma/main/core/utils"
+	"sigma/sigma/abstract"
+	modulestate "sigma/sigma/layer1/module/state"
+	tb "sigma/sigma/layer1/module/toolbox"
+	"sigma/sigma/utils/crypto"
+	inputstopics "sigma/sigverse/inputs/topics"
+	"sigma/sigverse/model"
+	outputstopics "sigma/sigverse/outputs/topics"
+	updatestopics "sigma/sigverse/updates/topics"
 )
 
 var sendTemplate = "topics/send"
 
-type TopicActions struct {
-	App *runtime.App
+type Actions struct {
+	Layer abstract.ILayer
 }
 
 // Create /topics/create check [ true true false ] access [ true false false false POST ]
-func (a *TopicActions) Create(s abstract.IState, input inputs_*.*) (any, error) {
-	space := models.Space{Id: info.Member.SpaceId}
-	context.Trx.First(&space)
-	topic := models.Topic{Id: utils.SecureUniqueId(context.AppId), Title: input.Title, Avatar: input.Avatar, SpaceId: space.Id}
-	context.Trx.Create(&topic)
-	context.Adapters().Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
-	go context.Signaler().SignalGroup("topics/create", topic.SpaceId, updates_topics.Create{Topic: topic}, true, []string{info.User.Id})
-	return outputs_topics.CreateOutput{Topic: topic}, nil
+func (a *Actions) Create(s abstract.IState, input inputstopics.CreateInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[*modulestate.StateL1](s)
+	state.Trx().Use()
+	space := model.Space{Id: state.Info().SpaceId()}
+	state.Trx().First(&space)
+	topic := model.Topic{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Title: input.Title, Avatar: input.Avatar, SpaceId: space.Id}
+	state.Trx().Create(&topic)
+	toolbox.Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
+	go toolbox.Signaler().SignalGroup("topics/create", topic.SpaceId, updatestopics.Create{Topic: topic}, true, []string{state.Info().UserId()})
+	return outputstopics.CreateOutput{Topic: topic}, nil
 }
 
 // Update /topics/update check [ true true false ] access [ true false false false PUT ]
-func (a *TopicActions) Update(s abstract.IState, input inputs_*.*) (any, error) {
-	space := models.Space{Id: info.Member.SpaceId}
-	context.Trx.First(&space)
-	topic := models.Topic{Id: input.TopicId}
-	context.Trx.First(&topic)
+func (a *Actions) Update(s abstract.IState, input inputstopics.UpdateInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[*modulestate.StateL1](s)
+	state.Trx().Use()
+	space := model.Space{Id: state.Info().SpaceId()}
+	state.Trx().First(&space)
+	topic := model.Topic{Id: input.TopicId}
+	state.Trx().First(&topic)
 	topic.Title = input.Title
 	topic.Avatar = input.Avatar
-	context.Trx.Save(&topic)
-	go context.Signaler().SignalGroup("topics/update", topic.SpaceId, updates_topics.Update{Topic: topic}, true, []string{info.User.Id})
-	return outputs_topics.UpdateOutput{Topic: topic}, nil
+	state.Trx().Save(&topic)
+	go toolbox.Signaler().SignalGroup("topics/update", topic.SpaceId, updatestopics.Update{Topic: topic}, true, []string{state.Info().UserId()})
+	return outputstopics.UpdateOutput{Topic: topic}, nil
 }
 
 // Delete /topics/delete check [ true true false ] access [ true false false false DELETE ]
-func (a *TopicActions) Delete(s abstract.IState, input inputs_*.*) (any, error) {
-	space := models.Space{Id: info.Member.SpaceId}
-	context.Trx.First(&space)
-	topic := models.Topic{Id: input.TopicId}
-	err := context.Trx.First(&topic).Error()
+func (a *Actions) Delete(s abstract.IState, input inputstopics.DeleteInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[*modulestate.StateL1](s)
+	state.Trx().Use()
+	space := model.Space{Id: state.Info().SpaceId()}
+	state.Trx().First(&space)
+	topic := model.Topic{Id: input.TopicId}
+	err := state.Trx().First(&topic).Error()
 	if err != nil {
 		return nil, err
 	}
-	context.Trx.Delete(&topic)
-	context.Adapters().Cache().Del(fmt.Sprintf("city::%s", topic.Id))
-	go context.Signaler().SignalGroup("topics/delete", topic.SpaceId, updates_topics.Delete{Topic: topic}, true, []string{info.User.Id})
-	return outputs_topics.DeleteOutput{Topic: topic}, nil
+	state.Trx().Delete(&topic)
+	toolbox.Cache().Del(fmt.Sprintf("city::%s", topic.Id))
+	go toolbox.Signaler().SignalGroup("topics/delete", topic.SpaceId, updatestopics.Delete{Topic: topic}, true, []string{state.Info().UserId()})
+	return outputstopics.DeleteOutput{Topic: topic}, nil
 }
 
 // Get /topics/get check [ true true false ] access [ true false false false GET ]
-func (a *TopicActions) Get(s abstract.IState, input inputs_*.*) (any, error) {
-	space := models.Space{Id: info.Member.SpaceId}
-	context.Trx.First(&space)
-	topic := models.Topic{Id: input.TopicId}
-	context.Trx.First(&topic)
+func (a *Actions) Get(s abstract.IState, input inputstopics.GetInput) (any, error) {
+	state := abstract.UseState[*modulestate.StateL1](s)
+	state.Trx().Use()
+	space := model.Space{Id: state.Info().SpaceId()}
+	state.Trx().First(&space)
+	topic := model.Topic{Id: input.TopicId}
+	state.Trx().First(&topic)
 	if space.IsPublic {
-		return outputs_topics.GetOutput{Topic: topic}, nil
+		return outputstopics.GetOutput{Topic: topic}, nil
 	}
-	member := models.Member{}
-	err := context.Trx.Where("space_id = ?", space.Id).Where("user_id = ?", info.User.Id).First(&member).Error()
+	member := model.Member{}
+	err := state.Trx().Where("space_id = ?", space.Id).Where("user_id = ?", state.Info().UserId()).First(&member).Error()
 	if err != nil {
 		return nil, errors.New("access to space denied")
 	}
-	return outputs_topics.GetOutput{Topic: topic}, nil
+	return outputstopics.GetOutput{Topic: topic}, nil
 }
 
 // Send /topics/send check [ true true true ] access [ true false false false POST ]
-func (a *TopicActions) Send(s abstract.IState, input inputs_*.*) (any, error) {
+func (a *Actions) Send(s abstract.IState, input inputstopics.SendInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[*modulestate.StateL1](s)
+	state.Trx().Use()
 	if input.Type == "broadcast" {
-		var p = updates_topics.Send{Action: "broadcast", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
-		context.Signaler().SignalGroup(sendTemplate, info.Member.SpaceId, p, true, []string{info.User.Id})
-		return outputs_topics.SendOutput{Passed: true}, nil
+		user := model.User{Id: state.Info().UserId()}
+		state.Trx().First(&user)
+		var p = updatestopics.Send{Action: "broadcast", User: user, Topic: model.Topic{SpaceId: state.Info().SpaceId(), Id: input.TopicId}, Data: input.Data}
+		toolbox.Signaler().SignalGroup(sendTemplate, state.Info().SpaceId(), p, true, []string{state.Info().UserId()})
+		return outputstopics.SendOutput{Passed: true}, nil
 	} else if input.Type == "single" {
-		memberData := context.Adapters().Cache().Get(fmt.Sprintf("member::%s::%s", info.Member.SpaceId, input.RecvId))
+		memberData := toolbox.Cache().Get(fmt.Sprintf("member::%s::%s", state.Info().SpaceId(), input.RecvId))
 		if memberData == "true" {
-			var p = updates_topics.Send{Action: "single", User: info.User, Topic: models.Topic{SpaceId: info.Member.SpaceId, Id: input.TopicId}, Data: input.Data}
-			context.Signaler().SignalUser(sendTemplate, "", input.RecvId, p, true)
-			return outputs_topics.SendOutput{Passed: true}, nil
+			user := model.User{Id: state.Info().UserId()}
+			state.Trx().First(&user)
+			var p = updatestopics.Send{Action: "single", User: user, Topic: model.Topic{SpaceId: state.Info().SpaceId(), Id: input.TopicId}, Data: input.Data}
+			toolbox.Signaler().SignalUser(sendTemplate, "", input.RecvId, p, true)
+			return outputstopics.SendOutput{Passed: true}, nil
 		}
 	}
-	return outputs_topics.SendOutput{Passed: false}, nil
+	return outputstopics.SendOutput{Passed: false}, nil
 }

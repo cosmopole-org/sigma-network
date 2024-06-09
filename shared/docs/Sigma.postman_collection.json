@@ -30,6 +30,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -74,6 +79,11 @@
 							{
 								"key": "token",
 								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -170,6 +180,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -200,8 +215,8 @@
 						"method": "GET",
 						"header": [
 							{
-								"key": "token",
-								"value": "{{token}}",
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -347,6 +362,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -391,6 +411,11 @@
 							{
 								"key": "token",
 								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -472,8 +497,8 @@
 								"type": "text"
 							},
 							{
-								"key": "origin",
-								"value": "8081",
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -518,6 +543,11 @@
 							{
 								"key": "token",
 								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -758,6 +788,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -805,8 +840,8 @@
 								"type": "text"
 							},
 							{
-								"key": "tower_id",
-								"value": "{{towerId}}",
+								"key": "layer",
+								"value": "1",
 								"type": "text"
 							}
 						],
@@ -1166,7 +1201,13 @@
 					],
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
+							}
+						],
 						"url": {
 							"raw": "{{server}}/auths/getServerPublicKey",
 							"host": [
@@ -1309,6 +1350,11 @@
 								"key": "token",
 								"value": "{{token}}",
 								"type": "text"
+							},
+							{
+								"key": "layer",
+								"value": "1",
+								"type": "text"
 							}
 						],
 						"body": {
@@ -1339,7 +1385,13 @@
 			"name": "hello",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "layer",
+						"value": "1",
+						"type": "text"
+					}
+				],
 				"url": {
 					"raw": "{{server}}/api/hello",
 					"host": [
@@ -1357,7 +1409,13 @@
 			"name": "ping",
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "layer",
+						"value": "1",
+						"type": "text"
+					}
+				],
 				"url": {
 					"raw": "{{server}}/api/ping",
 					"host": [

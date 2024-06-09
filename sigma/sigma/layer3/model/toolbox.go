@@ -1,10 +1,12 @@
 package module_model
 
 import (
+	modulemodel "sigma/sigma/layer2/model"
 	toolnet "sigma/sigma/layer3/tools/network"
 )
 
 type ToolboxL3 struct {
+	*modulemodel.ToolboxL2
 	net *toolnet.Network
 }
 

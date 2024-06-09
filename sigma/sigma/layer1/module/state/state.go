@@ -6,6 +6,11 @@ import (
 	toolbox2 "sigma/sigma/layer1/module/toolbox"
 )
 
+type IStateL1 interface {
+	Info() abstract.IInfo
+	Trx() adapters.ITrx
+}
+
 type StateL1 struct {
 	info abstract.IInfo
 	trx  adapters.ITrx
@@ -34,5 +39,11 @@ func NewStateBuilder(layer abstract.ILayer, bottom abstract.IStateBuilder) abstr
 
 func (sb *StateBuilder1) NewState(args ...interface{}) abstract.IState {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](sb.layer.Tools())
-	return &StateL1{info: args[0].(abstract.IInfo), trx: toolbox.Storage().CreateTrx()}
+	var trx adapters.ITrx
+	if len(args) > 1 {
+		trx = args[1].(adapters.ITrx)
+	} else {
+		trx = toolbox.Storage().CreateTrx()
+	}
+	return &StateL1{info: args[0].(abstract.IInfo), trx: trx}
 }

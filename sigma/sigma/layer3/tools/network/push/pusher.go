@@ -83,7 +83,7 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 		HistoryMetaTTL: 24 * time.Hour,
 	})
 	node.OnConnecting(func(ctx context.Context, e centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
-		userDataParts := strings.Split(cache.Get("auth::"+e.Token), "/")
+		userDataParts := strings.Split(cache.Get("plugin::"+e.Token), "/")
 		if len(userDataParts) != 2 {
 			return centrifuge.ConnectReply{}, centrifuge.DisconnectInvalidToken
 		}
@@ -145,7 +145,7 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
 			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
-			userDataPrts := strings.Split(cache.Get("auth::"+e.Token), "/")
+			userDataPrts := strings.Split(cache.Get("plugin::"+e.Token), "/")
 			if len(userDataPrts) != 2 {
 				cb(centrifuge.RefreshReply{}, centrifuge.DisconnectInvalidToken)
 			}

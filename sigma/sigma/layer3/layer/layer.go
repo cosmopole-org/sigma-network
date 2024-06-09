@@ -5,6 +5,7 @@ import (
 	moduleactor "sigma/sigma/core/module/actor"
 	modulelogger "sigma/sigma/core/module/logger"
 	"sigma/sigma/layer1/module/toolbox"
+	module_model "sigma/sigma/layer2/model"
 	modulemodel "sigma/sigma/layer3/model"
 	tool_net "sigma/sigma/layer3/tools/network"
 	netfederation "sigma/sigma/layer3/tools/network/federation"
@@ -42,6 +43,7 @@ func (l *Layer) ForFill(core abstract.ICore, args ...interface{}) {
 	net := tool_net.NewNetwork(core, l.logger, layer1Toolbox.Cache(), layer1Toolbox.Signaler())
 	net.Fed = l.federation
 	tb := modulemodel.NewTools(net)
+	tb.ToolboxL2 = abstract.UseToolbox[*module_model.ToolboxL2](args[0])
 	l.toolbox = tb
 }
 

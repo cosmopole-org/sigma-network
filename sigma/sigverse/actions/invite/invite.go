@@ -17,13 +17,13 @@ const inviteNotFoundError = "invite not found"
 
 var memberTemplate = "member::%s::%s"
 
-type InviteActions struct {
-	layer abstract.ILayer
+type Actions struct {
+	Layer abstract.ILayer
 }
 
 // Create /invites/create check [ true true false ] access [ true false false false POST ]
-func (a *InviteActions) Create(s abstract.IState, input inputsinvites.CreateInput) (any, error) {
-	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.layer.Tools())
+func (a *Actions) Create(s abstract.IState, input inputsinvites.CreateInput) (any, error) {
+	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
 	state := abstract.UseState[*modulestate.StateL1](s)
 	state.Trx().Use()
 	space := model.Space{Id: input.SpaceId}
@@ -31,7 +31,7 @@ func (a *InviteActions) Create(s abstract.IState, input inputsinvites.CreateInpu
 	if err != nil {
 		return nil, err
 	}
-	invite := model.Invite{Id: crypto.SecureUniqueId(a.layer.Core().Id()), UserId: input.UserId, SpaceId: input.SpaceId}
+	invite := model.Invite{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: input.SpaceId}
 	err2 := state.Trx().Create(&invite).Error()
 	if err2 != nil {
 		return nil, err2
@@ -41,8 +41,8 @@ func (a *InviteActions) Create(s abstract.IState, input inputsinvites.CreateInpu
 }
 
 // Cancel /invites/cancel check [ true true false ] access [ true false false false POST ]
-func (a *InviteActions) Cancel(s abstract.IState, input inputsinvites.CancelInput) (any, error) {
-	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.layer.Tools())
+func (a *Actions) Cancel(s abstract.IState, input inputsinvites.CancelInput) (any, error) {
+	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
 	state := abstract.UseState[*modulestate.StateL1](s)
 	state.Trx().Use()
 	admin := model.Admin{UserId: state.Info().UserId(), SpaceId: input.SpaceId}
@@ -67,8 +67,8 @@ func (a *InviteActions) Cancel(s abstract.IState, input inputsinvites.CancelInpu
 }
 
 // Accept /invites/accept check [ true false false ] access [ true false false false POST ]
-func (a *InviteActions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (any, error) {
-	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.layer.Tools())
+func (a *Actions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (any, error) {
+	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
 	state := abstract.UseState[*modulestate.StateL1](s)
 	state.Trx().Use()
 	invite := model.Invite{Id: input.InviteId}
@@ -83,7 +83,7 @@ func (a *InviteActions) Accept(s abstract.IState, input inputsinvites.AcceptInpu
 	if err2 != nil {
 		return nil, err2
 	}
-	member := model.Member{Id: crypto.SecureUniqueId(a.layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
+	member := model.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
 	state.Trx().Create(&member)
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
@@ -97,8 +97,8 @@ func (a *InviteActions) Accept(s abstract.IState, input inputsinvites.AcceptInpu
 }
 
 // Decline /invites/decline check [ true false false ] access [ true false false false POST ]
-func (a *InviteActions) Decline(s abstract.IState, input inputsinvites.DeclineInput) (any, error) {
-	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.layer.Tools())
+func (a *Actions) Decline(s abstract.IState, input inputsinvites.DeclineInput) (any, error) {
+	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
 	state := abstract.UseState[*modulestate.StateL1](s)
 	state.Trx().Use()
 	invite := model.Invite{Id: input.InviteId}

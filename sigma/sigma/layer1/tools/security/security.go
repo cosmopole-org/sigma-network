@@ -126,9 +126,9 @@ func (sm *Security) LoadAccess() {
 }
 
 func (sm *Security) AuthWithToken(token string) (string, string) {
-	var auth = sm.cache.Get("auth::" + token)
-	var userId string = ""
-	var userType string = ""
+	var auth = sm.cache.Get("plugin::" + token)
+	var userId = ""
+	var userType = ""
 	if auth != "" {
 		var dataParts = strings.Split(auth, "/")
 		userId = dataParts[1]

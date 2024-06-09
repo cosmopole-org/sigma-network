@@ -1,6 +1,6 @@
 package updates_topics
 
-import "sigma/main/core/models"
+import models "sigma/sigverse/model"
 
 type Send struct {
 	User   models.User  `json:"user"`

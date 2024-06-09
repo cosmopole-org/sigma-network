@@ -6,16 +6,16 @@ import (
 	"sigma/sigverse/inputs"
 )
 
-type DummyActions struct {
-	layer abstract.ILayer
+type Actions struct {
+	Layer abstract.ILayer
 }
 
 // Hello /api/hello check [ false false false ] access [ true false false false GET ]
-func (a *DummyActions) Hello(_ abstract.IState, _ inputs.HelloInput) (any, error) {
+func (a *Actions) Hello(_ abstract.IState, _ inputs.HelloInput) (any, error) {
 	return `{ "hello": "world" }`, nil
 }
 
 // Ping /api/ping check [ false false false ] access [ true false false false GET ]
-func (a *DummyActions) Ping(_ abstract.IState, _ inputs.HelloInput) (any, error) {
+func (a *Actions) Ping(_ abstract.IState, _ inputs.HelloInput) (any, error) {
 	return os.Getenv("MAIN_PORT"), nil
 }

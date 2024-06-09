@@ -94,19 +94,23 @@ func (sm *StorageManager) AutoMigrate(args ...interface{}) adapters.IStorage {
 }
 
 func (sm *StorageManager) CreateTrx() adapters.ITrx {
-	return &TrxWrapper{db: sm.db}
+	return &TrxWrapper{db: sm.db, used: false}
 }
 
 type TrxWrapper struct {
-	db  *gorm.DB
-	err error
+	db   *gorm.DB
+	used bool
+	err  error
 }
 
 func (sm *TrxWrapper) Error() error {
 	return sm.err
 }
 func (sm *TrxWrapper) Use() {
-	sm.db = sm.db.Begin()
+	if !sm.used {
+		sm.used = true
+		sm.db = sm.db.Begin()
+	}
 }
 func (sm *TrxWrapper) Create(args ...interface{}) adapters.ITrx {
 	sm.err = sm.db.Create(args[0]).Error
@@ -149,7 +153,9 @@ func (sm *TrxWrapper) Select(args ...interface{}) adapters.ITrx {
 	return sm
 }
 func (sm *TrxWrapper) Commit(args ...interface{}) adapters.ITrx {
-	sm.err = sm.db.Commit().Error
+	if sm.used {
+		sm.err = sm.db.Commit().Error
+	}
 	return sm
 }
 func (sm *TrxWrapper) SavePoint(args ...interface{}) adapters.ITrx {
@@ -157,7 +163,9 @@ func (sm *TrxWrapper) SavePoint(args ...interface{}) adapters.ITrx {
 	return sm
 }
 func (sm *TrxWrapper) Rollback(args ...interface{}) adapters.ITrx {
-	sm.err = sm.db.Rollback().Error
+	if sm.used {
+		sm.err = sm.db.Rollback().Error
+	}
 	return sm
 }
 func (sm *TrxWrapper) RollbackTo(args ...interface{}) adapters.ITrx {
