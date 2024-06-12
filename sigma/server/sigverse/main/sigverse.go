@@ -31,9 +31,7 @@
 			s := reflect.TypeOf(plugger)
 			for i := 0; i < s.NumMethod(); i++ {
 				f := s.Method(i)
-				if f.Name == "Install" {
-					f.Func.Call([]reflect.Value{reflect.ValueOf(plugger)})
-				} else {
+				if f.Name != "Install" {
 					result := f.Func.Call([]reflect.Value{reflect.ValueOf(plugger)})
 					action := result[0].Interface().(abstract.IAction)
 					layer.Actor().InjectAction(action)
@@ -43,17 +41,17 @@
 	
 		func PlugAll(layer abstract.ILayer, logger *module_logger.Logger, core abstract.ICore) {
 		
-				PlugThePlugger(layer, plugger_auth.New(&action_auth.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_auth.New(&action_auth.Actions{Layer: layer}, logger, core).Install(layer))
 			
-				PlugThePlugger(layer, plugger_dummy.New(&action_dummy.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_dummy.New(&action_dummy.Actions{Layer: layer}, logger, core).Install(layer))
 			
-				PlugThePlugger(layer, plugger_invite.New(&action_invite.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_invite.New(&action_invite.Actions{Layer: layer}, logger, core).Install(layer))
 			
-				PlugThePlugger(layer, plugger_space.New(&action_space.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_space.New(&action_space.Actions{Layer: layer}, logger, core).Install(layer))
 			
-				PlugThePlugger(layer, plugger_topic.New(&action_topic.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_topic.New(&action_topic.Actions{Layer: layer}, logger, core).Install(layer))
 			
-				PlugThePlugger(layer, plugger_user.New(&action_user.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_user.New(&action_user.Actions{Layer: layer}, logger, core).Install(layer))
 			
 		}
 		

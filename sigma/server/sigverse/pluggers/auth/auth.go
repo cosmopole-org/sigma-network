@@ -23,10 +23,11 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.GetServersMap)
 		}
 		
-	func (c *Plugger) Install() {
-		// pass
+	func (c *Plugger) Install(layer abstract.ILayer) *Plugger {
+		actions.Install(layer.Sb().NewState())
+		return c
 	}
-	
+
 	func New(actions *actions.Actions, logger *module_logger.Logger, core abstract.ICore) *Plugger {
 		id := "auth"
 		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: logger}
