@@ -12,6 +12,8 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
+func Install(s abstract.IState) {}
+
 // GetServerPublicKey /auths/getServerPublicKey check [ false false false ] access [ true false false false GET ]
 func (a *Actions) GetServerPublicKey(_ abstract.IState, _ inputsauth.GetServerKeyInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())

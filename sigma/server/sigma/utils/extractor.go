@@ -10,6 +10,7 @@ import (
 	net_grpc "sigma/sigma/layer3/tools/network/grpc"
 	net_http "sigma/sigma/layer3/tools/network/http"
 	net_pusher "sigma/sigma/layer3/tools/network/push"
+	"sigma/sigma/utils/vaidate"
 	"strings"
 )
 
@@ -28,16 +29,48 @@ func ExtractSecureAction[T abstract.IInput](logger *module_logger.Logger, core a
 	})
 	return actor.NewSecureAction(action, guard, core, logger, map[string]actor.Parse{
 		"http": func(i interface{}) (abstract.IInput, error) {
-			return net_http.ParseInput[T](i.(*fiber.Ctx))
+			input, err := net_http.ParseInput[T](i.(*fiber.Ctx))
+			if err == nil {
+				err2 := vaidate.Validate.Struct(input)
+				if err2 == nil {
+					return input, nil
+				}
+				return nil, err2
+			}
+			return nil, err
 		},
 		"push": func(i interface{}) (abstract.IInput, error) {
-			return net_pusher.ParseInput[T](i.(string))
+			input, err := net_pusher.ParseInput[T](i.(string))
+			if err == nil {
+				err2 := vaidate.Validate.Struct(input)
+				if err2 == nil {
+					return input, nil
+				}
+				return nil, err2
+			}
+			return nil, err
 		},
 		"grpc": func(i interface{}) (abstract.IInput, error) {
-			return net_grpc.ParseInput[T](i)
+			input, err := net_grpc.ParseInput[T](i)
+			if err == nil {
+				err2 := vaidate.Validate.Struct(input)
+				if err2 == nil {
+					return input, nil
+				}
+				return nil, err2
+			}
+			return nil, err
 		},
 		"fed": func(i interface{}) (abstract.IInput, error) {
-			return net_federation.ParseInput[T](i.(string))
+			input, err := net_federation.ParseInput[T](i.(string))
+			if err == nil {
+				err2 := vaidate.Validate.Struct(input)
+				if err2 == nil {
+					return input, nil
+				}
+				return nil, err2
+			}
+			return nil, err
 		},
 	})
 }

@@ -19,6 +19,14 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
+func Install(s abstract.IState) {
+	state := abstract.UseToolbox[modulestate.IStateL1](s)
+	state.Trx().Use()
+	state.Trx().AutoMigrate(&models.Space{})
+	state.Trx().AutoMigrate(&models.Member{})
+	state.Trx().Commit()
+}
+
 // AddMember /spaces/addMember check [ true true false ] access [ true false false false POST ]
 func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())

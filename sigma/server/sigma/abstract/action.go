@@ -1,5 +1,9 @@
 package abstract
 
+type IActions interface {
+	Install(IState)
+}
+
 type IAction interface {
 	Key() string
 	Act(IState, IInput) (int, any, error)

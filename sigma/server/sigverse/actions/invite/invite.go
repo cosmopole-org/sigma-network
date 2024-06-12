@@ -21,6 +21,13 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
+func Install(s abstract.IState) {
+	state := abstract.UseToolbox[modulestate.IStateL1](s)
+	state.Trx().Use()
+	state.Trx().AutoMigrate(&model.Invite{})
+	state.Trx().Commit()
+}
+
 // Create /invites/create check [ true true false ] access [ true false false false POST ]
 func (a *Actions) Create(s abstract.IState, input inputsinvites.CreateInput) (any, error) {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())

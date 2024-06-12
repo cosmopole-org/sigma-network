@@ -10,6 +10,8 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
+func Install(s abstract.IState) {}
+
 // Hello /api/hello check [ false false false ] access [ true false false false GET ]
 func (a *Actions) Hello(_ abstract.IState, _ inputs.HelloInput) (any, error) {
 	return `{ "hello": "world" }`, nil

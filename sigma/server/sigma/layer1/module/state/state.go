@@ -45,5 +45,9 @@ func (sb *StateBuilder1) NewState(args ...interface{}) abstract.IState {
 	} else {
 		trx = toolbox.Storage().CreateTrx()
 	}
-	return &StateL1{info: args[0].(abstract.IInfo), trx: trx}
+	if len(args) > 0 {
+		return &StateL1{info: args[0].(abstract.IInfo), trx: trx}
+	} else {
+		return &StateL1{info: nil, trx: trx}
+	}
 }

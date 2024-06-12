@@ -15,6 +15,8 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
+func Install(s abstract.IState) {}
+
 // Plug /plugins/plug check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Plug(_ abstract.IState, input inputsexternal.PlugInput) (any, error) {
 	toolbox := abstract.UseToolbox[*modulemodel.ToolboxL2](a.Layer.Tools())

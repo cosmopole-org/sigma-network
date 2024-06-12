@@ -45,9 +45,7 @@ func main() {
 			s := reflect.TypeOf(plugger)
 			for i := 0; i < s.NumMethod(); i++ {
 				f := s.Method(i)
-				if f.Name == "Install" {
-					f.Func.Call([]reflect.Value{reflect.ValueOf(plugger)})
-				} else {
+				if f.Name != "Install" {
 					result := f.Func.Call([]reflect.Value{reflect.ValueOf(plugger)})
 					action := result[0].Interface().(abstract.IAction)
 					layer.Actor().InjectAction(action)
@@ -59,7 +57,7 @@ func main() {
 		`
 		for _, serviceName := range serviceNames {
 			code += `
-				PlugThePlugger(layer, plugger_` + serviceName + `.New(&action_` + serviceName + `.Actions{Layer: layer}, logger, core))
+				PlugThePlugger(layer, plugger_` + serviceName + `.New(&action_` + serviceName + `.Actions{Layer: layer}, logger, core).Install(layer))
 			`
 		}
 		code += `
@@ -129,10 +127,11 @@ func build(pluggerName string, serviceName string, serviceRoot string) {
 	}
 	code +=
 		`
-	func (c *Plugger) Install() {
-		// pass
+	func (c *Plugger) Install(layer abstract.ILayer) *Plugger {
+		actions.Install(layer.Sb().NewState())
+		return c
 	}
-	
+
 	func New(actions *actions.Actions, logger *module_logger.Logger, core abstract.ICore) *Plugger {
 		id := "` + serviceName + `"
 		return &Plugger{Id: &id, Actions: actions, Core: core, Logger: logger}

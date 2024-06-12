@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 COPY run.sh ./
-COPY . .
+COPY .. .
 
 RUN go mod download
 RUN go mod tidy
