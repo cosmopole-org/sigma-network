@@ -5,5 +5,5 @@ import (
 )
 
 type GetOutput struct {
-	User models.User `json:"User"`
+	User models.PublicUser `json:"user"`
 }

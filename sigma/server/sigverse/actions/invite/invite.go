@@ -90,7 +90,7 @@ func (a *Actions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (an
 	if err2 != nil {
 		return nil, err2
 	}
-	member := model.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicIds: "*", Metadata: ""}
+	member := model.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicId: "*", Metadata: ""}
 	state.Trx().Create(&member)
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")

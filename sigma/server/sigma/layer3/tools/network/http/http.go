@@ -3,6 +3,7 @@ package net_http
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/mitchellh/mapstructure"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
@@ -68,7 +69,7 @@ func parseGlobally(c *fiber.Ctx) (abstract.IInput, error) {
 }
 
 func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
-	originHeader := c.GetReqHeaders()["Origin"]
+	originHeader := c.GetReqHeaders()["Dest"]
 	var origin = ""
 	if originHeader != nil {
 		origin = originHeader[0]
@@ -128,6 +129,9 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 }
 
 func (hs *HttpServer) Listen(port int) {
+	hs.Server.Use(cors.New(cors.Config{
+		AllowOrigins: "*",
+	}))
 	hs.Server.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).Send([]byte("hello world"))
 	})

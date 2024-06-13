@@ -5,6 +5,6 @@ import (
 )
 
 type AuthenticateOutput struct {
-	Authenticated bool        `json:"authenticated"`
-	User          models.User `json:"user"`
+	Authenticated bool              `json:"authenticated"`
+	User          models.PublicUser `json:"user"`
 }

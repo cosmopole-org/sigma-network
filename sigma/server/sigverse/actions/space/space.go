@@ -36,7 +36,7 @@ func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput
 	if err != nil {
 		return nil, err
 	}
-	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: state.Info().UserId(), TopicIds: "*", Metadata: ""}
+	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: state.Info().UserId(), TopicId: "*", Metadata: ""}
 	state.Trx().Create(&member)
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	go toolbox.Signaler().SignalGroup("spaces/addMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), Member: member}, true, []string{state.Info().UserId()})
@@ -71,7 +71,7 @@ func (a *Actions) Create(s abstract.IState, input inputsspaces.CreateInput) (any
 	state.Trx().Use()
 	space := models.Space{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Tag: input.Tag + "@" + a.Layer.Core().Id(), Title: input.Title, Avatar: input.Avatar, IsPublic: input.IsPublic}
 	state.Trx().Create(&space)
-	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: state.Info().UserId(), SpaceId: space.Id, TopicIds: "*", Metadata: ""}
+	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: state.Info().UserId(), SpaceId: space.Id, TopicId: "*", Metadata: ""}
 	state.Trx().Create(&member)
 	admin := models.Admin{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: state.Info().UserId(), SpaceId: space.Id, Role: "creator"}
 	state.Trx().Create(&admin)
@@ -154,7 +154,7 @@ func (a *Actions) Join(s abstract.IState, input inputsspaces.JoinInput) (any, er
 	if !space.IsPublic {
 		return nil, errors.New("access to private space denied")
 	}
-	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: state.Info().UserId(), SpaceId: input.SpaceId, TopicIds: "*", Metadata: ""}
+	member := models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: state.Info().UserId(), SpaceId: input.SpaceId, TopicId: "*", Metadata: ""}
 	err2 := state.Trx().Create(&member).Error()
 	if err2 != nil {
 		return nil, err2

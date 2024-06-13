@@ -57,7 +57,7 @@ func (a *Actions) Update(s abstract.IState, input inputsusers.UpdateInput) (any,
 	user.Username = input.Username + "@" + a.Layer.Core().Id()
 	state.Trx().Save(&user)
 	return outputsusers.UpdateOutput{
-		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar},
+		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
 	}, nil
 }
 
@@ -69,7 +69,9 @@ func (a *Actions) Get(s abstract.IState, input inputsusers.GetInput) (any, error
 	log.Println(user)
 	err := state.Trx().First(&user).Error()
 	log.Println(user, err)
-	return outputsusers.GetOutput{User: user}, err
+	return outputsusers.GetOutput{
+		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
+	}, err
 }
 
 // Delete /users/delete check [ true false false ] access [ true false false false DELETE ]

@@ -1,4 +1,7 @@
 
+import Storage from './storage';
+import {Secret} from "../models";
+
 type PublicKeyBatch = { [id: string]: CryptoKey };
 
 type RefreshEvents = { [id: string]: string };
@@ -14,11 +17,17 @@ type Group = {
 
 export default class Security {
     private groups: {[id: string]: Group} = {}
-    private myKeyPair?: CryptoKeyPair
+    private myPublicKey?: CryptoKey
+    private myPrivateKey?: CryptoKey
     private keyStore: {[id: string]: CryptoKey} = {}
-    public async getMyKeyPair() : Promise<CryptoKeyPair> {
-        if (!this.myKeyPair) {
-            this.myKeyPair = await window.crypto.subtle.generateKey(
+    private storage: Storage
+    constructor(storage: Storage) {
+        this.storage = storage;
+    }
+    private async generateKeyPair() {
+        let secret = await this.storage.db.secrets.findOne("me").exec();
+        if (!secret) {
+            let keyPair = await window.crypto.subtle.generateKey(
                 {
                     name: "RSA-OAEP",
                     modulusLength: 4096,
@@ -28,12 +37,40 @@ export default class Security {
                 true,
                 ["encrypt", "decrypt"],
             );
+            this.myPrivateKey = keyPair.privateKey;
+            this.myPublicKey = keyPair.publicKey;
+            await this.storage.db.secrets.insert({
+                id: "me",
+                publicKey: this.ab2b64(await crypto.subtle.exportKey('spki', keyPair.publicKey)),
+                privateKey: this.ab2b64(await crypto.subtle.exportKey('pkcs8', keyPair.privateKey))
+            });
+        } else {
+            this.myPublicKey = await this.parsePublicKey(secret.publicKey);
+            this.myPrivateKey = await this.parsePrivateKey(secret.privateKey);
         }
-        return this.myKeyPair;
+    }
+    public async getMyPrivateKey(): Promise<string> {
+        if (!this.myPrivateKey) {
+            await this.generateKeyPair();
+        }
+        return this.ab2b64(await crypto.subtle.exportKey('spki', this.myPrivateKey));
+    }
+    public async getMyPublicKey(): Promise<string> {
+        if (!this.myPublicKey) {
+            await this.generateKeyPair();
+        }
+        return this.ab2b64(await crypto.subtle.exportKey('spki', this.myPublicKey));
+    }
+    public updateGroupPacketId(newIdentifier: string, oldIdentifier: string): void {
+        this.keyStore[newIdentifier] = this.keyStore[oldIdentifier];
+        delete this.keyStore[oldIdentifier];
     }
     public async encryptGroupPacket(identifier: string, groupId: string, data: string): Promise<string> {
         this.groups[groupId].history[identifier] = this.groups[groupId].key.keyId;
         return await this.encryptDataByKey(this.groups[groupId].key.key, data)
+    }
+    public async reDecryptGroupPacket(identifier: string, groupId: string, cipher: string): Promise<string> {
+        return await this.decryptDataByKey(this.keyStore[this.groups[groupId].history[identifier]], cipher);
     }
     public async decryptGroupPacket(identifier: string, groupId: string, cipher: string): Promise<string> {
         this.groups[groupId].history[identifier] = this.groups[groupId].key.keyId;
@@ -87,7 +124,21 @@ export default class Security {
         return {id: id, key: this.keyStore[id]};
     }
     private async parsePublicKey(publicKey: string) : Promise<CryptoKey> {
-        return await window.crypto.subtle.importKey("spki", new Uint8Array(this.b642ab(publicKey)), { name: "RSA-OAEP", hash: "SHA-256" }, false, [ "encrypt" ]);
+        return await window.crypto.subtle.importKey(
+            "spki",
+            new Uint8Array(this.b642ab(publicKey)),
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            true,
+            ["encrypt"]
+        );
+    }
+    private async parsePrivateKey(privateKey: string) : Promise<CryptoKey> {
+        return await window.crypto.subtle.importKey(
+            "pkcs8",
+            new Uint8Array(this.b642ab(privateKey)),
+            { name: "RSA-OAEP", hash: "SHA-256" },
+            true,
+            ["decrypt"]);
     }
     private async encryptKey(publicKey: CryptoKey, key: string): Promise<string> {
         let encodedKey = new TextEncoder().encode(key);
@@ -105,7 +156,7 @@ export default class Security {
             {
                 name: "RSA-OAEP",
             },
-            this.myKeyPair.privateKey,
+            this.myPrivateKey,
             this.b642ab(cipherKey)
         ));
     }
@@ -150,10 +201,5 @@ export default class Security {
     }
     private ab2b64(arrayBuffer: ArrayBuffer): string {
         return window.btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
-    }
-    private toHex(buffer: Uint8Array) {
-        return Array.from(buffer)
-            .map(byte => byte.toString(16).padStart(2, '0'))
-            .join('');
     }
 }

@@ -1,20 +1,23 @@
-import Security from './security';
+
+import Sigma from "./sigma";
 
 (async () => {
 
-    let security = new Security();
+    let app = new Sigma();
+    await app.run();
 
-    const message = "hello world !";
+    let {success: s1, data: d1} = await app.services.users.create({username: "kasperius", secret: "0123", name: "keyhan", avatar: "123"})
+    if (!s1) {
+        console.log(d1.error);
+        return;
+    }
+    console.log(d1.user);
 
-    await security.getMyKeyPair();
+    let { success: s2, data: d2 } = await app.services.users.get({userId: d1.user.id});
+    if (!s2) {
+        console.log(d2.error);
+        return
+    }
+    console.log(d2.user);
 
-    console.log(message)
-    await security.newGroup("rasht");
-    console.log("start")
-    const cipher = await security.encryptGroupPacket("1","rasht", message);
-    console.log(cipher)
-    let messageBack = await security.decryptGroupPacket("2","rasht", cipher);
-    console.log(messageBack)
-
-    console.log("end");
 })();
