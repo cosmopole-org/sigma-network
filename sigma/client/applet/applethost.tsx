@@ -1,6 +1,7 @@
 "use client"
 
-import {add} from '@/public/applet/release';
+import {add} from '@/libs/raw/rubish/rubish';
+import dynamic from "next/dynamic";
 
 const tools = `
 class Image {
@@ -169,7 +170,7 @@ class Test {
 
 export async function runWasm() {
     console.log(add(1, 2));
-    // const res = await fetch("/applet.wasm");
+    // const res = await fetch("/libs.wasm");
     // const buffer = await res.arrayBuffer();
     // const wasm = await WebAssembly.instantiate(buffer, {module: {}, env: {}});
     // console.log(wasm);

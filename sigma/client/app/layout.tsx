@@ -20,6 +20,7 @@ import { useTheme } from "next-themes";
 import Script from "next/script";
 import { Logo } from "@/components/icons";
 import { putForge } from "@/api/offline/crypto";
+import {importLibs} from "@/libs/wrappers";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -38,16 +39,16 @@ let dynamicPath = '';
 let oldPath = '';
 let oldScroll = 0;
 let swiperInst: any = null;
-export const enableSwiper = () => {
-	if (swiperInst) {
-		swiperInst.enable();
-	}
-}
-export const disableSwiper = () => {
-	if (swiperInst) {
-		swiperInst.disable();
-	}
-}
+// export const enableSwiper = () => {
+// 	if (swiperInst) {
+// 		swiperInst.enable();
+// 	}
+// }
+// export const disableSwiper = () => {
+// 	if (swiperInst) {
+// 		swiperInst.disable();
+// 	}
+// }
 
 export default function RootLayout({
 	children,
@@ -60,6 +61,9 @@ export default function RootLayout({
 	loadSizes();
 	const contentRef = useRef<HTMLDivElement>(null);
 	const [loaded, setLoaded] = useState(false);
+	useEffect(() => {
+		importLibs().then(() => setLoaded(true));
+	}, []);
 	useEffect(() => {
 		const scroller = () => {
 			if (contentRef.current) {
@@ -133,12 +137,6 @@ export default function RootLayout({
 				<meta name='description' content='Welcome to Sigma universe!' />
 				<meta name="theme-color" content={theme === 'light' ? '#ffffff' : '#172024'} />
 				<link rel="manifest" href="/manifest.json" />
-				<Script src="/forge.js" onLoad={async () => {
-					if (typeof window !== 'undefined') {
-						putForge((window as any).forge.pki.rsa);
-						setLoaded(true);
-					}
-				}} />
 			</head>
 			<body
 				className={clsx(

@@ -125,7 +125,7 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 		})
 
 		// Event handler should not block, so start separate goroutine to
-		// periodically send messages to client.
+		// periodically send messages to rubish.
 		go func() {
 			for {
 				select {

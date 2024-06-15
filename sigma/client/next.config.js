@@ -13,6 +13,15 @@ const nextConfig = {
       },
     ],
   },
+  webpack(config) {
+    config.output.webassemblyModuleFilename = 'static/wasm/[modulehash].wasm'
+    config.experiments = { asyncWebAssembly: true, layers: true }
+    config.resolve.fallback = { fs: false };
+    config.externals = {
+      'node:fs/promises': 'commonjs2 node:fs/promises',
+    };
+    return config
+  },
 }
 
 module.exports = nextConfig
