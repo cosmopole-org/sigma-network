@@ -1,0 +1,15 @@
+{
+  "include": [
+    "src/**/*.ts"
+  ],
+  "compilerOptions": {
+    "noImplicitAny": false,
+    "lib": [
+      "ESNext",
+      "dom"
+    ],
+    "target": "esnext",
+    "module": "commonjs",
+    "allowJs": true
+  }
+}
