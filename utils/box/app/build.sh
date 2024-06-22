@@ -3,6 +3,7 @@
 rm -r ./build
 cp -r ./lib/runtime ./src/runtime
 npm run webpack
+mkdir ./lib/assets
 cp ./dist/build.js ./lib/assets/build.js.txt
 cd ./lib
 npm run build

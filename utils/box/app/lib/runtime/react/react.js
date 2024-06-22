@@ -1,199 +1,280 @@
 
+import diff from './diff';
+import Element from "./element";
 
+let vdom;
 let targetFunc;
 let callbackDict = {};
 let keyCounter = 1;
-let vdom;
-let rendering;
-let stack = [];
-let compCache = {};
-let keyCache = {};
-let renderStack = [];
+let renderCache = {};
+let stateCache = {};
 let stateCounter = 0;
-let indexCounter = 0;
-let updatingTreePath;
+let lastUpdateOfRender;
+let lastOldCache;
+let tree = [];
+let currentPath = "";
+let currentKey;
+let renderedChildren = {};
+let keyChanges = {};
+let indexCache = {};
 
-global.trigger = function trigger(callbackId) {
-  let cb = callbackDict[callbackId];
-  if (cb) cb();
+let genKey = () => {
+    return (keyCounter++).toString();
 }
 
-const isFunction = (target) => typeof target === 'function';
-
-const isObject = (target) => typeof target === 'object' && target !== null;
-
-class Element {
-  tag;
-  key;
-  props = {}
-  events = {}
-  children = []
-  constructor(tag, props, events, children) {
-    this.tag = tag;
-    let path = renderStack.join("/");
-    if (keyCache[path]) {
-      this.key = keyCache[path];
-    } else {
-      let key = Math.random().toString().substring(2);
-      keyCache[path] = key;
-      this.key = key;
-    }
-    this.props = props ?? {};
-    this.events = events ?? {};
-    this.children = children ?? [];
-  }
-  addChild(child, j = 0) {
-    if (Array.isArray(child)) {
-      child.forEach((nestedChild, i) => {
-        this.addChild(nestedChild, i + j);
-      });
-    } else if (this.children[j] == undefined) {
-      this.children.push(child);
-    } else if (JSON.stringify(child) !== JSON.stringify(this.children[j])) {
-      this.children[j] = child;
-    }
-  }
-  removeChild(index) {
-    this.children.splice(index, 1);
-  }
-  static create(tag, props = {}, ...children) {
-    if (props === undefined || props === null) {
-      props = {};
-    }
-    if (children === undefined || children === null) {
-      children = [];
-    }
-    if (isFunction(tag)) {
-      let previoudRendering = rendering;
-      let renderStackBackup = [...renderStack];
-      let copyOfRenderStack = [...renderStack, tag.name + "/" + indexCounter];
-      let path = renderStack.join("/");
-      let ic = indexCounter;
-      rendering = () => {
-        let prevStateCounter = stateCounter;
-        stateCounter = 0;
-        stack.push([]);
-        renderStack = copyOfRenderStack;
-        let prevIndexCounter = indexCounter;
-        indexCounter = 0;
-        let res = tag(props, children);
-        indexCounter = prevIndexCounter;
-        renderStack = renderStackBackup;
-        let states = stack.pop();
-        let key = (path.length > 0 ? (path + "/") : "") + tag.name + "/" + ic;
-        if (!compCache[key]) {
-          compCache[key] = states;
-        }
-        stateCounter = prevStateCounter;
-        if (vdom && (key === updatingTreePath)) {
-          message(JSON.stringify({ action: "update", element: res }));
-        }
-        return res;
-      }
-      let res = rendering();
-      renderStack = renderStackBackup;
-      rendering = previoudRendering;
-      return res;
-    }
-    let element = new Element(tag);
-    Object.entries(props).forEach(([name, value]) => {
-      if (name.startsWith('on')) {
-        let callbackId = (keyCounter++).toString();
-        callbackDict[callbackId] = value;
-        element.events[name.toLowerCase().substring(2)] = callbackId;
-      } else {
-        element.props[name] = value;
-      }
-    });
-    let prevIndexCounter = indexCounter;
-    indexCounter = 0;
-    const res = children.map((child) => {
-      const value = isFunction(child) ? child() : child;
-      return value;
-    });
-    indexCounter = prevIndexCounter;
-    element.addChild(res);
-    indexCounter++;
-    return element;
-  }
+global.trigger = function trigger(callbackId) {
+    let cb = callbackDict[callbackId];
+    if (cb) cb();
 }
 
 class Dep {
-  constructor() {
-    this.subs = new Set();
-  }
-  depend(rendering) {
-    rendering && this.subs.add(rendering);
-  }
-  notify() {
-    this.subs.forEach((sub) => sub());
-  }
+
+    subs;
+    parentPath;
+
+    constructor(parentPath) {
+        this.subs = new Set();
+        this.parentPath = parentPath;
+    }
+    depend() {
+        targetFunc && this.subs.add(targetFunc);
+    }
+    notify() {
+        this.subs.forEach((sub) => sub && sub(this.parentPath));
+    }
 }
 
-const createEffect = (fun) => {
-  targetFunc = fun;
-  targetFunc();
-  targetFunc = null;
-};
-
+const isFunction = (target) => typeof target === 'function';
+const isObject = (target) => typeof target === 'object' && target !== null;
 const clone = (acc, target) => {
-  if (isObject(acc)) {
-    Object.keys(acc).forEach((key) => {
-      if (isObject(acc[key])) target[key] = clone(acc[key], target[key]);
-      else target[key] = acc[key];
-    });
-  } else {
-    target = acc;
-  }
-  return target;
+    if (isObject(acc)) {
+        Object.keys(acc).forEach((key) => {
+            if (isObject(acc[key])) target[key] = clone(acc[key], target[key]);
+            else target[key] = acc[key];
+        });
+    } else {
+        target = acc;
+    }
+    return target;
 };
-const setter = (prx, dep, path) => (data) => {
-  updatingTreePath = path;
-  const result = isFunction(data) ? data(prx.data) : data;
-  if (isObject(result)) clone(result, prx.data);
-  else prx.data = result;
-  indexCounter = 0;
-  dep.notify();
+const setter = (prx, dep) => (data) => {
+    const result = isFunction(data) ? data(prx.data) : data;
+    if (isObject(result)) clone(result, prx.data);
+    else prx.data = result;
+    dep.notify();
+    message(JSON.stringify({ action: "update", element: diff(undefined, lastOldCache, lastUpdateOfRender) }));
 };
 const createOptions = (dep) => ({
-  get(target, key) {
-    if (isObject(target[key]))
-      return new Proxy(target[key], createOptions(dep));
-    return target[key];
-  },
+    get(target, key) {
+        if (isObject(target[key]))
+            return new Proxy(target[key], createOptions(dep));
+        return target[key];
+    },
 });
 
-const React = {
-  createElement: (tag, props, ...children) => {
-    return Element.create(tag, props, ...children);
-  },
-  init: (rootComp) => {
-    vdom = rootComp;
-    message(JSON.stringify({ action: "init", element: rootComp }));
-    return vdom;
-  },
-  useState: (data) => {
-    let key = renderStack.join("/");
-    let result;
-    let states = compCache[key];
-    if (states) {
-      result = states[stateCounter];
-      stateCounter++;
+const createEffect = (fun) => {
+    targetFunc = fun;
+    let res = targetFunc();
+    targetFunc = null;
+    return res;
+};
+
+const flatten = (result, child) => {
+    if (Array.isArray(child)) {
+        child.forEach((nestedChild) => {
+            flatten(result, nestedChild);
+        });
     } else {
-      const dep = new Dep();
-      dep.depend(rendering);
-      const prx = new Proxy({ data }, createOptions(dep));
-      result = [() => prx.data, setter(prx, dep, key)];
-      stack[stack.length - 1].push(result);
-      stateCounter++;
+        result.push(child);
     }
-    return result;
-  },
-  setTimeout: (cb, time) => {
-    let callbackId = (keyCounter++).toString();
-    callbackDict[callbackId] = cb;
-    message(JSON.stringify({ action: "setTimeout", callbackId, time }));
-  }
+};
+
+const React = {
+    createElement: (tag, props, ...children) => {
+        if (props === undefined || props === null) {
+            props = {};
+        }
+        if (children === undefined || children === null) {
+            children = [];
+        }
+
+        if (isFunction(tag)) {
+            return (counter, parentKey) => {
+                if (props.key === undefined) {
+                    props.key = parentKey + "_child";
+                }
+                indexCache[currentPath + "|" + props.key] = counter;
+                return createEffect((parentPath) => {
+                    if (parentPath === undefined) {
+                        parentPath = tree.join("/");
+                    }
+                    let counterInner = indexCache[parentPath + "|" + props.key];
+
+                    if (counterInner === undefined) {
+                        counterInner = 0;
+                    }
+                    let path = (parentPath ? (parentPath + "/") : "") + (tag.name + ":" + counterInner);
+                    let cpBackup = currentPath;
+                    currentPath = path;
+
+                    let keyBackup = currentKey;
+                    if (props.key !== undefined) {
+                        currentKey = props.key;
+                    }
+                    let scBackup = stateCounter;
+                    stateCounter = 0;
+                    let treeBackup = tree;
+                    tree = parentPath.split("/");
+                    tree.push(tag.name + ":" + counterInner)
+                    let kcBackup = keyChanges;
+                    keyChanges = {};
+
+                    let pathesOfChildren = {};
+                    let keys = Object.keys(stateCache);
+                    for (const pathKey of keys) {
+                        if ((pathKey.startsWith(path)) && (path != pathKey)) {
+                            pathesOfChildren[pathKey] = stateCache[pathKey].key;
+                        }
+                    }
+                    let rcBackup = renderedChildren;
+                    renderedChildren = {};
+
+                    lastUpdateOfRender = tag(props, children)(undefined, props.key);
+
+                    let pocl = Object.keys(pathesOfChildren);
+                    pocl.forEach(ck => {
+                        if (renderedChildren[ck] === undefined) {
+                            delete stateCache[ck];
+                        }
+                    })
+                    renderedChildren = rcBackup;
+                    renderedChildren[path] = props.key;
+
+                    keyChanges = kcBackup;
+                    tree.pop();
+                    tree = treeBackup;
+                    stateCounter = scBackup;
+                    currentKey = keyBackup;
+                    lastOldCache = renderCache[path];
+                    renderCache[path] = lastUpdateOfRender;
+
+                    currentPath = cpBackup;
+
+                    return lastUpdateOfRender;
+                });
+            }
+        }
+
+        return (counter, parentKey) => {
+
+            if (counter === undefined) {
+                counter = 0;
+            }
+
+            if (props.key === undefined) {
+                props.key = parentKey + "_child";
+            }
+
+            let elTag = tag;
+            let elProps = {};
+            Object.entries(props).forEach(([name, value]) => {
+                if (name.startsWith('on')) {
+                    let callbackId = genKey();
+                    callbackDict[callbackId] = value;
+                    elProps[name.toLowerCase()] = callbackId;
+                } else {
+                    elProps[name] = value;
+                }
+            });
+
+            let treeBackup = tree;
+            tree = currentPath.split("/");
+            tree.push(tag + ":" + counter);
+            let cpBackup = currentPath;
+            currentPath = tree.join("/");
+
+            let keyBackup = currentKey;
+            if (props.key !== undefined) {
+                currentKey = props.key;
+            }
+
+            let c = [];
+            flatten(c, children);
+            let childs = c.map((child, i) => {
+                if (isFunction(child)) {
+                    return child(i, props.key);
+                } else {
+                    return child;
+                }
+            });
+
+            currentPath = cpBackup;
+            currentKey = keyBackup;
+
+            let element = new Element(elTag, elProps, childs.filter(child => (child !== null)));
+
+            tree.pop();
+            tree = treeBackup;
+
+            return element;
+        }
+    },
+    init: (rootComp) => {
+        currentPath = "App:0";
+        vdom = rootComp(0);
+        renderCache["App:0"] = vdom;
+        message(JSON.stringify({ action: "init", element: vdom }));
+        return vdom;
+    },
+    useState: (data) => {
+        let path = currentPath;
+        let statesHolder = stateCache[path];
+        if ((statesHolder === undefined) || (statesHolder.key !== currentKey)) {
+            if ((statesHolder !== undefined) && (statesHolder.key !== currentKey)) {
+                let oldPathArr = path.split("/");
+                let keys = Object.keys(stateCache);
+                for (const pathKey of keys) {
+                    if (stateCache[pathKey].key === currentKey) {
+                        let newPathArrTest = pathKey.split("/");
+                        if (oldPathArr.length === newPathArrTest.length) {
+                            let diffCount = 0;
+                            let diffPart;
+                            for (let i = 0; i < oldPathArr.length; i++) {
+                                if (oldPathArr[i] !== newPathArrTest[i]) {
+                                    diffPart = oldPathArr[i];
+                                    diffCount++;
+                                }
+                            }
+                            if (diffCount === 1) {
+                                let statesHolderNew = stateCache[pathKey];
+                                statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                                stateCache[path] = statesHolderNew;
+                                indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                                let state = statesHolderNew.states[stateCounter];
+                                stateCounter++;
+                                return state;
+                            }
+                        }
+                    }
+                }
+            }
+            const dep = new Dep(path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "");
+            dep.depend();
+            const prx = new Proxy({ data }, createOptions(dep));
+            let state = [() => prx.data, setter(prx, dep)];
+            stateCache[path] = { states: [state], key: currentKey, dep };
+            stateCounter++;
+            return state;
+        }
+        let state = statesHolder.states[stateCounter];
+        stateCounter++;
+        return state;
+    },
+    setTimeout: (cb, time) => {
+        let callbackId = genKey();
+        callbackDict[callbackId] = cb;
+        message(JSON.stringify({ action: "setTimeout", callbackId, time }));
+    }
 };
 
 export default React;

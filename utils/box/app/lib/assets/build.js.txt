@@ -19,148 +19,203 @@
 /************************************************************************/
 var __webpack_exports__ = {};
 
+;// CONCATENATED MODULE: ./src/runtime/react/diff.js
+let updates = [];
+let findChanges = (parentKey, el1, el2) => {
+  if (el1 === undefined) {
+    updates.push({
+      __action__: 'element_created',
+      __key__: el2.key,
+      __element__: el2,
+      __parentKey__: parentKey
+    });
+    return;
+  }
+  if (el2 === undefined) {
+    updates.push({
+      __action__: 'element_deleted',
+      __key__: el1.key,
+      __parentKey__: parentKey
+    });
+    return;
+  }
+  if (el2.key === undefined) {
+    if (el2 !== el1) {
+      updates.push({
+        __action__: 'raw_updated',
+        __element__: el2,
+        __parentKey__: parentKey
+      });
+    }
+    return;
+  }
+  if (el1.key !== el2.key) {
+    updates.push({
+      __action__: 'element_deleted',
+      __key__: el1.key,
+      __parentKey__: parentKey
+    }, {
+      __action__: 'element_created',
+      __key__: el2.key,
+      __element__: el2,
+      __parentKey__: parentKey
+    });
+    return;
+  }
+  let propsChanges = {
+    __action__: 'props_updated',
+    __key__: el2.key,
+    __created__: {},
+    __deleted__: {},
+    __updated__: {}
+  };
+  for (let pKey in el2.props) {
+    if (el1.props[pKey] === undefined) {
+      propsChanges.__created__[pKey] = el2.props[pKey];
+    }
+  }
+  for (let pKey in el1.props) {
+    if (el2.props[pKey] === undefined) {
+      propsChanges.__deleted__[pKey] = el2.props[pKey];
+    }
+  }
+  for (let pKey in el2.props) {
+    if (el1.props[pKey] !== undefined && el2.props[pKey] !== undefined) {
+      if (el1.props[pKey] !== el2.props[pKey]) {
+        propsChanges.__updated__[pKey] = el2.props[pKey];
+      }
+    }
+  }
+  if (Object.keys(propsChanges.__created__).length > 0 || Object.keys(propsChanges.__deleted__).length > 0 || Object.keys(propsChanges.__updated__).length > 0) {
+    updates.push(propsChanges);
+  }
+  // let stylesChanges = { __action__: 'styles_updated', __key__: el2.key, __created__: {}, __deleted__: {}, __updated__: {} }
+  // for (let sKey in el2._styles) {
+  //     if (el1._styles[sKey] === undefined) {
+  //         stylesChanges.__created__[sKey] = el2._styles[sKey]
+  //     }
+  // }
+  // for (let sKey in el1._styles) {
+  //     if (el2._styles[sKey] === undefined) {
+  //         stylesChanges.__deleted__[sKey] = el2._styles[sKey]
+  //     }
+  // }
+  // for (let sKey in el2._styles) {
+  //     if (el1._styles[sKey] !== undefined && el2._styles[sKey] !== undefined) {
+  //         if (el1._styles[sKey] !== el2._styles[sKey]) {
+  //             stylesChanges.__updated__[sKey] = el2._styles[sKey]
+  //         }
+  //     }
+  // }
+  // if (
+  //     (Object.keys(stylesChanges.__created__).length > 0) ||
+  //     (Object.keys(stylesChanges.__deleted__).length > 0) ||
+  //     (Object.keys(stylesChanges.__updated__).length > 0)
+  // ) {
+  //     updates.push(stylesChanges)
+  // }
+  let cs = {};
+  el2.children.forEach(child => {
+    cs[child.key] = child;
+  });
+  el1.children.forEach(child => {
+    if (child.key === undefined) {
+      // pass
+    } else if (cs[child.key]) {
+      findChanges(el1.key, child, cs[child.key]);
+    } else {
+      updates.push({
+        __action__: 'element_deleted',
+        __key__: child.key,
+        __parentKey__: el1.key
+      });
+    }
+  });
+  cs = {};
+  el1.children.forEach(child => {
+    cs[child.key] = child;
+  });
+  el2.children.forEach(child => {
+    if (child.key === undefined) {
+      updates.push({
+        __action__: 'raw_updated',
+        __element__: child,
+        __parentKey__: el2.key
+      });
+    } else if (!cs[child.key]) {
+      updates.push({
+        __action__: 'element_created',
+        __key__: child.key,
+        __element__: child,
+        __parentKey__: el2.key
+      });
+    }
+  });
+};
+const diff = (parentKey, el1, el2) => {
+  updates = [];
+  findChanges(parentKey, el1, el2);
+  return updates;
+};
+/* harmony default export */ const react_diff = (diff);
+;// CONCATENATED MODULE: ./src/runtime/react/element.js
+class Element {
+  constructor(tagName, props, children) {
+    if (Array.isArray(props)) {
+      children = props;
+      props = {};
+    }
+    this.tagName = tagName;
+    this.props = props || {};
+    this.children = children || [];
+    this.key = props ? props.key : undefined;
+  }
+}
+/* harmony default export */ const react_element = (Element);
 ;// CONCATENATED MODULE: ./src/runtime/react/react.js
 function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
 function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : i + ""; }
 function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+
+
+let vdom;
 let targetFunc;
 let callbackDict = {};
 let keyCounter = 1;
-let vdom;
-let rendering;
-let stack = [];
-let compCache = {};
-let keyCache = {};
-let renderStack = [];
+let renderCache = {};
+let stateCache = {};
 let stateCounter = 0;
-let indexCounter = 0;
-let updatingTreePath;
+let lastUpdateOfRender;
+let lastOldCache;
+let tree = [];
+let currentPath = "";
+let currentKey;
+let renderedChildren = {};
+let keyChanges = {};
+let indexCache = {};
+let genKey = () => {
+  return (keyCounter++).toString();
+};
 __webpack_require__.g.trigger = function trigger(callbackId) {
   let cb = callbackDict[callbackId];
   if (cb) cb();
 };
-const isFunction = target => typeof target === 'function';
-const isObject = target => typeof target === 'object' && target !== null;
-class Element {
-  constructor(tag, props, events, children) {
-    _defineProperty(this, "tag", void 0);
-    _defineProperty(this, "key", void 0);
-    _defineProperty(this, "props", {});
-    _defineProperty(this, "events", {});
-    _defineProperty(this, "children", []);
-    this.tag = tag;
-    let path = renderStack.join("/");
-    if (keyCache[path]) {
-      this.key = keyCache[path];
-    } else {
-      let key = Math.random().toString().substring(2);
-      keyCache[path] = key;
-      this.key = key;
-    }
-    this.props = props !== null && props !== void 0 ? props : {};
-    this.events = events !== null && events !== void 0 ? events : {};
-    this.children = children !== null && children !== void 0 ? children : [];
-  }
-  addChild(child) {
-    let j = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    if (Array.isArray(child)) {
-      child.forEach((nestedChild, i) => {
-        this.addChild(nestedChild, i + j);
-      });
-    } else if (this.children[j] == undefined) {
-      this.children.push(child);
-    } else if (JSON.stringify(child) !== JSON.stringify(this.children[j])) {
-      this.children[j] = child;
-    }
-  }
-  removeChild(index) {
-    this.children.splice(index, 1);
-  }
-  static create(tag) {
-    let props = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
-    for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
-      children[_key - 2] = arguments[_key];
-    }
-    if (props === undefined || props === null) {
-      props = {};
-    }
-    if (children === undefined || children === null) {
-      children = [];
-    }
-    if (isFunction(tag)) {
-      let previoudRendering = rendering;
-      let renderStackBackup = [...renderStack];
-      let copyOfRenderStack = [...renderStack, tag.name + "/" + indexCounter];
-      let path = renderStack.join("/");
-      let ic = indexCounter;
-      rendering = () => {
-        let prevStateCounter = stateCounter;
-        stateCounter = 0;
-        stack.push([]);
-        renderStack = copyOfRenderStack;
-        let prevIndexCounter = indexCounter;
-        indexCounter = 0;
-        let res = tag(props, children);
-        indexCounter = prevIndexCounter;
-        renderStack = renderStackBackup;
-        let states = stack.pop();
-        let key = (path.length > 0 ? path + "/" : "") + tag.name + "/" + ic;
-        if (!compCache[key]) {
-          compCache[key] = states;
-        }
-        stateCounter = prevStateCounter;
-        if (vdom && key === updatingTreePath) {
-          message(JSON.stringify({
-            action: "update",
-            element: res
-          }));
-        }
-        return res;
-      };
-      let res = rendering();
-      renderStack = renderStackBackup;
-      rendering = previoudRendering;
-      return res;
-    }
-    let element = new Element(tag);
-    Object.entries(props).forEach(_ref => {
-      let [name, value] = _ref;
-      if (name.startsWith('on')) {
-        let callbackId = (keyCounter++).toString();
-        callbackDict[callbackId] = value;
-        element.events[name.toLowerCase().substring(2)] = callbackId;
-      } else {
-        element.props[name] = value;
-      }
-    });
-    let prevIndexCounter = indexCounter;
-    indexCounter = 0;
-    const res = children.map(child => {
-      const value = isFunction(child) ? child() : child;
-      return value;
-    });
-    indexCounter = prevIndexCounter;
-    element.addChild(res);
-    indexCounter++;
-    return element;
-  }
-}
 class Dep {
-  constructor() {
+  constructor(parentPath) {
+    _defineProperty(this, "subs", void 0);
+    _defineProperty(this, "parentPath", void 0);
     this.subs = new Set();
+    this.parentPath = parentPath;
   }
-  depend(rendering) {
-    rendering && this.subs.add(rendering);
+  depend() {
+    targetFunc && this.subs.add(targetFunc);
   }
   notify() {
-    this.subs.forEach(sub => sub());
+    this.subs.forEach(sub => sub && sub(this.parentPath));
   }
 }
-const createEffect = fun => {
-  targetFunc = fun;
-  targetFunc();
-  targetFunc = null;
-};
+const isFunction = target => typeof target === 'function';
+const isObject = target => typeof target === 'object' && target !== null;
 const clone = (acc, target) => {
   if (isObject(acc)) {
     Object.keys(acc).forEach(key => {
@@ -171,12 +226,14 @@ const clone = (acc, target) => {
   }
   return target;
 };
-const setter = (prx, dep, path) => data => {
-  updatingTreePath = path;
+const setter = (prx, dep) => data => {
   const result = isFunction(data) ? data(prx.data) : data;
   if (isObject(result)) clone(result, prx.data);else prx.data = result;
-  indexCounter = 0;
   dep.notify();
+  message(JSON.stringify({
+    action: "update",
+    element: react_diff(undefined, lastOldCache, lastUpdateOfRender)
+  }));
 };
 const createOptions = dep => ({
   get(target, key) {
@@ -184,42 +241,197 @@ const createOptions = dep => ({
     return target[key];
   }
 });
+const createEffect = fun => {
+  targetFunc = fun;
+  let res = targetFunc();
+  targetFunc = null;
+  return res;
+};
+const flatten = (result, child) => {
+  if (Array.isArray(child)) {
+    child.forEach(nestedChild => {
+      flatten(result, nestedChild);
+    });
+  } else {
+    result.push(child);
+  }
+};
 const React = {
   createElement: function (tag, props) {
-    for (var _len2 = arguments.length, children = new Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
-      children[_key2 - 2] = arguments[_key2];
+    for (var _len = arguments.length, children = new Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+      children[_key - 2] = arguments[_key];
     }
-    return Element.create(tag, props, ...children);
+    if (props === undefined || props === null) {
+      props = {};
+    }
+    if (children === undefined || children === null) {
+      children = [];
+    }
+    if (isFunction(tag)) {
+      return (counter, parentKey) => {
+        if (props.key === undefined) {
+          props.key = parentKey + "_child";
+        }
+        indexCache[currentPath + "|" + props.key] = counter;
+        return createEffect(parentPath => {
+          if (parentPath === undefined) {
+            parentPath = tree.join("/");
+          }
+          let counterInner = indexCache[parentPath + "|" + props.key];
+          if (counterInner === undefined) {
+            counterInner = 0;
+          }
+          let path = (parentPath ? parentPath + "/" : "") + (tag.name + ":" + counterInner);
+          let cpBackup = currentPath;
+          currentPath = path;
+          let keyBackup = currentKey;
+          if (props.key !== undefined) {
+            currentKey = props.key;
+          }
+          let scBackup = stateCounter;
+          stateCounter = 0;
+          let treeBackup = tree;
+          tree = parentPath.split("/");
+          tree.push(tag.name + ":" + counterInner);
+          let kcBackup = keyChanges;
+          keyChanges = {};
+          let pathesOfChildren = {};
+          let keys = Object.keys(stateCache);
+          for (const pathKey of keys) {
+            if (pathKey.startsWith(path) && path != pathKey) {
+              pathesOfChildren[pathKey] = stateCache[pathKey].key;
+            }
+          }
+          let rcBackup = renderedChildren;
+          renderedChildren = {};
+          lastUpdateOfRender = tag(props, children)(undefined, props.key);
+          let pocl = Object.keys(pathesOfChildren);
+          pocl.forEach(ck => {
+            if (renderedChildren[ck] === undefined) {
+              delete stateCache[ck];
+            }
+          });
+          renderedChildren = rcBackup;
+          renderedChildren[path] = props.key;
+          keyChanges = kcBackup;
+          tree.pop();
+          tree = treeBackup;
+          stateCounter = scBackup;
+          currentKey = keyBackup;
+          lastOldCache = renderCache[path];
+          renderCache[path] = lastUpdateOfRender;
+          currentPath = cpBackup;
+          return lastUpdateOfRender;
+        });
+      };
+    }
+    return (counter, parentKey) => {
+      if (counter === undefined) {
+        counter = 0;
+      }
+      if (props.key === undefined) {
+        props.key = parentKey + "_child";
+      }
+      let elTag = tag;
+      let elProps = {};
+      Object.entries(props).forEach(_ref => {
+        let [name, value] = _ref;
+        if (name.startsWith('on')) {
+          let callbackId = genKey();
+          callbackDict[callbackId] = value;
+          elProps[name.toLowerCase()] = callbackId;
+        } else {
+          elProps[name] = value;
+        }
+      });
+      let treeBackup = tree;
+      tree = currentPath.split("/");
+      tree.push(tag + ":" + counter);
+      let cpBackup = currentPath;
+      currentPath = tree.join("/");
+      let keyBackup = currentKey;
+      if (props.key !== undefined) {
+        currentKey = props.key;
+      }
+      let c = [];
+      flatten(c, children);
+      let childs = c.map((child, i) => {
+        if (isFunction(child)) {
+          return child(i, props.key);
+        } else {
+          return child;
+        }
+      });
+      currentPath = cpBackup;
+      currentKey = keyBackup;
+      let element = new react_element(elTag, elProps, childs.filter(child => child !== null));
+      tree.pop();
+      tree = treeBackup;
+      return element;
+    };
   },
   init: rootComp => {
-    vdom = rootComp;
+    currentPath = "App:0";
+    vdom = rootComp(0);
+    renderCache["App:0"] = vdom;
     message(JSON.stringify({
       action: "init",
-      element: rootComp
+      element: vdom
     }));
     return vdom;
   },
   useState: data => {
-    let key = renderStack.join("/");
-    let result;
-    let states = compCache[key];
-    if (states) {
-      result = states[stateCounter];
-      stateCounter++;
-    } else {
-      const dep = new Dep();
-      dep.depend(rendering);
+    let path = currentPath;
+    let statesHolder = stateCache[path];
+    if (statesHolder === undefined || statesHolder.key !== currentKey) {
+      if (statesHolder !== undefined && statesHolder.key !== currentKey) {
+        let oldPathArr = path.split("/");
+        let keys = Object.keys(stateCache);
+        for (const pathKey of keys) {
+          if (stateCache[pathKey].key === currentKey) {
+            let newPathArrTest = pathKey.split("/");
+            if (oldPathArr.length === newPathArrTest.length) {
+              let diffCount = 0;
+              let diffPart;
+              for (let i = 0; i < oldPathArr.length; i++) {
+                if (oldPathArr[i] !== newPathArrTest[i]) {
+                  diffPart = oldPathArr[i];
+                  diffCount++;
+                }
+              }
+              if (diffCount === 1) {
+                let statesHolderNew = stateCache[pathKey];
+                statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                stateCache[path] = statesHolderNew;
+                indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                let state = statesHolderNew.states[stateCounter];
+                stateCounter++;
+                return state;
+              }
+            }
+          }
+        }
+      }
+      const dep = new Dep(path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "");
+      dep.depend();
       const prx = new Proxy({
         data
       }, createOptions(dep));
-      result = [() => prx.data, setter(prx, dep, key)];
-      stack[stack.length - 1].push(result);
+      let state = [() => prx.data, setter(prx, dep)];
+      stateCache[path] = {
+        states: [state],
+        key: currentKey,
+        dep
+      };
       stateCounter++;
+      return state;
     }
-    return result;
+    let state = statesHolder.states[stateCounter];
+    stateCounter++;
+    return state;
   },
   setTimeout: (cb, time) => {
-    let callbackId = (keyCounter++).toString();
+    let callbackId = genKey();
     callbackDict[callbackId] = cb;
     message(JSON.stringify({
       action: "setTimeout",
@@ -245,35 +457,36 @@ const Counter = () => {
   }, count());
 };
 const Test = () => {
-  const [flag, setFlag] = react.useState(false);
   const [list, setList] = react.useState([]);
   let onClick = () => {
-    setFlag(c => !c);
     setList(l => {
       l.push(Math.random().toString());
       return l;
     });
   };
-  return /*#__PURE__*/react.createElement("div", {
-    style: "background-color: ".concat(flag() ? "blue" : "red", ";")
-  }, /*#__PURE__*/react.createElement("button", {
-    style: "width: 200px; height: 200px; background-color: green;",
-    onClick: onClick
-  }, flag()), list().map(d => /*#__PURE__*/react.createElement("div", {
-    key: d
-  }, /*#__PURE__*/react.createElement(Counter, null))));
-};
-const App = () => {
-  const [flag, setFlag] = react.useState(false);
-  let onClick = () => {
-    setFlag(c => !c);
+  let onClick2 = () => {
+    setList(l => {
+      l.splice(0, 1);
+      return l;
+    });
   };
   return /*#__PURE__*/react.createElement("div", {
-    style: "background-color: ".concat(flag() ? "blue" : "red", ";")
+    key: "container",
+    style: "background-color: blue;"
   }, /*#__PURE__*/react.createElement("button", {
+    key: "adderBtn",
     style: "width: 200px; height: 200px; background-color: yellow;",
     onClick: onClick
-  }, flag()), /*#__PURE__*/react.createElement(Test, null));
+  }, "add"), /*#__PURE__*/react.createElement("button", {
+    key: "adderBtn2",
+    style: "width: 200px; height: 200px; background-color: green;",
+    onClick: onClick2
+  }, "remove"), list().map(d => /*#__PURE__*/react.createElement(Counter, {
+    key: d
+  })));
+};
+const App = () => {
+  return /*#__PURE__*/react.createElement(Test, null);
 };
 /* harmony default export */ const components_App = (App);
 ;// CONCATENATED MODULE: ./src/index.jsx

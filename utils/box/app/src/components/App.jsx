@@ -16,46 +16,44 @@ const Counter = () => {
 }
 
 const Test = () => {
-    const [flag, setFlag] = React.useState(false);
     const [list, setList] = React.useState([]);
     let onClick = () => {
-        setFlag((c) => (!c));
         setList((l) => {
             l.push(Math.random().toString());
             return l;
         });
     };
+    let onClick2 = () => {
+        setList((l) => {
+            l.splice(0, 1);
+            return l;
+        });
+    };
     return (
-        <div style={`background-color: ${flag() ? "blue" : "red"};`}>
+        <div key={"container"} style={`background-color: blue;`}>
             <button
-                style="width: 200px; height: 200px; background-color: green;"
+                key={"adderBtn"}
+                style="width: 200px; height: 200px; background-color: yellow;"
                 onClick={onClick}
             >
-                {flag()}
+                add
+            </button>
+            <button
+                key={"adderBtn2"}
+                style="width: 200px; height: 200px; background-color: green;"
+                onClick={onClick2}
+            >
+                remove
             </button>
             {
-                list().map(d => <div key={d}><Counter /></div>)
+                list().map((d) => <Counter key={d} />)
             }
         </div>
     )
 }
 
 const App = () => {
-    const [flag, setFlag] = React.useState(false);
-    let onClick = () => {
-        setFlag((c) => (!c));
-    };
-    return (
-       <div style={`background-color: ${flag() ? "blue" : "red"};`}>
-            <button
-                style="width: 200px; height: 200px; background-color: yellow;"
-                onClick={onClick}
-            >
-                {flag()}
-            </button>
-            <Test />
-        </div>
-    )
+    return <Test />
 }
 
 export default App;
