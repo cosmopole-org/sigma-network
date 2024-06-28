@@ -21,13 +21,34 @@ var __webpack_exports__ = {};
 
 ;// CONCATENATED MODULE: ./src/runtime/react/diff.js
 let updates = [];
+let diffStack = [];
+let pp = "";
+const generatePath = () => {
+  if (pp.length > 0) {
+    return pp + "/" + diffStack.join("/");
+  } else {
+    return diffStack.join("/");
+  }
+};
+const generatePathForProps = () => {
+  if (pp.length > 0) {
+    if (diffStack.length > 1) {
+      return pp + "/" + diffStack.slice(0, diffStack.length - 1).join("/");
+    } else {
+      return pp;
+    }
+  } else {
+    return diffStack.slice(0, diffStack.length - 1).join("/");
+  }
+};
 let findChanges = (parentKey, el1, el2) => {
   if (el1 === undefined) {
     updates.push({
       __action__: 'element_created',
       __key__: el2.key,
       __element__: el2,
-      __parentKey__: parentKey
+      __parentKey__: parentKey,
+      path: generatePath()
     });
     return;
   }
@@ -35,7 +56,8 @@ let findChanges = (parentKey, el1, el2) => {
     updates.push({
       __action__: 'element_deleted',
       __key__: el1.key,
-      __parentKey__: parentKey
+      __parentKey__: parentKey,
+      path: generatePath()
     });
     return;
   }
@@ -44,7 +66,8 @@ let findChanges = (parentKey, el1, el2) => {
       updates.push({
         __action__: 'raw_updated',
         __element__: el2,
-        __parentKey__: parentKey
+        __parentKey__: parentKey,
+        path: generatePathForProps()
       });
     }
     return;
@@ -53,12 +76,14 @@ let findChanges = (parentKey, el1, el2) => {
     updates.push({
       __action__: 'element_deleted',
       __key__: el1.key,
-      __parentKey__: parentKey
+      __parentKey__: parentKey,
+      path: generatePath()
     }, {
       __action__: 'element_created',
       __key__: el2.key,
       __element__: el2,
-      __parentKey__: parentKey
+      __parentKey__: parentKey,
+      path: generatePath()
     });
     return;
   }
@@ -67,7 +92,8 @@ let findChanges = (parentKey, el1, el2) => {
     __key__: el2.key,
     __created__: {},
     __deleted__: {},
-    __updated__: {}
+    __updated__: {},
+    path: generatePathForProps()
   };
   for (let pKey in el2.props) {
     if (el1.props[pKey] === undefined) {
@@ -115,19 +141,25 @@ let findChanges = (parentKey, el1, el2) => {
   //     updates.push(stylesChanges)
   // }
   let cs = {};
-  el2.children.forEach(child => {
-    cs[child.key] = child;
+  el2.children.forEach((child, i) => {
+    cs[child.key] = {
+      child,
+      index: i
+    };
   });
   el1.children.forEach(child => {
     if (child.key === undefined) {
       // pass
     } else if (cs[child.key]) {
-      findChanges(el1.key, child, cs[child.key]);
+      diffStack.push(child.tagName + ":" + cs[child.key].index);
+      findChanges(el1.key, child, cs[child.key].child);
+      diffStack.pop();
     } else {
       updates.push({
         __action__: 'element_deleted',
         __key__: child.key,
-        __parentKey__: el1.key
+        __parentKey__: el1.key,
+        path: generatePath()
       });
     }
   });
@@ -140,21 +172,30 @@ let findChanges = (parentKey, el1, el2) => {
       updates.push({
         __action__: 'raw_updated',
         __element__: child,
-        __parentKey__: el2.key
+        __parentKey__: el2.key,
+        path: generatePathForProps()
       });
     } else if (!cs[child.key]) {
       updates.push({
         __action__: 'element_created',
         __key__: child.key,
         __element__: child,
-        __parentKey__: el2.key
+        __parentKey__: el2.key,
+        path: generatePath()
       });
     }
   });
 };
-const diff = (parentKey, el1, el2) => {
+const diff = (parentPath, parentKey, el1, el2) => {
   updates = [];
+  diffStack = [];
+  pp = parentPath;
+  if (pp.startsWith("/")) {
+    pp = pp.substring(1);
+  }
+  diffStack.push("div:0");
   findChanges(parentKey, el1, el2);
+  diffStack.pop();
   return updates;
 };
 /* harmony default export */ const react_diff = (diff);
@@ -193,6 +234,7 @@ let currentKey;
 let renderedChildren = {};
 let keyChanges = {};
 let indexCache = {};
+let bindedStates = {};
 let genKey = () => {
   return (keyCounter++).toString();
 };
@@ -229,10 +271,14 @@ const clone = (acc, target) => {
 const setter = (prx, dep) => data => {
   const result = isFunction(data) ? data(prx.data) : data;
   if (isObject(result)) clone(result, prx.data);else prx.data = result;
+  bindedStates = {};
   dep.notify();
   message(JSON.stringify({
     action: "update",
-    element: react_diff(undefined, lastOldCache, lastUpdateOfRender)
+    element: {
+      scope: dep.parentPath,
+      updates: react_diff(dep.parentPath, undefined, lastOldCache, lastUpdateOfRender)
+    }
   }));
 };
 const createOptions = dep => ({
@@ -306,8 +352,16 @@ const React = {
           renderedChildren = {};
           lastUpdateOfRender = tag(props, children)(undefined, props.key);
           let pocl = Object.keys(pathesOfChildren);
+          let rch = Object.keys(renderedChildren);
           pocl.forEach(ck => {
-            if (renderedChildren[ck] === undefined) {
+            let found = false;
+            for (let rcp of rch) {
+              if (ck.startsWith(rcp)) {
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
               delete stateCache[ck];
             }
           });
@@ -353,6 +407,16 @@ const React = {
       if (props.key !== undefined) {
         currentKey = props.key;
       }
+      let path = tree.join("/");
+      let pathesOfChildren = {};
+      let keys = Object.keys(stateCache);
+      for (const pathKey of keys) {
+        if (pathKey.startsWith(path) && path != pathKey) {
+          pathesOfChildren[pathKey] = stateCache[pathKey].key;
+        }
+      }
+      let rcBackup = renderedChildren;
+      renderedChildren = {};
       let c = [];
       flatten(c, children);
       let childs = c.map((child, i) => {
@@ -362,6 +426,22 @@ const React = {
           return child;
         }
       });
+      let pocl = Object.keys(pathesOfChildren);
+      let rch = Object.keys(renderedChildren);
+      pocl.forEach(ck => {
+        let found = false;
+        for (let rcp of rch) {
+          if (ck.startsWith(rcp)) {
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          delete stateCache[ck];
+        }
+      });
+      renderedChildren = rcBackup;
+      renderedChildren[path] = props.key;
       currentPath = cpBackup;
       currentKey = keyBackup;
       let element = new react_element(elTag, elProps, childs.filter(child => child !== null));
@@ -387,26 +467,67 @@ const React = {
       if (statesHolder !== undefined && statesHolder.key !== currentKey) {
         let oldPathArr = path.split("/");
         let keys = Object.keys(stateCache);
+        let foundOriginal = false;
+        for (const pathKey of keys) {
+          if (pathKey === path) {
+            foundOriginal = true;
+            continue;
+          }
+          if (!foundOriginal) {
+            continue;
+          }
+          if (stateCache[pathKey].key === currentKey) {
+            let newPathArrTest = pathKey.split("/");
+            if (oldPathArr.length === newPathArrTest.length) {
+              if (bindedStates[pathKey + "|" + stateCache[pathKey].key] !== true) {
+                let diffCount = 0;
+                let diffPart;
+                for (let i = 0; i < oldPathArr.length; i++) {
+                  if (oldPathArr[i] !== newPathArrTest[i]) {
+                    diffPart = oldPathArr[i];
+                    diffCount++;
+                  }
+                }
+                if (diffCount === 1) {
+                  let statesHolderNew = stateCache[pathKey];
+                  statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                  stateCache[path] = statesHolderNew;
+                  indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                  let state = statesHolderNew.states[stateCounter];
+                  stateCounter++;
+                  bindedStates[pathKey + "|" + statesHolderNew.key] = true;
+                  return state;
+                }
+              }
+            }
+          }
+        }
+      } else if (statesHolder === undefined) {
+        let oldPathArr = path.split("/");
+        let keys = Object.keys(stateCache);
         for (const pathKey of keys) {
           if (stateCache[pathKey].key === currentKey) {
             let newPathArrTest = pathKey.split("/");
             if (oldPathArr.length === newPathArrTest.length) {
-              let diffCount = 0;
-              let diffPart;
-              for (let i = 0; i < oldPathArr.length; i++) {
-                if (oldPathArr[i] !== newPathArrTest[i]) {
-                  diffPart = oldPathArr[i];
-                  diffCount++;
+              if (bindedStates[pathKey + "|" + stateCache[pathKey].key] !== true) {
+                let diffCount = 0;
+                let diffPart;
+                for (let i = 0; i < oldPathArr.length; i++) {
+                  if (oldPathArr[i] !== newPathArrTest[i]) {
+                    diffPart = oldPathArr[i];
+                    diffCount++;
+                  }
                 }
-              }
-              if (diffCount === 1) {
-                let statesHolderNew = stateCache[pathKey];
-                statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
-                stateCache[path] = statesHolderNew;
-                indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
-                let state = statesHolderNew.states[stateCounter];
-                stateCounter++;
-                return state;
+                if (diffCount === 1) {
+                  let statesHolderNew = stateCache[pathKey];
+                  statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                  stateCache[path] = statesHolderNew;
+                  indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                  let state = statesHolderNew.states[stateCounter];
+                  stateCounter++;
+                  bindedStates[pathKey + "|" + statesHolderNew.key] = true;
+                  return state;
+                }
               }
             }
           }
@@ -424,10 +545,12 @@ const React = {
         dep
       };
       stateCounter++;
+      bindedStates[path + "|" + currentKey] = true;
       return state;
     }
     let state = statesHolder.states[stateCounter];
     stateCounter++;
+    bindedStates[path + "|" + statesHolder.key] = true;
     return state;
   },
   setTimeout: (cb, time) => {
@@ -456,11 +579,15 @@ const Counter = () => {
     onClick: onClick
   }, count());
 };
+let kCounter = 1;
+const generateKey = () => {
+  return "a_" + kCounter++;
+};
 const Test = () => {
   const [list, setList] = react.useState([]);
   let onClick = () => {
     setList(l => {
-      l.push(Math.random().toString());
+      l.push(generateKey());
       return l;
     });
   };
@@ -481,9 +608,9 @@ const Test = () => {
     key: "adderBtn2",
     style: "width: 200px; height: 200px; background-color: green;",
     onClick: onClick2
-  }, "remove"), list().map(d => /*#__PURE__*/react.createElement(Counter, {
+  }, "remove"), list().map(d => /*#__PURE__*/react.createElement("div", {
     key: d
-  })));
+  }, /*#__PURE__*/react.createElement("div", null, /*#__PURE__*/react.createElement(Counter, null)))));
 };
 const App = () => {
   return /*#__PURE__*/react.createElement(Test, null);

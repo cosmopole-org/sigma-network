@@ -1,4 +1,26 @@
-let updates = []
+let updates = [];
+let diffStack = [];
+let pp = "";
+
+const generatePath = () => {
+    if (pp.length > 0) {
+        return pp + "/" + diffStack.join("/");
+    } else {
+        return diffStack.join("/");
+    }
+}
+
+const generatePathForProps = () => {
+    if (pp.length > 0) {
+        if (diffStack.length > 1) {
+            return pp + "/" + diffStack.slice(0, diffStack.length - 1).join("/");
+        } else {
+            return pp;
+        }
+    } else {
+        return diffStack.slice(0, diffStack.length - 1).join("/");
+    }
+}
 
 let findChanges = (parentKey, el1, el2) => {
     if (el1 === undefined) {
@@ -7,7 +29,8 @@ let findChanges = (parentKey, el1, el2) => {
                 __action__: 'element_created',
                 __key__: el2.key,
                 __element__: el2,
-                __parentKey__: parentKey
+                __parentKey__: parentKey,
+                path: generatePath()
             }
         );
         return;
@@ -17,7 +40,8 @@ let findChanges = (parentKey, el1, el2) => {
             {
                 __action__: 'element_deleted',
                 __key__: el1.key,
-                __parentKey__: parentKey
+                __parentKey__: parentKey,
+                path: generatePath()
             }
         );
         return;
@@ -28,7 +52,8 @@ let findChanges = (parentKey, el1, el2) => {
                 {
                     __action__: 'raw_updated',
                     __element__: el2,
-                    __parentKey__: parentKey
+                    __parentKey__: parentKey,
+                    path: generatePathForProps()
                 }
             );
         }
@@ -39,18 +64,20 @@ let findChanges = (parentKey, el1, el2) => {
             {
                 __action__: 'element_deleted',
                 __key__: el1.key,
-                __parentKey__: parentKey
+                __parentKey__: parentKey,
+                path: generatePath()
             },
             {
                 __action__: 'element_created',
                 __key__: el2.key,
                 __element__: el2,
-                __parentKey__: parentKey
+                __parentKey__: parentKey,
+                path: generatePath()
             }
         )
         return
     }
-    let propsChanges = { __action__: 'props_updated', __key__: el2.key, __created__: {}, __deleted__: {}, __updated__: {} }
+    let propsChanges = { __action__: 'props_updated', __key__: el2.key, __created__: {}, __deleted__: {}, __updated__: {}, path: generatePathForProps() }
     for (let pKey in el2.props) {
         if (el1.props[pKey] === undefined) {
             propsChanges.__created__[pKey] = el2.props[pKey]
@@ -101,18 +128,21 @@ let findChanges = (parentKey, el1, el2) => {
     //     updates.push(stylesChanges)
     // }
     let cs = {}
-    el2.children.forEach(child => { cs[child.key] = child })
+    el2.children.forEach((child, i) => { cs[child.key] = { child, index: i } })
     el1.children.forEach(child => {
         if (child.key === undefined) {
             // pass
         } else if (cs[child.key]) {
-            findChanges(el1.key, child, cs[child.key])
+            diffStack.push(child.tagName + ":" + cs[child.key].index);
+            findChanges(el1.key, child, cs[child.key].child)
+            diffStack.pop();
         } else {
             updates.push(
                 {
                     __action__: 'element_deleted',
                     __key__: child.key,
-                    __parentKey__: el1.key
+                    __parentKey__: el1.key,
+                    path: generatePath()
                 }
             )
         }
@@ -125,7 +155,8 @@ let findChanges = (parentKey, el1, el2) => {
                 {
                     __action__: 'raw_updated',
                     __element__: child,
-                    __parentKey__: el2.key
+                    __parentKey__: el2.key,
+                    path: generatePathForProps()
                 }
             );
         } else if (!cs[child.key]) {
@@ -134,17 +165,25 @@ let findChanges = (parentKey, el1, el2) => {
                     __action__: 'element_created',
                     __key__: child.key,
                     __element__: child,
-                    __parentKey__: el2.key
+                    __parentKey__: el2.key,
+                    path: generatePath()
                 }
             )
         }
     })
 }
 
-const diff = (parentKey, el1, el2) => {
-    updates = []
-    findChanges(parentKey, el1, el2)
-    return updates
+const diff = (parentPath, parentKey, el1, el2) => {
+    updates = [];
+    diffStack = [];
+    pp = parentPath;
+    if (pp.startsWith("/")) {
+        pp = pp.substring(1);
+    }
+    diffStack.push("div:0");
+    findChanges(parentKey, el1, el2);
+    diffStack.pop();
+    return updates;
 }
 
 export default diff;

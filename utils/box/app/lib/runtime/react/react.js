@@ -17,6 +17,7 @@ let currentKey;
 let renderedChildren = {};
 let keyChanges = {};
 let indexCache = {};
+let bindedStates = {};
 
 let genKey = () => {
     return (keyCounter++).toString();
@@ -61,8 +62,9 @@ const setter = (prx, dep) => (data) => {
     const result = isFunction(data) ? data(prx.data) : data;
     if (isObject(result)) clone(result, prx.data);
     else prx.data = result;
+    bindedStates = {};
     dep.notify();
-    message(JSON.stringify({ action: "update", element: diff(undefined, lastOldCache, lastUpdateOfRender) }));
+    message(JSON.stringify({ action: "update", element: { scope: dep.parentPath, updates: diff(dep.parentPath, undefined, lastOldCache, lastUpdateOfRender) } }));
 };
 const createOptions = (dep) => ({
     get(target, key) {
@@ -142,8 +144,16 @@ const React = {
                     lastUpdateOfRender = tag(props, children)(undefined, props.key);
 
                     let pocl = Object.keys(pathesOfChildren);
+                    let rch = Object.keys(renderedChildren);
                     pocl.forEach(ck => {
-                        if (renderedChildren[ck] === undefined) {
+                        let found = false;
+                        for (let rcp of rch) {
+                            if (ck.startsWith(rcp)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
                             delete stateCache[ck];
                         }
                     })
@@ -198,6 +208,18 @@ const React = {
                 currentKey = props.key;
             }
 
+            let path = tree.join("/");
+
+            let pathesOfChildren = {};
+            let keys = Object.keys(stateCache);
+            for (const pathKey of keys) {
+                if ((pathKey.startsWith(path)) && (path != pathKey)) {
+                    pathesOfChildren[pathKey] = stateCache[pathKey].key;
+                }
+            }
+            let rcBackup = renderedChildren;
+            renderedChildren = {};
+
             let c = [];
             flatten(c, children);
             let childs = c.map((child, i) => {
@@ -207,6 +229,23 @@ const React = {
                     return child;
                 }
             });
+
+            let pocl = Object.keys(pathesOfChildren);
+            let rch = Object.keys(renderedChildren);
+            pocl.forEach(ck => {
+                let found = false;
+                for (let rcp of rch) {
+                    if (ck.startsWith(rcp)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    delete stateCache[ck];
+                }
+            })
+            renderedChildren = rcBackup;
+            renderedChildren[path] = props.key;
 
             currentPath = cpBackup;
             currentKey = keyBackup;
@@ -233,26 +272,67 @@ const React = {
             if ((statesHolder !== undefined) && (statesHolder.key !== currentKey)) {
                 let oldPathArr = path.split("/");
                 let keys = Object.keys(stateCache);
+                let foundOriginal = false;
+                for (const pathKey of keys) {
+                    if (pathKey === path) {
+                        foundOriginal = true;
+                        continue;
+                    }
+                    if (!foundOriginal) {
+                        continue;
+                    }
+                    if (stateCache[pathKey].key === currentKey) {
+                        let newPathArrTest = pathKey.split("/");
+                        if (oldPathArr.length === newPathArrTest.length) {
+                            if (bindedStates[pathKey + "|" + stateCache[pathKey].key] !== true) {
+                                let diffCount = 0;
+                                let diffPart;
+                                for (let i = 0; i < oldPathArr.length; i++) {
+                                    if (oldPathArr[i] !== newPathArrTest[i]) {
+                                        diffPart = oldPathArr[i];
+                                        diffCount++;
+                                    }
+                                }
+                                if (diffCount === 1) {
+                                    let statesHolderNew = stateCache[pathKey];
+                                    statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                                    stateCache[path] = statesHolderNew;
+                                    indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                                    let state = statesHolderNew.states[stateCounter];
+                                    stateCounter++;
+                                    bindedStates[pathKey + "|" + statesHolderNew.key] = true;
+                                    return state;
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (statesHolder === undefined) {
+                let oldPathArr = path.split("/");
+                let keys = Object.keys(stateCache);
                 for (const pathKey of keys) {
                     if (stateCache[pathKey].key === currentKey) {
                         let newPathArrTest = pathKey.split("/");
                         if (oldPathArr.length === newPathArrTest.length) {
-                            let diffCount = 0;
-                            let diffPart;
-                            for (let i = 0; i < oldPathArr.length; i++) {
-                                if (oldPathArr[i] !== newPathArrTest[i]) {
-                                    diffPart = oldPathArr[i];
-                                    diffCount++;
+                            if (bindedStates[pathKey + "|" + stateCache[pathKey].key] !== true) {
+                                let diffCount = 0;
+                                let diffPart;
+                                for (let i = 0; i < oldPathArr.length; i++) {
+                                    if (oldPathArr[i] !== newPathArrTest[i]) {
+                                        diffPart = oldPathArr[i];
+                                        diffCount++;
+                                    }
                                 }
-                            }
-                            if (diffCount === 1) {
-                                let statesHolderNew = stateCache[pathKey];
-                                statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
-                                stateCache[path] = statesHolderNew;
-                                indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
-                                let state = statesHolderNew.states[stateCounter];
-                                stateCounter++;
-                                return state;
+                                if (diffCount === 1) {
+                                    let statesHolderNew = stateCache[pathKey];
+                                    statesHolderNew.dep.parentPath = path.includes("/") ? path.substring(0, path.lastIndexOf("/")) : "";
+                                    stateCache[path] = statesHolderNew;
+                                    indexCache[newPathArrTest.slice(0, newPathArrTest.length - 1).join("/") + "|" + statesHolderNew.key] = Number(diffPart.split(":")[1]);
+                                    let state = statesHolderNew.states[stateCounter];
+                                    stateCounter++;
+                                    bindedStates[pathKey + "|" + statesHolderNew.key] = true;
+                                    return state;
+                                }
                             }
                         }
                     }
@@ -264,10 +344,12 @@ const React = {
             let state = [() => prx.data, setter(prx, dep)];
             stateCache[path] = { states: [state], key: currentKey, dep };
             stateCounter++;
+            bindedStates[path + "|" + currentKey] = true;
             return state;
         }
         let state = statesHolder.states[stateCounter];
         stateCounter++;
+        bindedStates[path + "|" + statesHolder.key] = true;
         return state;
     },
     setTimeout: (cb, time) => {

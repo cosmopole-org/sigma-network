@@ -15,11 +15,16 @@ const Counter = () => {
     );
 }
 
+let kCounter = 1;
+const generateKey = () => {
+    return "a_" + (kCounter++);
+}
+
 const Test = () => {
     const [list, setList] = React.useState([]);
     let onClick = () => {
         setList((l) => {
-            l.push(Math.random().toString());
+            l.push(generateKey());
             return l;
         });
     };
@@ -46,7 +51,7 @@ const Test = () => {
                 remove
             </button>
             {
-                list().map((d) => <Counter key={d} />)
+                list().map((d) => <div key={d}><div><Counter /></div></div>)
             }
         </div>
     )
