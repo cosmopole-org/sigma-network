@@ -94,7 +94,7 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
     }, []);
     if (isTouchDevice()) {
         return (
-            <div style={{ overflowX: 'hidden', width: wid - 8, height: 1500, minHeight: 1500, position: 'relative' }}>
+            <div style={{ overflowX: 'hidden', width: wid, height: 1500, minHeight: 1500, position: 'relative' }}>
                 {
                     Object.keys(boxes).map((k: string, index: number) => (
                         <div
@@ -153,9 +153,8 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
                             }}
                         >
                             <div
-                                className="overflow-hidden w-full h-full rounded-xl"
+                                className="shadow-medium overflow-hidden w-full h-full rounded-xl"
                                 style={{
-                                    border: `1px solid ${highlightColor}`,
                                     backgroundColor: dragging === k ? 'transparent' : theme === 'light' ? '#ffffff6f' : '#2828286f',
                                     display: draggingIdState.get({ noproxy: true }) === k ? 'none' : 'block'
                                 }}>

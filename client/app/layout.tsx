@@ -17,10 +17,10 @@ import 'swiper/css/effect-creative';
 import { switchHomeNav } from "@/components/home/home-navbar";
 import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
-import Script from "next/script";
 import { Logo } from "@/components/icons";
-import { putForge } from "@/api/offline/crypto";
-import {importLibs} from "@/libs/wrappers";
+import IconButton from "@/components/elements/icon-button";
+import MetaTouch, { changeMetaDrawerState } from "@/components/home/metaTouch";
+import { showRoomShadow } from "@/components/home/shadow";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -39,16 +39,26 @@ let dynamicPath = '';
 let oldPath = '';
 let oldScroll = 0;
 let swiperInst: any = null;
-// export const enableSwiper = () => {
-// 	if (swiperInst) {
-// 		swiperInst.enable();
-// 	}
-// }
-// export const disableSwiper = () => {
-// 	if (swiperInst) {
-// 		swiperInst.disable();
-// 	}
-// }
+export const enableSwiper = () => {
+	if (swiperInst) {
+		swiperInst.enable();
+	}
+}
+export const disableSwiper = () => {
+	if (swiperInst) {
+		swiperInst.disable();
+	}
+}
+export const swipePrev = () => {
+	if (swiperInst) {
+		swiperInst.slidePrev();
+	}
+}
+export const swipeNext = () => {
+	if (swiperInst) {
+		swiperInst.slideNext();
+	}
+}
 
 export default function RootLayout({
 	children,
@@ -62,7 +72,7 @@ export default function RootLayout({
 	const contentRef = useRef<HTMLDivElement>(null);
 	const [loaded, setLoaded] = useState(false);
 	useEffect(() => {
-		importLibs().then(() => setLoaded(true));
+		setLoaded(true);
 	}, []);
 	useEffect(() => {
 		const scroller = () => {
@@ -149,35 +159,21 @@ export default function RootLayout({
 						loaded ? (
 							<div className="relative flex flex-col" style={{ height: h }}>
 								<main className="w-full h-full">
-									<Swiper
-										onInit={(swiper: any) => {
-											swiperInst = swiper
-										}}
-										grabCursor={true}
-										effect={'creative'}
-										creativeEffect={{
-											prev: {
-												shadow: true,
-												translate: [0, 0, -100],
-											},
-											next: {
-												translate: ['100%', 0, 0],
-											},
-										}}
-										modules={[EffectCreative]}
-										className="h-full w-full"
-									>
-										<SwiperSlide className="w-full h-full"><div ref={contentRef} className="w-full h-full overflow-x-hidden overflow-y-auto">{children}</div></SwiperSlide>
-										<SwiperSlide className="w-full h-full">
-											<div className="grid grid-cols-2 w-full h-full overflow-auto p-4 gap-2 bg-s-white/70 dark:bg-black/70">
-												{getUsers().map(i => (
-													<div key={i.id} className="w-full h-48 bg-white dark:bg-s-black rounded-lg">
-
-													</div>
-												))}
+									<div className="w-full h-full overflow-hidden">
+										<div ref={contentRef} className="w-full h-full overflow-hidden relative">
+											{children}
+										</div>
+										<div className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
+											<IconButton color={'#000'} name="menu" className="ml-1 -mt-[2px]" onClick={() => swipePrev()} />
+											<IconButton color={'#006FEE'} name="connected" className="-mt-[2px]" />
+											<div className="flex-1">
 											</div>
-										</SwiperSlide>
-									</Swiper>
+											<div className="absolute left-1/2 -translate-x-1/2 pt-[7px] text-center">
+												Keyhan's Home
+											</div>
+											<IconButton color={'#000'} name="more" className="-mt-[2px]" />
+										</div>
+									</div>
 									{
 										showLoadingState.get({ noproxy: true }) ? (
 											<Card isBlurred shadow="none" radius="none" className="w-full h-full fixed left-0 top-0 bg-transparent" style={{ zIndex: 100 }}>
@@ -199,6 +195,6 @@ export default function RootLayout({
 					}
 				</Providers>
 			</body>
-		</html>
+		</html >
 	);
 }

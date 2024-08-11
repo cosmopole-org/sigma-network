@@ -1,21 +1,16 @@
 "use client"
 
-import { Card, CircularProgress } from "@nextui-org/react";
 import { useRouter } from "next/navigation"
-import {useEffect, useState} from "react";
-import {AppletWasm} from '@/libs/wrappers';
+import { useEffect } from "react"
 
 export default function Main() {
-	const [result, setResult] = useState(0);
-	//const router = useRouter();
+	const router = useRouter();
 	useEffect(() => {
-		(async () => {
-			AppletWasm.add(1, 2);
-		})();
+		router.replace('/app/home/main');
 	}, []);
 	return (
 		<div className="w-full h-full">
-			{result}
+			
 		</div>
 	)
 }

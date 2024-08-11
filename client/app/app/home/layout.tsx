@@ -53,7 +53,7 @@ export default function HomeLayout({
 						</Card>
 					) : null
 				}
-				<HomeBottomNav />
+				{/* <HomeBottomNav /> */}
 			</main>
 		</div>
 	);

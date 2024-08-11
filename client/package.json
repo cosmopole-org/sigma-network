@@ -25,12 +25,14 @@
     "autoprefixer": "10.4.16",
     "axios": "^1.6.7",
     "clsx": "^2.0.0",
+    "critters": "^0.0.24",
     "crypto-browserify": "^3.12.0",
     "crypto-js": "^4.2.0",
     "eslint": "8.48.0",
     "eslint-config-next": "14.0.2",
     "framer-motion": "^10.16.4",
     "intl-messageformat": "^10.5.0",
+    "jquery": "^3.7.1",
     "next": "^14.1.4",
     "next-auth": "^4.24.7",
     "next-themes": "^0.2.1",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "@types/crypto-js": "^4.2.2",
+    "@types/jquery": "^3.5.29",
     "@types/react-virtualized": "^9.21.29"
   },
   "browser": {

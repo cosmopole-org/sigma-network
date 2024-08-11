@@ -13,8 +13,8 @@ html {
 
 .area {
     width: 100%;
-    height: 350px;
-    max-height: 350px;
+    height: 340px;
+    max-height: 340px;
     position: relative;
 }
 
@@ -131,4 +131,17 @@ html {
         border-radius: 50%;
     }
 
+}
+
+.high-light{
+    transition: opacity .25s linear;
+}
+
+#multicanvasArea.active .high-light {
+    opacity:1;
+}
+
+
+#multicanvasArea.deactive .high-light { 
+    opacity:0;
 }
