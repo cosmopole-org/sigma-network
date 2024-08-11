@@ -3,7 +3,7 @@ import Storage from "../helpers/storage";
 import Users from "../api/users";
 import Security from "../helpers/security";
 
-export default class Sigma {
+class Sigma {
     public net: Network = new Network()
     public store: Storage = new Storage()
     public security: Security = new Security(this.store)
