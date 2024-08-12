@@ -15,3 +15,5 @@ class Sigma {
     //     }
     // }
 }
+
+export default Sigma;
