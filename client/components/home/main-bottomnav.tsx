@@ -5,6 +5,8 @@ import { Card } from "@nextui-org/react";
 import { BottomNavItem } from "../elements/bottomnav-item";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import { changeMetaDrawerState } from "./metaTouch";
+import { showRoomShadow } from "./shadow";
 
 export default function MainBottomNav() {
     const router = useRouter();
@@ -15,6 +17,8 @@ export default function MainBottomNav() {
     }
     const openPanelByKey = (key: string) => () => {
         setPanelKey(key)
+        changeMetaDrawerState(true);
+        showRoomShadow.set(true);
     }
     return (
         <Card

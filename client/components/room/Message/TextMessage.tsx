@@ -1,63 +1,49 @@
 
-import {
-    Paper,
-    Typography
-} from "@mui/material";
-import {
-    Done,
-    DoneAll, History
-} from "@mui/icons-material";
+import { Card } from '@nextui-org/react';
 import './bubble.css'
-import { themeColor } from "../../../../App";
-import IMessage from "../../../../api/models/message";
-import { api } from "../../../..";
+import Icon from '@/components/elements/icon';
 
-const TextMessage = (props: { message: IMessage, side?: string, lastOfSection?: boolean, firstOfSection?: boolean, isQuote?: boolean }) => {
+const TextMessage = (props: { message: any, side?: string, lastOfSection?: boolean, firstOfSection?: boolean, isQuote?: boolean }) => {
     return (
-        <Paper
+        <div
             style={{
-                height: props.isQuote ? '100%' : 'calc(100% - 20px)',
+                height: props.isQuote ? '100%' : 'calc(100% - 8px)',
                 width: 'auto',
                 minWidth: 100,
+                maxWidth: props.lastOfSection ? 214 : 200,
                 borderRadius: props.isQuote ? 0 :
                     props.side === 'left' ?
-                        `${props.firstOfSection ? 24 : 8}px 24px 24px 8px` :
-                        `24px ${props.firstOfSection ? 24 : 8}px 8px 24px`,
+                        `${props.firstOfSection ? 16 : 8}px 16px 16px 8px` :
+                        `16px ${props.firstOfSection ? 24 : 8}px 8px 16px`,
                 padding: 8,
                 paddingTop: props.isQuote ? 0 : 8,
-                background: props.isQuote ?
-                    themeColor.get({ noproxy: true })[200] :
-                    (props.side === 'right' || props.isQuote) ?
-                        `linear-gradient(135deg, ${themeColor.get({ noproxy: true })[500]}, ${themeColor.get({ noproxy: true })[200]}) border-box` :
-                        themeColor.get({ noproxy: true })['plain'],
-                marginLeft: props.side === 'left' ? 0 : 'auto',
-                marginRight: props.side === 'left' ? 'auto' : 0,
-                marginTop: 0,
-                marginBottom: 'auto'
+                background: '#fff',
+                marginLeft: props.side === 'left' ? props.lastOfSection ? 0 : 14 : 'auto',
+                marginRight: props.side === 'left' ? 'auto' : props.lastOfSection ? 0 : 14,
+                marginTop: 0
             }}
-            elevation={0}
-            className={props.isQuote ? '' : (props.side === 'right' ? "bubble" : "bubble2") + (props.lastOfSection ? (" " + props.side) : "")}
+            className={props.isQuote ? '' : (props.side === 'right' ? "bubble" : "bubble2") + (props.lastOfSection ? (" " + props.side) : "") +
+                " shadow-medium"}
         >
             <div style={{ width: 'auto', height: '100%', position: 'relative' }}>
-                <Typography
-                    variant={"caption"}
+                <p
                     style={{
                         textAlign: "left", fontWeight: 'bold', borderRadius: 8, marginTop: 0, height: 'auto',
-                        background: 'transparent', color: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff'
+                        background: 'transparent', color: '#000'
                     }}
                 >
                     {(props.message as any).author.firstName}
-                </Typography>
-                <Typography
+                </p>
+                <p
                     style={{
                         textAlign: "left", wordWrap: 'break-word', textOverflow: props.isQuote ? 'ellipsis' : undefined,
                         whiteSpace: props.isQuote ? 'nowrap' : undefined, overflow: props.isQuote ? 'hidden' : undefined,
                         display: 'flex', wordBreak: 'break-word', fontSize: 14, height: 'auto', paddingBottom: 16,
-                        color: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff'
+                        color: '#000'
                     }}
                 >
                     {props.message.data.text}
-                </Typography>
+                </p>
                 {
                     props.isQuote ?
                         null :
@@ -67,48 +53,39 @@ const TextMessage = (props: { message: IMessage, side?: string, lastOfSection?: 
                                 paddingLeft: 0, paddingRight: 0,
                                 borderRadius: "16px 16px 0px 16px"
                             }}>
-                                <Typography
-                                    style={{ textAlign: "right", flex: 1, fontSize: 12, color: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff' }}
+                                <p
+                                    style={{ textAlign: "right", flex: 1, fontSize: 12, color: '#000' }}
                                 >
                                     {(new Date(props.message.time)).toTimeString().substring(0, 5)}
-                                </Typography>
+                                </p>
                                 {
-                                    (props.message as any).isDummy ? (
-                                        <History
-                                            style={{
-                                                width: 16,
-                                                height: 16,
-                                                marginLeft: 2,
-                                                fill: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff'
-                                            }}
+                                    // (props.message as any).isDummy ? (
+                                        <Icon
+                                            name='more'
+                                            className='w-4 h-4 ml-[2px]'
+                                            color={'#000'}
                                         />
-                                    ) : props.message.authorId !== api.memory.myHumanId.get({ noproxy: true }) ?
-                                        null :
-                                        props.message.seen ? (
-                                            <DoneAll
-                                                style={{
-                                                    width: 16,
-                                                    height: 16,
-                                                    marginLeft: 2,
-                                                    fill: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff'
-                                                }}
-                                            />
-                                        ) : (
-                                            <Done
-                                                style={{
-                                                    width: 16,
-                                                    height: 16,
-                                                    marginLeft: 2,
-                                                    fill: props.side === 'left' ? themeColor.get({ noproxy: true })['activeText'] : '#fff'
-                                                }}
-                                            />
-                                        )
+                                    // ) : props.message.authorId !== api.memory.myHumanId.get({ noproxy: true }) ?
+                                    //     null :
+                                    //     props.message.seen ? (
+                                    //         <Icon
+                                    //             name='more'
+                                    //             className='w-4 h-4 ml-[2px]'
+                                    //             color={'#000'}
+                                    //         />
+                                    //     ) : (
+                                    //         <Icon
+                                    //             name='more'
+                                    //             className='w-4 h-4 ml-[2px]'
+                                    //             color={'#000'}
+                                    //         />
+                                    //     )
                                 }
                             </div>
                         )
                 }
             </div>
-        </Paper>
+        </div>
     );
 }
 

@@ -1,11 +1,12 @@
 
 import { Input } from "@nextui-org/react";
 import IconButton from "../elements/icon-button";
+import MessageList from "./room-messagelist";
 
 export default function Chat() {
     return (
         <div className="w-full h-full overflow-hidden relative">
-            {/* <MessageList /> */}
+            <MessageList />
             <Input
                 classNames={{
                     base: "h-10",

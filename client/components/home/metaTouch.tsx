@@ -74,12 +74,13 @@ const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, 
                     let currentTouchPosX = e.touches[0].clientX;
                     if (
                         (
-                            (touchStartPosY.current > (112 + 96))// &&
-                            // (
-                            //     metaActiveTab.get({ noproxy: true }) === 'chat' ?
-                            //         (document.getElementById('messagesListEl')?.scrollTop === 0) :
-                            //         (document.getElementById('files-list')?.scrollTop === 0)
-                            // )
+                            (touchStartPosY.current > (112 + 96)) &&
+                            (
+                                metaActiveTab.get({ noproxy: true }) === 'chat' ?
+                                    (document.getElementById('messages-list')?.scrollTop === 0) :
+                                    (document.getElementById('files-list')?.scrollTop === 0)
+                            ) &&
+                            (currentTouchPosY > touchStartPosY.current)
                         ) ||
                         (
                             touchStartPosY.current <= (112 + 96)
