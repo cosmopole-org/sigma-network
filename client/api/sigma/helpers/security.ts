@@ -1,6 +1,6 @@
 
 import Storage from './storage';
-import {Secret} from "../models";
+import { Secret } from "../models";
 
 type PublicKeyBatch = { [id: string]: CryptoKey };
 
@@ -16,10 +16,10 @@ type Group = {
 };
 
 export default class Security {
-    private groups: {[id: string]: Group} = {}
+    private groups: { [id: string]: Group } = {}
     private myPublicKey?: CryptoKey
     private myPrivateKey?: CryptoKey
-    private keyStore: {[id: string]: CryptoKey} = {}
+    private keyStore: { [id: string]: CryptoKey } = {}
     private storage: Storage
     constructor(storage: Storage) {
         this.storage = storage;
@@ -82,14 +82,14 @@ export default class Security {
     public async refreshGroupKey(groupId: string): Promise<{ [id: string]: string }> {
         let group = this.groups[groupId];
         let { id, key } = await this.generateNewKey();
-        group.key = {keyId: id, key: key};
+        group.key = { keyId: id, key: key };
         return this.encryptKeyBatch(group.publicKeys, group.key.key);
     }
     public async newGroup(groupId: string): Promise<void> {
-        let {id, key} = await this.generateNewKey();
+        let { id, key } = await this.generateNewKey();
         await this.putGroup({
             groupId: groupId,
-            key: {key: key, keyId: id},
+            key: { key: key, keyId: id },
             publicKeys: {},
             history: {}
         });
@@ -97,7 +97,7 @@ export default class Security {
     public deleteGroup(groupId: string) {
         delete this.groups[groupId];
     }
-    public async putGroup(group: {groupId: string, key: GroupKey, publicKeys: {[id: string]: string}, history: RefreshEvents}): Promise<void> {
+    public async putGroup(group: { groupId: string, key: GroupKey, publicKeys: { [id: string]: string }, history: RefreshEvents }): Promise<void> {
         let g: Group = {
             groupId: group.groupId,
             key: group.key,
@@ -114,16 +114,16 @@ export default class Security {
     }
 
     // internal api
-    private async generateNewKey() : Promise<{id: string, key: CryptoKey}> {
+    private async generateNewKey(): Promise<{ id: string, key: CryptoKey }> {
         let id = window.crypto.randomUUID().toString();
         this.keyStore[id] = await window.crypto.subtle.generateKey(
-           { name: "AES-GCM", length: 256 },
+            { name: "AES-GCM", length: 256 },
             true,
             ["encrypt", "decrypt"],
         );
-        return {id: id, key: this.keyStore[id]};
+        return { id: id, key: this.keyStore[id] };
     }
-    private async parsePublicKey(publicKey: string) : Promise<CryptoKey> {
+    private async parsePublicKey(publicKey: string): Promise<CryptoKey> {
         return await window.crypto.subtle.importKey(
             "spki",
             new Uint8Array(this.b642ab(publicKey)),
@@ -132,7 +132,7 @@ export default class Security {
             ["encrypt"]
         );
     }
-    private async parsePrivateKey(privateKey: string) : Promise<CryptoKey> {
+    private async parsePrivateKey(privateKey: string): Promise<CryptoKey> {
         return await window.crypto.subtle.importKey(
             "pkcs8",
             new Uint8Array(this.b642ab(privateKey)),
@@ -152,24 +152,27 @@ export default class Security {
     }
     private async decryptKey(cipherKey: string): Promise<string> {
         const dec = new TextDecoder();
-        return dec.decode(await window.crypto.subtle.decrypt(
-            {
-                name: "RSA-OAEP",
-            },
-            this.myPrivateKey,
-            this.b642ab(cipherKey)
-        ));
-    }
-    private async encryptKeyBatch(keys: PublicKeyBatch, key: CryptoKey): Promise<{[id: string]: string}> {
-        let exportedKey = await crypto.subtle.exportKey('raw', key);
-        let keyMap: {[id: string]: string} = {};
-        let ids = Object.keys(keys);
-        for (let i = 0; i < ids.length; i++) {
-            keyMap[ids[i]] = this.ab2b64(await window.crypto.subtle.encrypt(
+        if (this.myPrivateKey) {
+            return dec.decode(await window.crypto.subtle.decrypt(
                 {
                     name: "RSA-OAEP",
                 },
-                keys[ids[i]], // from generateKey or importKey above
+                this.myPrivateKey,
+                this.b642ab(cipherKey)
+            ));
+        }
+        return "";
+    }
+    private async encryptKeyBatch(keys: PublicKeyBatch, key: CryptoKey): Promise<{ [id: string]: string }> {
+        let exportedKey = await crypto.subtle.exportKey('raw', key);
+        let keyMap: { [id: string]: string } = {};
+        let ids = Object.keys(keys);
+        for (const element of ids) {
+            keyMap[element] = this.ab2b64(await window.crypto.subtle.encrypt(
+                {
+                    name: "RSA-OAEP",
+                },
+                keys[element], // from generateKey or importKey above
                 exportedKey // ArrayBuffer of data you want to encrypt
             ))
         }
@@ -186,20 +189,20 @@ export default class Security {
         );
         const ctArray = Array.from(new Uint8Array(encrypted));
         const ctStr = ctArray.map(byte => String.fromCharCode(byte)).join('');
-        return btoa(ivStr+ctStr);
+        return btoa(ivStr + ctStr);
     }
     private async decryptDataByKey(key: CryptoKey, cipher: string): Promise<string> {
-        const ivStr = atob(cipher).slice(0,12);
+        const ivStr = atob(cipher).slice(0, 12);
         const iv = new Uint8Array(Array.from(ivStr).map(ch => ch.charCodeAt(0)));
         const ctStr = atob(cipher).slice(12);
         const ctUint8 = new Uint8Array(Array.from(ctStr).map(ch => ch.charCodeAt(0)));
         const plainBuffer = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ctUint8);
         return new TextDecoder().decode(plainBuffer);
     }
-    private b642ab(base64string: string) : ArrayBuffer{
+    private b642ab(base64string: string): ArrayBuffer {
         return Uint8Array.from(atob(base64string), c => c.charCodeAt(0)).buffer;
     }
     private ab2b64(arrayBuffer: ArrayBuffer): string {
-        return window.btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer)));
+        return window.btoa(String.fromCharCode.apply(null, new Uint8Array(arrayBuffer) as any));
     }
 }

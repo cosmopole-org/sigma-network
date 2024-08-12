@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { hookstate, useHookstate } from "@hookstate/core";
+import React from "react";
+import { hookstate } from "@hookstate/core";
 import { Card } from "@nextui-org/react";
 import Chat from "../room/room-chat";
 import RoomWallpaper from '../../images/room.jpg';
@@ -17,7 +17,12 @@ const MetaContent = (props: { room: any, needToCloseRecorder?: boolean }) => {
                 <div style={{
                     position: 'relative', width: '100%', height: '100%', zIndex: 2
                 }}>
-                    <img src={RoomWallpaper.src} className="w-full h-full left-0 top-0 absolute"/>
+                    <img src={RoomWallpaper.src} className="w-full h-full left-0 top-0 absolute" />
+                    <div key={'room-background-overlay'} style={{
+                        opacity: 0.65,
+                        backgroundColor: '#99C7FB',
+                        width: '100%', height: '100%', position: 'absolute', left: 0, top: 0
+                    }} />
                     <div style={{ width: '100%', height: `100%` }}>
                         <Chat />
                     </div>

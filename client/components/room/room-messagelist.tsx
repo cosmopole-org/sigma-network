@@ -43,7 +43,7 @@ function renderRow({ index, key, style, parent }: { index: number, key: any, sty
     // }
     // }
     const text = index === 1 ? "hello world ! \n hello world ! \n hello world ! \n hello world !" : "hello world !";
-    comp = <TextMessage lastOfSection={index === 9 || index === 19} firstOfSection={index === 0 || index === 10} message={{ data: { text: text }, author: { firstName: "keyhan", lastName: "kasperian" }, authorId: 123, time: 1 }} key={index} side={index < 10 ? 'right' : 'left'} />
+    comp = <TextMessage lastOfSection={index === 4 || index === 19} firstOfSection={index === 0 || index === 5} message={{ data: { text: text }, author: { firstName: "keyhan", lastName: "kasperian" }, authorId: 123, time: 1 }} key={index} side={index < 5 ? 'right' : 'left'} />
     return (
         <CellMeasurer
             key={key}

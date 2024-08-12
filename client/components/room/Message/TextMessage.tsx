@@ -38,7 +38,7 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                     style={{
                         textAlign: "left", wordWrap: 'break-word', textOverflow: props.isQuote ? 'ellipsis' : undefined,
                         whiteSpace: props.isQuote ? 'nowrap' : undefined, overflow: props.isQuote ? 'hidden' : undefined,
-                        display: 'flex', wordBreak: 'break-word', fontSize: 14, height: 'auto', paddingBottom: 16,
+                        display: 'flex', wordBreak: 'break-word', fontSize: 14, height: 'auto', paddingBottom: 24,
                         color: '#000'
                     }}
                 >
