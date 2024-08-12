@@ -27,8 +27,8 @@ export default function HomeMain() {
                     <p className="text-xl text-center w-full mt-6" style={{ color: color }}>My Books</p>
                 </div>
                 <div className="absolute mt-[-32px] left-0 top-[340px] w-full h-full bg-white dark:bg-background" style={{ borderRadius: '12px 12px 0px 0px' }} />
-                <div className="w-full h-auto -mt-12">
-                    <AvatarGroup isBordered>
+                <div className="w-full h-12 -mt-12 relative">
+                    <AvatarGroup isBordered className="absolute left-1/2 -translate-x-1/2">
                         <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026024d" />
                         <Avatar src="https://i.pravatar.cc/150?u=a04258a2462d826712d" />
                         <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026704d" />
