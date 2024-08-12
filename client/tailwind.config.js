@@ -37,7 +37,8 @@ module.exports = {
           primary: {
             DEFAULT: "#006FEE",
             foreground: "#ffffff",
-          }
+          },
+          bnav: "#338EF7"
         },
       },
       dark: {

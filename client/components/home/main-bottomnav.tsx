@@ -1,17 +1,24 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card } from "@nextui-org/react";
 import { BottomNavItem } from "../elements/bottomnav-item";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { changeMetaDrawerState } from "./metaTouch";
 import { showRoomShadow } from "./shadow";
+import { useHookstate } from "@hookstate/core";
 
 export default function MainBottomNav() {
+    const isSelected = useHookstate(showRoomShadow);
     const router = useRouter();
     const [panelKey, setPanelKey] = useState<string | undefined>(undefined)
     const { theme } = useTheme();
+    useEffect(() => {
+        if (!isSelected.get({noproxy: true})) {
+            setPanelKey(undefined)            
+        }
+    }, [isSelected.get({ noproxy: true })]);
     const openCall = () => () => {
         router.push("/app/call")
     }

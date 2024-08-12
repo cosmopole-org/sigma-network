@@ -9,7 +9,7 @@ export function BottomNavItem({ color, selected, itemKey, icon, title, onClick, 
             {icon ? (
                 <div
                     style={{ paddingTop: (isCurrent ? 3 : 0) + (pt ?? 0), paddingBottom: (isCurrent ? 3 : 0) + (pb ?? 0), transform: isCurrent ? 'scale(1.15)' : 'scale(1)', transition: 'transform 250ms' }}
-                    className={(isCurrent ? "rounded-2xl bg-primary px-4" : "")}
+                    className={(isCurrent ? "rounded-2xl bg-bnav px-4" : "")}
                 >
                     <Icon name={icon} size={[size, size]} color={isCurrent ? '#fff' : color} />
                 </div>
