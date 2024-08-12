@@ -17,8 +17,10 @@ export default function HomeBottomNav() {
     const router = useRouter();
     const path = usePathname();
     useEffect(() => {
-        let pArr = path.split('/')
-        switchHomeSection(pArr[pArr.length - 1]);
+        if (path) {
+            let pArr = path.split('/')
+            switchHomeSection(pArr[pArr.length - 1]);
+        }
     }, []);
     const onItemClick = (key: string) => () => {
         selectedState.set(key);

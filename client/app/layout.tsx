@@ -66,7 +66,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const path = usePathname();
-	dynamicPath = path;
+	if (path) dynamicPath = path;
 	const scrollPositions = useRef<{ [url: string]: number }>({})
 	loadSizes();
 	const contentRef = useRef<HTMLDivElement>(null);
