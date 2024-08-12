@@ -2,13 +2,16 @@
 
 import "@/styles/globals.css";
 import { fontSans } from "@/config/fonts";
+import { Providers } from "./providers";
 import clsx from "clsx";
 import { useHookstate } from "@hookstate/core";
 import { Card, CircularProgress } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { showMainLoading, switchLoading, switchMainLoading, switchRoomLoading } from "../api/offline/states";
-import { loadSizes } from "@/api/offline/constants";
+import { getUsers, loadSizes } from "@/api/offline/constants";
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectCreative } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/effect-creative';
 import { switchHomeNav } from "@/components/home/home-navbar";
@@ -16,7 +19,8 @@ import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
 import { Logo } from "@/components/icons";
 import IconButton from "@/components/elements/icon-button";
-import { Providers } from "./providers";
+import MetaTouch, { changeMetaDrawerState } from "@/components/home/metaTouch";
+import { showRoomShadow } from "@/components/home/shadow";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
