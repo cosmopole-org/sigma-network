@@ -34,7 +34,8 @@
 		"react-virtualized": "^9.22.5",
 		"jquery": "^3.7.1",
 		"applet-mwc": "^0.2.5",
-		"applet-vm": "^0.2.12"
+		"applet-vm": "^0.2.12",
+		"swiper": "^11.1.0"
 	},
 	"devDependencies": {
 		"@types/node": "20.5.7",
