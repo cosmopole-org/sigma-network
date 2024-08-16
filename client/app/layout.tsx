@@ -65,6 +65,7 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const showRoom = useHookstate(showRoomShadow);
 	const path = usePathname();
 	if (path) dynamicPath = path;
 	const scrollPositions = useRef<{ [url: string]: number }>({})
@@ -163,13 +164,22 @@ export default function RootLayout({
 										<div ref={contentRef} className="w-full h-full overflow-hidden relative">
 											{children}
 										</div>
-										<div className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
-											<IconButton color={'#000'} name="menu" className="ml-1 -mt-[2px]" onClick={() => swipePrev()} />
+										<div style={{ zIndex: 99999 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
+											{
+												showRoom.get({ noproxy: true }) ? (
+													<IconButton color={'#000'} name="close" className="ml-1 -mt-[2px]" onClick={() => {
+														changeMetaDrawerState(false)
+														showRoom.set(false)
+													}} />
+												) : (
+													<IconButton color={'#000'} name="menu" className="ml-1 -mt-[2px]" onClick={() => swipePrev()} />
+												)
+											}
 											<IconButton color={'#006FEE'} name="connected" className="-mt-[2px]" />
 											<div className="flex-1">
 											</div>
 											<div className="absolute left-1/2 -translate-x-1/2 pt-[7px] text-center">
-												Keyhan's Home
+												{showRoom.get({ noproxy: true }) ? "Chat" : "Keyhan's Home"}
 											</div>
 											<IconButton color={'#000'} name="more" className="-mt-[2px]" />
 										</div>

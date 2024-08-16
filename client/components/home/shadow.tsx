@@ -29,9 +29,7 @@ const Shadow = (props: { onClick: () => void }) => {
             onClick={() => {
                 $("#multicanvasArea").removeClass('active');
                 $("#multicanvasArea").addClass('deactive');
-                setTimeout(() => {
-                    show.set(false);
-                }, 250);
+                show.set(false);
                 props?.onClick();
             }}
             style={{

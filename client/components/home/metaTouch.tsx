@@ -1,9 +1,14 @@
 
 import { useRef } from "react";
 import MetaContent, { metaActiveTab } from "./metaContent";
-import { Card } from "@nextui-org/react";
+import { Button, Card, Tab, Tabs } from "@nextui-org/react";
 import { useTheme } from "next-themes";
 import MainBottomNav from "./main-bottomnav";
+import Icon from "../elements/icon";
+import { showRoomShadow } from "./shadow";
+import { useHookstate } from "@hookstate/core";
+import HomeFolders from "./home-folders";
+import MainAppsTabs from "./main-apps-tabs";
 
 const emojiPadHeight = 424;
 
@@ -17,16 +22,17 @@ export let setChatKeyboardOpen = (open: boolean) => {
 }
 
 const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, needToCloseRecorder?: boolean }) => {
+    const showRoomsShadowState = useHookstate(showRoomShadow);
     const metaRef = useRef(null);
     const { theme } = useTheme();
     const top = useRef(window.innerHeight)
     const updateTop = (newVal: number) => {
-        if (newVal > window.innerHeight - 64) newVal = window.innerHeight - 64;
+        if (newVal > window.innerHeight - 72) newVal = window.innerHeight - 72;
         top.current = newVal
         metaRef.current && ((metaRef.current as HTMLElement).style.transform = `translateY(${top.current}px)`)
     }
     changeMetaDrawerState = (open: boolean) => {
-        updateTop(open ? 112 : (window.innerHeight - 64))
+        updateTop(open ? 112 : (window.innerHeight - 72))
     }
     const mdX = useRef(0);
     const mdY = useRef(0);
@@ -47,9 +53,9 @@ const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, 
             ref={metaRef}
             style={{
                 transition: `transform .25s`,
-                transform: `translateY(${window.innerHeight - 64}px)`,
+                transform: `translateY(${window.innerHeight - 72}px)`,
                 borderRadius: '24px 24px 0px 0px',
-                height: window.innerHeight - 136,
+                height: window.innerHeight - 104,
                 position: 'absolute',
                 left: 0,
                 top: 0,
@@ -57,8 +63,54 @@ const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, 
                 zIndex: 2
             }}
         >
-            <MainBottomNav />
-            <div className="mt-4" style={{ width: '100%', height: '100%', position: 'relative' }}>
+            {
+                showRoomsShadowState.get({ noproxy: true }) ? (
+                    <MainAppsTabs />
+                ) : (
+                    <div className="flex gap-4 p-2 rounded-[28px] w-[calc(100%-64px)] ml-8 ">
+                        <Button
+                            isIconOnly
+                            color="primary"
+                            variant="shadow"
+                            className="h-12 w-12"
+                            radius="full"
+                            onClick={() => {
+                                changeMetaDrawerState(true);
+                                showRoomShadow.set(true);
+                            }}
+                        >
+                            <Icon name="chat" />
+                        </Button>
+                        <Button
+                            color="primary"
+                            variant="shadow"
+                            className="flex-1 h-12 text-lg"
+                            radius="full"
+                            onClick={() => {
+                                changeMetaDrawerState(!showRoomsShadowState.get({ noproxy: true }));
+                                showRoomShadow.set(!showRoomsShadowState.get({ noproxy: true }));
+                            }}
+                        >
+                            {showRoomsShadowState.get({ noproxy: true }) ? <Icon name="close" /> : <Icon name="blocks" />}
+                            {showRoomsShadowState.get({ noproxy: true }) ? 'Close' : 'Open'} Apps
+                        </Button>
+                        <Button
+                            isIconOnly
+                            color="primary"
+                            variant="shadow"
+                            className="h-12 w-12"
+                            radius="full"
+                            onClick={() => {
+                                changeMetaDrawerState(true);
+                                showRoomShadow.set(true);
+                            }}
+                        >
+                            <Icon name="storage" />
+                        </Button>
+                    </div>
+                )
+            }
+            <div className="mt-2" style={{ width: '100%', height: '100%', position: 'relative' }}>
                 <MetaContent room={props.room} needToCloseRecorder={props.needToCloseRecorder} />
             </div>
             <div

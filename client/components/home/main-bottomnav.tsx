@@ -30,7 +30,7 @@ export default function MainBottomNav() {
     return (
         <Card
             style={{ backgroundColor: theme === 'light' ? 'rgb(41, 98, 255)' : '#7828C8' }}
-            className="grid grid-cols-4 rounded-3xl w-[calc(100%-96px)] ml-12 h-14">
+            className="grid grid-cols-4 rounded-3xl w-[calc(100%-96px)] ml-12 h-20 p-3 gap-3">
             <BottomNavItem color="#fff" iconOnly itemKey="call" selected={panelKey} title="Call" icon="call" onClick={openCall()} />
             <BottomNavItem color="#fff" iconOnly itemKey="chat" selected={panelKey} title="Chat" icon="chat" onClick={openPanelByKey('chat')} />
             <BottomNavItem color="#fff" iconOnly itemKey="files" selected={panelKey} title="Files" icon="storage" onClick={openPanelByKey('files')} />

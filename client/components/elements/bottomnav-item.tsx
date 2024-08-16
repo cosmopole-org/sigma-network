@@ -5,7 +5,7 @@ export function BottomNavItem({ color, selected, itemKey, icon, title, onClick, 
     const isCurrent = selected === itemKey;
     let size = iconSize
     return (
-        <Card className="items-center bg-transparent pt-4 h-full" isPressable shadow="none" onClick={onClick}>
+        <Card className="items-center bg-[#005BC4] pt-4 h-full" isPressable shadow="none" onClick={onClick}>
             {icon ? (
                 <div
                     style={{ paddingTop: (isCurrent ? 3 : 0) + (pt ?? 0), paddingBottom: (isCurrent ? 3 : 0) + (pb ?? 0), transform: isCurrent ? 'scale(1.15)' : 'scale(1)', transition: 'transform 250ms' }}
