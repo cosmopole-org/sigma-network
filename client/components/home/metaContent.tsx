@@ -20,16 +20,18 @@ const MetaContent = (props: { room: any, needToCloseRecorder?: boolean }) => {
                     <img src={RoomWallpaper.src} className="w-full h-full left-0 top-0 absolute" />
                     <div key={'room-background-overlay'} style={{
                         opacity: 0.65,
-                        backgroundColor: '#99C7FB',
                         width: '100%', height: '100%', position: 'absolute', left: 0, top: 0
-                    }} />
+                    }}
+                    className="bg-primary/50"
+                    />
                     <div
                         style={{
-                            width: '100%', height: 32, backgroundColor: '#fff',
-                            borderRadius: '16px 16px 0px 0px', position: 'relative'
+                            width: '100%', height: 32,
+                            borderRadius: '12px 12px 0px 0px', position: 'relative'
                         }}
+                        className="bg-content1"
                     >
-                        <div className="w-32 h-2 bg-[#99C7FB] ml-auto mr-auto translate-y-3 rounded-xl shadow-medium" />
+                        <div className="w-32 h-[4px] bg-primary ml-auto mr-auto translate-y-4 rounded-xl shadow-medium" />
                     </div>
                     <div style={{ width: '100%', height: `calc(100% - 40px)` }}>
                         <Chat />

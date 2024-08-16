@@ -6,6 +6,7 @@ import { getUsers } from "@/api/offline/constants"
 import { hookstate, useHookstate } from "@hookstate/core"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
+import { swipeNext } from "@/app/layout"
 
 export const roomsListView = hookstate(false);
 const roomsListViewExtra = hookstate(false);
@@ -41,7 +42,7 @@ export default function HomeRoomsList() {
             >
                 {getUsers().map(item => (
                     <Card onClick={() => {
-                        router.push('/app/room/chat');
+                        swipeNext();
                     }} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <div className="flex flex-col">

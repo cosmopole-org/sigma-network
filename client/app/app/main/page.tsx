@@ -16,7 +16,7 @@ export default function HomeMain() {
     const color = '#fff';
     return (
         <div ref={containerRef} className={"w-full h-full"}>
-            <div className="w-full h-full relative overflow-x-hidden overflow-y-auto">
+            <div className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
                 <div className="area" style={{ backgroundColor: theme === 'light' ? 'rgb(41, 98, 255)' : '#7828C8' }}>
                     <ul className="circles">
                         {Array.from(Array(10).keys()).map(i => <li style={{ backgroundColor: theme === 'light' ? '#fff7' : '#0005' }} key={i}></li>)}
@@ -26,7 +26,7 @@ export default function HomeMain() {
                     <Avatar className="w-32 h-32 ml-auto mr-auto mt-12" src={getUsers()[0].avatar} />
                     <p className="text-xl text-center w-full mt-6" style={{ color: color }}>My Books</p>
                 </div>
-                <div className="absolute mt-[-32px] left-0 top-[340px] w-full h-full bg-white dark:bg-background" style={{ borderRadius: '12px 12px 0px 0px' }} />
+                <div className="absolute mt-[-32px] left-0 top-[340px] w-full h-full bg-white dark:bg-background" style={{ borderRadius: '16px 16px 0px 0px' }} />
                 <div className="w-full h-12 -mt-12 relative">
                     <AvatarGroup isBordered className="absolute left-1/2 -translate-x-1/2">
                         <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026024d" />

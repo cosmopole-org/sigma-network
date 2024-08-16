@@ -115,7 +115,7 @@ const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, 
             </div>
             <div
                 ref={touchRef}
-                style={{ width: '100%', height: `calc(100% - ${isChatKeyboardOpen ? emojiPadHeight : 0}px)`, position: 'absolute', left: 0, top: 0, zIndex: 2 }}
+                style={{ width: '100%', height: `calc(100% - ${isChatKeyboardOpen ? emojiPadHeight : 0}px)`, position: 'absolute', left: 0, top: 56, zIndex: 2 }}
                 onTouchStart={e => {
                     touchStartTop.current = top.current;
                     touchStartPosY.current = e.touches[0].clientY;

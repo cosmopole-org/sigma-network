@@ -5,13 +5,12 @@ import { showLoading } from "@/api/offline/states";
 import HomeBottomNav, { selectedHomeSection } from "@/components/home/home-bottomnav";
 import { useHookstate } from "@hookstate/core";
 import { Card, CircularProgress } from "@nextui-org/react";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import Contacts from "./contacts/page";
+import Settings from "./settings/page";
+import Spaces from "./spaces/page";
 
-export default function HomeLayout({
-	children,
-}: Readonly<{
-	children: React.ReactNode;
-}>) {
+export default function HomePage() {
 	const homeSectionState = useHookstate(selectedHomeSection);
 	const showLoadingState = useHookstate(showLoading);
 	useEffect(() => {
@@ -40,8 +39,26 @@ export default function HomeLayout({
 			}
 		}
 	}, []);
+	let children: React.ReactNode;
+	switch (homeSectionState.get({ noproxy: true })) {
+		case 'contacts': {
+			children = <Contacts />
+			break;
+		}
+		case 'spaces': {
+			children = <Spaces />
+			break;
+		}
+		case 'settings': {
+			children = <Settings />
+			break;
+		}
+		default: {
+			children = null
+		}
+	}
 	return (
-		<div className="relative flex flex-col h-screen w-full">
+		<div className="relative flex flex-col h-screen">
 			<main className="w-full h-full relative">
 				{children}
 				{
