@@ -4,11 +4,14 @@ import { setHomeCityScrollPos, setHomePeopleScrollPos, setHomeSettingsScrollPos 
 import { showLoading } from "@/api/offline/states";
 import HomeBottomNav, { selectedHomeSection } from "@/components/home/home-bottomnav";
 import { useHookstate } from "@hookstate/core";
-import { Card, CircularProgress } from "@nextui-org/react";
+import { Avatar, Card, CircularProgress, Divider } from "@nextui-org/react";
 import React, { useEffect } from "react";
 import Contacts from "./contacts/page";
 import Settings from "./settings/page";
 import Spaces from "./spaces/page";
+import IconButton from "@/components/elements/icon-button";
+import { getUsers } from "@/api/offline/constants";
+import HomeRoomsList from "@/components/home/home-rooms-list";
 
 export default function HomePage() {
 	const homeSectionState = useHookstate(selectedHomeSection);
@@ -59,19 +62,29 @@ export default function HomePage() {
 	}
 	return (
 		<div className="relative flex flex-col h-screen">
-			<main className="w-full h-full relative">
-				{children}
+			<Card shadow="md" className="w-20 h-full bg-s-white dark:bg-content2 pl-2 pt-2 fixed overflow-y-auto" style={{borderRadius: 0}}>
+				<div className="w-16 h-12 rounded-2xl mt-1 pl-3 pt-2">
+					<IconButton name="human" size={[32, 32]} color={"#777"} />
+				</div>
+				<div className="w-16 h-12 rounded-2xl mt-3 pl-3 pt-3">
+					<IconButton name="chat" size={[24, 24]} color={"#777"} />
+				</div>
+				<div className="w-16 h-12 rounded-2xl mt-3 pl-3 pt-3">
+					<IconButton name="settings" size={[24, 24]} color={"#777"} />
+				</div>
+				<div className="w-16 h-12 rounded-2xl mt-3 pl-3 pt-3">
+					<IconButton name="inbox" size={[32, 32]} color={"#777"} />
+				</div>
+				<Divider className="mt-4 w-[calc(100%-8px)]" />
 				{
-					showLoadingState.get({ noproxy: true }) ? (
-						<Card shadow="none" radius="none" className="w-full h-full fixed left-0 top-0" style={{ zIndex: 50 }}>
-							<Card className="w-24 h-24 fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-								<CircularProgress />
-							</Card>
-						</Card>
-					) : null
+					getUsers().map(item => (
+						<div key={item.id} className="w-12 h-12 bg-white dark: bg-content1 mt-6 ml-2" style={{ borderRadius: '50%' }}>
+							<Avatar alt={item.name} className="w-full h-full" size="lg" src={item.avatar} isBordered />
+						</div>
+					))
 				}
-				<HomeBottomNav />
-			</main>
+			</Card>
+			<HomeRoomsList />
 		</div>
 	);
 }

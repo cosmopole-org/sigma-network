@@ -23,15 +23,13 @@ export default function HomeRoomsList() {
             roomsListExtraState.set(roomsListState.get({ noproxy: true }));
         }, 250);
     }, [roomsListState.get({ noproxy: true })]);
-    return (roomsListState.get({ noproxy: true }) || roomsListExtraState.get({ noproxy: true })) ? (
-        <Card className="fixed top-[164px] overflow-x-hidden" style={{
-            width: 'calc(100% - 78px)', height: 'calc(100% - 184px)', borderRadius: '24px 0px 0px 0px', right: 0,
-            transition: 'transform 250ms', transform: (roomsListState.get({ noproxy: true }) && roomsListExtraState.get({ noproxy: true })) ? 'translateX(0px)' : 'translateX(+100%)'
+    return (
+        <Card className="fixed top-0 left-20 overflow-x-hidden w-full h-full" style={{
+            borderRadius: 0
         }}>
             <Card radius="none" className="h-10">
                 <div className="flex h-full">
-                    <IconButton name="back" size={[20, 20]} onClick={() => roomsListState.set(false)} />
-                    <p className="mt-2">
+                    <p className="mt-2 ml-2">
                         Tower rooms
                     </p>
                 </div>
@@ -54,5 +52,4 @@ export default function HomeRoomsList() {
             </div>
         </Card>
     )
-        : null
 }
