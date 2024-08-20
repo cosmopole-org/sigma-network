@@ -8,16 +8,23 @@ const emojiPadHeight = 424;
 
 export let switchMainDrawer = (open: boolean) => { }
 
+let drawerOpen = false;
+
 let isChatKeyboardOpen = false;
 let recalculateMetaCoverHeight = () => { }
 
 const MainDrawer = (props: { onOpen: () => void, onClose: () => void, content: any }) => {
     const shadowRoomState = useHookstate(showRoomShadow);
     const metaRef = useRef(null);
-    const left = useRef(0)
+    const left = useRef(0);
     const updateTop = (newVal: number) => {
         if (newVal > window.innerWidth - 72) newVal = window.innerWidth - 72;
-        left.current = newVal
+        left.current = newVal;
+        if (newVal >= window.innerWidth - 72) {
+            drawerOpen = true;
+        } else {
+            drawerOpen = false;
+        }
         metaRef.current && ((metaRef.current as HTMLElement).style.transform = `translateX(${left.current}px)`)
     }
     switchMainDrawer = (open: boolean) => {
@@ -42,7 +49,7 @@ const MainDrawer = (props: { onOpen: () => void, onClose: () => void, content: a
             ref={metaRef}
             style={{
                 transition: `transform .25s`,
-                transform: `translateX(0px)`,
+                transform: `translateX(${drawerOpen ? window.innerWidth - 72 : 0}px)`,
                 borderRadius: '24px 24px 0px 0px',
                 position: 'absolute',
                 left: 0,

@@ -1,12 +1,13 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
-import { getUsers } from "@/api/offline/constants";
-import Icon from "../elements/icon";
-import Settings from "@/app/app/home/settings/page";
-import Contacts from "@/app/app/home/contacts/page";
-import Spaces from "@/app/app/home/spaces/page";
+import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
+import HomeTowersList from "@/components/home/home-towers-list";
+import HomeNavbar from "@/components/home/home-navbar";
+import Icon from "@/components/elements/icon";
+import TowerCreateModal, {switchTowerCreateModal} from "@/components/home/tower-create-modal";
+import HomeFoldersModal, {switchHomeFoldersModal} from "@/components/home/home-folders-modal";
+import HomeArchiveModal, {switchHomeArchiveModal} from "@/components/home/home-archive-modal";
 
 const chatsHomeModalShow = hookstate(false);
 export const switchHomeChatsHomeModal = (v: boolean) => {
@@ -27,7 +28,45 @@ export default function HomeChatsModal() {
                     <>
                         <ModalHeader className="flex flex-col gap-1">Chats</ModalHeader>
                         <ModalBody className="p-0">
-                            <Spaces />
+                            <div className="w-full h-full relative">
+                                <HomeNavbar />
+                                <HomeTowersList />
+                                <div className="sticky bottom-[16px] h-10">
+                                    <Button
+                                        isIconOnly
+                                        color="primary"
+                                        variant="shadow"
+                                        className="absolute right-2/4 translate-x-[155px]"
+                                        radius="full"
+                                        onClick={() => switchHomeFoldersModal(true)}
+                                    >
+                                        <Icon name="storage" />
+                                    </Button>
+                                    <Button
+                                        isIconOnly
+                                        color="primary"
+                                        variant="shadow"
+                                        className="absolute left-2/4 -translate-x-[155px]"
+                                        radius="full"
+                                        onClick={() => switchHomeArchiveModal(true)}
+                                    >
+                                        <Icon name="archive" />
+                                    </Button>
+                                    <Button
+                                        color="primary"
+                                        variant="shadow"
+                                        className="absolute left-2/4 -translate-x-1/2 h-10 text-lg"
+                                        radius="full"
+                                        onClick={() => switchTowerCreateModal(true)}
+                                    >
+                                        <Icon name="add" />
+                                        Create new space
+                                    </Button>
+                                </div>
+                                <TowerCreateModal />
+                                <HomeFoldersModal />
+                                <HomeArchiveModal />
+                            </div>
                         </ModalBody>
                     </>
                 )}

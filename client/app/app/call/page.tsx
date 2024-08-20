@@ -13,8 +13,7 @@ export default function Call() {
     const [mic, setMic] = useState(false);
     return (
         <div className="w-full h-full relative">
-            <CallNavbar />
-            <div className="grid grid-cols-2 w-full h-full pt-24 pl-8 pr-8 gap-8">
+            <div className="overflow-y-auto grid grid-cols-2 w-full h-full pt-24 pl-8 pr-8 gap-8">
                 {getUsers().map(item => (
                     <Card isPressable key={item.id} style={{ borderRadius: 16 }} shadow='none' className='bg-transparent h-48'>
                         <Avatar className="w-full h-full aspect-square" src={item.avatar} />

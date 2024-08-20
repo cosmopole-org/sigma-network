@@ -5,9 +5,11 @@ import { Avatar, Card } from "@nextui-org/react"
 import { switchRoomsList } from "./home-rooms-list"
 import Icon from "../elements/icon"
 import { useTheme } from "next-themes"
+import { useRouter } from "next/navigation"
 
 export default function HomeTowersList() {
     const { theme } = useTheme();
+    const router = useRouter();
     return (
         <div
             className="w-full h-full pl-4 pr-4 pb-20 pt-[88px] overflow-y-auto"
@@ -15,7 +17,7 @@ export default function HomeTowersList() {
         >
             <div className="h-0" />
             <Card onClick={() => {
-                switchRoomsList(true);
+                router.push('/app/chat')
             }} className="mt-4 m-h-16 w-full bg-transparent" key={'home'} isPressable shadow="none">
                 <div className="flex gap-2 w-full">
                     <Icon iconType="circle" name="home" size={[48, 48]} className="w-[68px] p-1" color={theme === 'light' ? "blue" : "#aaa"} />
@@ -31,7 +33,7 @@ export default function HomeTowersList() {
             </Card>
             {
                 getUsers().map((item, index) => (
-                    <Card className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
+                    <Card onClick={() => router.push('/app/chat')} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <Avatar alt={item.name} className="w-[58px] h-[58px]" src={item.avatar} style={{ minWidth: 58 }} />
                             <div className="flex flex-col relative w-full">

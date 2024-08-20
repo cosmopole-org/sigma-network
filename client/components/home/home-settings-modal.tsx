@@ -1,10 +1,8 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
-import { getUsers } from "@/api/offline/constants";
-import Icon from "../elements/icon";
-import Settings from "@/app/app/home/settings/page";
+import { Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react";
+import HomeSettings from "./home-settings";
 
 const settingsHomeModalShow = hookstate(false);
 export const switchHomeSettingssModal = (v: boolean) => {
@@ -25,7 +23,7 @@ export default function HomeSettingsModal() {
                     <>
                         <ModalHeader className="flex flex-col gap-1">Settings</ModalHeader>
                         <ModalBody className="p-0">
-                            <Settings />
+                            <HomeSettings />
                         </ModalBody>
                     </>
                 )}

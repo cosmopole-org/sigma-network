@@ -2,18 +2,13 @@
 
 import { setHomeCityScrollPos, setHomePeopleScrollPos, setHomeSettingsScrollPos } from "@/api/offline/backup";
 import { showLoading } from "@/api/offline/states";
-import HomeBottomNav, { selectedHomeSection } from "@/components/home/home-bottomnav";
+import { selectedHomeSection } from "@/components/home/home-bottomnav";
 import { useHookstate } from "@hookstate/core";
-import { Avatar, Card, CircularProgress, Divider } from "@nextui-org/react";
+import { Avatar, Card, Divider } from "@nextui-org/react";
 import React, { useEffect, useState } from "react";
-import Contacts from "./contacts/page";
-import Settings from "./settings/page";
-import Spaces from "./spaces/page";
-import IconButton from "@/components/elements/icon-button";
 import { getUsers } from "@/api/offline/constants";
 import HomeRoomsList from "@/components/home/home-rooms-list";
 import Icon from "@/components/elements/icon";
-import HomeSettings from "@/components/home/home-settings";
 import HomeSettingsModal, { switchHomeSettingssModal } from "@/components/home/home-settings-modal";
 import HomeContactsModal, { switchHomeContactsModal } from "@/components/home/home-contacts-modal";
 import HomeChatsModal, { switchHomeChatsHomeModal } from "@/components/home/home-chats-modal";
@@ -51,7 +46,7 @@ export default function HomePage() {
 	}, []);
 	return (
 		<div className="relative flex flex-col h-screen">
-			<Card shadow="md" className="w-20 h-full bg-s-white dark:bg-content2 pl-2 pt-2 fixed overflow-y-auto" style={{ borderRadius: 0 }}>
+			<Card shadow="md" className="w-20 h-full bg-s-white dark:bg-content2 pl-2 pt-12 fixed overflow-y-auto" style={{ borderRadius: 0 }}>
 				<div className="w-16 h-12 rounded-2xl mt-3 pl-4 pt-2"
 					onClick={() => {
 						selectedHomeSection.set("contacts")

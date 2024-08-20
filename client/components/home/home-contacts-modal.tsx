@@ -1,11 +1,11 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
-import { getUsers } from "@/api/offline/constants";
+import { Button, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
 import Icon from "../elements/icon";
-import Settings from "@/app/app/home/settings/page";
-import Contacts from "@/app/app/home/contacts/page";
+import HomeNavbar from "./home-navbar";
+import HomePeopleList from "./home-people-list";
+import ContactCreateModal, { switchContactCreateModal } from "./contact-create-modal";
 
 const contactsHomeModalShow = hookstate(false);
 export const switchHomeContactsModal = (v: boolean) => {
@@ -26,7 +26,21 @@ export default function HomeContactsModal() {
                     <>
                         <ModalHeader className="flex flex-col gap-1">Contacts</ModalHeader>
                         <ModalBody className="p-0 overflow-y-auto" style={{ maxHeight: 600 }}>
-                            <Contacts />
+                            <HomeNavbar />
+                            <HomePeopleList />
+                            <div className="sticky bottom-[56px] h-10">
+                                <Button
+                                    color="primary"
+                                    variant="shadow"
+                                    className="absolute left-1/2 -translate-x-1/2 h-10 text-lg"
+                                    radius="full"
+                                    onClick={() => switchContactCreateModal(true)}
+                                >
+                                    <Icon name="add" />
+                                    Create new contact
+                                </Button>
+                            </div>
+                            <ContactCreateModal />
                         </ModalBody>
                     </>
                 )}

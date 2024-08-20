@@ -22,7 +22,7 @@ const MetaContent = (props: { room: any, needToCloseRecorder?: boolean }) => {
                         opacity: 0.65,
                         width: '100%', height: '100%', position: 'absolute', left: 0, top: 0
                     }}
-                    className="bg-primary/50"
+                        className="bg-primary/50"
                     />
                     <div
                         style={{
