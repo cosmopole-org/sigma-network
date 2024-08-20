@@ -1,12 +1,7 @@
 'use client'
 
 import { hookstate, useHookstate } from "@hookstate/core"
-import { Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
-import { getUsers } from "@/api/offline/constants";
-import Icon from "../elements/icon";
-import Settings from "@/app/app/home/settings/page";
-import Contacts from "@/app/app/home/contacts/page";
-import Spaces from "@/app/app/home/spaces/page";
+import { Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
 
 const inboxHomeModalShow = hookstate(false);
 export const switchHomeInboxHomeModal = (v: boolean) => {
