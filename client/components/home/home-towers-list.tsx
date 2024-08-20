@@ -2,7 +2,6 @@
 
 import { getUsers } from "@/api/offline/constants"
 import { Avatar, Card } from "@nextui-org/react"
-import { switchRoomsList } from "./home-rooms-list"
 import Icon from "../elements/icon"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
