@@ -24,7 +24,7 @@ export default function HomeRoomsList() {
         }, 250);
     }, [roomsListState.get({ noproxy: true })]);
     return (
-        <Card className="fixed top-0 left-20 overflow-x-hidden w-full h-full" style={{
+        <Card className="overflow-x-hidden w-full h-full" style={{
             borderRadius: 0
         }}>
             <Card radius="none" className="h-10">

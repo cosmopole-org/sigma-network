@@ -13,6 +13,7 @@ import React, { useRef } from "react";
 import HomePage from "../home/page";
 import { useHookstate } from "@hookstate/core";
 import IconButton from "@/components/elements/icon-button";
+import HomeSettingsModal from "@/components/home/home-settings-modal";
 
 export default function HomeMain() {
     const containerRef = useRef<HTMLDivElement>(null);

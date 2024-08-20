@@ -12,16 +12,18 @@ export default function Contacts() {
         <div className="w-full relative">
             <HomeNavbar />
             <HomePeopleList />
-            <Button
-                color="primary"
-                variant="shadow"
-                className="fixed bottom-[88px] left-2/4 -translate-x-1/2 h-10 text-lg"
-                radius="full"
-                onClick={() => switchContactCreateModal(true)}
-            >
-                <Icon name="add" />
-                Create new contact
-            </Button>
+            <div className="sticky bottom-[16px] h-10">
+                <Button
+                    color="primary"
+                    variant="shadow"
+                    className="absolute left-1/2 -translate-x-1/2 h-10 text-lg"
+                    radius="full"
+                    onClick={() => switchContactCreateModal(true)}
+                >
+                    <Icon name="add" />
+                    Create new contact
+                </Button>
+            </div>
             <ContactCreateModal />
         </div>
     );

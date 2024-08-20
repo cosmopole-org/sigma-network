@@ -17,25 +17,16 @@ export const switchHomeNav = (v: boolean) => {
 }
 
 export default function HomeNavbar() {
-    const roomsListState = useHookstate(roomsListView);
     const homeSectionState = useHookstate(selectedHomeSection);
     const homeNavShowState = useHookstate(homeNavShow);
     return (
         <Navbar
             isBordered
-            className={'bg-content1 ' + ((!roomsListState.get({ noproxy: true }) || (homeSectionState.get({ noproxy: true }) !== 'spaces')) ? undefined : 'absolute') + " " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[164px] pb-2" : "h-[124px] pb-2")}
-            style={{ transform: (homeNavShowState.get({ noproxy: true }) || roomsListState.get({noproxy: true})) ? 'translateY(0px)' : 'translateY(-100%)', transition: 'transform 400ms' }}
+            className={'bg-content1 ' + (homeSectionState.get({ noproxy: true }) !== 'spaces' ? undefined : 'absolute') + " " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[92px] pb-8" : "h-[56px] pb-10")}
+            style={{ transform: homeNavShowState.get({ noproxy: true }) ? 'translateY(-1px)' : 'translateY(-100%)', transition: 'transform 400ms' }}
         >
-            <NavbarContent as="div" className={"items-center w-full " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[164px]" : "h-[128px]")} justify="center">
-                <div className={"w-full"} style={{ paddingTop: (homeSectionState.get({ noproxy: true }) === 'spaces' ? 20 : 0) }}>
-                    <div className="flex pl-1">
-                        <HomeMenu />
-
-                        <p className="text-xl flex-1 text-center">
-                            Sigma
-                        </p>
-                        <HomeNotifications />
-                    </div>
+            <NavbarContent as="div" className={"items-center w-full " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[92px]" : "h-[56px]")} justify="center">
+                <div className={"w-full"} style={{ paddingTop: (homeSectionState.get({ noproxy: true }) === 'spaces' ? 4 : 0) }}>
                     <HomeSearchbar />
                     {
                         homeSectionState.get({ noproxy: true }) === 'spaces' ? (

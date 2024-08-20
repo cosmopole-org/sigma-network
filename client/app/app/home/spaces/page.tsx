@@ -12,41 +12,42 @@ import HomeArchiveModal, { switchHomeArchiveModal } from "@/components/home/home
 
 export default function Spaces() {
     return (
-        <div className="w-full relative">
+        <div className="w-full h-full relative">
             <HomeNavbar />
             <HomeTowersList />
-            <HomeRoomsList />
-            <HomeFolders secondary />
-            <Button
-                color="primary"
-                variant="shadow"
-                className="fixed bottom-[88px] left-2/4 -translate-x-1/2 h-10 text-lg"
-                radius="full"
-                onClick={() => switchTowerCreateModal(true)}
-            >
-                <Icon name="add" />
-                Create new space
-            </Button>
-            <Button
-                isIconOnly
-                color="primary"
-                variant="shadow"
-                className="fixed bottom-[88px] right-2/4 translate-x-[155px]"
-                radius="full"
-                onClick={() => switchHomeFoldersModal(true)}
-            >
-                <Icon name="storage" />
-            </Button>
-            <Button
-                isIconOnly
-                color="primary"
-                variant="shadow"
-                className="fixed bottom-[88px] left-2/4 -translate-x-[155px]"
-                radius="full"
-                onClick={() => switchHomeArchiveModal(true)}
-            >
-                <Icon name="archive" />
-            </Button>
+            <div className="sticky bottom-[16px] h-10">
+                <Button
+                    isIconOnly
+                    color="primary"
+                    variant="shadow"
+                    className="absolute right-2/4 translate-x-[155px]"
+                    radius="full"
+                    onClick={() => switchHomeFoldersModal(true)}
+                >
+                    <Icon name="storage" />
+                </Button>
+                <Button
+                    isIconOnly
+                    color="primary"
+                    variant="shadow"
+                    className="absolute left-2/4 -translate-x-[155px]"
+                    radius="full"
+                    onClick={() => switchHomeArchiveModal(true)}
+                >
+                    <Icon name="archive" />
+                </Button>
+                <Button
+                    color="primary"
+                    variant="shadow"
+                    className="absolute left-2/4 -translate-x-1/2 h-10 text-lg"
+                    radius="full"
+                    onClick={() => switchTowerCreateModal(true)}
+                >
+                    <Icon name="add" />
+                    Create new space
+                </Button>
+            </div>
+
             <TowerCreateModal />
             <HomeFoldersModal />
             <HomeArchiveModal />
