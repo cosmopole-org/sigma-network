@@ -2,13 +2,9 @@
 import { useRef } from "react";
 import MetaContent from "./metaContent";
 import { showRoomShadow } from "./shadow";
-import { useHookstate } from "@hookstate/core";
+import { hookstate, useHookstate } from "@hookstate/core";
 
 const emojiPadHeight = 424;
-
-export let switchMainDrawer = (open: boolean) => { }
-
-let drawerOpen = false;
 
 let isChatKeyboardOpen = false;
 let recalculateMetaCoverHeight = () => { }
@@ -21,9 +17,13 @@ const MainDrawer = (props: { onOpen: () => void, onClose: () => void, content: a
         if (newVal > window.innerWidth - 72) newVal = window.innerWidth - 72;
         left.current = newVal;
         if (newVal >= window.innerWidth - 72) {
-            drawerOpen = true;
+            if (!mainDrawerOpen.get({noproxy: true})) {
+                mainDrawerOpen.set(true);
+            }
         } else {
-            drawerOpen = false;
+            if (mainDrawerOpen.get({noproxy: true})) {
+                mainDrawerOpen.set(false);
+            }
         }
         metaRef.current && ((metaRef.current as HTMLElement).style.transform = `translateX(${left.current}px)`)
     }
@@ -49,7 +49,7 @@ const MainDrawer = (props: { onOpen: () => void, onClose: () => void, content: a
             ref={metaRef}
             style={{
                 transition: `transform .25s`,
-                transform: `translateX(${drawerOpen ? window.innerWidth - 72 : 0}px)`,
+                transform: `translateX(${mainDrawerOpen.get({noproxy: true}) ? window.innerWidth - 72 : 0}px)`,
                 borderRadius: '24px 24px 0px 0px',
                 position: 'absolute',
                 left: 0,

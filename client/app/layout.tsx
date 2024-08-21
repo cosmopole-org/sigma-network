@@ -19,7 +19,7 @@ import { Logo } from "@/components/icons";
 import IconButton from "@/components/elements/icon-button";
 import { changeMetaDrawerState } from "@/components/home/metaTouch";
 import { showRoomShadow } from "@/components/home/shadow";
-import { switchMainDrawer } from "@/components/home/main-drawer";
+import { mainDrawerOpen, switchMainDrawer } from "./app/main/page";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -55,6 +55,7 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+	const mainDrawerOpenState = useHookstate(mainDrawerOpen);
 	swipeNext = () => switchMainDrawer(false);
 	const showRoom = useHookstate(showRoomShadow);
 	const path = usePathname();
@@ -177,6 +178,8 @@ export default function RootLayout({
 												<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => router.back()} />
 											) : dynamicPath === "/app/chat" ? (
 												<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => router.back()} />
+											) : mainDrawerOpenState.get({ noproxy: true }) ? (
+												<IconButton name="close" className="ml-1 -mt-[2px]" onClick={() => switchMainDrawer(false)} />
 											) : (
 												<IconButton name="menu" className="ml-1 -mt-[2px]" onClick={() => switchMainDrawer(true)} />
 											)
