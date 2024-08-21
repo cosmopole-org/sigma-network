@@ -5,13 +5,10 @@ import MainTools from "@/components/home/main-tools-drawer";
 import Board from "@/components/room/room-board";
 import { Avatar, AvatarGroup } from "@nextui-org/react";
 import { useTheme } from "next-themes";
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import HomePage from "../home/page";
-import { hookstate } from "@hookstate/core";
 import MainShadow from "@/components/home/main-shadow";
-
-export let switchMainDrawer = (open: boolean) => { }
-export let mainDrawerOpen = hookstate(false);
+import { mainDrawerOpen, setMainDrawerSwitcher } from "@/app/layout";
 
 const calcDrawerX = () => {
     return mainDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - 720) : 0;
@@ -20,13 +17,13 @@ const calcDrawerX = () => {
 export default function HomeMain() {
     const containerRef = useRef<HTMLDivElement>(null);
     const drawerRef = useRef<HTMLDivElement>(null);
-    switchMainDrawer = (open: boolean) => {
+    setMainDrawerSwitcher((open: boolean) => {
         mainDrawerOpen.set(!mainDrawerOpen.get({ noproxy: true }));
         if (drawerRef.current) {
             if (open) drawerRef.current.style.transform = `translateX(${window.innerWidth - 72}px)`;
             else drawerRef.current.style.transform = `translateX(0px)`;
         }
-    }
+    });
     const { theme } = useTheme();
     const color = '#fff';
     return (

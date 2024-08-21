@@ -4,7 +4,7 @@ import "@/styles/globals.css";
 import { fontSans } from "@/config/fonts";
 import { Providers } from "./providers";
 import clsx from "clsx";
-import { useHookstate } from "@hookstate/core";
+import { hookstate, useHookstate } from "@hookstate/core";
 import { Card, CircularProgress } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,7 +19,6 @@ import { Logo } from "@/components/icons";
 import IconButton from "@/components/elements/icon-button";
 import { changeMetaDrawerState } from "@/components/home/metaTouch";
 import { showRoomShadow } from "@/components/home/shadow";
-import { mainDrawerOpen, switchMainDrawer } from "./app/main/page";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -49,6 +48,12 @@ export const disableSwiper = () => {
 	}
 }
 export let swipeNext = () => { }
+
+export let switchMainDrawer = (open: boolean) => { }
+export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
+	switchMainDrawer = mds;
+}
+export let mainDrawerOpen = hookstate(false);
 
 export default function RootLayout({
 	children,
