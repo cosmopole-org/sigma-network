@@ -11,7 +11,7 @@ import MainShadow from "@/components/home/main-shadow";
 import { mainDrawerOpen, setMainDrawerSwitcher } from "@/app/layout";
 
 const calcDrawerX = () => {
-    return mainDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - 720) : 0;
+    return mainDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - 72) : 0;
 }
 
 export default function HomeMain() {
@@ -31,7 +31,7 @@ export default function HomeMain() {
             <div className="w-[85%] h-full overflow-x-hidden overflow-y-auto fixed">
                 <HomePage />
             </div>
-            <div ref={drawerRef} className="shadow-medium w-full h-full overflow-hidden" style={{ transform: `translaateX(${calcDrawerX()}px)`, transition: 'transform .25s' }}>
+            <div ref={drawerRef} className="shadow-medium w-full h-full overflow-hidden" style={{ transform: `translateX(${calcDrawerX()}px)`, transition: 'transform .25s' }}>
                 <div className="w-full h-full overflow-hidden relative">
                     <div ref={containerRef} className={"w-full h-full"}>
                         <div className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
