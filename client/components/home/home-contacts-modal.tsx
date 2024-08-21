@@ -25,7 +25,9 @@ export default function HomeContactsModal() {
                 {(onClose) => (
                     <>
                         <ModalHeader className="flex flex-col gap-1">Contacts</ModalHeader>
-                        <ModalBody className="p-0 overflow-y-auto" style={{ maxHeight: 600 }}>
+                        <ModalBody className="p-0 overflow-y-auto" style={{
+                            maxHeight: window.innerHeight * 8 / 10 - 100
+                        }}>
                             <HomeNavbar />
                             <HomePeopleList />
                             <div className="sticky bottom-[56px] h-10">

@@ -12,7 +12,9 @@ export default function HomeTowersList() {
     return (
         <div
             className="w-full h-full pl-4 pr-4 pb-20 pt-[88px] overflow-y-auto"
-            style={{ maxHeight: 600 }}
+            style={{
+                maxHeight: window.innerHeight * 8 / 10 - 100
+            }}
         >
             <div className="h-0" />
             <Card onClick={() => {
