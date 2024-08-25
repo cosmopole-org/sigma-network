@@ -13,7 +13,6 @@ import (
 	"sigma/sigma/layer1/tools/signaler"
 	"sigma/sigma/utils/crypto"
 	"sigma/sigma/utils/vaidate"
-	"sigma/sigverse/model"
 
 	"strings"
 
@@ -117,16 +116,8 @@ func (sm *Security) Decrypt(tag string, cipherText string) string {
 	return string(plaintext)
 }
 
-func (sm *Security) LoadAccess() {
-	var members []model.Member
-	sm.storage.Find(&members)
-	for _, member := range members {
-		sm.signaler.JoinGroup(member.SpaceId, member.UserId)
-	}
-}
-
-func (sm *Security) AuthWithToken(token string) (string, string) {
-	var auth = sm.cache.Get("plugin::" + token)
+func (sm *Security) AuthWithToken(token string) (string, string, bool) {
+	var auth = sm.cache.Get("auth::" + token)
 	var userId = ""
 	var userType = ""
 	if auth != "" {
@@ -134,7 +125,8 @@ func (sm *Security) AuthWithToken(token string) (string, string) {
 		userId = dataParts[1]
 		userType = dataParts[0]
 	}
-	return userId, userType
+	var isGod = sm.cache.Get("god::" + userId)
+	return userId, userType, (isGod == "true")
 }
 
 func (sm *Security) Authenticate(headers map[string][]string, ctx *fiber.Ctx) (string, string, string) {
@@ -142,7 +134,7 @@ func (sm *Security) Authenticate(headers map[string][]string, ctx *fiber.Ctx) (s
 		return "", "", ""
 	}
 	var token = string(headers["Token"][0])
-	var userId, userType = sm.AuthWithToken(token)
+	var userId, userType, _ = sm.AuthWithToken(token)
 	if userId == "" {
 		_ = ctx.Status(fiber.ErrForbidden.Code).JSON(models.BuildErrorJson("token authentication failed"))
 		return "", "", ""
@@ -169,8 +161,21 @@ func (sm *Security) AuthorizeFedHumanWithProcessed(userId string, spaceId string
 }
 
 func (sm *Security) AuthorizeHumanWithProcessed(token string, userId string, spaceId string, topicId string) Location {
-	if spaceId == "" {
+	if spaceId == "" && topicId == "" {
 		return Location{SpaceId: "", TopicId: ""}
+	}
+	if spaceId == "" {
+		if topicId != "" {
+			var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
+			if cityData == "" {
+				return Location{SpaceId: "", TopicId: ""}
+			}
+			var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, cityData, userId))
+			if memberData == "" {
+				return Location{SpaceId: "", TopicId: ""}
+			}
+			return Location{SpaceId: cityData, TopicId: topicId}	
+		}
 	}
 	var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
 	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))

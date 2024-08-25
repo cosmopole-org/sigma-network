@@ -22,7 +22,7 @@ export default function HomeNavbar() {
     return (
         <Navbar
             isBordered
-            className={'bg-content1 ' + (homeSectionState.get({ noproxy: true }) !== 'spaces' ? undefined : 'absolute') + " " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[92px] pb-8" : "h-[56px] pb-10")}
+            className={'bg-content1 ' + (homeSectionState.get({ noproxy: true }) !== 'spaces' ? undefined : 'absolute') + " " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[92px] pb-0" : "h-[56px] pb-0")}
             style={{ transform: homeNavShowState.get({ noproxy: true }) ? 'translateY(-1px)' : 'translateY(-100%)', transition: 'transform 400ms' }}
         >
             <NavbarContent as="div" className={"items-center w-full " + (homeSectionState.get({ noproxy: true }) === 'spaces' ? "h-[92px]" : "h-[56px]")} justify="center">

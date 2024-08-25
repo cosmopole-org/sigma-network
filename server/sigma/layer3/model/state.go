@@ -20,7 +20,7 @@ func NewStateBuilder(layer abstract.ILayer, bottom abstract.IStateBuilder) abstr
 
 func (sb *StateBuilder3) NewState(args ...interface{}) abstract.IState {
 	if len(args) > 0 {
-		return &StateL3{sb.bottom.NewState(args[0]).(*modulemodel.StateL2)}
+		return &StateL3{sb.bottom.NewState(args...).(*modulemodel.StateL2)}
 	} else {
 		return &StateL3{sb.bottom.NewState().(*modulemodel.StateL2)}
 	}

@@ -1,4 +1,4 @@
-package actions_auth
+package actions_plugin
 
 import (
 	"encoding/json"
@@ -15,7 +15,9 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
-func Install(s abstract.IState) {}
+func Install(s abstract.IState, a *Actions) error {
+	return nil
+}
 
 // Plug /plugins/plug check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Plug(_ abstract.IState, input inputsexternal.PlugInput) (any, error) {

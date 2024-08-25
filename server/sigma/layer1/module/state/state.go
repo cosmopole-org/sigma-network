@@ -7,13 +7,16 @@ import (
 )
 
 type IStateL1 interface {
+	Dummy() string
 	Info() abstract.IInfo
 	Trx() adapters.ITrx
+	SetTrx(adapters.ITrx)
 }
 
 type StateL1 struct {
-	info abstract.IInfo
-	trx  adapters.ITrx
+	info  abstract.IInfo
+	trx   adapters.ITrx
+	dummy string
 }
 
 func (s *StateL1) Info() abstract.IInfo {
@@ -24,8 +27,12 @@ func (s *StateL1) Trx() adapters.ITrx {
 	return s.trx
 }
 
-func (s *StateL1) Dummy() {
-	// pass
+func (s *StateL1) SetTrx(newTrx adapters.ITrx) {
+	s.trx = newTrx
+}
+
+func (s *StateL1) Dummy() string {
+	return s.dummy
 }
 
 type StateBuilder1 struct {
@@ -40,14 +47,18 @@ func NewStateBuilder(layer abstract.ILayer, bottom abstract.IStateBuilder) abstr
 func (sb *StateBuilder1) NewState(args ...interface{}) abstract.IState {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](sb.layer.Tools())
 	var trx adapters.ITrx
-	if len(args) > 1 {
+	if (len(args) > 1) && (args[1] != nil) {
 		trx = args[1].(adapters.ITrx)
 	} else {
 		trx = toolbox.Storage().CreateTrx()
 	}
 	if len(args) > 0 {
-		return &StateL1{info: args[0].(abstract.IInfo), trx: trx}
+		if len(args) > 2 {
+			return &StateL1{info: args[0].(abstract.IInfo), trx: trx, dummy: args[2].(string)}
+		} else {
+			return &StateL1{info: args[0].(abstract.IInfo), trx: trx, dummy: ""}
+		}
 	} else {
-		return &StateL1{info: nil, trx: trx}
+		return &StateL1{info: nil, trx: trx, dummy: ""}
 	}
 }

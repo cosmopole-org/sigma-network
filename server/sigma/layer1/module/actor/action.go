@@ -2,10 +2,11 @@ package actor
 
 import (
 	"encoding/json"
+	"errors"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
 	modulemodel "sigma/sigma/layer1/model"
-	module_state "sigma/sigma/layer1/module/state"
+	statemodule "sigma/sigma/layer1/module/state"
 	toolbox2 "sigma/sigma/layer1/module/toolbox"
 )
 
@@ -31,18 +32,20 @@ func (a *SecureAction) ParseInput(protocol string, raw interface{}) (abstract.II
 	return a.Parsers[protocol](raw)
 }
 
-func (a *SecureAction) SecurelyAct(layer abstract.ILayer, token string, origin string, packetId string, input abstract.IInput) (int, any, error) {
+func (a *SecureAction) SecurelyAct(layer abstract.ILayer, token string, origin string, packetId string, input abstract.IInput, dummy string) (int, any, error) {
 	if a.core.Id() == origin {
 		success, info := a.Guard.ValidateByToken(layer, token, input.GetSpaceId(), input.GetTopicId(), input.GetMemberId())
 		if !success {
-			return -1, nil, nil
+			return -1, nil, errors.New("authorization failed")
 		}
-		s := layer.Sb().NewState(info)
+		s := layer.Sb().NewState(info, nil, dummy).(statemodule.IStateL1)
 		statusCode, res, err := a.Act(s, input)
-		if err != nil {
-			s.(module_state.IStateL1).Trx().Rollback()
-		} else {
-			s.(module_state.IStateL1).Trx().Commit()
+		if s.Trx().Used() {
+			if err != nil {
+				s.Trx().Revert()
+			} else {
+				s.Trx().Push()
+			}
 		}
 		return statusCode, res, err
 	}

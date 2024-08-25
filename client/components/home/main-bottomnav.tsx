@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { changeMetaDrawerState } from "./metaTouch";
 import { showRoomShadow } from "./shadow";
 import { useHookstate } from "@hookstate/core";
+import { RouteSys } from "@/api/offline/states";
 
 export default function MainBottomNav() {
     const isSelected = useHookstate(showRoomShadow);
@@ -20,7 +21,7 @@ export default function MainBottomNav() {
         }
     }, [isSelected.get({ noproxy: true })]);
     const openCall = () => () => {
-        router.push("/app/call")
+        RouteSys.push("/app/call")
     }
     const openPanelByKey = (key: string) => () => {
         setPanelKey(key)

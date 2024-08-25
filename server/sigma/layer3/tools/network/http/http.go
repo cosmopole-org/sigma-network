@@ -3,14 +3,16 @@ package net_http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/mitchellh/mapstructure"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
 	modulemodel "sigma/sigma/layer1/model"
 	moduleactormodel "sigma/sigma/layer1/module/actor"
 	"sigma/sigma/layer2/tools/wasm/model"
+	realip "sigma/sigma/utils/ip"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/mitchellh/mapstructure"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -87,14 +89,15 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	var layerNum = 0
 	layerNumHeader := c.GetReqHeaders()["Layer"]
 	if layerNumHeader == nil {
-		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
+		layerNum = 1
+	} else {
+		ln, err := strconv.ParseInt(layerNumHeader[0], 10, 32)
+		if err != nil {
+			hs.logger.Println(err)
+			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
+		}
+		layerNum = int(ln)
 	}
-	ln, err := strconv.ParseInt(layerNumHeader[0], 10, 32)
-	if err != nil {
-		hs.logger.Println(err)
-		return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson("layer number not specified"))
-	}
-	layerNum = int(ln)
 	org := hs.sigmaCore.Id()
 	if origin != "" {
 		org = origin
@@ -106,10 +109,11 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 	}
 	var input abstract.IInput
 	if action.(*moduleactormodel.SecureAction).HasGlobalParser() {
-		input, err = parseGlobally(c)
-		if err != nil {
-			hs.logger.Println(err)
-			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson(err.Error()))
+		var err1 error
+		input, err1 = parseGlobally(c)
+		if err1 != nil {
+			hs.logger.Println(err1)
+			return c.Status(fiber.StatusBadRequest).JSON(modulemodel.BuildErrorJson(err1.Error()))
 		}
 	} else {
 		i, err2 := action.(*moduleactormodel.SecureAction).ParseInput("http", c)
@@ -119,11 +123,15 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 		}
 		input = i
 	}
-	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input)
+	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input, realip.FromRequest(c.Context()))
 	if statusCode == 1 {
 		return handleResultOfFunc(c, result)
 	} else if err != nil {
-		return c.Status(statusCode).JSON(modulemodel.BuildErrorJson(err.Error()))
+		httpStatusCode := fiber.StatusInternalServerError
+		if statusCode == -1 {
+			httpStatusCode = fiber.StatusForbidden
+		}
+		return c.Status(httpStatusCode).JSON(modulemodel.BuildErrorJson(err.Error()))
 	}
 	return c.Status(statusCode).JSON(result)
 }

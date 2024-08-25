@@ -30,7 +30,7 @@ export default function HumanProfile() {
             </div>
             <div className="justify-center flex w-full h-auto pl-4 pr-4 gap-4 absolute top-[280px]">
                 <Button
-                    onClick={() => router.push('/app/room/chat')}
+                    onClick={() => RouteSy.push('/app/room/chat')}
                     isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='message' size={[24, 24]} />
                 </Button>

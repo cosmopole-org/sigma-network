@@ -12,7 +12,9 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
-func Install(s abstract.IState) {}
+func Install(s abstract.IState, a *Actions) error {
+	return nil
+}
 
 // GetServerPublicKey /auths/getServerPublicKey check [ false false false ] access [ true false false false GET ]
 func (a *Actions) GetServerPublicKey(_ abstract.IState, _ inputsauth.GetServerKeyInput) (any, error) {

@@ -5,13 +5,15 @@ import { fontSans } from "@/config/fonts";
 import { Providers } from "./providers";
 import clsx from "clsx";
 import { hookstate, useHookstate } from "@hookstate/core";
-import { Card, CircularProgress } from "@nextui-org/react";
+import { Card, CircularProgress, Spinner } from "@nextui-org/react";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { showMainLoading, switchLoading, switchMainLoading, switchRoomLoading } from "../api/offline/states";
+import { RouterComponent, RouteSys, showMainLoading, switchLoading, switchMainLoading, switchRoomLoading } from "../api/offline/states";
 import { loadSizes } from "@/api/offline/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { EffectCreative } from 'swiper/modules';
 import { switchHomeNav } from "@/components/home/home-navbar";
 import { switchRoomNav } from "@/components/room/room-navbar";
 import { useTheme } from "next-themes";
@@ -19,6 +21,7 @@ import { Logo } from "@/components/icons";
 import IconButton from "@/components/elements/icon-button";
 import { changeMetaDrawerState } from "@/components/home/metaTouch";
 import { showRoomShadow } from "@/components/home/shadow";
+import dynamic from "next/dynamic";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -47,7 +50,9 @@ export const disableSwiper = () => {
 		swiperInst.disable();
 	}
 }
-export let swipeNext = () => { }
+export let swipeNext = () => {
+	swiperInst.slideNext();
+}
 
 export let switchMainDrawer = (open: boolean) => { }
 export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
@@ -56,16 +61,13 @@ export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
 export let mainDrawerOpen = hookstate(false);
 
 export default function RootLayout({
-	children,
+	children
 }: Readonly<{
-	children: React.ReactNode;
+	children: React.ReactNode
 }>) {
-	const mainDrawerOpenState = useHookstate(mainDrawerOpen);
 	swipeNext = () => switchMainDrawer(false);
-	const showRoom = useHookstate(showRoomShadow);
 	const path = usePathname();
 	if (path) dynamicPath = path;
-	const router = useRouter();
 	const scrollPositions = useRef<{ [url: string]: number }>({})
 	loadSizes();
 	const contentRef = useRef<HTMLDivElement>(null);
@@ -126,7 +128,6 @@ export default function RootLayout({
 			switchRoomNav(true);
 		}
 	}, [path])
-	const showLoadingState = useHookstate(showMainLoading);
 	const [h, setH] = useState(0)
 	const handleResize = () => setH(window.innerHeight);
 	const { theme } = useTheme();
@@ -139,6 +140,7 @@ export default function RootLayout({
 	useEffect(() => {
 		loadTheme()
 	}, [theme]);
+
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<head>
@@ -153,53 +155,10 @@ export default function RootLayout({
 					fontSans.variable
 				)}
 			>
+				<RouterComponent />
 				<Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
 					{
-						loaded ? (
-							<div className="relative flex flex-col" style={{ height: h }}>
-								<main className="w-full h-full">
-									<div ref={contentRef} className="w-full h-full fixed">
-										{children}
-									</div>
-									{
-										showLoadingState.get({ noproxy: true }) ? (
-											<Card isBlurred shadow="none" radius="none" className="w-full h-full fixed left-0 top-0 bg-transparent" style={{ zIndex: 100 }}>
-												<Card className="w-24 h-24 fixed left-[50%] top-[50%] -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-													<CircularProgress />
-												</Card>
-											</Card>
-										) : null
-									}
-									<div style={{ zIndex: 99999 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
-										{
-											showRoom.get({ noproxy: true }) ? (
-												<IconButton name="close" className="ml-1 -mt-[2px]" onClick={() => {
-													changeMetaDrawerState(false)
-													showRoom.set(false)
-												}} />
-											) : dynamicPath === "/app/profile/human" ? (
-												<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => router.back()} />
-											) : dynamicPath === "/app/call" ? (
-												<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => router.back()} />
-											) : dynamicPath === "/app/chat" ? (
-												<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => router.back()} />
-											) : mainDrawerOpenState.get({ noproxy: true }) ? (
-												<IconButton name="close" className="ml-1 -mt-[2px]" onClick={() => switchMainDrawer(false)} />
-											) : (
-												<IconButton name="menu" className="ml-1 -mt-[2px]" onClick={() => switchMainDrawer(true)} />
-											)
-										}
-										<IconButton color={'#006FEE'} name="connected" className="-mt-[2px]" />
-										<div className="flex-1">
-										</div>
-										<div className="absolute left-1/2 -translate-x-1/2 pt-[7px] text-center">
-											{showRoom.get({ noproxy: true }) ? "Chat" : "Keyhan's Home"}
-										</div>
-										<IconButton name="more" className="-mt-[2px]" />
-									</div>
-								</main>
-							</div>
-						) : (
+						loaded ? children : (
 							<div className="relative flex flex-col" style={{ height: h }}>
 								<main className="w-full h-full">
 									<Logo size={88} className="fixed left-2/4 top-2/4 -translate-x-2/4 -translate-y-2/4" />
@@ -208,7 +167,7 @@ export default function RootLayout({
 						)
 					}
 				</Providers>
-			</body>
-		</html>
+			</body >
+		</html >
 	);
 }

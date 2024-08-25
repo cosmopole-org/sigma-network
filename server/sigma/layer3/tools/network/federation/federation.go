@@ -112,7 +112,7 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 				}
 				if member != nil {
 					member.Id = crypto.SecureUniqueId(fed.sigmaCore.Id()) + "_" + channelId
-					fed.storage.CreateTrx().Create(member).Commit()
+					fed.storage.Create(member)
 					fed.signaler.JoinGroup(member.SpaceId, member.UserId)
 				}
 			}

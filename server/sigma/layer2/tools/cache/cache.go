@@ -22,6 +22,10 @@ func NewCache(logger *modulelogger.Logger, redisUri string) *Cache {
 	return &Cache{RedisClient: client, logger: logger}
 }
 
+func (m *Cache) Infra() any {
+	return m.RedisClient
+}
+
 func (m *Cache) Put(key string, value string) {
 	err := m.RedisClient.Set(context.Background(), key, value, 0).Err()
 	if err != nil {

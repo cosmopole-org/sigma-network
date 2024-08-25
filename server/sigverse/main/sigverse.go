@@ -13,6 +13,9 @@
 			plugger_dummy "sigma/sigverse/pluggers/dummy"
 			action_dummy "sigma/sigverse/actions/dummy"
 			
+			plugger_interact "sigma/sigverse/pluggers/interact"
+			action_interact "sigma/sigverse/actions/interact"
+			
 			plugger_invite "sigma/sigverse/pluggers/invite"
 			action_invite "sigma/sigverse/actions/invite"
 			
@@ -41,17 +44,40 @@
 	
 		func PlugAll(layer abstract.ILayer, logger *module_logger.Logger, core abstract.ICore) {
 		
-				PlugThePlugger(layer, plugger_auth.New(&action_auth.Actions{Layer: layer}, logger, core).Install(layer))
+				a_auth := &action_auth.Actions{Layer: layer}
+				p_auth := plugger_auth.New(a_auth, logger, core)
+				PlugThePlugger(layer, p_auth)
+				p_auth.Install(layer, a_auth)
 			
-				PlugThePlugger(layer, plugger_dummy.New(&action_dummy.Actions{Layer: layer}, logger, core).Install(layer))
+				a_dummy := &action_dummy.Actions{Layer: layer}
+				p_dummy := plugger_dummy.New(a_dummy, logger, core)
+				PlugThePlugger(layer, p_dummy)
+				p_dummy.Install(layer, a_dummy)
 			
-				PlugThePlugger(layer, plugger_invite.New(&action_invite.Actions{Layer: layer}, logger, core).Install(layer))
+				a_interact := &action_interact.Actions{Layer: layer}
+				p_interact := plugger_interact.New(a_interact, logger, core)
+				PlugThePlugger(layer, p_interact)
+				p_interact.Install(layer, a_interact)
 			
-				PlugThePlugger(layer, plugger_space.New(&action_space.Actions{Layer: layer}, logger, core).Install(layer))
+				a_invite := &action_invite.Actions{Layer: layer}
+				p_invite := plugger_invite.New(a_invite, logger, core)
+				PlugThePlugger(layer, p_invite)
+				p_invite.Install(layer, a_invite)
 			
-				PlugThePlugger(layer, plugger_topic.New(&action_topic.Actions{Layer: layer}, logger, core).Install(layer))
+				a_space := &action_space.Actions{Layer: layer}
+				p_space := plugger_space.New(a_space, logger, core)
+				PlugThePlugger(layer, p_space)
+				p_space.Install(layer, a_space)
 			
-				PlugThePlugger(layer, plugger_user.New(&action_user.Actions{Layer: layer}, logger, core).Install(layer))
+				a_topic := &action_topic.Actions{Layer: layer}
+				p_topic := plugger_topic.New(a_topic, logger, core)
+				PlugThePlugger(layer, p_topic)
+				p_topic.Install(layer, a_topic)
+			
+				a_user := &action_user.Actions{Layer: layer}
+				p_user := plugger_user.New(a_user, logger, core)
+				PlugThePlugger(layer, p_user)
+				p_user.Install(layer, a_user)
 			
 		}
 		

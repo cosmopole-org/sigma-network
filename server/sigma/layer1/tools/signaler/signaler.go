@@ -26,6 +26,7 @@ type Signaler struct {
 	Groups         *cmap.ConcurrentMap[string, *Group]
 	GlobalBridge   *models.GlobalListener
 	LGroupDisabled bool
+	JListener      *models.JoinListener
 	Federation     adapters.IFederation
 	logger         *module_logger.Logger
 }
@@ -43,6 +44,10 @@ func (p *Signaler) ListenToGroup(listener *models.Listener, overrideFunctionaly 
 func (p *Signaler) BrdigeGlobally(listener *models.GlobalListener, overrideFunctionaly bool) {
 	p.LGroupDisabled = true
 	p.GlobalBridge = listener
+}
+
+func (p *Signaler) ListenToJoin(listener *models.JoinListener) {
+	p.JListener = listener
 }
 
 func (p *Signaler) SignalUser(key string, respondToId string, listenerId string, data any, pack bool) {
@@ -114,8 +119,13 @@ func (p *Signaler) SignalGroup(key string, groupId string, data any, pack bool, 
 		} else {
 			packet = data
 		}
+		if p.LGroupDisabled {
+			p.GlobalBridge.Signal(groupId, packet)
+			return
+		}
 		if group.Override {
 			group.Listener.Signal(packet)
+			return
 		}
 		var foreignersMap = map[string][]string{}
 		for t := range group.Points.IterBuffered() {
@@ -161,6 +171,9 @@ func (p *Signaler) JoinGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
 		g.Points.Set(userId, userId)
+		if p.JListener != nil {
+			p.JListener.Join(groupId, userId)
+		}
 	}
 }
 
@@ -168,6 +181,9 @@ func (p *Signaler) LeaveGroup(groupId string, userId string) {
 	g, ok := p.RetriveGroup(groupId)
 	if ok {
 		g.Points.Remove(userId)
+		if p.JListener != nil {
+			p.JListener.Leave(groupId, userId)
+		}
 	}
 }
 

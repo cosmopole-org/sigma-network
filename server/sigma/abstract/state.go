@@ -1,7 +1,7 @@
 package abstract
 
 type IState interface {
-	Dummy()
+	Dummy() string
 }
 
 type IStateBuilder interface {

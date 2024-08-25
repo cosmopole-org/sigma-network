@@ -14,6 +14,7 @@ import (
 	models "sigma/sigma/layer1/model"
 	moduleactormodel "sigma/sigma/layer1/module/actor"
 	"sigma/sigma/layer1/tools/signaler"
+	"sigma/sigverse/model"
 	"strconv"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func (pt *PusherServer) PrepareAnswer(answer any) []byte {
 	return answerBytes
 }
 
-func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache, signaler *signaler.Signaler) *PusherServer {
+func New(core abstract.ICore, logger *modulelogger.Logger, storage adapters.IStorage, cache adapters.ICache, signaler *signaler.Signaler) *PusherServer {
 	pusher := &PusherServer{
 		sigmaCore:     core,
 		endpoints:     make(map[string]bool),
@@ -83,7 +84,7 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 		HistoryMetaTTL: 24 * time.Hour,
 	})
 	node.OnConnecting(func(ctx context.Context, e centrifuge.ConnectEvent) (centrifuge.ConnectReply, error) {
-		userDataParts := strings.Split(cache.Get("plugin::"+e.Token), "/")
+		userDataParts := strings.Split(cache.Get("auth::"+e.Token), "/")
 		if len(userDataParts) != 2 {
 			return centrifuge.ConnectReply{}, centrifuge.DisconnectInvalidToken
 		}
@@ -91,23 +92,38 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 		if userId == "" {
 			return centrifuge.ConnectReply{}, centrifuge.DisconnectInvalidToken
 		}
+		pusher.userIdToToken[userId] = e.Token
 		newCtx := centrifuge.SetCredentials(ctx, &centrifuge.Credentials{
 			UserID:   userId,
 			ExpireAt: time.Now().Unix() + 60,
 			Info:     []byte(`{}`),
 		})
+
+		var subs = map[string]centrifuge.SubscribeOptions{
+			"#" + userId: {
+				EnableRecovery: true,
+				EmitPresence:   true,
+				EmitJoinLeave:  true,
+				PushJoinLeave:  true,
+			},
+		}
+
+		var members []model.Member
+		storage.Where("user_id = ?", userId).Find(&members)
+		for _, member := range members {
+			subs[member.SpaceId] = centrifuge.SubscribeOptions{
+				EnableRecovery: true,
+				EmitPresence:   false,
+				EmitJoinLeave:  false,
+				PushJoinLeave:  false,
+			}
+		}
+
 		return centrifuge.ConnectReply{
 			Context: newCtx,
 			Data:    []byte(`{}`),
 			// Subscribe to a personal server-side channel.
-			Subscriptions: map[string]centrifuge.SubscribeOptions{
-				"#" + userId: {
-					EnableRecovery: true,
-					EmitPresence:   true,
-					EmitJoinLeave:  true,
-					PushJoinLeave:  true,
-				},
-			},
+			Subscriptions: subs,
 		}, nil
 	})
 	node.OnConnect(func(client *centrifuge.Client) {
@@ -145,13 +161,10 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 
 		client.OnRefresh(func(e centrifuge.RefreshEvent, cb centrifuge.RefreshCallback) {
 			log.Printf("[user %s] connection is going to expire, refreshing", client.UserID())
-			userDataPrts := strings.Split(cache.Get("plugin::"+e.Token), "/")
-			if len(userDataPrts) != 2 {
-				cb(centrifuge.RefreshReply{}, centrifuge.DisconnectInvalidToken)
-			}
-			userId := userDataPrts[1]
+			userId := client.UserID()
 			if userId == "" {
 				cb(centrifuge.RefreshReply{}, centrifuge.DisconnectInvalidToken)
+				return
 			}
 			cb(centrifuge.RefreshReply{
 				ExpireAt: time.Now().Unix() + 60,
@@ -192,7 +205,7 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 				cb(centrifuge.RPCReply{}, centrifuge.ErrorBadRequest)
 				return
 			}
-			res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, pusher.userIdToToken[client.UserID()], origin, packetId, input)
+			res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, pusher.userIdToToken[client.UserID()], origin, packetId, input, "")
 			if err2 != nil {
 				cb(centrifuge.RPCReply{Data: pusher.PrepareAnswer(models.BuildErrorJson(err2.Error()))}, nil)
 			} else {
@@ -226,11 +239,26 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 		log.Fatal(err)
 	}
 
+	signaler.ListenToJoin(&models.JoinListener{
+		Join: func(groupId string, userId string) {
+			err := node.Subscribe(userId, groupId)
+			if err != nil {
+				pusher.logger.Println(err)
+			}
+		},
+		Leave: func(groupId string, userId string) {
+			err := node.Unsubscribe(userId, groupId)
+			if err != nil {
+				pusher.logger.Println(err)
+			}
+		},
+	})
+
 	signaler.BrdigeGlobally(&models.GlobalListener{
 		Signal: func(groupId string, b any) {
 			_, err := pusher.node.Publish(groupId, b.([]byte))
 			if err != nil {
-				return
+				pusher.logger.Println(err)
 			}
 		},
 	}, true)
@@ -246,6 +274,13 @@ func New(core abstract.ICore, logger *modulelogger.Logger, cache adapters.ICache
 			return true
 		},
 	})
+
+	var members []model.Member
+	storage.Find(&members)
+	for _, member := range members {
+		signaler.JoinGroup(member.SpaceId, member.UserId)
+	}
+
 	pusher.node = node
 	mux := http.NewServeMux()
 	mux.Handle("/connection/websocket", websocketHandler)

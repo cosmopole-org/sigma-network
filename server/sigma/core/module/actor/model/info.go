@@ -3,13 +3,22 @@ package module_actor_model
 import "strings"
 
 type Info struct {
+	isGod   bool
 	userId  string
 	spaceId string
 	topicId string
 }
 
 func NewInfo(userId string, spaceId string, topicId string) *Info {
-	return &Info{userId: userId, spaceId: spaceId, topicId: topicId}
+	return &Info{isGod: false, userId: userId, spaceId: spaceId, topicId: topicId}
+}
+
+func NewGodInfo(userId string, spaceId string, topicId string, isGod bool) *Info {
+	return &Info{isGod: isGod, userId: userId, spaceId: spaceId, topicId: topicId}
+}
+
+func (info *Info) IsGod() bool {
+	return info.isGod
 }
 
 func (info *Info) UserId() string {

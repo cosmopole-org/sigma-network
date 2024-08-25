@@ -9,12 +9,13 @@ import (
 type Core struct {
 	id     string
 	utils  abstract.IUtils
+	gods   []string
 	layers []abstract.ILayer
 	actor  *moduleactor.Actor
 }
 
 func NewCore(id string, log abstract.Log) abstract.ICore {
-	return &Core{id, modulecoremodel.NewUtils(log), make([]abstract.ILayer, 0), moduleactor.NewActor()}
+	return &Core{id, modulecoremodel.NewUtils(log), make([]string, 0), make([]abstract.ILayer, 0), moduleactor.NewActor()}
 }
 
 func (c *Core) Push(l abstract.ILayer) {
@@ -33,7 +34,12 @@ func (c *Core) Layers() []abstract.ILayer {
 	return c.layers
 }
 
-func (c *Core) Load(layers []abstract.ILayer, args []interface{}) {
+func (c *Core) Gods() []string {
+	return c.gods
+}
+
+func (c *Core) Load(gods []string, layers []abstract.ILayer, args []interface{}) {
+	c.gods = gods
 	c.layers = layers
 	var output = args
 	for i := len(layers) - 1; i >= 0; i-- {

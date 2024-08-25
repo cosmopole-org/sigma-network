@@ -57,7 +57,10 @@ func main() {
 		`
 		for _, serviceName := range serviceNames {
 			code += `
-				PlugThePlugger(layer, plugger_` + serviceName + `.New(&action_` + serviceName + `.Actions{Layer: layer}, logger, core).Install(layer))
+				a_` + serviceName + ` := &action_` + serviceName + `.Actions{Layer: layer}
+				p_` + serviceName + ` := plugger_` + serviceName + `.New(a_` + serviceName + `, logger, core)
+				PlugThePlugger(layer, p_` + serviceName + `)
+				p_` + serviceName + `.Install(layer, a_` + serviceName + `)
 			`
 		}
 		code += `
@@ -127,8 +130,12 @@ func build(pluggerName string, serviceName string, serviceRoot string) {
 	}
 	code +=
 		`
-	func (c *Plugger) Install(layer abstract.ILayer) *Plugger {
-		actions.Install(layer.Sb().NewState())
+	func (c *Plugger) Install(layer abstract.ILayer, a *actions.Actions) *Plugger {
+		s := layer.Sb().NewState()	
+		err := actions.Install(s, a)
+		if err != nil {
+			panic(err)
+		}
 		return c
 	}
 

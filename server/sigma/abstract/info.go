@@ -1,6 +1,7 @@
 package abstract
 
 type IInfo interface {
+	IsGod() bool
 	UserId() string
 	SpaceId() string
 	TopicId() string

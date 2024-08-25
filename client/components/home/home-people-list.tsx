@@ -1,15 +1,16 @@
 "use client"
 
 import { getUsers } from "@/api/offline/constants"
+import { RouteSys } from "@/api/offline/states";
 import { Avatar, Card } from "@nextui-org/react"
 import { useRouter } from "next/navigation"
 
 export default function HomePeopleList() {
     const router = useRouter();
     return (
-        <div className="w-full h-auto pl-4 pr-4 pb-20">
+        <div className="w-full h-auto pt-5 pl-4 pr-4 pb-20">
             <Card onClick={() => {
-                router.push('/app/profile/human')
+                RouteSys.push('/app/profile')
             }} className="mt-0 m-h-16 w-full bg-transparent" key={'home'} isPressable shadow="none">
                 <div className="flex gap-2 w-full">
                     <Avatar alt={"me"} className="w-[68px]" size="lg" />
@@ -25,7 +26,7 @@ export default function HomePeopleList() {
             {
                 getUsers().map(item => (
                     <Card onClick={() => {
-                        router.push('/app/profile/human')
+                        RouteSys.push('/app/profile')
                     }} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <Avatar alt={item.name} className="w-[68px]" size="lg" src={item.avatar} />

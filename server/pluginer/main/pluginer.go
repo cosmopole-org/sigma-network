@@ -26,7 +26,10 @@
 	
 		func PlugAll(layer abstract.ILayer, logger *module_logger.Logger, core abstract.ICore) {
 		
-				PlugThePlugger(layer, plugger_plugin.New(&action_plugin.Actions{Layer: layer}, logger, core).Install(layer))
+				a_plugin := &action_plugin.Actions{Layer: layer}
+				p_plugin := plugger_plugin.New(a_plugin, logger, core)
+				PlugThePlugger(layer, p_plugin)
+				p_plugin.Install(layer, a_plugin)
 			
 		}
 		

@@ -43,8 +43,20 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Join)
 		}
 		
-	func (c *Plugger) Install(layer abstract.ILayer) *Plugger {
-		actions.Install(layer.Sb().NewState())
+		func (c *Plugger) CreateGroup() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.CreateGroup)
+		}
+		
+		func (c *Plugger) CreatePrivate() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.CreatePrivate)
+		}
+		
+	func (c *Plugger) Install(layer abstract.ILayer, a *actions.Actions) *Plugger {
+		s := layer.Sb().NewState()	
+		err := actions.Install(s, a)
+		if err != nil {
+			panic(err)
+		}
 		return c
 	}
 

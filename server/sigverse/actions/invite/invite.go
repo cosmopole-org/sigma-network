@@ -21,25 +21,25 @@ type Actions struct {
 	Layer abstract.ILayer
 }
 
-func Install(s abstract.IState) {
+func Install(s abstract.IState, a *Actions) error {
 	state := abstract.UseToolbox[modulestate.IStateL1](s)
-	state.Trx().Use()
-	state.Trx().AutoMigrate(&model.Invite{})
-	state.Trx().Commit()
+	return state.Trx().AutoMigrate(&model.Invite{})
 }
 
 // Create /invites/create check [ true true false ] access [ true false false false POST ]
 func (a *Actions) Create(s abstract.IState, input inputsinvites.CreateInput) (any, error) {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
-	state := abstract.UseState[*modulestate.StateL1](s)
-	state.Trx().Use()
+	state := abstract.UseState[modulestate.IStateL1](s)
+	var invite model.Invite
+	trx := state.Trx()
+	trx.Use()
 	space := model.Space{Id: input.SpaceId}
-	err := state.Trx().First(&space).Error()
+	err := trx.First(&space).Error()
 	if err != nil {
 		return nil, err
 	}
-	invite := model.Invite{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: input.SpaceId}
-	err2 := state.Trx().Create(&invite).Error()
+	invite = model.Invite{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: input.SpaceId}
+	err2 := trx.Create(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
@@ -50,22 +50,24 @@ func (a *Actions) Create(s abstract.IState, input inputsinvites.CreateInput) (an
 // Cancel /invites/cancel check [ true true false ] access [ true false false false POST ]
 func (a *Actions) Cancel(s abstract.IState, input inputsinvites.CancelInput) (any, error) {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
-	state := abstract.UseState[*modulestate.StateL1](s)
-	state.Trx().Use()
+	state := abstract.UseState[modulestate.IStateL1](s)
+	var invite model.Invite
+	trx := state.Trx()
+	trx.Use()
 	admin := model.Admin{UserId: state.Info().UserId(), SpaceId: input.SpaceId}
-	err := state.Trx().First(&admin).Error()
+	err := trx.First(&admin).Error()
 	if err != nil {
 		return nil, err
 	}
-	invite := model.Invite{Id: input.InviteId}
-	err2 := state.Trx().First(&invite).Error()
+	invite = model.Invite{Id: input.InviteId}
+	err2 := trx.First(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
 	if invite.SpaceId != input.SpaceId {
 		return nil, errors.New(inviteNotFoundError)
 	}
-	err3 := state.Trx().Delete(&invite).Error()
+	err3 := trx.Delete(&invite).Error()
 	if err3 != nil {
 		return nil, err3
 	}
@@ -76,26 +78,34 @@ func (a *Actions) Cancel(s abstract.IState, input inputsinvites.CancelInput) (an
 // Accept /invites/accept check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (any, error) {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
-	state := abstract.UseState[*modulestate.StateL1](s)
-	state.Trx().Use()
+	state := abstract.UseState[modulestate.IStateL1](s)
+	var member model.Member
+	trx := state.Trx()
+	trx.Use()
 	invite := model.Invite{Id: input.InviteId}
-	err := state.Trx().First(&invite).Error()
+	err := trx.First(&invite).Error()
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != state.Info().UserId() {
 		return nil, errors.New(inviteNotFoundError)
 	}
-	err2 := state.Trx().Delete(&invite).Error()
+	err2 := trx.Delete(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
-	member := model.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicId: "*", Metadata: ""}
-	state.Trx().Create(&member)
+	member = model.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: invite.UserId, SpaceId: invite.SpaceId, TopicId: "*", Metadata: ""}
+	err3 := trx.Create(&member).Error()
+	if err3 != nil {
+		return nil, err3
+	}
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	var admins []model.Admin
-	state.Trx().Where("space_id = ?", invite.SpaceId).Find(&admins)
+	err4 := trx.Where("space_id = ?", invite.SpaceId).Find(&admins).Error()
+	if err4 != nil {
+		return nil, err4
+	}
 	for _, admin := range admins {
 		go toolbox.Signaler().SignalUser("invites/accept", "", admin.UserId, updatesinvites.Accept{Invite: invite}, true)
 	}
@@ -106,22 +116,26 @@ func (a *Actions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (an
 // Decline /invites/decline check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Decline(s abstract.IState, input inputsinvites.DeclineInput) (any, error) {
 	toolbox := abstract.UseToolbox[*toolbox2.ToolboxL1](a.Layer.Tools())
-	state := abstract.UseState[*modulestate.StateL1](s)
-	state.Trx().Use()
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
 	invite := model.Invite{Id: input.InviteId}
-	err := state.Trx().First(&invite).Error()
+	err := trx.First(&invite).Error()
 	if err != nil {
 		return nil, err
 	}
 	if invite.UserId != state.Info().UserId() {
 		return nil, errors.New(inviteNotFoundError)
 	}
-	err2 := state.Trx().Delete(&invite).Error()
+	err2 := trx.Delete(&invite).Error()
 	if err2 != nil {
 		return nil, err2
 	}
 	var admins []model.Admin
-	state.Trx().Where("space_id = ?", invite.SpaceId).Find(&admins)
+	err3 := trx.Where("space_id = ?", invite.SpaceId).Find(&admins).Error()
+	if err3 != nil {
+		return nil, err3
+	}
 	for _, admin := range admins {
 		go toolbox.Signaler().SignalUser("invites/accept", "", admin.UserId, updatesinvites.Accept{Invite: &invite}, true)
 	}

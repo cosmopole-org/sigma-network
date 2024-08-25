@@ -31,8 +31,12 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Decline)
 		}
 		
-	func (c *Plugger) Install(layer abstract.ILayer) *Plugger {
-		actions.Install(layer.Sb().NewState())
+	func (c *Plugger) Install(layer abstract.ILayer, a *actions.Actions) *Plugger {
+		s := layer.Sb().NewState()	
+		err := actions.Install(s, a)
+		if err != nil {
+			panic(err)
+		}
 		return c
 	}
 

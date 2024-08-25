@@ -8,3 +8,8 @@ type Listener struct {
 type GlobalListener struct {
 	Signal func(string, any)
 }
+
+type JoinListener struct {
+	Join func(string, string)
+	Leave func(string, string)
+}

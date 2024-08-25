@@ -87,7 +87,7 @@ func (gs *GrpcServer) serverInterceptor(
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, err.Error())
 	}
-	res, _, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, origin, requestId, input)
+	res, _, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, origin, requestId, input, "")
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, err.Error())
 	} else {

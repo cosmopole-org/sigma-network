@@ -13,6 +13,8 @@ import (
 	layer3 "sigma/sigma/layer3/layer"
 	modulemodel "sigma/sigma/layer3/model"
 	pluggersigverse "sigma/sigverse/main"
+	pluggeradmin "sigma/admin/main"
+	pluggersocial "sigma/social/main"
 )
 
 var noExit = make(chan int)
@@ -29,10 +31,13 @@ func main() {
 	logger.Println("Welcome to Sigma !")
 
 	app := sigma.NewApp(sigma.Config{
-		Id:  "sigma.cloud",
+		Id:  "sigma",
 		Log: logger.Println,
 	})
 	app.Load(
+		[]string{
+			"keyhan",
+		},
 		[]abstract.ILayer{
 			layer1.New(),
 			layer2.New(),
@@ -47,7 +52,10 @@ func main() {
 		},
 	)
 	pluggersigverse.PlugAll(app.Get(1), logger, app)
+	pluggeradmin.PlugAll(app.Get(1), logger, app)
 	pluggerpluginer.PlugAll(app.Get(2), logger, app)
+	pluggersocial.PlugAll(app.Get(2), logger, app)
+	
 	abstract.UseToolbox[*modulemodel.ToolboxL3](app.Get(3).Tools()).Net().Run(
 		map[string]int{
 			"http": 9010,

@@ -5,13 +5,13 @@ import { Card } from "@nextui-org/react";
 import { BottomNavItem } from "../elements/bottomnav-item";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { switchRoomLoading } from "@/api/offline/states";
+import { RouteSys, switchRoomLoading } from "@/api/offline/states";
 
 export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPanel: (panelKey: string) => void, panelKey: string | undefined }>) {
     const router = useRouter();
     const { theme } = useTheme();
     const openCall = () => () => {
-        router.push("/app/call")
+        RouteSys.push("/app/call")
     }
     const openPanelByKey = (key: string) => () => {
         switchRoomLoading(true);

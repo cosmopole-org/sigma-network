@@ -13,7 +13,7 @@ type Guard struct {
 }
 
 func (g *Guard) ValidateOnlyToken(layer abstract.ILayer, token string) (bool, string) {
-	userId, _ := abstract.UseToolbox[*toolbox.ToolboxL1](layer.Core().Get(1).Tools()).Security().AuthWithToken(token)
+	userId, _, _ := abstract.UseToolbox[*toolbox.ToolboxL1](layer.Core().Get(1).Tools()).Security().AuthWithToken(token)
 	return true, userId
 }
 
@@ -22,18 +22,18 @@ func (g *Guard) ValidateByToken(layer abstract.ILayer, token string, spaceId str
 		return true, moduleactormodel.NewInfo("", "", "")
 	}
 	security := abstract.UseToolbox[toolbox.IToolboxL1](layer.Tools()).Security()
-	userId, userType := security.AuthWithToken(token)
+	userId, userType, isGod := security.AuthWithToken(token)
 	if userId == "" {
 		return false, &moduleactormodel.Info{}
 	}
 	if !g.IsInSpace {
-		return true, moduleactormodel.NewInfo(userId, "", "")
+		return true, moduleactormodel.NewGodInfo(userId, "", "", isGod)
 	}
 	location := security.HandleLocationWithProcessed(token, userId, userType, spaceId, topicId, memberId)
 	if location.SpaceId == "" {
 		return false, &moduleactormodel.Info{}
 	}
-	return true, moduleactormodel.NewInfo(userId, spaceId, topicId)
+	return true, moduleactormodel.NewGodInfo(userId, location.SpaceId, location.TopicId, isGod)
 }
 
 func (g *Guard) ValidateByUserId(userId string, spaceId string, topicId string) (bool, *moduleactormodel.Info) {
