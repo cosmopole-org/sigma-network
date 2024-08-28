@@ -82,9 +82,11 @@ export default function Main() {
 			} else {
 				RouteSys.swiperInst.allowTouchMove = false
 			}
-			setTimeout(() => {
-				RouteSys.swiperInst.slideNext();				
-			});
+			if (RouteSys.lastAction === "navigate") {
+				setTimeout(() => {
+					RouteSys.swiperInst.slideNext();
+				});
+			}
 		}
 	}, [hist]);
 
@@ -97,27 +99,16 @@ export default function Main() {
 						width: '100%',
 						height: '100%'
 					}}
-					effect="creative"
-					creativeEffect={{
-						prev: {
-							shadow: true
-						},
-						next: {
-							translate: ["100%", 0, 0]
-						}
-					}}
-					modules={[Virtual, EffectCreative]}
+					modules={[Virtual]}
 					touchStartPreventDefault={false}
 					onSwiper={(s: SwiperClass) => {
 						RouteSys.putSwiper(s);
-						RouteSys.swiperInst.update()
-						RouteSys.swiperInst.on('slideChange', function (event: any) {
+						s.update()
+						s.on('slideChange', function (event: any) {
 							if (event.activeIndex > event.previousIndex) {
 								// do nothing
 							} else {
-								setTimeout(() => {
-									RouteSys.pop({ doNotSlideBack: true });									
-								});
+								RouteSys.pop({ doNotSlideBack: true });
 							}
 						})
 					}}
@@ -140,9 +131,9 @@ export default function Main() {
 						<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => RouteSys.pop()} />
 					) : hist[hist.length - 1] === "/app/chats" ? (
 						<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => RouteSys.pop()} />
-					) : hist[hist.length - 1]  === "/app/call" ? (
+					) : hist[hist.length - 1] === "/app/call" ? (
 						<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => RouteSys.pop()} />
-					) : hist[hist.length - 1]  === "/app/chat" ? (
+					) : hist[hist.length - 1] === "/app/chat" ? (
 						<IconButton name="back" className="ml-1 -mt-[2px]" onClick={() => RouteSys.pop()} />
 					) : mainDrawerOpenState.get({ noproxy: true }) ? (
 						<IconButton name="close" className="ml-1 -mt-[2px]" onClick={() => switchMainDrawer(false)} />

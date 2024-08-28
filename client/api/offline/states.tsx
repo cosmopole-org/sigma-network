@@ -38,6 +38,7 @@ const pathes = [
 	"/app/chats",
 ]
 export let RouteSys: {
+	_pathCount: number,
 	lastAction: string,
 	swiperInst: any,
 	history: State<string[]>,
@@ -45,6 +46,7 @@ export let RouteSys: {
 	pop: (options?: { doNotSlideBack: boolean }) => void,
 	putSwiper: (i: any) => void
 } = {
+	_pathCount: 1,
 	lastAction: "",
 	swiperInst: null,
 	history: hookstate<string[]>(["/app/home"]),
@@ -54,9 +56,13 @@ export let RouteSys: {
 		RouteSys.swiperInst = i;
 	}
 };
+
+let memOfTransit = false;
+
 export const RouterComponent = () => {
 	const router = useRouter();
 	RouteSys.push = (p: string, options?: { changePath?: boolean }) => {
+		RouteSys._pathCount++;
 		if (options?.changePath) {
 			router.push(p);
 		}
@@ -65,13 +71,26 @@ export const RouterComponent = () => {
 			RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
 		}
 	}
-	RouteSys.pop = (options?: { doNotSlideBack: boolean }) => {
+	RouteSys.pop = (options?: { doNotSlideBack?: boolean }) => {
 		if (RouteSys.history.get({ noproxy: true }).length > 1) {
+			if (memOfTransit) {
+				memOfTransit = false;
+				RouteSys.lastAction = "";
+				return;
+			}
+			RouteSys._pathCount--;
 			if (!options?.doNotSlideBack) {
+				memOfTransit = true;
 				RouteSys.swiperInst?.slidePrev();
+				RouteSys.lastAction = "back";
+				setTimeout(() => {
+					RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys._pathCount)]);
+				}, 250);
 			} else {
 				RouteSys.lastAction = "back";
-				RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys.history.get({ noproxy: true }).length - 1)]);
+				// setTimeout(() => {
+					RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys._pathCount)]);
+				// }, 250);
 			}
 		}
 	}
