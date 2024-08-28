@@ -61,6 +61,9 @@ export const RouterComponent = () => {
 	const router = useRouter();
 	RouteSys.push = (p: string, options?: { changePath?: boolean }) => {
 		RouteSys._pathCount++;
+		if (options?.changePath) {
+			router.push(p);
+		}
 		RouteSys.lastAction = "navigate";
 		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
 	}
