@@ -109,14 +109,15 @@ export default function Main() {
 					modules={[Virtual, EffectCreative]}
 					touchStartPreventDefault={false}
 					onSwiper={(s: SwiperClass) => {
-						//s.appendSlide()
 						RouteSys.putSwiper(s);
 						RouteSys.swiperInst.update()
 						RouteSys.swiperInst.on('slideChange', function (event: any) {
 							if (event.activeIndex > event.previousIndex) {
 								// do nothing
 							} else {
-								RouteSys.pop({ doNotSlideBack: true });
+								setTimeout(() => {
+									RouteSys.pop({ doNotSlideBack: true });									
+								});
 							}
 						})
 					}}
