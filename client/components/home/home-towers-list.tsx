@@ -12,7 +12,7 @@ export default function HomeTowersList() {
     const router = useRouter();
     return (
         <div
-            className="w-full h-full pl-4 pr-4 pb-20 pt-1 overflow-y-auto">
+            className="absolute top-0 w-full h-full pt-[160px] pl-4 pr-4 pb-20 overflow-y-auto">
             <div className="h-0" />
             <Card onClick={() => {
                 RouteSys.push('/app/chat')

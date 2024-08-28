@@ -58,7 +58,7 @@ const MetaTouch = (props: { room: any, onOpen: () => void, onClose: () => void, 
                 height: window.innerHeight - 104,
                 position: 'absolute',
                 left: 0,
-                top: 0,
+                top: 4,
                 width: '100%',
                 zIndex: 2
             }}

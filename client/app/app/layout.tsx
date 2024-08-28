@@ -22,6 +22,7 @@ import IconButton from "@/components/elements/icon-button";
 import { changeMetaDrawerState } from "@/components/home/metaTouch";
 import { showRoomShadow } from "@/components/home/shadow";
 import dynamic from "next/dynamic";
+import HomeMain from "./home/page";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -59,34 +60,21 @@ export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
 }
 export let mainDrawerOpen = hookstate(false);
 
+const mapOfRoutes: { [key: string]: any } = {
+	"/app/home": dynamic(() => import("./home/page")),
+	"/app/chat": dynamic(() => import("./chat/page")),
+	"/app/call": dynamic(() => import("./call/page")),
+	"/app/profile": dynamic(() => import("./profile/page")),
+	"/app/contacts": dynamic(() => import("./contacts/page")),
+	"/app/settings": dynamic(() => import("./settings/page")),
+	"/app/chats": dynamic(() => import("./chats/page")),
+};
+
 export default function RootLayout({
 	children,
-	home,
-	chat,
-	call,
-	profile,
-	contacts,
-	settings,
-	chats,
 }: Readonly<{
 	children: React.ReactNode;
-	home: React.ReactNode;
-	chat: React.ReactNode;
-	call: React.ReactNode;
-	profile: React.ReactNode;
-	contacts: React.ReactNode;
-	settings: React.ReactNode;
-	chats: React.ReactNode;
 }>) {
-	const mapOfRoutes: { [key: string]: any } = {
-		"/app/home": home,
-		"/app/chat": chat,
-		"/app/call": call,
-		"/app/profile": profile,
-		"/app/contacts": contacts,
-		"/app/settings": settings,
-		"/app/chats": chats,
-	};
 	const mainDrawerOpenState = useHookstate(mainDrawerOpen);
 	swipeNext = () => switchMainDrawer(false);
 	const showRoom = useHookstate(showRoomShadow);
@@ -117,7 +105,7 @@ export default function RootLayout({
 		}
 	}, [path])
 
-	const hist = useHookstate(RouteSys.history).get({ noproxy: true });
+	let hist = useHookstate(RouteSys.history).get({ noproxy: true });
 	useEffect(() => {
 		if (RouteSys.swiperInst) {
 			if (hist.length > 1) {
@@ -160,7 +148,7 @@ export default function RootLayout({
 						})
 					}}
 				>
-					{hist.map((c, i) => <SwiperSlide key={c + "_" + i}>{mapOfRoutes[c]}</SwiperSlide>)}
+					{hist.map((c, i) => <SwiperSlide className="w-full h-full bg-white dark:bg-content1" key={c + "_" + i}>{mapOfRoutes[c]}</SwiperSlide>)}
 				</Swiper>
 			</div>
 			<div style={{ zIndex: 99999 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">

@@ -56,11 +56,7 @@ export let RouteSys: {
 	}
 };
 export const RouterComponent = () => {
-	const router = useRouter();
 	RouteSys.push = (p: string, options?: { changePath?: boolean }) => {
-		if (options?.changePath) {
-			router.push(p);
-		}
 		RouteSys.lastAction = "navigate";
 		if (pathes.includes(p)) {
 			RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);

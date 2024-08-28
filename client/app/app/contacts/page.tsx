@@ -13,8 +13,9 @@ export default function ContactsPage() {
     return (
         <div className="w-full h-full relative overflow-y-auto bg-white dark:bg-content1">
             <Navbar
+                isBlurred
                 isBordered
-                className={'bg-content1 pt-10 pb-3'}
+                className={'pt-10 pb-3'}
             >
                 <NavbarContent as="div" className={"items-center w-full"} justify="center">
                     <div className={"w-full"}>
