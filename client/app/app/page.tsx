@@ -44,11 +44,7 @@ const mapOfRoutes: { [key: string]: any } = {
 	"/app/chats": dynamic(() => import("./chats/page")),
 };
 
-export default function Main({
-	children,
-}: Readonly<{
-	children: React.ReactNode;
-}>) {
+export default function Main() {
 	const mainDrawerOpenState = useHookstate(mainDrawerOpen);
 	const showRoom = useHookstate(showRoomShadow);
 	const path = usePathname();
