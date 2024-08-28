@@ -1,6 +1,7 @@
 "use client"
 
 import { hookstate, State } from "@hookstate/core";
+import { useRouter } from "next/navigation";
 
 export const showRoomLoading = hookstate(true);
 export const switchRoomLoading = (v: boolean) => {
@@ -54,7 +55,11 @@ export let RouteSys: {
 	}
 };
 export const RouterComponent = () => {
+	const router = useRouter();
 	RouteSys.push = (p: string, options?: { changePath?: boolean }) => {
+		if (options?.changePath) {
+			router.push(p);
+		}
 		RouteSys.lastAction = "navigate";
 		if (pathes.includes(p)) {
 			RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
