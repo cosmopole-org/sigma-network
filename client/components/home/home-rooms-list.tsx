@@ -6,7 +6,7 @@ import { getUsers } from "@/api/offline/constants"
 import { hookstate, useHookstate } from "@hookstate/core"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
-import { swipeNext } from "@/app/app/page"
+import { swipeNext } from "../../api/offline/states"
 
 export const roomsListView = hookstate(false);
 const roomsListViewExtra = hookstate(false);

@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import AppletHost from "./applet-host";
 import { useHookstate } from "@hookstate/core";
 import { draggingId } from "@/api/offline/states";
-import { disableSwiper, enableSwiper } from "@/app/app/page";
+import { disableSwiper, enableSwiper } from "../../api/offline/states";
 import BlogPost from "../blog/post";
 
 type Box = { el: HTMLDivElement | any, key: string, x: number, y: number, w: number, h: number, color: string, oldY: number }
