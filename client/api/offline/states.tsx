@@ -1,6 +1,6 @@
 "use client"
 
-import { swipeNext } from "@/app/app/layout";
+import { swipeNext } from "@/app/app/page";
 import { hookstate, State } from "@hookstate/core";
 import { useRouter } from 'next/navigation';
 
