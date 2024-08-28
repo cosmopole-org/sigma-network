@@ -57,42 +57,25 @@ export let RouteSys: {
 	}
 };
 
-let memOfTransit = false;
-
 export const RouterComponent = () => {
 	const router = useRouter();
 	RouteSys.push = (p: string, options?: { changePath?: boolean }) => {
 		RouteSys._pathCount++;
-		if (options?.changePath) {
-			router.push(p);
-		}
 		RouteSys.lastAction = "navigate";
-		if (pathes.includes(p)) {
-			RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
-		}
+		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
 	}
 	RouteSys.pop = (options?: { doNotSlideBack?: boolean }) => {
 		if (RouteSys.history.get({ noproxy: true }).length > 1) {
-			if (memOfTransit) {
-				memOfTransit = false;
-				RouteSys.lastAction = "";
-				return;
-			}
-			RouteSys._pathCount--;
-			if (!options?.doNotSlideBack) {
-				memOfTransit = true;
-				RouteSys.swiperInst?.slidePrev();
-				RouteSys.lastAction = "back";
-				setTimeout(() => {
+            if (!options?.doNotSlideBack) {
+                RouteSys.swiperInst?.slidePrev();
+            } else {
+				RouteSys._pathCount--;
+                RouteSys.lastAction = 'back'
+                setTimeout(() => {
 					RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys._pathCount)]);
-				}, 250);
-			} else {
-				RouteSys.lastAction = "back";
-				// setTimeout(() => {
-					RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys._pathCount)]);
-				// }, 250);
-			}
-		}
+                }, 250);
+            }
+        }
 	}
 	return <div></div>
 }
