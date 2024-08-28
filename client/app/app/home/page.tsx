@@ -8,7 +8,7 @@ import { useTheme } from "next-themes";
 import React, { useRef } from "react";
 import HomePage from "../../../components/home/home-spaces";
 import MainShadow from "@/components/home/main-shadow";
-import { mainDrawerOpen, setMainDrawerSwitcher } from "@/app/app/page";
+import { mainDrawerOpen, setMainDrawerSwitcher } from "../../../api/offline/states";
 import HomeBottomNav from "@/components/home/home-bottomnav";
 import { useHookstate } from "@hookstate/core";
 

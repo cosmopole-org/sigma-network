@@ -39,33 +39,12 @@ let dynamicPath = '';
 
 let oldPath = '';
 let oldScroll = 0;
-let swiperInst: any = null;
-export const enableSwiper = () => {
-	if (swiperInst) {
-		swiperInst.enable();
-	}
-}
-export const disableSwiper = () => {
-	if (swiperInst) {
-		swiperInst.disable();
-	}
-}
-export let swipeNext = () => {
-	swiperInst.slideNext();
-}
-
-export let switchMainDrawer = (open: boolean) => { }
-export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
-	switchMainDrawer = mds;
-}
-export let mainDrawerOpen = hookstate(false);
 
 export default function RootLayout({
 	children
 }: Readonly<{
 	children: React.ReactNode
 }>) {
-	swipeNext = () => switchMainDrawer(false);
 	const path = usePathname();
 	if (path) dynamicPath = path;
 	const scrollPositions = useRef<{ [url: string]: number }>({})

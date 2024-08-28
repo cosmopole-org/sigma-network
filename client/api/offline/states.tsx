@@ -1,8 +1,6 @@
 "use client"
 
-import { swipeNext } from "@/app/app/page";
 import { hookstate, State } from "@hookstate/core";
-import { useRouter } from 'next/navigation';
 
 export const showRoomLoading = hookstate(true);
 export const switchRoomLoading = (v: boolean) => {
@@ -74,3 +72,23 @@ export const RouterComponent = () => {
 	}
 	return <div></div>
 }
+
+export const enableSwiper = () => {
+	if (RouteSys.swiperInst) {
+		RouteSys.swiperInst.enable();
+	}
+}
+export const disableSwiper = () => {
+	if (RouteSys.swiperInst) {
+		RouteSys.swiperInst.disable();
+	}
+}
+export let swipeNext = () => {
+	switchMainDrawer(false);
+}
+
+export let switchMainDrawer = (open: boolean) => { }
+export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
+	switchMainDrawer = mds;
+}
+export let mainDrawerOpen = hookstate(false);

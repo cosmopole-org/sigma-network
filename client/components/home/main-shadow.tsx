@@ -1,5 +1,5 @@
 
-import { mainDrawerOpen, switchMainDrawer } from "@/app/app/page";
+import { mainDrawerOpen, switchMainDrawer } from "../../api/offline/states";
 import { useHookstate } from "@hookstate/core"
 
 const MainShadow = () => {

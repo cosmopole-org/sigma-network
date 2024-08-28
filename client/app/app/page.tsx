@@ -4,7 +4,7 @@ import "@/styles/globals.css";
 import { hookstate, useHookstate } from "@hookstate/core";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { RouterComponent, RouteSys, showMainLoading, switchLoading, switchMainLoading, switchRoomLoading } from "../../api/offline/states";
+import { mainDrawerOpen, RouterComponent, RouteSys, showMainLoading, switchLoading, switchMainDrawer, switchMainLoading, switchRoomLoading } from "../../api/offline/states";
 import { loadSizes } from "@/api/offline/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
@@ -33,25 +33,6 @@ let dynamicPath = '';
 
 let oldPath = '';
 let oldScroll = 0;
-export const enableSwiper = () => {
-	if (RouteSys.swiperInst) {
-		RouteSys.swiperInst.enable();
-	}
-}
-export const disableSwiper = () => {
-	if (RouteSys.swiperInst) {
-		RouteSys.swiperInst.disable();
-	}
-}
-export let swipeNext = () => {
-	RouteSys.swiperInst.slideNext();
-}
-
-export let switchMainDrawer = (open: boolean) => { }
-export let setMainDrawerSwitcher = (mds: (open: boolean) => void) => {
-	switchMainDrawer = mds;
-}
-export let mainDrawerOpen = hookstate(false);
 
 const mapOfRoutes: { [key: string]: any } = {
 	"/app/home": dynamic(() => import("./home/page")),
@@ -69,7 +50,6 @@ export default function Main({
 	children: React.ReactNode;
 }>) {
 	const mainDrawerOpenState = useHookstate(mainDrawerOpen);
-	swipeNext = () => switchMainDrawer(false);
 	const showRoom = useHookstate(showRoomShadow);
 	const path = usePathname();
 	if (path) dynamicPath = path;
