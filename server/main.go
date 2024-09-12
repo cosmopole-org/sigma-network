@@ -4,7 +4,7 @@ import (
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"os"
-	pluggerpluginer "sigma/pluginer/main"
+	// pluggerpluginer "sigma/pluginer/main"
 	"sigma/sigma"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
@@ -53,7 +53,7 @@ func main() {
 	)
 	pluggersigverse.PlugAll(app.Get(1), logger, app)
 	pluggeradmin.PlugAll(app.Get(1), logger, app)
-	pluggerpluginer.PlugAll(app.Get(2), logger, app)
+	// pluggerpluginer.PlugAll(app.Get(2), logger, app)
 	pluggersocial.PlugAll(app.Get(2), logger, app)
 	
 	abstract.UseToolbox[*modulemodel.ToolboxL3](app.Get(3).Tools()).Net().Run(

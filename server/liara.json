@@ -1,5 +1,5 @@
 {
-  "app": "cosmopole",
+  "app": "sigverse",
   "port": "9010",
   "platform": "docker",
   "build": {

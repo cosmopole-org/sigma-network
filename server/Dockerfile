@@ -3,13 +3,14 @@ WORKDIR /app
 
 COPY go.mod go.sum ./
 COPY run.sh ./
-COPY .. .
+COPY . .
 
-RUN go mod download
-RUN go mod tidy
-RUN go build -o main .
+RUN go mod download && \
+    go mod tidy && \
+    bash ./run.sh && \
+    go build -o main .
 
 ENV PORT=9010
 EXPOSE $PORT
 
-CMD bash ./run.sh
+ENTRYPOINT [ "./main" ]

@@ -11,5 +11,5 @@ rm -r ./social/pluggers
 rm -r ./social/main
 rm -r ./admin/pluggers
 rm -r ./admin/main
+
 go run ./build/pluggergen.go "./sigverse" "./pluginer" "./social" "./admin"
-go run .

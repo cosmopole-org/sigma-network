@@ -1,6 +1,7 @@
 package actions_user
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"sigma/sigma/abstract"
@@ -55,7 +56,7 @@ func Install(s abstract.IState, a *Actions) error {
 	state.Trx().Use()
 	for _, godUsername := range a.Layer.Core().Gods() {
 		var user = models.User{}
-		err := state.Trx().Where("username = ?", godUsername + "@" + a.Layer.Core().Id()).First(&user).Error()
+		err := state.Trx().Where("username = ?", godUsername+"@"+a.Layer.Core().Id()).First(&user).Error()
 		if err != nil {
 			log.Println(err)
 			state.Trx().Reset()
@@ -96,6 +97,18 @@ func (a *Actions) Create(s abstract.IState, input inputsusers.CreateInput) (any,
 	)
 	trx := state.Trx()
 	trx.Use()
+	findErr := trx.Model(&models.User{}).Where("username = ?", input.Username + "@" + a.Layer.Core().Id()).First(&user).Error()
+	if findErr == nil {
+		if user.Secret == input.Secret {
+			trx.Reset()
+			trx.Where("user_id = ?", user.Id).First(&session)
+			return outputsusers.CreateOutput{User: user, Session: session}, nil
+
+		} else {
+			return nil, errors.New("provided secret is incorrent")
+		}
+	}
+	trx.Reset()
 	token := crypto.SecureUniqueString()
 	user = models.User{Metadata: datatypes.JSON([]byte(`{}`)), Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Type: "human", PublicKey: input.PublicKey, Username: input.Username + "@" + a.Layer.Core().Id(), Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
 	err := trx.Create(&user).Error()

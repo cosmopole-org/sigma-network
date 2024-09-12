@@ -202,6 +202,29 @@ func (a *Actions) Get(s abstract.IState, input inputsspaces.GetInput) (any, erro
 	return outputsspaces.GetOutput{Space: space}, nil
 }
 
+// Read /spaces/read check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Read(s abstract.IState, input inputsspaces.ReadInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	var members []models.Member
+	trx := state.Trx()
+	trx.Use()
+	err := trx.Model(&models.Member{}).Where("user_id = ?", state.Info().UserId()).Find(&members).Error()
+	if err != nil {
+		return nil, err
+	}
+	trx.Reset()
+	ids := []string{}
+	for i := 0; i < len(members); i++ {
+		ids = append(ids, members[i].SpaceId)
+	}
+	var spaces []models.Space
+	err2 := trx.Model(&models.Space{}).Where("id in ?", ids).Find(&spaces).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	return outputsspaces.ReadOutput{Spaces: spaces}, nil
+}
+
 // Join /spaces/join check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Join(s abstract.IState, input inputsspaces.JoinInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
@@ -227,7 +250,6 @@ func (a *Actions) Join(s abstract.IState, input inputsspaces.JoinInput) (any, er
 	go toolbox.Signaler().SignalGroup("spaces/join", member.SpaceId, updatesspaces.Join{Member: member}, true, []string{member.UserId})
 	return outputsspaces.JoinOutput{Member: member}, nil
 }
-
 
 // CreateGroup /spaces/createGroup check [ true false false ] access [ true false false false PUT ]
 func (a *Actions) CreateGroup(s abstract.IState, input inputsspaces.CreateGroupInput) (any, error) {
@@ -331,7 +353,7 @@ func (a *Actions) CreatePrivate(s abstract.IState, input inputsspaces.CreatePriv
 	groupRes := res.(outputsspaces.CreateSpaceOutput)
 	space = groupRes.Space
 	myMember = groupRes.Member
-	topic = groupRes.Topic	
+	topic = groupRes.Topic
 	_, _, addMemberErr := a.Layer.Actor().FetchAction("/spaces/addMember").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), myMember.SpaceId, ""), trx), inputsspaces.AddMemberInput{
 		UserId:   input.ParticipantId,
 		SpaceId:  groupRes.Space.Id,
