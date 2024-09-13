@@ -3,9 +3,22 @@ import { Card, colors } from '@nextui-org/react';
 import './bubble.css'
 import Icon from '@/components/elements/icon';
 import { useTheme } from '@/api/client/states';
+import { api } from '@/index';
+import { useEffect, useState } from 'react';
+import { User } from '@/api/sigma/models';
 
 const TextMessage = (props: { message: any, side?: string, lastOfSection?: boolean, firstOfSection?: boolean, isQuote?: boolean }) => {
     const { theme } = useTheme();
+    const [author, setAuthor] = useState<User | null>();
+    useEffect(() => {
+        const userObservable = api.sigma.store.db.users.findOne(props.message.authorId).$;
+        let userSub = userObservable.subscribe(user => {
+            setAuthor(user);
+        });
+        return () => {
+            userSub.unsubscribe();
+        }
+    }, []);
     return (
         <div
             style={{
@@ -32,13 +45,13 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                 {
                     props.firstOfSection ? (
                         <p
-                        className={props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white"}
+                            className={props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white"}
                             style={{
                                 textAlign: "left", fontWeight: 'bold', borderRadius: 8, marginTop: 0, height: 'auto',
                                 background: 'transparent'
                             }}
                         >
-                            {(props.message as any).author.firstName}
+                            {author?.name ?? "-"}
                         </p>
                     ) : null
                 }
@@ -62,7 +75,7 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                                 borderRadius: "16px 16px 0px 16px"
                             }}>
                                 <p
-                    className={props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white"}
+                                    className={props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white"}
                                     style={{ textAlign: "right", flex: 1, fontSize: 12 }}
                                 >
                                     {(new Date(props.message.time)).toTimeString().substring(0, 5)}

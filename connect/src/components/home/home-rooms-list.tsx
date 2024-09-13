@@ -10,13 +10,16 @@ export default function HomeRoomsList(props: Readonly<{ spaceId: string }>) {
     const [topics, setTopics] = useState<Topic[]>([]);
     useEffect(() => {
         const topicsObservable = api.sigma.store.db.topics.find({ selector: { spaceId: { $eq: props.spaceId } } }).$;
-        topicsObservable.subscribe(ts => {
+        let topicsSub = topicsObservable.subscribe(ts => {
             if (selectedTopicId === "") {
                 setSelectedTopicId(ts.length > 0 ? (ts[0] as any).id : "");
             }
             setTopics(ts);
         });
         api.sigma.services?.topics.read({ spaceId: props.spaceId });
+        return () => {
+            topicsSub.unsubscribe();
+        }
     }, [props.spaceId]);
     return (
         <Card className="overflow-x-hidden w-full h-full pt-16" style={{

@@ -2,6 +2,7 @@ import Api from "@/api";
 import Network from "../helpers/network";
 import Storage from "../helpers/storage";
 import { genRandAvatar } from "@/api/utils";
+import { randEmoji } from "@/api/client/constants";
 
 export default class Topics {
     private api: Api
@@ -31,7 +32,7 @@ export default class Topics {
     ) {
         try {
             const { success, result } = await this.net.safelyRequest(1, "topics/create", "POST", {
-                "title": body.title,
+                "title": randEmoji() + " " + body.title,
                 "avatar": genRandAvatar(),
                 "spaceId": body.spaceId,
                 "metadata": "{}"

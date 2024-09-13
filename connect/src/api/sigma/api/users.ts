@@ -36,9 +36,10 @@ export default class Users {
             let { success, result } = await this.net.safelyRequest(1, "users/create", "POST", { ...body, publicKey: "1234567890", avatar: genRandAvatar() });
             if (success) {
                 await Promise.all([
-                    this.store.db.users.insert(result.user),
-                    this.store.db.sessions.insert(result.session)
+                    this.store.db.users.upsert(result.user),
+                    this.store.db.sessions.upsert(result.session)
                 ]);
+                this.store.saveMyUserId(result.user.id);
                 this.store.saveToken(result.session.token);
                 this.authenticate().then(async (res: any) => {
                     await this.api.loadData();

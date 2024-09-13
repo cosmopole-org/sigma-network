@@ -13,12 +13,15 @@ export default function HomePage() {
 	const [spaces, setSpaces] = useState<Space[]>([]);
 	useEffect(() => {
 		const spacesObservable = api.sigma.store.db.spaces.find().$;
-		spacesObservable.subscribe(ss => {
+		let spacesSub = spacesObservable.subscribe(ss => {
 			if (selectedSpaceId === "") {
 				setSelectedSpaceId(ss.length > 0 ? (ss[0] as any).id : "");
 			}
 			setSpaces(ss);
 		});
+		return () => {
+			spacesSub.unsubscribe();
+		}
 	}, []);
 	return (
 		<div className="relative flex flex-col h-screen">

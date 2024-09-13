@@ -34,11 +34,18 @@ Api.load().then((a) => {
     }, 2000);
   }
   if (api.sigma.store.token.length > 0) {
-    api.sigma.services?.users.authenticate().then(res => {
+    api.sigma.services?.users.authenticate().then(async res => {
       let authenticated = res.data.authenticated
       Actions.updateAuthenticated(authenticated);
       if (!authenticated) loadauth();
-      else Actions.updateAuthStep("passed");
+      else {
+        if ((await api.sigma.store.db.spaces.count().exec()) > 0) {
+          let space = await api.sigma.store.db.spaces.findOne().exec();
+          let topic = await api.sigma.store.db.topics.findOne({ selector: { spaceId: { $eq: space?.id } } }).exec();
+          if (space && topic) Actions.updatePos(space?.id, topic?.id);
+        }
+        Actions.updateAuthStep("passed");
+      }
     }).catch(e => {
       console.log(e);
       Actions.updateAuthenticated(false);

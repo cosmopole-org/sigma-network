@@ -47,3 +47,15 @@ export type Secret = {
     privateKey: string
     publicKey: string
 }
+
+export type Message = {
+    id: string
+    authorId: string
+    spaceId: string
+    topicId: string
+    time: number
+    tag: string
+    data: {
+        text?: string
+    }
+}

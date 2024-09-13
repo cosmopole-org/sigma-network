@@ -1,9 +1,11 @@
 import { useMemo } from "react";
 import { Card } from "@nextui-org/react";
 import Chat from "../room/room-chat";
+import { States } from "@/api/client/states";
 
 export default function HomeApps() {
-    const chat = useMemo(() => <Chat />, []);
+    const pos = States.useListener(States.store.currentPos);
+    const chat = useMemo(() => <Chat spaceId={pos.spaceId} topicId={pos.topicId} />, [pos.spaceId, pos.topicId]);
     return (
         <Card className="overflow-hidden w-full h-full bg-white">
             <div

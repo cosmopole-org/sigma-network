@@ -1,66 +1,82 @@
-'use client'
-
+import { api } from "@/index";
 import TextMessage from "./Message/TextMessage";
-import React, { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import { List, AutoSizer, CellMeasurer, CellMeasurerCache } from 'react-virtualized';
-
-const rowCount = 20;
-
-const list = Array.from(Array(rowCount).keys()).map((val, idx) => {
-    return {
-        id: idx,
-        name: 'John Doe',
-        image: 'http://via.placeholder.com/40',
-        text: 'dfgdgfdgdfgdfgdgf4ybryrbynrtnybrtbrstbbsetdbtbtst.'
-    }
-});
-
+import { Message } from "@/api/sigma/models";
 
 const cache = new CellMeasurerCache({
     fixedWidth: true,
     defaultHeight: 100
 });
 
-function renderRow({ index, key, style, parent }: { index: number, key: any, style: any, parent: any }) {
-    const rem = index % 4;
-    let comp: ReactNode = null;
-    // switch (rem) {
-    //     case 0: {
-    //         comp = <TextMessage lastOfSection={index === 9} firstOfSection={index === 0} message={{data: {text: "hello world !"}, author: { firstName: "keyhan", lastName: "kasperian" }, authorId: 123, time: 1 }} key={index} side={'right'} />
-    //         break;
-    //     }
-    // case 1: {
-    //     comp = <PhotoMessage key={index} rightSide={index % 2 === 0} />
-    //     break;
-    // }
-    // case 2: {
-    //     comp = <VideoMessage key={index} rightSide={index % 2 === 0} />
-    //     break;
-    // }
-    // case 3: {
-    //     comp = <AudioMessage key={index} rightSide={index % 2 === 0} />
-    //     break;
-    // }
-    // }
-    const text = index === 1 ? "hello world ! \n hello world ! \n hello world ! \n hello world !" : "hello world !";
-    comp = <TextMessage lastOfSection={index === 4 || index === 19} firstOfSection={index === 0 || index === 5} message={{ data: { text: text }, author: { firstName: "keyhan", lastName: "kasperian" }, authorId: 123, time: 1 }} key={index} side={index < 5 ? 'right' : 'left'} />
-    return (
-        <CellMeasurer
-            key={key}
-            cache={cache}
-            parent={parent}
-            columnIndex={0}
-            rowIndex={index}>
-            {({ registerChild, measure }: any) => (
-                <div style={style} ref={registerChild}>
-                    {comp}
-                </div>
-            )}
-        </CellMeasurer>
-    );
-}
+export default function MessageList(props: Readonly<{ topicId: string }>) {
 
-export default function MessageList() {
+    const [msgs, setMsgs] = useState<any[]>([]);
+    const myHumanId = api.sigma.store.myUserId
+
+    function renderRow({ index, key, style, parent }: { index: number, key: any, style: any, parent: any }) {
+        let comp: ReactNode = null;
+        let message = msgs[index]
+        if (!message) {
+            comp = <div className="w-full h-[88px]" />
+        } else {
+            let nextMessage: Message = msgs[index + 1]
+            let isLastOfSection = (nextMessage && (nextMessage.authorId !== message.authorId)) || !nextMessage
+            let prevMessage: Message = msgs[index - 1]
+            let isFirstOfSection = (prevMessage && (prevMessage.authorId !== message.authorId)) || !prevMessage
+            comp = <TextMessage
+                lastOfSection={isLastOfSection} firstOfSection={isFirstOfSection} message={message} key={message.id}
+                side={myHumanId === message.authorId ? "right" : "left"}
+            />
+        }
+        return (
+            <CellMeasurer
+                key={key}
+                cache={cache}
+                parent={parent}
+                columnIndex={0}
+                rowIndex={index}>
+                {({ registerChild }: any) => (
+                    <div style={style} ref={registerChild}>
+                        {comp}
+                    </div>
+                )}
+            </CellMeasurer>
+        );
+    }
+
+    useEffect(() => {
+        const msgsObservable = api.sigma.store.db.messages.find({
+            selector: { topicId: { $eq: props.topicId } },
+            sort: [
+                { time: 'asc' }
+            ]
+        }).$;
+        let msgsSub = msgsObservable.subscribe(ms => {
+            setMsgs(ms);
+        });
+        setTimeout(() => {
+            listRef.current?.scrollToRow(msgs.length - 1);
+        }, 250);
+        return () => {
+            msgsSub.unsubscribe();
+        }
+    }, [props.topicId]);
+
+    const oldLength = useRef(0);
+
+    useEffect(() => {
+        if (oldLength.current < msgs.length) {
+            cache.clear(msgs.length - 1, 0);
+        }
+        oldLength.current = msgs.length;
+        if (msgs[msgs.length - 1]?.authorId === myHumanId) {
+            listRef.current?.scrollToRow(msgs.length);
+        }
+    }, [msgs]);
+
+    const listRef = useRef<List>(null);
+
     return (
         <div className="h-full">
             <AutoSizer>
@@ -68,14 +84,15 @@ export default function MessageList() {
                     ({ width, height }: any) => (
                         <List
                             id="messages-list"
+                            ref={listRef}
                             width={width}
                             height={height}
                             deferredMeasurementCache={cache}
                             rowHeight={cache.rowHeight}
                             rowRenderer={renderRow}
-                            rowCount={list.length}
+                            rowCount={msgs.length + 1}
                             overscanRowCount={3}
-                            className={'px-2 pb-36 pt-14'}
+                            className={'px-2'}
                         />
                     )
                 }

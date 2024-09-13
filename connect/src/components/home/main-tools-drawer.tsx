@@ -8,14 +8,13 @@ import { useMemo } from "react";
 import HomeApps from "../components/home-apps";
 
 const MainTools = () => {
-    const memContentView = useMemo(() => <HomeApps />, []);
     const memOpenedHeadView = useMemo(() => <HomeAppsHeader />, []);
     const memClosedHeadView = useMemo(() => <MainAppsTabs />, []);
     return (
         <>
             <Backdrop stateName={"homeAppsOpen"} stateChangerName="switchHomeApps" />
             <HomeAppsDrawer
-                contentView={memContentView}
+                contentView={<HomeApps />}
                 openedHeadView={memOpenedHeadView}
                 closedHeadView={memClosedHeadView}
                 room={undefined}

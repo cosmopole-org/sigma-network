@@ -27,7 +27,7 @@ export default class Network {
                     headers: myHeaders,
                     redirect: "follow"
                 });
-                return {success: true, result: await rawRes.json()};
+                return {success: (rawRes.status === 200), result: await rawRes.json()};
             } else {
                 const myHeaders = new Headers();
                 myHeaders.append("layer", layer.toString());
@@ -39,7 +39,7 @@ export default class Network {
                     body: JSON.stringify(body),
                     redirect: "follow"
                 });
-                return {success: true, result: await rawRes.json()};
+                return {success: (rawRes.status === 200), result: await rawRes.json()};
             }
         } catch (ex) {
             return { success: false, result: ex };
