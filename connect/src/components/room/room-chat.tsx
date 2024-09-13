@@ -3,7 +3,7 @@ import { Input } from "@nextui-org/react";
 import IconButton from "../elements/icon-button";
 import MessageList from "./room-messagelist";
 import RoomWallpaper from '../../images/room.jpg';
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 
 export default function Chat() {
     const { theme } = useTheme();

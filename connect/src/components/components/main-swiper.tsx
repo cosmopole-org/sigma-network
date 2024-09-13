@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { Actions, RouteSys, Rx, States } from "@/api/offline/states";
+import { Actions, RouteSys, Rx, States } from "@/api/client/states";
 
 export default function MainSwiper(props: Readonly<{ contentKey: string, bottomKey: string, onOpen: () => void, onClose: () => void, content: any, bottom: any }>) {
     const pos = useRef(0)

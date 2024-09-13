@@ -1,6 +1,6 @@
 
 import { ReactNode, useCallback, useEffect, useRef } from "react";
-import { Rx, States } from "@/api/offline/states";
+import { Rx, States } from "@/api/client/states";
 
 export default function HomeAppsDrawer(props: Readonly<{ contentView: ReactNode, openedHeadView: ReactNode, closedHeadView: ReactNode, room: any, onOpen: () => void, onClose: () => void, needToCloseRecorder?: boolean }>) {
     const containerrRef = useRef(null);

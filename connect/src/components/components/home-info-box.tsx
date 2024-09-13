@@ -1,7 +1,7 @@
 import { Avatar, Button } from "@nextui-org/react";
 import Icon from "../elements/icon";
-import { RouteSys } from "@/api/offline/states";
-import { getUsers } from "@/api/offline/constants";
+import { RouteSys } from "@/api/client/states";
+import { getUsers } from "@/api/client/constants";
 
 export default function HomeInfoBox({ className }: Readonly<{ className: string }>) {
     return (

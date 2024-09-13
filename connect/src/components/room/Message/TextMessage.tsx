@@ -2,7 +2,7 @@
 import { Card, colors } from '@nextui-org/react';
 import './bubble.css'
 import Icon from '@/components/elements/icon';
-import { useTheme } from '@/api/offline/states';
+import { useTheme } from '@/api/client/states';
 
 const TextMessage = (props: { message: any, side?: string, lastOfSection?: boolean, firstOfSection?: boolean, isQuote?: boolean }) => {
     const { theme } = useTheme();

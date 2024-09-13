@@ -1,4 +1,4 @@
-import { Actions, States } from "@/api/offline/states";
+import { Actions, States } from "@/api/client/states";
 import { Switch } from "@nextui-org/switch";
 
 export default function BoardBgSwitch() {

@@ -1,10 +1,10 @@
 import { Button } from "@nextui-org/button";
 import Icon from "../elements/icon";
-import { Actions } from "@/api/offline/states";
+import { Actions } from "@/api/client/states";
 
 export default function ChatsBottomBar() {
     return (
-        <div className="w-full absolute bottom-4">
+        <div className="w-full absolute bottom-14">
             <div className="w-full relative">
                 <Button
                     isIconOnly

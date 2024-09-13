@@ -4,7 +4,7 @@ import React from "react";
 import { Avatar, Navbar, NavbarContent } from "@nextui-org/react";
 import IconButton from "../elements/icon-button";
 import { useRouter } from "next/navigation";
-import { getUsers } from '../../api/offline/constants';
+import { getUsers } from '../../api/client/constants';
 
 export default function CallNavbar() {
     const router = useRouter();

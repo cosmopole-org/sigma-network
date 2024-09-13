@@ -1,4 +1,4 @@
-import { getSvgIconPath } from "@/api/offline/resources";
+import { getSvgIconPath } from "@/api/client/resources";
 import icons from "../icons";
 import { IconType } from "@/types";
 import { Card } from "@nextui-org/react";

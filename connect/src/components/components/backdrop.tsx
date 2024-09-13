@@ -1,4 +1,4 @@
-import { Actions, States } from "@/api/offline/states";
+import { Actions, States } from "@/api/client/states";
 
 export default function Backdrop({ stateName, stateChangerName }: Readonly<{ stateName: string, stateChangerName: string }>) {
     const show = States.useListener((States.store as any)[stateName]);

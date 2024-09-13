@@ -130,6 +130,33 @@ func (a *Actions) Get(s abstract.IState, input inputstopics.GetInput) (any, erro
 	return outputstopics.GetOutput{Topic: topic}, nil
 }
 
+// Read /topics/read check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Read(s abstract.IState, input inputstopics.ReadInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	var space model.Space
+	err2 := trx.Model(&model.Space{}).Where("id = ?", input.SpaceId).First(&space).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	trx.Reset()
+	var member model.Member
+	err := trx.Model(&model.Member{}).Where("user_id = ?", state.Info().UserId()).Where("space_id = ?", input.SpaceId).First(&member).Error()
+	if err != nil {
+		if !space.IsPublic {
+			return nil, err
+		}
+	}
+	trx.Reset()
+	var topics []model.Topic
+	err3 := trx.Model(&model.Topic{}).Where("space_id = ?", space.Id).Find(&topics).Error()
+	if err3 != nil {
+		return nil, err3
+	}	
+	return outputstopics.ReadOutput{Topics: topics}, nil
+}
+
 // Send /topics/send check [ true true true ] access [ true false false false POST ]
 func (a *Actions) Send(s abstract.IState, input inputstopics.SendInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())

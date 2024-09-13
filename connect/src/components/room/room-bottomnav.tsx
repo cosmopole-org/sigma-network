@@ -3,8 +3,8 @@
 import React from "react";
 import { Card } from "@nextui-org/react";
 import { BottomNavItem } from "../elements/bottomnav-item";
-import { useTheme } from "@/api/offline/states";
-import { RouteSys, switchRoomLoading } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
+import { RouteSys, switchRoomLoading } from "@/api/client/states";
 
 export default function RoomBottomNav({ openPanel, panelKey }: Readonly<{ openPanel: (panelKey: string) => void, panelKey: string | undefined }>) {
     const { theme } = useTheme();

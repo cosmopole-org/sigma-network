@@ -1,5 +1,5 @@
-import { getServerUrl } from "../offline/constants";
-import { States } from "../offline/states";
+import { getServerUrl } from "../client/constants";
+import { States } from "../client/states";
 
 const request = async (path: string, body: any, layer: number): Promise<any> => {
     const myHeaders = new Headers();
@@ -18,6 +18,9 @@ const request = async (path: string, body: any, layer: number): Promise<any> => 
     return await d.json();
 }
 
+const genRandAvatar = () => (Math.floor(Math.random() * 20)).toString();
+
 export {
-    request
+    request,
+    genRandAvatar
 }

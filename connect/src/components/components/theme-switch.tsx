@@ -1,4 +1,4 @@
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 import { MoonFilledIcon, SunFilledIcon } from "../icons";
 import { Switch } from "@nextui-org/switch";
 

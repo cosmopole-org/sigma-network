@@ -1,6 +1,6 @@
 import { Input } from "@nextui-org/react";
 import Icon from "../elements/icon";
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 
 export default function RoomSearchbar() {
     const { theme } = useTheme();

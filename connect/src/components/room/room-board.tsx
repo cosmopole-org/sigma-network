@@ -1,9 +1,9 @@
-import { getClockWidgetData, getWindowWidth, isTouchDevice } from "@/api/offline/constants";
+import { getClockWidgetData, getWindowWidth, isTouchDevice } from "@/api/client/constants";
 import { useEffect, useRef, useState } from "react";
 import AppletHost from "./applet-host";
 import { useHookstate } from "@hookstate/core";
 import BlogPost from "../blog/post";
-import { Actions, States, useTheme } from "@/api/offline/states";
+import { Actions, States, useTheme } from "@/api/client/states";
 
 type Box = { el: any, key: string, x: number, y: number, w: number, h: number, color: string, oldY: number }
 

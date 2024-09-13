@@ -1,7 +1,7 @@
 "use client"
 
-import { getUsers } from "@/api/offline/constants"
-import { RouteSys } from "@/api/offline/states";
+import { getUsers } from "@/api/client/constants"
+import { RouteSys } from "@/api/client/states";
 import { Avatar, Card } from "@nextui-org/react"
 
 export default function HomePeopleList() {

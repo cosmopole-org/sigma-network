@@ -1,14 +1,17 @@
-import Services from './online/services';
+import Sigma from "./sigma";
 
 class Api {
     public static async load(): Promise<Api> {
         let a = new Api();
-        await a.services.spaces.read();
+        await a.sigma.run(a);
         return a;
     }
-    services: Services
+    sigma: Sigma
     constructor() {
-        this.services = new Services();
+        this.sigma = new Sigma();
+    }
+    async loadData() {
+        await this.sigma.services?.spaces.read();
     }
 }
 

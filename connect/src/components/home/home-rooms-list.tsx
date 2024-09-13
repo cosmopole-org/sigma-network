@@ -1,47 +1,49 @@
-"use client"
-
 import { Card } from "@nextui-org/react"
-import { getUsers } from "@/api/offline/constants"
-import { hookstate, useHookstate } from "@hookstate/core"
-import { useEffect } from "react"
-import { Actions } from "@/api/offline/states"
+import { useEffect, useState } from "react"
+import { Actions } from "@/api/client/states"
+import IconButton from "../elements/icon-button"
+import { Topic } from "@/api/sigma/models"
+import { api } from "@/index"
 
-export const roomsListView = hookstate(false);
-const roomsListViewExtra = hookstate(false);
-export const switchRoomsList = (v: boolean) => {
-    roomsListView.set(v);
-}
-
-export default function HomeRoomsList() {
-    const roomsListState = useHookstate(roomsListView);
-    const roomsListExtraState = useHookstate(roomsListViewExtra);
-   useEffect(() => {
-        setTimeout(() => {
-            roomsListExtraState.set(roomsListState.get({ noproxy: true }));
-        }, 250);
-    }, [roomsListState.get({ noproxy: true })]);
+export default function HomeRoomsList(props: Readonly<{ spaceId: string }>) {
+    const [selectedTopicId, setSelectedTopicId] = useState("");
+    const [topics, setTopics] = useState<Topic[]>([]);
+    useEffect(() => {
+        const topicsObservable = api.sigma.store.db.topics.find({ selector: { spaceId: { $eq: props.spaceId } } }).$;
+        topicsObservable.subscribe(ts => {
+            if (selectedTopicId === "") {
+                setSelectedTopicId(ts.length > 0 ? (ts[0] as any).id : "");
+            }
+            setTopics(ts);
+        });
+        api.sigma.services?.topics.read({ spaceId: props.spaceId });
+    }, [props.spaceId]);
     return (
         <Card className="overflow-x-hidden w-full h-full pt-16" style={{
             borderRadius: 0
         }}>
-            <Card radius="none" className="h-10">
-                <div className="flex h-full">
-                    <p className="mt-2 ml-2">
-                        Tower rooms
+            <Card radius="none" className="h-10 w-full">
+                <div className="flex flex-row h-full w-full">
+                    <p className="mt-2 ml-3 flex-1">
+                        Space topics
                     </p>
+                    <IconButton name="add" className="mr-2"
+                        onClick={() => Actions.openCreateTopicModal(props.spaceId)}
+                    />
                 </div>
             </Card>
             <div
                 className={"relative w-full overflow-scroll pl-4 pr-4"}
                 style={{ height: 'calc(100% - 40px)' }}
             >
-                {getUsers().map(item => (
+                {topics.map((item: Topic) => (
                     <Card onClick={() => {
+                        Actions.updatePos(props.spaceId, item.id);
                         Actions.updateHomeMenuState(false);
                     }} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <div className="flex flex-col">
-                                <span className="text-md text-left">{item.emoji} {item.name}</span>
+                                <span className="text-md text-left">{item.title}</span>
                             </div>
                         </div>
                     </Card>

@@ -1,5 +1,5 @@
 
-import { Actions } from "@/api/offline/states";
+import { Actions } from "@/api/client/states";
 import Backdrop from "../components/backdrop";
 import MainAppsTabs from "./main-apps-tabs";
 import HomeAppsHeader from "../components/home-apps-header";

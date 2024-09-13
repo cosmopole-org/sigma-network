@@ -1,8 +1,8 @@
 "use client"
 
-import { getFiles } from "@/api/offline/constants"
+import { getFiles } from "@/api/client/constants"
 import { Button, Card, CardBody, CardFooter, Chip, Image } from "@nextui-org/react"
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 import Icon from "../elements/icon";
 
 export default function Files() {

@@ -1,8 +1,8 @@
 import "@/styles/globals.css";
 import { useHookstate } from "@hookstate/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RouteSys, States, useTheme } from "./api/offline/states";
-import { loadSizes } from "@/api/offline/constants";
+import { RouteSys, States, useTheme } from "./api/client/states";
+import { loadSizes } from "@/api/client/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
 import MainSwiper from "./components/components/main-swiper";
@@ -18,6 +18,8 @@ import RoomMachinesPage from "./app/room-machines/page";
 import StatusBar from "./components/components/status-bar";
 import AuthPage from "./app/auth/page";
 import SplashPage from "./app/splash/page";
+import CreateSpaceModal from "./components/modals/create-space/page";
+import CreateTopicModal from "./components/modals/create-topic/page";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -32,6 +34,7 @@ if (typeof window !== 'undefined') {
 }
 
 export const mapOfRoutes: { [key: string]: any } = {
+	// pages
 	"/app/splash": SplashPage,
 	"/app/auth": AuthPage,
 	"/app/home": HomeMain,
@@ -42,23 +45,27 @@ export const mapOfRoutes: { [key: string]: any } = {
 	"/app/settings": SettingsPage,
 	"/app/chats": ChatsPage,
 	"/app/explore": ExplorePage,
-	"/app/room-machines": RoomMachinesPage
+	"/app/room-machines": RoomMachinesPage,
+	// modals
+	"/app/create-space": CreateSpaceModal,
+	"/app/create-topic": CreateTopicModal,
 };
 
-const Container = (props: { type: string }) => {
+const Container = (props: { type: string, state: any }) => {
 	const Comp = mapOfRoutes[props.type];
-	const memoCompVal = useMemo(() => <Comp />, []);
+	const memoCompVal = useMemo(() => <Comp {...props.state} />, []);
 	if (!Comp) return null;
 	return memoCompVal;
 }
 
 export default function Main() {
 	const [, setUpddateTrigger] = useState(Math.random());
-    useTheme();
+	const [preAuthStepChange, setPreAuthStepChange] = useState("");
+	useTheme();
 	const top1CompCache = useRef<any>(null);
 	const top2CompCache = useRef<any>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
-	const isAuthenticated = States.useListener(States.store.authenticated);
+	const authStep = States.useListener(States.store.authStep);
 	const hist = useHookstate(RouteSys.history).get({ noproxy: true });
 
 	loadSizes();
@@ -70,14 +77,14 @@ export default function Main() {
 		if (top1CompCache.current) {
 			if (RouteSys.lastAction === "navigate") {
 				if (hist.length > 1) {
-					let Top1 = mapOfRoutes[hist[hist.length - 1]];
+					let Top1 = mapOfRoutes[hist[hist.length - 1]?.path];
 					top2CompCache.current = top1CompCache.current;
 					top1CompCache.current = <Top1 />;
 				}
 			} else if (RouteSys.lastAction === "back") {
 				top1CompCache.current = top2CompCache.current;
 				if (hist.length > 1) {
-					let Top2 = mapOfRoutes[hist[hist.length - 2]];
+					let Top2 = mapOfRoutes[hist[hist.length - 2]?.path];
 					top2CompCache.current = (
 						<Top2 />
 					);
@@ -86,7 +93,7 @@ export default function Main() {
 				}
 			}
 		} else {
-			let Top1 = mapOfRoutes[hist[hist.length - 1]];
+			let Top1 = mapOfRoutes[hist[hist.length - 1]?.path];
 			top1CompCache.current = (
 				<Top1 />
 			);
@@ -96,30 +103,64 @@ export default function Main() {
 
 	}, [hist]);
 
+	let content = null;
+
+	switch (preAuthStepChange) {
+		case "passed": {
+			content = (
+				<div ref={contentRef} className="w-full h-full fixed">
+					{memHome}
+					<MainSwiper
+						onOpen={() => {
+
+						}}
+						onClose={() => {
+							setTimeout(() => {
+								RouteSys.pop({ doNotSlideBack: true });
+							}, 250);
+						}}
+						contentKey={hist[hist.length - 1]?.path}
+						bottomKey={hist[hist.length - 2]?.path}
+						content={<Container type={hist[hist.length - 1]?.path} state={hist[hist.length - 1]?.state}/>}
+						bottom={<Container type={hist[hist.length - 2]?.path} state={hist[hist.length - 2]?.state} />}
+					/>
+				</div>
+			);
+			break;
+		}
+		case "auth": {
+			content = <AuthPage />;
+			break;
+		}
+		default: {
+			content = <SplashPage />;
+			break;
+		}
+	}
+
+	const shadowRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (shadowRef.current) {
+			if (authStep !== "") {
+				shadowRef.current.style.opacity = "0";
+				setTimeout(() => {
+					setPreAuthStepChange(authStep);
+					setTimeout(() => {
+						if (shadowRef.current) {
+							shadowRef.current.style.opacity = "1";
+						}
+					}, 250);
+				}, 250);
+			}
+		}
+	}, [authStep]);
+
 	return (
 		<main className="w-full h-screen">
-			{
-				(isAuthenticated || (hist[hist.length - 1] === "/app/auth")) ? (
-					<div ref={contentRef} className="w-full h-full fixed">
-						{isAuthenticated ? memHome : null}
-						<MainSwiper
-							onOpen={() => {
-
-							}}
-							onClose={() => {
-								setTimeout(() => {
-									RouteSys.pop({ doNotSlideBack: true });
-								}, 250);
-							}}
-							contentKey={hist[hist.length - 1]}
-							bottomKey={hist[hist.length - 2]}
-							content={<Container type={hist[hist.length - 1]} />}
-							bottom={<Container type={hist[hist.length - 2]} />}
-						/>
-					</div>
-				) :
-					<SplashPage />
-			}
+			<div ref={shadowRef} className="w-full h-full" style={{ opacity: 1, transition: 'opacity 0.25s' }}>
+				{content}
+			</div>
 			<StatusBar />
 		</main >
 	);

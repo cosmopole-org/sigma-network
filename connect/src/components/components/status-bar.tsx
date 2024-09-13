@@ -1,4 +1,4 @@
-import { Actions, RouteSys, States } from "@/api/offline/states";
+import { Actions, RouteSys, States } from "@/api/client/states";
 import IconButton from "../elements/icon-button";
 
 export default function StatusBar() {
@@ -22,7 +22,7 @@ export default function StatusBar() {
         leftSideBtn = <IconButton name="menu" className="ml-1 -mt-[2px]" onClick={() => Actions.updateHomeMenuState(true)} />;
     }
     return (
-        <div style={{ zIndex: 99999 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
+        <div style={{ zIndex: 99998 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
             {leftSideBtn}
             <IconButton color={'#006FEE'} name="connected" className="-mt-[2px]" />
             <div className="flex-1">

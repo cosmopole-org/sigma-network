@@ -1,4 +1,4 @@
-import { RouteSys } from "@/api/offline/states";
+import { RouteSys } from "@/api/client/states";
 import { Avatar, AvatarGroup } from "@nextui-org/react";
 
 export default function HomeAvatarGroup() {

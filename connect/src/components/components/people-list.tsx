@@ -1,6 +1,6 @@
-import { getUsers } from "@/api/offline/constants"
+import { getUsers } from "@/api/client/constants"
 import { Image } from "@nextui-org/react"
-import { RouteSys } from "@/api/offline/states"
+import { RouteSys } from "@/api/client/states"
 
 export default function PeopleList(props: Readonly<{ className?: string }>) {
     return (

@@ -17,14 +17,11 @@ export function useTheme() {
 
 export let States = {
 	store: {
+		currentPos: hookstate({ spaceId: "", topicId: "" }),
 		authenticated: hookstate(false),
 		myUserId: localStorage.getItem("myUserId"),
 		token: localStorage.getItem("token"),
 		theme: hookstate(localStorage.getItem("theme") ?? "dark"),
-
-		spaces: hookstate({}),
-
-		towerCreateModalShow: hookstate(false),
 		showRoomLoading: hookstate(true),
 		roomSliderView: hookstate(false),
 		showLoading: hookstate(true),
@@ -37,6 +34,7 @@ export let States = {
 		chatsArchiveModalOpen: hookstate(false),
 		exploreSelectedTab: hookstate(0),
 		homeAppsOpen: hookstate(false),
+		authStep: hookstate("")
 	},
 	useListener<T>(so: State<T>) {
 		const s = useHookstate<T>(so);
@@ -51,14 +49,11 @@ export let States = {
 }
 
 export let Actions = {
-	updateSpaces: (v: any[]) => {
-		if (v) {
-			let spaceDict: { [id: string]: any } = {};
-			v.forEach(s => {
-				spaceDict[s.id] = s;
-			})
-			States.store.spaces.set(spaceDict);
-		}
+	updatePos: (spaceId: string, topicId: string) => {
+		States.store.currentPos.set({ spaceId, topicId });
+	},
+	updateAuthStep: (v: string) => {
+		States.store.authStep.set(v);
 	},
 	isAuthenticated: () => {
 		return States.store.authenticated;
@@ -86,8 +81,11 @@ export let Actions = {
 	swtichRoomSlider: (v: boolean) => {
 		States.store.roomSliderView.set(v);
 	},
-	switchTowerCreateModal: (v: boolean) => {
-		States.store.towerCreateModalShow.set(v);
+	openCreateSpaceModal: () => {
+		RouteSys.push("/app/create-space");
+	},
+	openCreateTopicModal: (spaceId: string) => {
+		RouteSys.push("/app/create-topic", { spaceId });
 	},
 	switchDraggingId: (v: string | undefined) => {
 		States.store.draggingId.set(v);
@@ -105,10 +103,10 @@ export let Actions = {
 		States.store.boardEditingMode.set(v);
 	},
 	switchChatsFoldersModal: (v: boolean) => {
-		States.store.chatsArchiveModalOpen.set(v);
+		States.store.chatsFoldersModalOpen.set(v);
 	},
 	switchChatsArchiveModal: (v: boolean) => {
-		States.store.chatsFoldersModalOpen.set(v);
+		States.store.chatsArchiveModalOpen.set(v);
 	},
 	switchExploreTab: (v: number) => {
 		States.store.exploreSelectedTab.set(v);
@@ -156,18 +154,18 @@ export let RouteSys: {
 	_pathCount: number,
 	lastAction: string,
 	swiperInst: any,
-	history: State<string[]>,
-	push: (p: string, options?: { changePath?: boolean }) => void,
+	history: State<{ path: string, state: any }[]>,
+	push: (p: string, state?: any) => void,
 	pop: (options?: { doNotSlideBack: boolean }) => void,
 } = {
 	_pathCount: 0,
 	lastAction: "",
 	swiperInst: null,
-	history: hookstate<string[]>([]),
-	push: (p: string) => {
+	history: hookstate<{ path: string, state: any }[]>([]),
+	push: (path: string, state?: any) => {
 		RouteSys._pathCount++;
 		RouteSys.lastAction = "navigate";
-		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), p]);
+		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), { path, state }]);
 	},
 	pop: (options?: { doNotSlideBack: boolean }) => {
 		if (!options?.doNotSlideBack) {

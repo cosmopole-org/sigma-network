@@ -1,7 +1,7 @@
-import { getUsers } from "@/api/offline/constants"
+import { getUsers } from "@/api/client/constants"
 import { Avatar, Card, Modal, ModalBody, ModalContent, ModalHeader } from "@nextui-org/react"
 import Icon from "../elements/icon"
-import { Actions, States } from "@/api/offline/states"
+import { Actions, States } from "@/api/client/states"
 
 export default function ChatsArchiveModal() {
     const open = States.useListener(States.store.chatsArchiveModalOpen);

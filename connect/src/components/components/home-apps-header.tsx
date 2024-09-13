@@ -1,4 +1,4 @@
-import { Actions, RouteSys, States } from "@/api/offline/states";
+import { Actions, RouteSys, States } from "@/api/client/states";
 import Icon from "../elements/icon";
 import CommandsPalette from "../home/commands-palette";
 import { Button } from "@nextui-org/button";

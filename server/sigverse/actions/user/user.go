@@ -84,6 +84,9 @@ func Install(s abstract.IState, a *Actions) error {
 func (a *Actions) Authenticate(s abstract.IState, _ inputsusers.AuthenticateInput) (any, error) {
 	state := abstract.UseState[modulestate.IStateL1](s)
 	_, res, _ := a.Layer.Actor().FetchAction("/users/get").Act(a.Layer.Sb().NewState(moduleactormodel.NewInfo("", "", ""), state.Trx()), inputsusers.GetInput{UserId: state.Info().UserId()})
+	if res == nil {
+		return nil, errors.New("user not found")
+	}
 	return outputsusers.AuthenticateOutput{Authenticated: true, User: res.(outputsusers.GetOutput).User}, nil
 }
 

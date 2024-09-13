@@ -1,9 +1,9 @@
 
 import Icon from '@/components/elements/icon';
-import { getUsers } from '../../api/offline/constants';
+import { getUsers } from '../../api/client/constants';
 import { Avatar, Button, Card } from "@nextui-org/react"
 import { useState } from "react";
-import { RouteSys } from '@/api/offline/states';
+import { RouteSys } from '@/api/client/states';
 
 export default function CallPage() {
     const [cam, setCam] = useState(false);

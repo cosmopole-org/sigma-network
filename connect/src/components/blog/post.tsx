@@ -1,6 +1,6 @@
 'use client'
 
-import { getUsers } from "@/api/offline/constants";
+import { getUsers } from "@/api/client/constants";
 import Icon from "@/components/elements/icon";
 import { Card, CardHeader, CardBody, CardFooter, Avatar, Chip, Image } from "@nextui-org/react";
 import React from "react";

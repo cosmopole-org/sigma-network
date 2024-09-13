@@ -1,4 +1,4 @@
-import { Rx, States } from "@/api/offline/states";
+import { Rx, States } from "@/api/client/states";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
 
 export default function HomeMenuDrawer({ content }: Readonly<{ content: ReactNode }>) {

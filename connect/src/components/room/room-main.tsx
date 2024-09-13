@@ -2,7 +2,7 @@
 
 import BoardEl from "@/components/room/room-board";
 import RoomNavbar, { roomNavShow, switchRoomNav } from "@/components/room/room-navbar";
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 import { useEffect, useRef } from "react";
 
 export default function Main() {

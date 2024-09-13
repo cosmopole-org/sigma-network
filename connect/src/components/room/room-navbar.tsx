@@ -3,10 +3,10 @@
 import { Avatar, Navbar, NavbarContent } from "@nextui-org/react";
 import { hookstate, useHookstate } from "@hookstate/core";
 import IconButton from "../elements/icon-button";
-import { getUsers } from "@/api/offline/constants";
+import { getUsers } from "@/api/client/constants";
 import RoomSearchbar from "./room-searchbar";
-import { useTheme } from "@/api/offline/states";
-import { RouteSys } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
+import { RouteSys } from "@/api/client/states";
 
 export const roomNavShow = hookstate(true);
 export const switchRoomNav = (v: boolean) => {

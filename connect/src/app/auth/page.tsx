@@ -1,4 +1,3 @@
-import { RouteSys } from "@/api/offline/states";
 import Icon from "@/components/elements/icon";
 import TextField from "@/components/elements/textfield";
 import { Logo } from "@/components/icons";
@@ -17,9 +16,11 @@ export default function AuthPage() {
                 <TextField label="password" onChange={t => { passwordRef.current = t; }} />
                 <Button color="primary" className="mt-6" onClick={() => {
                     if (usernameRef.current.length > 0 && passwordRef.current.length > 0) {
-                        api.services.auth.login(usernameRef.current, usernameRef.current, passwordRef.current).
-                            then(() => RouteSys.pop()).
-                            catch(e => alert(JSON.stringify(e)));
+                        api.sigma.services?.users.create({
+                            username: usernameRef.current,
+                            name: usernameRef.current,
+                            secret: passwordRef.current
+                        });
                     } else {
                         alert("username or password can not be empty")
                     }

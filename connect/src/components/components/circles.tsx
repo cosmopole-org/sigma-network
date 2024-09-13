@@ -1,4 +1,4 @@
-import { useTheme } from "@/api/offline/states";
+import { useTheme } from "@/api/client/states";
 
 export default function Circles({ className }: Readonly<{ className?: string }>) {
     const { theme } = useTheme();

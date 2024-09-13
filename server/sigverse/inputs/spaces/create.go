@@ -4,7 +4,7 @@ type CreateInput struct {
 	Tag      string `json:"tag" validate:"required"`
 	Title    string `json:"title" validate:"required"`
 	Avatar   string `json:"avatar" validate:"required"`
-	IsPublic bool   `json:"isPublic" validate:"required"`
+	IsPublic bool   `json:"isPublic"`
 }
 
 func (d CreateInput) GetData() any {

@@ -1,9 +1,7 @@
-"use client"
-
-import { getUsers } from "@/api/offline/constants"
+import { getUsers } from "@/api/client/constants"
 import { Avatar, Card } from "@nextui-org/react"
 import Icon from "../elements/icon"
-import { RouteSys, useTheme } from "@/api/offline/states"
+import { RouteSys, useTheme } from "@/api/client/states"
 
 export default function TowersList() {
     const { theme } = useTheme();

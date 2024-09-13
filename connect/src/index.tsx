@@ -5,7 +5,7 @@ import App from "./App.tsx";
 import { Provider } from "./provider.tsx";
 import "@/styles/globals.css";
 import Api from "./api/index.ts";
-import { Actions, RouteSys, States } from "./api/offline/states.tsx";
+import { Actions } from "./api/client/states.tsx";
 
 window.addEventListener('error', e => {
   if (e.message === 'ResizeObserver loop limit exceeded') {
@@ -30,13 +30,15 @@ Api.load().then((a) => {
   api = a;
   const loadauth = () => {
     setTimeout(() => {
-      RouteSys.push("/app/auth");
+      Actions.updateAuthStep("auth");
     }, 2000);
   }
-  if (States.getToken().length > 0) {
-    api.services.auth.authenticate().then(res => {
-      Actions.updateAuthenticated(res);
-      if (!res) loadauth();
+  if (api.sigma.store.token.length > 0) {
+    api.sigma.services?.users.authenticate().then(res => {
+      let authenticated = res.data.authenticated
+      Actions.updateAuthenticated(authenticated);
+      if (!authenticated) loadauth();
+      else Actions.updateAuthStep("passed");
     }).catch(e => {
       console.log(e);
       Actions.updateAuthenticated(false);

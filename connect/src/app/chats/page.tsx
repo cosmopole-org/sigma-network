@@ -1,6 +1,5 @@
 import { Navbar, NavbarContent } from "@nextui-org/navbar";
 import HomeSearchbar from "@/components/home/home-searchbar";
-import TowerCreateModal from "@/components/home/tower-create-modal";
 import HomeFolders from "@/components/home/home-folders";
 import ChatsBottomBar from "@/components/components/chats-bottombar";
 import ChatsFoldersModal from "@/components/modals/chats-folders-modal";
@@ -9,7 +8,7 @@ import TowersList from "@/components/components/towers-list";
 
 export default function ChatsPage() {
     return (
-        <div className="w-full h-full relative overflow-y-auto bg-white dark:bg-content1">
+        <div className="w-full h-full relative bg-white dark:bg-content1 overflow-hidden">
             <Navbar
                 isBlurred
                 isBordered
@@ -24,7 +23,6 @@ export default function ChatsPage() {
             </Navbar >
             <TowersList />
             <ChatsBottomBar />
-            <TowerCreateModal />
             <ChatsFoldersModal />
             <ChatsArchiveModal />
         </div>

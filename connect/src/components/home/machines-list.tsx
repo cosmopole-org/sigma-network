@@ -1,6 +1,6 @@
-import { getUsers } from "@/api/offline/constants"
+import { getUsers } from "@/api/client/constants"
 import Icon from "../elements/icon"
-import { RouteSys } from "@/api/offline/states"
+import { RouteSys } from "@/api/client/states"
 
 export default function MachinesList(props: Readonly<{ className?: string }>) {
     return (

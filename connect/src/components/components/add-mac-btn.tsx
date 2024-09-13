@@ -1,6 +1,6 @@
 import { Button } from "@nextui-org/button";
 import Icon from "../elements/icon";
-import { States } from "@/api/offline/states";
+import { States } from "@/api/client/states";
 
 export default function AddMacBtn() {
     const edit = States.useListener(States.store.boardEditingMode);

@@ -1,6 +1,6 @@
 import { Tab, Tabs } from "@nextui-org/react";
 import Icon from "../elements/icon";
-import { Actions, States } from "@/api/offline/states";
+import { Actions, States } from "@/api/client/states";
 
 export default function ExploreTabs({ secondary, style }: Readonly<{ style: any, secondary?: boolean }>) {
     const selectedTab = States.useListener(States.store.exploreSelectedTab);
