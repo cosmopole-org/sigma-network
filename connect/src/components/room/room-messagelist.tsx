@@ -92,7 +92,7 @@ export default function MessageList(props: Readonly<{ topicId: string }>) {
                             rowRenderer={renderRow}
                             rowCount={msgs.length + 1}
                             overscanRowCount={3}
-                            className={'px-2'}
+                            className={'px-2 pt-10'}
                         />
                     )
                 }

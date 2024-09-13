@@ -11,6 +11,7 @@ import MessageList from "./room-messagelist";
 export default function Chat(props: Readonly<{ spaceId: string, topicId: string }>) {
     const { theme } = useTheme();
     const textRef = useRef("");
+    const [textElKey, setTextElKey] = useState(Math.random());
     const [topic, setTopic] = useState<Topic | null>();
     useEffect(() => {
         const topicObservable = api.sigma.store.db.topics.findOne(props.topicId).$;
@@ -29,6 +30,7 @@ export default function Chat(props: Readonly<{ spaceId: string, topicId: string 
             }} />
             <MessageList topicId={topic?.id ?? ""} />
             <Input
+                key={textElKey}
                 classNames={{
                     base: "h-10 absolute bottom-6 left-[5%] w-[90%]",
                     mainWrapper: "items-center h-full",
@@ -43,6 +45,8 @@ export default function Chat(props: Readonly<{ spaceId: string, topicId: string 
                     onClick={() => {
                         if (textRef.current.length > 0) {
                             api.sigma.services?.messages.create({ spaceId: props.spaceId, topicId: props.topicId, data: { text: textRef.current } })
+                            textRef.current = "";
+                            setTextElKey(Math.random());
                         }
                     }} />}
             />
