@@ -1,4 +1,5 @@
 import Sigma from "./sigma";
+import { Space } from "./sigma/models";
 
 class Api {
     public static async load(): Promise<Api> {
@@ -11,7 +12,12 @@ class Api {
         this.sigma = new Sigma();
     }
     async loadData() {
-        await this.sigma.services?.spaces.read();
+        let res = await this.sigma.services?.spaces.read();
+        let ps: any = [];
+        res?.data.spaces.forEach((space: Space) => {
+            ps.push(this.sigma.services?.topics.read({ spaceId: space.id }));
+        });
+        Promise.all(ps);
     }
 }
 

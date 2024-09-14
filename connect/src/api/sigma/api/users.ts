@@ -43,6 +43,11 @@ export default class Users {
                 this.store.saveToken(result.session.token);
                 this.authenticate().then(async (res: any) => {
                     await this.api.loadData();
+                    if ((await this.store.db.spaces.count().exec()) > 0) {
+                        let space = await this.store.db.spaces.findOne().exec();
+                        let topic = await this.store.db.topics.findOne({ selector: { spaceId: { $eq: space?.id } } }).exec();
+                        if (space && topic) Actions.updatePos(space?.id, topic?.id);
+                    }
                     Actions.updateAuthenticated(res.data.authenticated);
                     Actions.updateAuthStep("passed");
                 });

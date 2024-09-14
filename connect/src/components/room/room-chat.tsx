@@ -18,6 +18,9 @@ export default function Chat(props: Readonly<{ spaceId: string, topicId: string 
         let topicSub = topicObservable.subscribe(t => {
             setTopic(t);
         });
+        if (props.topicId) {
+            api.sigma.services?.messages.read({ topicId: props.topicId, offset: 1, count: 1000 });
+        }
         return () => {
             topicSub.unsubscribe();
         }

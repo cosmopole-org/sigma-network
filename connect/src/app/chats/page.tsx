@@ -4,7 +4,7 @@ import HomeFolders from "@/components/home/home-folders";
 import ChatsBottomBar from "@/components/components/chats-bottombar";
 import ChatsFoldersModal from "@/components/modals/chats-folders-modal";
 import ChatsArchiveModal from "@/components/modals/chats-archive-modal";
-import TowersList from "@/components/components/towers-list";
+import ChatsList from "@/components/components/chats-list";
 
 export default function ChatsPage() {
     return (
@@ -21,7 +21,7 @@ export default function ChatsPage() {
                     </div>
                 </NavbarContent>
             </Navbar >
-            <TowersList />
+            <ChatsList />
             <ChatsBottomBar />
             <ChatsFoldersModal />
             <ChatsArchiveModal />

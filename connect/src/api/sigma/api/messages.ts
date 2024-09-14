@@ -16,7 +16,7 @@ export default class Messages {
             const { success, result } = await this.net.safelyRequest(2, "messages/read", "GET", body);
             if (success) {
                 let messages = result.messages;
-                this.store.db.spaces.bulkUpsert(messages);
+                this.store.db.messages.bulkUpsert(messages);
                 return { success: true, data: { messages } };
             } else {
                 return { success: false, data: { error: result.toString() } };

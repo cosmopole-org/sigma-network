@@ -45,7 +45,7 @@ export default function HomePage() {
 								setSelectedSpaceId(item.id);
 							}}
 							key={item.id} className="w-12 h-12 bg-white dark: bg-content1 mt-6 ml-2" style={{ borderRadius: '50%' }}>
-							<Avatar alt={item.title} className="w-full h-full" size="lg" src={getUsers()[item.avatar].avatar} isBordered />
+							<Avatar alt={item.title} className="w-full h-full" size="lg" src={getUsers()[item.avatar]?.avatar} isBordered />
 						</div>
 					))
 				}
