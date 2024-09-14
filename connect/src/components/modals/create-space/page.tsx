@@ -1,4 +1,5 @@
 import { RouteSys } from "@/api/client/states";
+import Icon from "@/components/elements/icon";
 import TextField from "@/components/elements/textfield";
 import { api } from "@/index";
 import { Button } from "@nextui-org/button";
@@ -10,16 +11,13 @@ export default function CreateSpaceModal() {
     return (
         <div className="w-full h-full relative overflow-y-auto bg-white dark:bg-content2 pt-20 pl-4 pr-4">
             <div>
-                <p className="mb-2">
+                <p className="mb-2 ml-1">
                     Please choose a name for your space.
                 </p>
                 <TextField label="Space Name" onChange={t => { titleRef.current = t; }} />
             </div>
             <div className="absolute bottom-4 right-4">
-                <Button color="danger" variant="light" onPress={onClose}>
-                    Cancel
-                </Button>
-                <Button className="ml-4" color="primary" onPress={async () => {
+                <Button isIconOnly className="ml-4" color="success" size="lg" onPress={async () => {
                     if (titleRef.current.length > 0) {
                         await api.sigma.services?.spaces.create({ title: titleRef.current, isPublic: false })
                         onClose();
@@ -27,7 +25,7 @@ export default function CreateSpaceModal() {
                         alert("title can not be empty");
                     }
                 }}>
-                    Create
+                    <Icon name="tick" />
                 </Button>
             </div>
         </div>

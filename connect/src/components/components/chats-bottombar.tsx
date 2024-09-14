@@ -31,7 +31,7 @@ export default function ChatsBottomBar() {
                     variant="shadow"
                     className="absolute left-2/4 -translate-x-1/2 h-10 text-lg"
                     radius="full"
-                    onClick={() => Actions.switchTowerCreateModal(true)}
+                    onClick={() => Actions.openCreateSpaceModal()}
                 >
                     <Icon name="add" />
                     Create new space
