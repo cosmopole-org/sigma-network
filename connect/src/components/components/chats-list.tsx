@@ -52,7 +52,7 @@ export default function ChatsList() {
                                     <span className="text-lg text-left">
                                         {item.title}
                                     </span>
-                                    <Chip className={"ml-2 " + (theme === "light" ? "" : "")} size="sm" variant="faded" style={{ backgroundColor: colorMap[colorList[Math.floor(Number(item.avatar) / 3)]][700] }}>
+                                    <Chip className={"ml-2 " + (theme === "light" ? "" : "")} size="sm" variant="faded" style={{ backgroundColor: colorMap[colorList[Math.floor(Number(item.avatar) / 3)]][600] }}>
                                         {spacesDict[item.spaceId].title}
                                     </Chip>
                                 </div>
