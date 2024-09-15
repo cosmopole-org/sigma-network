@@ -32,6 +32,9 @@ const schema = {
         "tag": {
             "type": "string"
         },
+        "state": {
+            "type": "string"
+        },
         "data": {
             "type": "object",
             "properties": {

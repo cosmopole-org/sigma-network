@@ -55,6 +55,7 @@ export type Message = {
     topicId: string
     time: number
     tag: string
+    state?: string,
     data: {
         text?: string
     }

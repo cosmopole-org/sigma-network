@@ -915,6 +915,20 @@ const icons: { [key: string]: any } = {
 			<g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <title>explore-solid</title> <g id="Layer_2" data-name="Layer 2"> <g id="invisible_box" data-name="invisible box"> <rect width="48" height="48" fill="none"></rect> </g> <g id="icons_Q2" data-name="icons Q2"> <path d="M24,2A22,22,0,1,0,46,24,21.9,21.9,0,0,0,24,2ZM34.7,14.7,28,28,14.7,34.7a1.1,1.1,0,0,1-1.4-1.4L20,20l13.3-6.7A1.1,1.1,0,0,1,34.7,14.7ZM24,22a2,2,0,1,0,2,2A2,2,0,0,0,24,22Z"></path> <path d="M24,22a2,2,0,1,0,2,2A2,2,0,0,0,24,22Zm0,0a2,2,0,1,0,2,2A2,2,0,0,0,24,22Z"></path> </g> </g> </g>
 		</svg>
 	),
+	'history': ({ size = [24, 24], color = "currentColor", ...props }: any) => (
+		<svg
+			aria-hidden="true"
+			fill={'none'}
+			focusable="false"
+			width={size[0]}
+			height={size[1]}
+			role="presentation"
+			viewBox="0 0 24 24"
+			{...props}
+		>
+			<g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M2 12C2 17.5228 6.47715 22 12 22C13.8214 22 15.5291 21.513 17 20.6622M12 2C17.5228 2 22 6.47715 22 12C22 13.8214 21.513 15.5291 20.6622 17" stroke={color} stroke-width="1.5" stroke-linecap="round"></path> <path d="M12 9V13H16" stroke={color} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> <path d="M17 20.6622C15.5291 21.513 13.8214 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 13.8214 21.513 15.5291 20.6622 17" stroke={color} stroke-width="1.5" stroke-linecap="round" stroke-dasharray="0.5 3.5"></path> </g>
+		</svg>
+	),
 }
 
 export default icons;

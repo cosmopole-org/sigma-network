@@ -75,33 +75,24 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                                 borderRadius: "16px 16px 0px 16px"
                             }}>
                                 <p
-                                    className={props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white"}
+                                    className={"mt-[2px] mr-1 " + (props.side === "left" ? theme === "dark" ? 'text-white' : "text-content" : "text-white")}
                                     style={{ textAlign: "right", flex: 1, fontSize: 12 }}
                                 >
                                     {(new Date(props.message.time)).toTimeString().substring(0, 5)}
                                 </p>
                                 {
-                                    // (props.message as any).isDummy ? (
-                                    <Icon
-                                        name='more'
-                                        className='w-4 h-4 ml-[2px]'
-                                        color={props.side === "left" ? theme === "dark" ? '#ffffff' : "#333333" : "#ffffff"}
-                                    />
-                                    // ) : props.message.authorId !== api.memory.myHumanId.get({ noproxy: true }) ?
-                                    //     null :
-                                    //     props.message.seen ? (
-                                    //         <Icon
-                                    //             name='more'
-                                    //             className='w-4 h-4 ml-[2px]'
-                                    //             color={'#000'}
-                                    //         />
-                                    //     ) : (
-                                    //         <Icon
-                                    //             name='more'
-                                    //             className='w-4 h-4 ml-[2px]'
-                                    //             color={'#000'}
-                                    //         />
-                                    //     )
+                                    props.side === "right" ?
+                                        props.message.state === "sent" ? (
+                                            <Icon
+                                                name="tick" size={[14, 14]}
+                                                color={theme === "dark" ? '#ffffff' : "#333333"}
+                                            />
+                                        ) :
+                                            <Icon
+                                                name="history" size={[16, 16]}
+                                                color={theme === "dark" ? '#ffffff' : "#333333"}
+                                            /> :
+                                        null
                                 }
                             </div>
                         )

@@ -9,7 +9,7 @@ const cache = new CellMeasurerCache({
     defaultHeight: 100
 });
 
-export default function MessageList(props: Readonly<{ topicId: string }>) {
+export default function MessageList(props: Readonly<{ className?: string, topicId: string }>) {
 
     const [msgs, setMsgs] = useState<any[]>([]);
     const myHumanId = api.sigma.store.myUserId
@@ -92,7 +92,7 @@ export default function MessageList(props: Readonly<{ topicId: string }>) {
                             rowRenderer={renderRow}
                             rowCount={msgs.length + 1}
                             overscanRowCount={3}
-                            className={'px-2 pt-10'}
+                            className={'px-2 pt-10 ' + (props.className ?? "")}
                         />
                     )
                 }

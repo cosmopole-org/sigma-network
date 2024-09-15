@@ -1,10 +1,11 @@
 import { getUsers } from "@/api/client/constants"
-import { Avatar, Badge, Card, Chip, colors } from "@nextui-org/react"
+import { Avatar, Card, Chip, colors } from "@nextui-org/react"
 import Icon from "../elements/icon"
-import { RouteSys, useTheme } from "@/api/client/states"
+import { RouteSys } from "@/api/client/states"
 import { useEffect, useState } from "react";
 import { Space, Topic } from "@/api/sigma/models";
 import { api } from "@/index";
+import { stringToColour } from "@/api/utils";
 
 const colorMap: { [id: string]: any } = {
     "blue": colors.blue,
@@ -19,7 +20,6 @@ const colorMap: { [id: string]: any } = {
 const colorList = Object.keys(colorMap);
 
 export default function ChatsList() {
-    const { theme } = useTheme();
     const [spacesDict, setSpacesDict] = useState<{ [id: string]: Space }>({});
     const [topics, setTopics] = useState<Topic[]>([]);
     useEffect(() => {
@@ -48,11 +48,11 @@ export default function ChatsList() {
                         <div className="flex gap-2 w-full">
                             <Avatar isBordered alt={item.title} className="w-[56px] h-[56px] m-1" src={getUsers()[Number(spacesDict[item.spaceId].avatar)].avatar} style={{ minWidth: 56 }} />
                             <div className="flex flex-col relative w-full">
-                                <div className="w-full flex flex-row">
+                                <div className="w-full flex flex-row mt-1">
                                     <span className="text-lg text-left">
                                         {item.title}
                                     </span>
-                                    <Chip className={"ml-2 " + (theme === "light" ? "" : "")} size="sm" variant="faded" style={{ backgroundColor: colorMap[colorList[Math.floor(Number(item.avatar) / 3)]][600] }}>
+                                    <Chip className={"ml-2 text-white"} size="sm" variant="faded" style={{ backgroundColor: colorMap[stringToColour(spacesDict[item.spaceId].title + " " + spacesDict[item.spaceId].avatar, colorList)][600] }}>
                                         {spacesDict[item.spaceId].title}
                                     </Chip>
                                 </div>

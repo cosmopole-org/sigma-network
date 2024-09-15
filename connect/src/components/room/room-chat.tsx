@@ -8,7 +8,7 @@ import { Topic } from "@/api/sigma/models";
 import { api } from "@/index";
 import MessageList from "./room-messagelist";
 
-export default function Chat(props: Readonly<{ spaceId: string, topicId: string }>) {
+export default function Chat(props: Readonly<{ className?: string, spaceId: string, topicId: string }>) {
     const { theme } = useTheme();
     const textRef = useRef("");
     const [textElKey, setTextElKey] = useState(Math.random());
@@ -31,7 +31,7 @@ export default function Chat(props: Readonly<{ spaceId: string, topicId: string 
             <div key={'room-background-overlay'} className='bg-white dark:bg-content1' style={{
                 opacity: theme === "dark" ? 0.85 : 0.35, width: '100%', height: '100%', position: 'absolute', left: 0, top: 0
             }} />
-            <MessageList topicId={topic?.id ?? ""} />
+            <MessageList className={props.className} topicId={topic?.id ?? ""} />
             <Input
                 key={textElKey}
                 classNames={{
