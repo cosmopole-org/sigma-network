@@ -157,6 +157,7 @@ export let RouteSys: {
 	history: State<{ path: string, state: any }[]>,
 	push: (p: string, state?: any) => void,
 	pop: (options?: { doNotSlideBack: boolean }) => void,
+	replaceData: (states: any, pc: number, la: string, h: { path: string, state: any }[]) => void
 } = {
 	_pathCount: 0,
 	lastAction: "",
@@ -182,5 +183,11 @@ export let RouteSys: {
 				RouteSys.history.set([...RouteSys.history.get({ noproxy: true }).slice(0, RouteSys._pathCount)]);
 			}, 250);
 		}
+	},
+	replaceData: (states: any, pc: number, la: string, h: { path: string, state: any }[]) => {
+		States.store = states;
+		RouteSys._pathCount = pc;
+		RouteSys.lastAction = la;
+		RouteSys.history.set(h);
 	}
 };

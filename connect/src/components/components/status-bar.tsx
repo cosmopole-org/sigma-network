@@ -17,7 +17,7 @@ const pages: { [id: string]: string } = {
     "/app/create-topic": "Create Topic",
 }
 
-export default function StatusBar() {
+export default function StatusBar(props: Readonly<{ screenshotCallback: () => void }>) {
     const homeDrawerOpen = States.useListener(States.store.homeDrawerOpen);
     let hist = States.useListener(RouteSys.history);
     const pos = States.useListener(States.store.currentPos);
@@ -54,7 +54,7 @@ export default function StatusBar() {
             <div className="absolute left-1/2 -translate-x-1/2 text-center pt-[7px] dark:text-white">
                 {title}
             </div>
-            <IconButton name="more" className="-mt-[2px]" />
+            <IconButton name="more" className="-mt-[2px]" onClick={props.screenshotCallback}/>
         </div>
     )
 }
