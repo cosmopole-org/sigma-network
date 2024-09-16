@@ -46,6 +46,7 @@
     "framer-motion": "~11.1.1",
     "html-to-image": "^1.11.11",
     "html2canvas": "^1.4.1",
+    "jotai": "^2.9.3",
     "jquery": "^3.7.1",
     "lovefield": "^2.1.12",
     "peerjs": "^1.5.2",

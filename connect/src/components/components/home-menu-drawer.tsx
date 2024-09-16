@@ -1,9 +1,9 @@
 import { Rx, States } from "@/api/client/states";
 import { ReactNode, useCallback, useEffect, useRef } from "react";
 
-export default function HomeMenuDrawer({ content }: Readonly<{ content: ReactNode }>) {
+export default function HomeMenuDrawer(props: Readonly<{ open: any, content: ReactNode }>) {
     const drawerRef = useRef<HTMLDivElement>(null);
-    const open = States.useListener(States.store.homeDrawerOpen);
+    const open = States.useListener(props.open);
     const measurePos = useCallback(() => {
         return open ? (window.innerWidth - 72) : 0;
     }, [open]);
@@ -20,7 +20,7 @@ export default function HomeMenuDrawer({ content }: Readonly<{ content: ReactNod
     return (
         <div ref={drawerRef} className="shadow-medium w-full h-full overflow-hidden" style={{ transform: `translateX(${measurePos()}px)`, transition: 'transform .25s' }}>
             <div className="w-full h-full overflow-hidden relative">
-                {content}
+                {props.content}
             </div>
         </div>
     )

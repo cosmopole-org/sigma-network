@@ -15,29 +15,60 @@ export function useTheme() {
 	return { theme: theme.get({ noproxy: true }), setTheme: theme.set };
 }
 
+let hookStateStore = {
+	currentPos: hookstate({ spaceId: "", topicId: "" }),
+	authenticated: hookstate(false),
+	myUserId: localStorage.getItem("myUserId"),
+	token: localStorage.getItem("token"),
+	theme: hookstate(localStorage.getItem("theme") ?? "dark"),
+	showRoomLoading: hookstate(true),
+	roomSliderView: hookstate(false),
+	showLoading: hookstate(true),
+	showMainLoading: hookstate(false),
+	draggingId: hookstate<string | undefined>(undefined),
+	showBoardBackground: hookstate(localStorage.getItem("showBoardBackground") === "true"),
+	homeDrawerOpen: hookstate(false),
+	boardEditingMode: hookstate(false),
+	chatsFoldersModalOpen: hookstate(false),
+	chatsArchiveModalOpen: hookstate(false),
+	exploreSelectedTab: hookstate(0),
+	homeAppsOpen: hookstate(false),
+	authStep: hookstate("")
+};
+
+let initialId = "default";
+let currentTabId = initialId;
+export const getCurrentTabId = () => currentTabId;
+export const updateCurrentTabId = (id: string) => { currentTabId = id; }
+
+const pageToStateMap: { [path: string]: any } = {
+	"homeDrawerOpen": () => hookstate(false)
+}
+
+const prepareNewStateStore = (): { [key: string]: { [key: string]: any } } => {
+	let statesStore: { [key: string]: { [key: string]: any } } = {
+		"main": { "homeDrawerOpen": pageToStateMap.homeDrawerOpen() }
+	};
+	return statesStore;
+}
+
+const statesOfEachPage: { [path: string]: string[] } = {
+	"main": ["homeDrawerOpen"]
+}
+
+let appStateStore: { [key: string]: any } = {
+	[initialId]: prepareNewStateStore()
+};
+
 export let States = {
-	store: {
-		currentPos: hookstate({ spaceId: "", topicId: "" }),
-		authenticated: hookstate(false),
-		myUserId: localStorage.getItem("myUserId"),
-		token: localStorage.getItem("token"),
-		theme: hookstate(localStorage.getItem("theme") ?? "dark"),
-		showRoomLoading: hookstate(true),
-		roomSliderView: hookstate(false),
-		showLoading: hookstate(true),
-		showMainLoading: hookstate(false),
-		draggingId: hookstate<string | undefined>(undefined),
-		showBoardBackground: hookstate(localStorage.getItem("showBoardBackground") === "true"),
-		homeDrawerOpen: hookstate(false),
-		boardEditingMode: hookstate(false),
-		chatsFoldersModalOpen: hookstate(false),
-		chatsArchiveModalOpen: hookstate(false),
-		exploreSelectedTab: hookstate(0),
-		homeAppsOpen: hookstate(false),
-		authStep: hookstate("")
-	},
+	appStateStore,
+	store: hookStateStore,
 	useListener<T>(so: State<T>) {
 		const s = useHookstate<T>(so);
+		return s.get({ noproxy: true });
+	},
+	useListenerByKey(so: string) {
+		const s = useHookstate((States.store as any)[so]);
 		return s.get({ noproxy: true });
 	},
 	get<T>(so: State<T>) {
@@ -46,7 +77,7 @@ export let States = {
 	getToken() {
 		return this.store.token ?? "";
 	}
-}
+};
 
 export let Actions = {
 	updatePos: (spaceId: string, topicId: string) => {
@@ -95,7 +126,13 @@ export let Actions = {
 		States.store.showBoardBackground.set(v);
 	},
 	updateHomeMenuState: (v: boolean) => {
-		States.store.homeDrawerOpen.set(v);
+		let tabState = States.appStateStore[currentTabId];
+		Object.keys(tabState).forEach(pageKey => {
+			let pageState = tabState[pageKey];
+			Object.keys(pageState).forEach(stateKey => {
+				pageState[stateKey].set(v);
+			});
+		});
 		Rx.notify("update-home-swiping-lock", { locked: v });
 		Rx.notify("update-home-spaces-menu-pos", { pos: v ? (window.innerWidth - 72) : 0 });
 	},
@@ -154,21 +191,41 @@ export let RouteSys: {
 	_pathCount: number,
 	lastAction: string,
 	swiperInst: any,
-	history: State<{ path: string, state: any }[]>,
+	history: State<{ path: string, state: any, key: string }[]>,
+	newTab: () => string,
 	push: (p: string, state?: any) => void,
 	pop: (options?: { doNotSlideBack: boolean }) => void,
-	replaceData: (states: any, pc: number, la: string, h: { path: string, state: any }[]) => void
+	replaceData: (pc: number, la: string, h: { path: string, state: any, key: string }[]) => void
 } = {
 	_pathCount: 0,
 	lastAction: "",
 	swiperInst: null,
-	history: hookstate<{ path: string, state: any }[]>([]),
+	history: hookstate<{ path: string, state: any, key: string }[]>([]),
+	newTab: () => {
+		let id = Math.random().toString().substring(2);
+		let store = prepareNewStateStore();
+		States.appStateStore[id] = store;
+		currentTabId = id;
+		return id;
+	},
 	push: (path: string, state?: any) => {
+		let key = Math.random().toString().substring(2);
+		let pageStateSetup = statesOfEachPage[path];
+		if (pageStateSetup) {
+			let stateDict: { [key: string]: any } = {};
+			pageStateSetup.forEach(stateKey => {
+				stateDict[stateKey] = pageToStateMap[stateKey]()
+			});
+			States.appStateStore[currentTabId][key] = stateDict;
+		}
 		RouteSys._pathCount++;
 		RouteSys.lastAction = "navigate";
-		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), { path, state }]);
+		RouteSys.history.set([...RouteSys.history.get({ noproxy: true }), { path, state, key }]);
 	},
 	pop: (options?: { doNotSlideBack: boolean }) => {
+		let hist = RouteSys.history.get({ noproxy: true })
+		let data = hist[hist.length - 1];
+		delete States.appStateStore[currentTabId][data.key];
 		if (!options?.doNotSlideBack) {
 			Rx.notify("switch-main-swiper", { open: true });
 			RouteSys._pathCount--;
@@ -184,8 +241,7 @@ export let RouteSys: {
 			}, 250);
 		}
 	},
-	replaceData: (states: any, pc: number, la: string, h: { path: string, state: any }[]) => {
-		States.store = states;
+	replaceData: (pc: number, la: string, h: { path: string, state: any, key: string }[]) => {
 		RouteSys._pathCount = pc;
 		RouteSys.lastAction = la;
 		RouteSys.history.set(h);

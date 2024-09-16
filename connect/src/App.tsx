@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import { useHookstate } from "@hookstate/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RouteSys, States, useTheme } from "./api/client/states";
+import { getCurrentTabId, RouteSys, States, updateCurrentTabId, useTheme } from "./api/client/states";
 import { loadSizes } from "@/api/client/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
@@ -23,6 +23,7 @@ import CreateTopicModal from "./components/modals/create-topic/page";
 import html2canvas from "html2canvas";
 import { Button } from "@nextui-org/button";
 import Icon from "./components/elements/icon";
+import { Cache } from "html2canvas/dist/types/core/cache-storage";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -68,7 +69,7 @@ export default function Main() {
 	const top1CompCache = useRef<any>(null);
 	const top2CompCache = useRef<any>(null);
 	const contentRef = useRef<HTMLDivElement>(null);
-	const authStep = States.useListener(States.store.authStep);
+	const authStep = States.useListenerByKey("authStep");
 	const hist = useHookstate(RouteSys.history).get({ noproxy: true });
 
 	const opacityRef = useRef<HTMLDivElement>(null);
@@ -181,12 +182,15 @@ export default function Main() {
 		return { el: placeholder };
 	}
 
-	const takeScreenshot = (el: any) => {
+	const takeScreenshot = (el: any, isNew: boolean) => {
 		if (shadowRef.current && opacityRef.current) {
-			let canvasPromise = html2canvas(shadowRef.current, {
-				useCORS: true
-			});
 			let id = currentTabIdRef.current
+			let canvasPromise = html2canvas(shadowRef.current, {
+				width: !isNew ? (w + 16) : window.innerWidth,
+				height: !isNew ? (h + 32) : window.innerHeight,
+				imageTimeout: 1,
+				foreignObjectRendering: false
+			});
 			canvasPromise.then((canvas) => {
 				canvas.setAttribute("id", id);
 				canvas.style.width = '100%';
@@ -198,18 +202,18 @@ export default function Main() {
 						if (currentTabIdRef.current !== "") {
 							ssStore.current[currentTabIdRef.current].snapshot = { states: { ...States.store }, pc: RouteSys._pathCount, la: RouteSys.lastAction, h: RouteSys.history.get({ noproxy: true }) };
 						}
+						shadowRef.current.style.display = 'block';
+						opacityRef.current.style.opacity = '1';
+						shadowRef.current.style.transform = 'scale(1.0)';
 						currentTabIdRef.current = id;
+						updateCurrentTabId(id);
 						let snapshot = ssStore.current[id].snapshot;
 						RouteSys.replaceData(
-							snapshot.states,
 							snapshot.pc,
 							snapshot.la,
 							snapshot.h,
 						);
 						setKey(Math.random());
-						shadowRef.current.style.display = 'block';
-						opacityRef.current.style.opacity = '1';
-						shadowRef.current.style.transform = 'scale(1.0)';
 					}
 					setTimeout(() => {
 						if (screenshotRef.current) {
@@ -234,7 +238,7 @@ export default function Main() {
 				className="p-4 pt-16 w-full h-full fixed gap-4 grid-cols-2 left-0 top-0 bg-white dark:bg-content1"
 			>
 				<Button isIconOnly className="w-full" style={{ height: h }} onClick={() => {
-					let id = Math.random().toString().substring(2);
+					let id = RouteSys.newTab();
 					let { el } = createNewTab(id);
 					currentTabIdRef.current = id;
 					if (shadowRef.current) {
@@ -248,8 +252,10 @@ export default function Main() {
 						if (screenshotRef.current) {
 							screenshotRef.current.style.display = 'none';
 						}
+						setTimeout(() => {
+							takeScreenshot(el, true);
+						});
 					});
-					takeScreenshot(el);
 				}}>
 					<Icon name="add" />
 				</Button>
@@ -274,10 +280,10 @@ export default function Main() {
 									if (screenshotRef.current) {
 										screenshotRef.current.style.display = 'grid';
 									}
-									shadowRef.current.style.display = 'none';
+									shadowRef.current.style.display = 'hidden';
 								}
-							}, 500);
-							takeScreenshot(el);
+								takeScreenshot(el, false);
+							}, 250);
 						} else {
 							if (shadowRef.current) {
 								shadowRef.current.style.display = 'block';
