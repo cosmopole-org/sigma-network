@@ -1,10 +1,10 @@
 
-import { Actions } from "@/api/client/states";
+import { Actions, States } from "@/api/client/states";
 import Backdrop from "../components/backdrop";
 import MainAppsTabs from "./main-apps-tabs";
 import HomeAppsHeader from "../components/home-apps-header";
 import HomeAppsDrawer from "../components/home-apps-drawer";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import HomeApps from "../components/home-apps";
 
 const MainTools = () => {

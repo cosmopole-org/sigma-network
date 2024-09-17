@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import { useHookstate } from "@hookstate/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getCurrentTabId, RouteSys, States, updateCurrentTabId, useTheme } from "./api/client/states";
+import { RouteSys, States, useTheme } from "./api/client/states";
 import { loadSizes } from "@/api/client/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
@@ -20,10 +20,6 @@ import AuthPage from "./app/auth/page";
 import SplashPage from "./app/splash/page";
 import CreateSpaceModal from "./components/modals/create-space/page";
 import CreateTopicModal from "./components/modals/create-topic/page";
-import html2canvas from "html2canvas";
-import { Button } from "@nextui-org/button";
-import Icon from "./components/elements/icon";
-import { Cache } from "html2canvas/dist/types/core/cache-storage";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -73,10 +69,6 @@ export default function Main() {
 	const hist = useHookstate(RouteSys.history).get({ noproxy: true });
 
 	const opacityRef = useRef<HTMLDivElement>(null);
-	const ssStore = useRef<{ [id: string]: { element: any, snapshot: any } }>({});
-	const screenshotRef = useRef<HTMLDivElement>(null);
-	const [key, setKey] = useState(Math.random());
-	const currentTabIdRef = useRef("");
 
 	loadSizes();
 
@@ -166,139 +158,14 @@ export default function Main() {
 		}
 	}, [authStep]);
 
-	let w = window.innerWidth / 2 - 16;
-	let h = w * window.innerHeight / window.innerWidth;
-
-	const createNewTab = (id: string) => {
-		let placeholder = document.createElement("div");
-		placeholder.setAttribute("id", id);
-		placeholder.style.width = '100%';
-		placeholder.style.height = (h + 'px').toString();
-		placeholder.style.borderRadius = '16px 16px 16px 16px';
-		placeholder.style.backgroundColor = '#ffffff';
-		screenshotRef.current?.appendChild(placeholder);
-		ssStore.current[id] = { element: placeholder, snapshot: { states: { ...States.store }, pc: RouteSys._pathCount, la: RouteSys.lastAction, h: RouteSys.history.get({ noproxy: true }) } };
-		currentTabIdRef.current = id;
-		return { el: placeholder };
-	}
-
-	const takeScreenshot = (el: any, isNew: boolean) => {
-		if (shadowRef.current && opacityRef.current) {
-			let id = currentTabIdRef.current
-			let canvasPromise = html2canvas(shadowRef.current, {
-				width: !isNew ? (w + 16) : window.innerWidth,
-				height: !isNew ? (h + 32) : window.innerHeight,
-				imageTimeout: 1,
-				foreignObjectRendering: false
-			});
-			canvasPromise.then((canvas) => {
-				canvas.setAttribute("id", id);
-				canvas.style.width = '100%';
-				canvas.style.height = (h + 'px').toString();
-				canvas.style.borderRadius = '16px 16px 16px 16px';
-				ssStore.current[id].element = canvas;
-				canvas.onclick = () => {
-					if (shadowRef.current && opacityRef.current) {
-						if (currentTabIdRef.current !== "") {
-							ssStore.current[currentTabIdRef.current].snapshot = { states: { ...States.store }, pc: RouteSys._pathCount, la: RouteSys.lastAction, h: RouteSys.history.get({ noproxy: true }) };
-						}
-						shadowRef.current.style.display = 'block';
-						opacityRef.current.style.opacity = '1';
-						shadowRef.current.style.transform = 'scale(1.0)';
-						currentTabIdRef.current = id;
-						updateCurrentTabId(id);
-						let snapshot = ssStore.current[id].snapshot;
-						RouteSys.replaceData(
-							snapshot.pc,
-							snapshot.la,
-							snapshot.h,
-						);
-						setKey(Math.random());
-					}
-					setTimeout(() => {
-						if (screenshotRef.current) {
-							screenshotRef.current.style.display = 'none';
-						}
-					});
-				};
-				el.replaceWith(canvas);
-			});
-		}
-	}
-
 	return (
 		<main className="w-full h-screen">
 			<div ref={opacityRef} className="w-full h-full" style={{ opacity: 1, transition: 'opacity 0.25s' }}>
-				<div key={key} ref={shadowRef} className="w-full h-full" style={{ transform: 'scale(1)', transition: 'transform 0.25s' }}>
+				<div ref={shadowRef} className="w-full h-full" style={{ transform: 'scale(1)', transition: 'transform 0.25s' }}>
 					{content}
 				</div>
 			</div>
-			<div ref={screenshotRef}
-				style={{ display: 'none', alignItems: 'flex-start', overflowY: 'auto' }}
-				className="p-4 pt-16 w-full h-full fixed gap-4 grid-cols-2 left-0 top-0 bg-white dark:bg-content1"
-			>
-				<Button isIconOnly className="w-full" style={{ height: h }} onClick={() => {
-					let id = RouteSys.newTab();
-					let { el } = createNewTab(id);
-					currentTabIdRef.current = id;
-					if (shadowRef.current) {
-						shadowRef.current.style.display = 'block';
-					}
-					if (shadowRef.current && opacityRef.current) {
-						opacityRef.current.style.opacity = '1';
-						shadowRef.current.style.transform = 'scale(1.0)';
-					}
-					setTimeout(() => {
-						if (screenshotRef.current) {
-							screenshotRef.current.style.display = 'none';
-						}
-						setTimeout(() => {
-							takeScreenshot(el, true);
-						});
-					});
-				}}>
-					<Icon name="add" />
-				</Button>
-			</div>
-			<StatusBar screenshotCallback={() => {
-				if (screenshotRef.current) {
-					if (shadowRef.current && opacityRef.current) {
-						if (shadowRef.current.style.transform === "scale(1)") {
-							let el: any = null;
-							if (Object.keys(ssStore.current).length === 0) {
-								let id = "default";
-								({ el } = createNewTab(id));
-							} else {
-								if (currentTabIdRef.current !== "") {
-									el = document.getElementById(currentTabIdRef.current);
-								}
-							}
-							shadowRef.current.style.transform = 'scale(0.5)';
-							opacityRef.current.style.opacity = '0';
-							setTimeout(() => {
-								if (shadowRef.current) {
-									if (screenshotRef.current) {
-										screenshotRef.current.style.display = 'grid';
-									}
-									shadowRef.current.style.display = 'hidden';
-								}
-								takeScreenshot(el, false);
-							}, 250);
-						} else {
-							if (shadowRef.current) {
-								shadowRef.current.style.display = 'block';
-							}
-							opacityRef.current.style.opacity = '1';
-							shadowRef.current.style.transform = 'scale(1.0)';
-							setTimeout(() => {
-								if (screenshotRef.current) {
-									screenshotRef.current.style.display = 'none';
-								}
-							});
-						}
-					}
-				}
-			}} />
+			<StatusBar screenshotCallback={() => {}} />
 		</main >
 	);
 }

@@ -1,5 +1,3 @@
-"use client"
-
 import { getFiles } from "@/api/client/constants"
 import { Button, Card, CardBody, CardFooter, Chip, Image } from "@nextui-org/react"
 import { useTheme } from "@/api/client/states";
@@ -8,7 +6,7 @@ import Icon from "../elements/icon";
 export default function Files() {
     const { theme } = useTheme();
     return (
-        <div className="w-full h-auto relative">
+        <div className="w-full h-full overflow-y-auto relative bg-white dark:bg-content3">
             <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-3 pb-32">
                 {Array.from(Array(4).keys()).map(i => (
                     <Card isBlurred={false} shadow="sm" key={'folder-' + i} isPressable onPress={() => console.log("item pressed")}>

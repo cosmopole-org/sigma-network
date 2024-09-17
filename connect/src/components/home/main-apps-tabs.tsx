@@ -1,28 +1,27 @@
-"use client"
-
 import { Tab, Tabs } from "@nextui-org/react";
 import Icon from "../elements/icon";
-import { hookstate, useHookstate } from "@hookstate/core";
+import { Actions, States } from "@/api/client/states";
+import { Key } from "react";
 
-const tabSelected = hookstate(0);
-
-export default function MainAppsTabs({ secondary }: Readonly<{ secondary?: boolean }>) {
-    const selectedState = useHookstate(tabSelected);
+export default function MainAppsTabs() {
+    const selectedDrawerApp = States.useListener(States.store.selectedDrawerApp);
     return (
-        <Tabs onSelectionChange={(v: any) => selectedState.set(v)} selectedKey={selectedState.get({ noproxy: true })} variant={"light"} color={"primary"} radius="full" aria-label="Tabs colors" fullWidth className={"bg-white dark:bg-content1 rounded-3xl ml-4 w-[calc(100%-32px)]"}>
-            <Tab title={
+        <Tabs onSelectionChange={(k: Key) => {
+            Actions.updateSelectedDrawerApp(k.toString());
+        }} selectedKey={selectedDrawerApp} variant={"light"} color={"primary"} radius="full" aria-label="Tabs colors" fullWidth className={"bg-white dark:bg-content1 rounded-3xl ml-4 w-[calc(100%-32px)]"}>
+            <Tab key={"chat"} title={
                 <div className="flex items-center space-x-2">
                     <Icon name="chat" />
                     <span>Chat</span>
                 </div>
             } />
-            <Tab title={
+            <Tab key={"apps"} title={
                 <div className="flex items-center space-x-2">
                     <Icon name="blocks" />
                     <span>Apps</span>
                 </div>
             } />
-            <Tab title={
+            <Tab key={"files"} title={
                 <div className="flex items-center space-x-2">
                     <Icon name="storage" />
                     <span>Storage</span>

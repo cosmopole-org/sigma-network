@@ -30,6 +30,7 @@ export default function HomeAppsHeader() {
                     className="h-12 w-12"
                     radius="md"
                     onClick={() => {
+                        Actions.updateSelectedDrawerApp("chat");
                         Actions.switchHomeApps(true);
                     }}
                 >
@@ -42,6 +43,7 @@ export default function HomeAppsHeader() {
                     className="h-12 w-12"
                     radius="md"
                     onClick={() => {
+                        Actions.updateSelectedDrawerApp("files");
                         Actions.switchHomeApps(true);
                     }}
                 >
