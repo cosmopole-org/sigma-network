@@ -8,7 +8,7 @@ export default function HomeAppsHeader() {
     const editing = States.useListener(States.store.boardEditingMode);
     return (
         <div
-            className={"backdrop-blur w-full h-[72%] " + (showBoardBackgroundState ? "bg-homeNavbar/75" : "bg-content1/75")}
+            className={"backdrop-blur w-full h-20 " + (showBoardBackgroundState ? "bg-homeNavbar/75" : "bg-content1/75")}
             style={{ borderRadius: '32px 32px 0px 0px' }}
         >
             <div className="p-3 gap-2 flex flex-nowrap w-auto h-auto absolute left-1/2 -translate-x-1/2">

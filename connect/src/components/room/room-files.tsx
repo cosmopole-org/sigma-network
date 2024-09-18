@@ -6,7 +6,7 @@ import Icon from "../elements/icon";
 export default function Files() {
     const { theme } = useTheme();
     return (
-        <div className="w-full h-full overflow-y-auto relative bg-white dark:bg-content3">
+        <div id="files-list" className="w-full h-full overflow-y-auto relative bg-white dark:bg-content3">
             <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-4 pb-32">
                 {Array.from(Array(4).keys()).map(i => (
                     <Button key={'folder-' + i} onPress={() => console.log("item pressed")}
