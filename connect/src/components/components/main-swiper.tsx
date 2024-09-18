@@ -86,6 +86,10 @@ export default function MainSwiper(props: Readonly<{ contentKey: string, bottomK
         )
     }
 
+    const changeTouchAbility = (el: any, state: string) => {
+        el.style.pointerEvents = state;
+    }
+
     return (
         <div className="w-full h-full">
             {compsArr.map((cd, i) => (
@@ -112,103 +116,107 @@ export default function MainSwiper(props: Readonly<{ contentKey: string, bottomK
                     </div>
                 </div>
             ))}
-            {
-                (editing || appsOpen) ? null : (
-                    <div
-                        ref={touchRef}
-                        style={{ width: '100%', height: `100%`, position: 'absolute', left: 0, top: 56, zIndex: 2 }}
-                        onTouchStart={e => {
-                            touchStartTime.current = Date.now();
-                            touchStartTop.current = pos.current;
-                            touchStartPosY.current = e.touches[0].clientY;
-                            touchStartPosX.current = e.touches[0].clientX;
-                        }}
-                        onTouchMove={e => {
-                            let currentTouchPosY = e.touches[0].clientY;
-                            let currentTouchPosX = e.touches[0].clientX;
-                            if ((Math.abs(currentTouchPosX - touchStartPosX.current) > Math.abs(currentTouchPosY - touchStartPosY.current))) {
-                                touchRef.current && ((touchRef.current as HTMLElement).style.pointerEvents = 'auto');
-                                touchLastPosY.current = currentTouchPosY;
-                                touchLastPosX.current = currentTouchPosX;
-                                let resPos = touchStartTop.current + currentTouchPosX - touchStartPosX.current;
-                                if (resPos < 0) resPos = 0;
-                                updatePos(resPos);
-                            } else {
-                                touchStartTime.current = 0;
-                                updatePos((pos.current < (window.innerWidth - 150)) ? 0 : window.innerWidth);
-                                touchRef.current && ((touchRef.current as HTMLElement).style.pointerEvents = 'none');
-                                touchable.current = false;
-                            }
-                        }}
-                        onTouchEnd={() => {
-                            touchRef.current && ((touchRef.current as HTMLElement).style.pointerEvents = 'auto');
-                            if (((Math.abs(touchLastPosY.current - touchStartPosY.current) < 16) && (Math.abs(touchLastPosX.current - touchStartPosX.current) < 16))) {
-                                // do nothing
-                            } else if (touchable.current && touchLastPosX.current > 0 && touchLastPosY.current > 0) {
-                                let now = Date.now();
-                                if (touchStartTime.current > 0 && (((touchLastPosX.current - touchStartPosX.current) / ((now - touchStartTime.current) / 1000)) > 200)) {
-                                    if (RouteSys._pathCount === 0) {
-                                        Actions.updateHomeMenuState(true);
-                                    } else {
-                                        updatePos(window.innerWidth);
-                                        props.onClose();
-                                    }
-                                } else if (touchStartTime.current > 0 && (((touchLastPosX.current - touchStartPosX.current) / ((now - touchStartTime.current) / 1000)) < -200)) {
-                                    if (RouteSys._pathCount === 0) {
-                                        Actions.updateHomeMenuState(false);
-                                    }
-                                } else if (RouteSys._pathCount === 0) {
-                                    let open = (pos.current < (window.innerWidth - 150));
-                                    Actions.updateHomeMenuState(open);
-                                } else {
-                                    let open = (pos.current < (window.innerWidth - 150));
-                                    updatePos(open ? 0 : window.innerWidth);
-                                    if (open) {
-                                        props.onOpen();
-                                    } else {
-                                        props.onClose();
-                                    }
-                                }
-                            }
+            <div
+                ref={touchRef}
+                style={{ width: '100%', height: `100%`, position: 'absolute', left: 0, top: 56, zIndex: 2, display: 'none' }}
+                onTouchStart={e => {
+                    touchable.current = true;
+                    touchStartTime.current = Date.now();
+                    touchStartTop.current = pos.current;
+                    touchStartPosY.current = e.touches[0].clientY;
+                    touchStartPosX.current = e.touches[0].clientX;
+                }}
+                onTouchMove={e => {
+                    let currentTouchPosY = e.touches[0].clientY;
+                    let currentTouchPosX = e.touches[0].clientX;
+                    //if (touchable.current) {
+                        if ((Math.abs(currentTouchPosX - touchStartPosX.current) > Math.abs(currentTouchPosY - touchStartPosY.current))) {
+                            touchRef.current && changeTouchAbility(touchRef.current, 'auto');
+                            touchLastPosY.current = currentTouchPosY;
+                            touchLastPosX.current = currentTouchPosX;
+                            let resPos = touchStartTop.current + currentTouchPosX - touchStartPosX.current;
+                            if (resPos < 0) resPos = 0;
+                            updatePos(resPos);
+                        } else {
                             touchStartTime.current = 0;
-                            touchable.current = true;
-                            touchLastPosY.current = 0;
-                            touchLastPosX.current = 0;
-                        }}
-                        onMouseDown={e => {
-                            mdX.current = e.clientX;
-                            mdY.current = e.clientY;
-                        }}
-                        onMouseUp={e => {
-                            let muX = e.clientX;
-                            let muY = e.clientY;
-                            function triggerMouseEvent(node: any, eventType: string, x: number, y: number) {
-                                node.dispatchEvent(new MouseEvent(eventType, {
-                                    view: window,
-                                    bubbles: true,
-                                    cancelable: true,
-                                    clientX: x,
-                                    clientY: y,
-                                    button: 0
-                                }));
-                            };
-                            function clickOnEl(el: any, x: number, y: number) {
-                                triggerMouseEvent(el, "mouseover", x, y);
-                                triggerMouseEvent(el, "mousedown", x, y);
-                                triggerMouseEvent(el, "mouseup", x, y);
-                                triggerMouseEvent(el, "click", x, y);
-                                el.focus();
+                            updatePos((pos.current < (window.innerWidth - 150)) ? 0 : window.innerWidth);
+                            touchable.current = false;
+                            if (touchRef.current) {
+                                (touchRef.current as any).style.display = 'none';
                             }
-                            if ((Math.abs(muX - mdX.current) < 16) && (Math.abs(muY - mdY.current) < 16)) {
-                                touchRef.current && ((touchRef.current as HTMLElement).style.pointerEvents = 'none');
-                                let el = (document.elementFromPoint(mdX.current, mdY.current) as HTMLElement);
-                                clickOnEl(el, e.clientX, e.clientY);
-                                touchRef.current && ((touchRef.current as HTMLElement).style.pointerEvents = 'auto');
+                            console.log("touching... ", (touchRef.current as any).style.pointerEvents);
+                        }
+                    //}
+                }}
+                onTouchEnd={() => {
+                    if (touchRef.current) {
+                        (touchRef.current as any).style.display = 'block';
+                    }
+                    if (((Math.abs(touchLastPosY.current - touchStartPosY.current) < 16) && (Math.abs(touchLastPosX.current - touchStartPosX.current) < 16))) {
+                        // do nothing
+                    } else if (touchable.current && touchLastPosX.current > 0 && touchLastPosY.current > 0) {
+                        let now = Date.now();
+                        if (touchStartTime.current > 0 && (((touchLastPosX.current - touchStartPosX.current) / ((now - touchStartTime.current) / 1000)) > 200)) {
+                            if (RouteSys._pathCount === 0) {
+                                Actions.updateHomeMenuState(true);
+                            } else {
+                                updatePos(window.innerWidth);
+                                props.onClose();
                             }
-                        }}
-                    />
-                )
-            }
+                        } else if (touchStartTime.current > 0 && (((touchLastPosX.current - touchStartPosX.current) / ((now - touchStartTime.current) / 1000)) < -200)) {
+                            if (RouteSys._pathCount === 0) {
+                                Actions.updateHomeMenuState(false);
+                            }
+                        } else if (RouteSys._pathCount === 0) {
+                            let open = (pos.current < (window.innerWidth - 150));
+                            Actions.updateHomeMenuState(open);
+                        } else {
+                            let open = (pos.current < (window.innerWidth - 150));
+                            updatePos(open ? 0 : window.innerWidth);
+                            if (open) {
+                                props.onOpen();
+                            } else {
+                                props.onClose();
+                            }
+                        }
+                    }
+                    touchStartTime.current = 0;
+                    touchable.current = true;
+                    touchLastPosY.current = 0;
+                    touchLastPosX.current = 0;
+                }}
+                onMouseDown={e => {
+                    mdX.current = e.clientX;
+                    mdY.current = e.clientY;
+                }}
+                onMouseUp={e => {
+                    let muX = e.clientX;
+                    let muY = e.clientY;
+                    function triggerMouseEvent(node: any, eventType: string, x: number, y: number) {
+                        node.dispatchEvent(new MouseEvent(eventType, {
+                            view: window,
+                            bubbles: true,
+                            cancelable: true,
+                            clientX: x,
+                            clientY: y,
+                            button: 0
+                        }));
+                    };
+                    function clickOnEl(el: any, x: number, y: number) {
+                        triggerMouseEvent(el, "mouseover", x, y);
+                        triggerMouseEvent(el, "mousedown", x, y);
+                        triggerMouseEvent(el, "mouseup", x, y);
+                        triggerMouseEvent(el, "click", x, y);
+                        el.focus();
+                    }
+                    if ((Math.abs(muX - mdX.current) < 16) && (Math.abs(muY - mdY.current) < 16)) {
+                        touchRef.current && changeTouchAbility(touchRef.current, 'none');
+                        let el = (document.elementFromPoint(mdX.current, mdY.current) as HTMLElement);
+                        clickOnEl(el, e.clientX, e.clientY);
+                        touchRef.current && changeTouchAbility(touchRef.current, 'auto');
+                    }
+                }}
+            />
         </div>
     )
 }

@@ -48,7 +48,7 @@ export default function HomeAppsDrawer(props: Readonly<{ contentView: ReactNode,
                 open ? (
                     <div
                         ref={touchRef}
-                        style={{ width: '100%', height: `100%`, position: 'absolute', left: 0, top: 56, zIndex: 2 }}
+                        style={{ width: '100%', height: 56, position: 'absolute', left: 0, top: 56, zIndex: 2 }}
                         onTouchStart={e => {
                             touchStartTop.current = pos.current;
                             touchStartPosY.current = e.touches[0].clientY;

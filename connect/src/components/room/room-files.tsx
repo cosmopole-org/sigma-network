@@ -10,9 +10,9 @@ export default function Files() {
             <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-4 pb-32">
                 {Array.from(Array(4).keys()).map(i => (
                     <Button key={'folder-' + i} onPress={() => console.log("item pressed")}
-                        className="w-full h-full col-span-2 bg-white dark:bg-content1" variant="shadow"
+                        className="w-full h-full col-span-1 bg-white dark:bg-content1" variant="shadow"
                         style={{
-                            borderRadius: 24
+                            borderRadius: 16
                         }}>
                         <div className="overflow-visible relative">
                             <Icon
@@ -21,7 +21,7 @@ export default function Files() {
                                 className="w-full h-[96px] p-6 pl-2 pr-4"
                             />
                         </div>
-                        <div className="text-medium text-left justify-between flex-1">
+                        <div className="text-small text-left justify-between flex-1">
                             <b>Folder 1</b>
                             <p className="text-default-900">3 files</p>
                         </div>
