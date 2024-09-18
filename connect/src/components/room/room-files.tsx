@@ -1,5 +1,5 @@
 import { getFiles } from "@/api/client/constants"
-import { Button, Card, CardBody, CardFooter, Chip, Image } from "@nextui-org/react"
+import { Button, Chip, Image } from "@nextui-org/react"
 import { useTheme } from "@/api/client/states";
 import Icon from "../elements/icon";
 
@@ -7,32 +7,33 @@ export default function Files() {
     const { theme } = useTheme();
     return (
         <div className="w-full h-full overflow-y-auto relative bg-white dark:bg-content3">
-            <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-3 pb-32">
+            <div className="gap-3 grid grid-cols-2 sm:grid-cols-4 pl-3 pr-3 pt-4 pb-32">
                 {Array.from(Array(4).keys()).map(i => (
-                    <Card isBlurred={false} shadow="sm" key={'folder-' + i} isPressable onPress={() => console.log("item pressed")}>
-                        <CardBody className="overflow-visible p-0 relative">
-                            <Chip className="absolute left-2 top-2"
-                                color="secondary">
-                                Folder
-                            </Chip>
+                    <Button key={'folder-' + i} onPress={() => console.log("item pressed")}
+                        className="w-full h-full col-span-2 bg-white dark:bg-content1" variant="shadow"
+                        style={{
+                            borderRadius: 24
+                        }}>
+                        <div className="overflow-visible relative">
                             <Icon
                                 name="folder"
                                 size={[64, 64]}
-                                className="w-full h-[140px] pl-2 pr-2 pb-2 pt-8"
+                                className="w-full h-[96px] p-6 pl-2 pr-4"
                             />
-                        </CardBody>
-                        <CardFooter className="text-small justify-between">
+                        </div>
+                        <div className="text-medium text-left justify-between flex-1">
                             <b>Folder 1</b>
-                            <p className="text-default-500">3 files</p>
-                        </CardFooter>
-                    </Card>
+                            <p className="text-default-900">3 files</p>
+                        </div>
+                    </Button>
                 ))}
+                <div className="col-span-2" />
                 {getFiles().map((item, index) => {
                     const t = index % 3;
                     if (t === 0) {
                         return (
-                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
-                                <CardBody className="overflow-visible p-0 relative">
+                            <div className="shadow-medium bg-white dark:bg-content1" style={{ borderRadius: 16 }} key={item.img}>
+                                <div className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">
                                         <div className="flex">
@@ -52,27 +53,27 @@ export default function Files() {
                                         className="w-full object-cover h-[140px]"
                                         src={'https://nextui.org/' + item.img}
                                     />
-                                </CardBody>
-                                <CardFooter className="text-small justify-between">
-                                    <b>{item.title}</b>
+                                </div>
+                                <div className="text-small justify-between flex flex-row p-3">
+                                    <b className="flex-1">{item.title}</b>
                                     <p className="text-default-500">1.4 MB</p>
-                                </CardFooter>
-                            </Card>
+                                </div>
+                            </div>
                         );
                     } else if (t === 1) {
                         return (
-                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
-                                <CardBody className="overflow-visible p-0 relative">
+                            <div className="shadow-medium bg-white dark:bg-content1" style={{ borderRadius: 16 }} key={item.img}>
+                                <div className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">
                                         <div className="flex">
-                                            <Icon name="video" size={[16, 16]} className="mr-1 mt-[2px]" />
-                                            Video
+                                            <Icon name="gallery" size={[16, 16]} className="mr-1 mt-[2px]" />
+                                            Photo
                                         </div>
                                     </Chip>
-                                    <Chip className="absolute right-2 top-2 z-50"
+                                    <Chip className="text-xs pt-[2px] absolute right-2 top-2 z-50"
                                         color="primary">
-                                        12:25
+                                        1080 × 720
                                     </Chip>
                                     <Image
                                         shadow="sm"
@@ -85,18 +86,18 @@ export default function Files() {
                                     <Button isIconOnly radius="full" className="p-4 absolute left-2/4 top-2/4 -translate-x-1/2 -translate-y-1/2 z-10 w-auto h-auto backdrop-blur" style={{ backgroundColor: theme === 'light' ? '#ffffffbf' : '#171717bf' }}>
                                         <Icon name="play" size={[28, 28]} />
                                     </Button>
-                                </CardBody>
-                                <CardFooter className="text-small justify-between">
-                                    <b>{item.title}</b>
+                                </div>
+                                <div className="text-small justify-between flex flex-row p-3">
+                                    <b className="flex-1">{item.title}</b>
                                     <p className="text-default-500">1.4 MB</p>
-                                </CardFooter>
-                            </Card>
+                                </div>
+                            </div>
                         );
 
                     } else if (t === 2) {
                         return (
-                            <Card isBlurred={false} shadow="sm" key={item.img} isPressable onPress={() => console.log("item pressed")} >
-                                <CardBody className="overflow-visible p-0 relative">
+                            <div className="shadow-medium bg-white dark:bg-content1" style={{ borderRadius: 16 }} key={item.img}>
+                                <div className="overflow-visible p-0 relative">
                                     <Chip className="absolute left-2 top-2 z-50"
                                         color="secondary">
                                         <div className="flex">
@@ -119,12 +120,12 @@ export default function Files() {
                                     <Button isIconOnly radius="full" className="p-4 absolute left-2/4 top-2/4 -translate-x-1/2 -translate-y-1/2 z-10 w-auto h-auto backdrop-blur" style={{ backgroundColor: theme === 'light' ? '#ffffffbf' : '#171717bf' }}>
                                         <Icon name="play" size={[28, 28]} />
                                     </Button>
-                                </CardBody>
-                                <CardFooter className="text-small justify-between">
-                                    <b>{item.title}</b>
+                                </div>
+                                <div className="text-small justify-between flex flex-row p-3">
+                                    <b className="flex-1">{item.title}</b>
                                     <p className="text-default-500">1.4 MB</p>
-                                </CardFooter>
-                            </Card>
+                                </div>
+                            </div>
                         );
                     }
                 })}
