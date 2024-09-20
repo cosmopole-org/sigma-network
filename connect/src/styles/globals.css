@@ -1,4 +1,3 @@
-
 @import url('https://fonts.googleapis.com/css?family=Exo:400,700');
 
 @tailwind base;
@@ -6,9 +5,14 @@
 @tailwind utilities;
 
 html {
+    overscroll-behavior-x: none;
     overflow: hidden;
     width: 100%;
     position: fixed;
+}
+
+body {
+    overscroll-behavior-x: none;
 }
 
 .area {
@@ -210,15 +214,15 @@ html {
 
 }
 
-.high-light{
+.high-light {
     transition: opacity .25s linear;
 }
 
 #multicanvasArea.active .high-light {
-    opacity:1;
+    opacity: 1;
 }
 
 
-#multicanvasArea.deactive .high-light { 
-    opacity:0;
+#multicanvasArea.deactive .high-light {
+    opacity: 0;
 }

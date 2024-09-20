@@ -118,7 +118,7 @@ export default function MainSwiper(props: Readonly<{ contentKey: string, bottomK
             ))}
             <div
                 ref={touchRef}
-                style={{ width: '100%', height: `100%`, position: 'absolute', left: 0, top: 56, zIndex: 2, display: 'none' }}
+                style={{ width: 32, height: `100%`, position: 'absolute', left: 0, top: 56, zIndex: 2 }}
                 onTouchStart={e => {
                     touchable.current = true;
                     touchStartTime.current = Date.now();
@@ -129,24 +129,21 @@ export default function MainSwiper(props: Readonly<{ contentKey: string, bottomK
                 onTouchMove={e => {
                     let currentTouchPosY = e.touches[0].clientY;
                     let currentTouchPosX = e.touches[0].clientX;
-                    //if (touchable.current) {
-                        if ((Math.abs(currentTouchPosX - touchStartPosX.current) > Math.abs(currentTouchPosY - touchStartPosY.current))) {
-                            touchRef.current && changeTouchAbility(touchRef.current, 'auto');
-                            touchLastPosY.current = currentTouchPosY;
-                            touchLastPosX.current = currentTouchPosX;
-                            let resPos = touchStartTop.current + currentTouchPosX - touchStartPosX.current;
-                            if (resPos < 0) resPos = 0;
-                            updatePos(resPos);
-                        } else {
-                            touchStartTime.current = 0;
-                            updatePos((pos.current < (window.innerWidth - 150)) ? 0 : window.innerWidth);
-                            touchable.current = false;
-                            if (touchRef.current) {
-                                (touchRef.current as any).style.display = 'none';
-                            }
-                            console.log("touching... ", (touchRef.current as any).style.pointerEvents);
+                    if ((Math.abs(currentTouchPosX - touchStartPosX.current) > Math.abs(currentTouchPosY - touchStartPosY.current))) {
+                        touchRef.current && changeTouchAbility(touchRef.current, 'auto');
+                        touchLastPosY.current = currentTouchPosY;
+                        touchLastPosX.current = currentTouchPosX;
+                        let resPos = touchStartTop.current + currentTouchPosX - touchStartPosX.current;
+                        if (resPos < 0) resPos = 0;
+                        updatePos(resPos);
+                    } else {
+                        touchStartTime.current = 0;
+                        updatePos((pos.current < (window.innerWidth - 150)) ? 0 : window.innerWidth);
+                        touchable.current = false;
+                        if (touchRef.current) {
+                            (touchRef.current as any).style.display = 'none';
                         }
-                    //}
+                    }
                 }}
                 onTouchEnd={() => {
                     if (touchRef.current) {
