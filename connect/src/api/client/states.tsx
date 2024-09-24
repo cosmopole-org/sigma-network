@@ -3,16 +3,18 @@ import { useEffect } from "react";
 
 export function useTheme() {
 	const theme = useHookstate(States.store.theme);
+	const wallpaper = useHookstate(States.store.wallpaper);
 	useEffect(() => {
 		localStorage.setItem("theme", theme.get({ noproxy: true }));
+		localStorage.setItem("wallpaper", wallpaper.get({ noproxy: true }));
 		let body = document.getElementsByTagName("body")[0];
 		if (body.classList.contains("light")) {
 			body.classList.replace("light", theme.get({ noproxy: true }));
 		} else {
 			body.classList.replace("dark", theme.get({ noproxy: true }));
 		}
-	}, [theme.get({ noproxy: true })]);
-	return { theme: theme.get({ noproxy: true }), setTheme: theme.set };
+	}, [theme.get({ noproxy: true }), wallpaper.get({ noproxy: true })]);
+	return { theme: theme.get({ noproxy: true }), setTheme: theme.set, wallpaper: wallpaper.get({ noproxy: true }), setWallpaper: wallpaper.set };
 }
 
 let hookStateStore = {
@@ -21,6 +23,7 @@ let hookStateStore = {
 	myUserId: localStorage.getItem("myUserId"),
 	token: localStorage.getItem("token"),
 	theme: hookstate(localStorage.getItem("theme") ?? "dark"),
+	wallpaper: hookstate(localStorage.getItem("wallpaper") ?? ""),
 	showRoomLoading: hookstate(true),
 	roomSliderView: hookstate(false),
 	showLoading: hookstate(true),

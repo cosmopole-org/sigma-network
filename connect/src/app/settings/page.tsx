@@ -2,6 +2,7 @@ import { Navbar, NavbarContent } from "@nextui-org/navbar";
 import HomeSearchbar from "@/components/home/home-searchbar";
 import ThemeSwitch from "@/components/components/theme-switch";
 import BoardBgSwitch from "@/components/components/board-bg-switch";
+import WallpaperSwitch from "@/components/components/wallpaper-switch";
 
 export default function SettingsPage() {
     return (
@@ -21,6 +22,7 @@ export default function SettingsPage() {
                     <div className="relative w-full">
                         <ThemeSwitch />
                         <BoardBgSwitch />
+                        <WallpaperSwitch />
                     </div>
                 </div>
             </div>

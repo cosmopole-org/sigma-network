@@ -49,6 +49,9 @@ const measureFinal = () => {
     })
 }
 
+const cardLightColor = "#dddddd33";
+const cardDarkColor = "#00000022";
+
 let initialPosX = 0, initialPosY = 0, relPosX = -1, relPosY = -1;
 
 function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ highlightColor: string, changeScrollLock: (v: boolean) => void, getSCrollY: () => number }>) {
@@ -69,19 +72,19 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
     }
     const shadowRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        Object.values(boxes).forEach(b => b.color = (theme === "light" ? '#ffffffaa' : '#00000033'));
+        Object.values(boxes).forEach(b => b.color = (theme === "light" ? cardLightColor : cardDarkColor));
         setUpdateTrigger(Math.random());
     }, [theme]);
     useEffect(() => {
         boxes = {
-            red: { el: null, key: 'red', x: 0, y: 0, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 0 },
-            green: { el: null, key: 'green', x: 0, y: 150, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 150 },
-            post1: { el: null, key: 'post1', x: 0, y: 300, w: 300, h: 262, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 300 },
-            blue: { el: null, key: 'blue', x: 0, y: 450, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 450 },
-            red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 600 },
-            post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 262, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 750 },
-            green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 900 },
-            blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: theme === "light" ? '#ffffffaa' : '#00000033', oldY: 1050 }
+            red: { el: null, key: 'red', x: 0, y: 0, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 0 },
+            green: { el: null, key: 'green', x: 0, y: 150, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 150 },
+            post1: { el: null, key: 'post1', x: 0, y: 300, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 300 },
+            blue: { el: null, key: 'blue', x: 0, y: 450, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 450 },
+            red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 600 },
+            post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 750 },
+            green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 900 },
+            blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 1050 }
         }
         Object
             .keys(boxes)
@@ -162,7 +165,7 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
                             }}
                         >
                             <div
-                                className="overflow-hidden w-full h-full rounded-3xl"
+                                className="backdrop-blur overflow-hidden w-full h-full rounded-3xl shadow-md"
                                 style={{
                                     backgroundColor: dragging === k ? 'transparent' : boxes[k].color,
                                     display: draggingIdState === k ? 'none' : 'block'
