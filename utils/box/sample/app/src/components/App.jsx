@@ -1,4 +1,4 @@
-import { React } from "../runtime/react";
+import React from "react";
 
 const Counter = () => {
     const [count, setCount] = React.useState(0);

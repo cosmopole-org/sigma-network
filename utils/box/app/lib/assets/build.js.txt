@@ -612,8 +612,11 @@ const Test = () => {
     key: d
   }, /*#__PURE__*/react.createElement("div", null, /*#__PURE__*/react.createElement(Counter, null)))));
 };
-const App = () => {
+const TestTest = () => {
   return /*#__PURE__*/react.createElement(Test, null);
+};
+const App = () => {
+  return /*#__PURE__*/react.createElement(TestTest, null);
 };
 /* harmony default export */ const components_App = (App);
 ;// CONCATENATED MODULE: ./src/index.jsx
