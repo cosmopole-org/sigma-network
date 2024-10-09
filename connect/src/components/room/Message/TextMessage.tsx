@@ -36,7 +36,7 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                 marginLeft: props.side === 'left' ? props.lastOfSection ? 0 : 14 : 'auto',
                 marginRight: props.side === 'left' ? 'auto' : props.lastOfSection ? 0 : 14,
                 marginTop: 0,
-                background: props.side === "left" ? (theme === "dark" ? "#1b2730" : "#ffffff") : `linear-gradient(135deg, ${colors.blue[600]} 0%, ${colors.purple[600]} 65%) border-box`,
+                background: props.side === "left" ? (theme === "dark" ? "#1b2730" : "#ffffff") : `linear-gradient(135deg, ${theme === "dark" ? colors.blue[600] : colors.blue[400]} 0%, ${theme === "dark" ? colors.purple[600] : colors.purple[400]} 65%) border-box`,
             }}
             className={props.isQuote ? '' : (props.side === 'right' ? "bubble" : "bubble2") + (props.lastOfSection ? (" " + props.side) : "") +
                 " shadow-medium bg-white dark:bg-content2"}
@@ -85,12 +85,12 @@ const TextMessage = (props: { message: any, side?: string, lastOfSection?: boole
                                         props.message.state === "sent" ? (
                                             <Icon
                                                 name="tick" size={[14, 14]}
-                                                color={theme === "dark" ? '#ffffff' : "#333333"}
+                                                color={'#ffffff'}
                                             />
                                         ) :
                                             <Icon
                                                 name="history" size={[16, 16]}
-                                                color={theme === "dark" ? '#ffffff' : "#333333"}
+                                                color={'#ffffff'}
                                             /> :
                                         null
                                 }

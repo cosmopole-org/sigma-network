@@ -14,7 +14,7 @@ export default function HomeContent() {
     const showBoardBg = States.useListener(States.store.showBoardBackground);
     const board = useMemo(() => (
         <div
-            className={"w-full h-auto pb-2 pt-8 -mt-8 gap-4 relative " + (showBoardBg ? "bg-s-white/60 dark:bg-content2/50" : "")}
+            className={"w-full h-auto pb-2 pt-[72px] -mt-8 gap-4 relative " + (showBoardBg ? "bg-s-white/60 dark:bg-content2/70" : "")}
             style={{ borderRadius: '32px 32px 0px 0px' }}
         >
             <Board
@@ -40,11 +40,11 @@ export default function HomeContent() {
         <div className={"w-full h-full"}>
             <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
                 {circles}
-                <div className="w-full h-[340px]" />
-                {infoBox}
-                <div className="absolute mt-[-32px] left-0 top-[340px] w-full h-full" style={{ borderRadius: '16px 16px 0px 0px' }} />
+                <div className="w-full h-[260px]" />
+                <div className="absolute mt-[-32px] left-0 top-[200px] w-full h-full" style={{ borderRadius: '16px 16px 0px 0px' }} />
                 {members}
                 {board}
+                {infoBox}
             </div>
             <AddMacBtn />
             <MainTools />

@@ -1,5 +1,7 @@
-import 'dart:math';
+import 'package:animated_analog_clock/animated_analog_clock.dart';
+import 'package:avatar_stack/positions.dart';
 import 'package:flutter/material.dart';
+import 'package:avatar_stack/avatar_stack.dart';
 
 /// A helper class if you want a FloatingActionButton to be pinned in the FlexibleAppBar
 class SliverFab extends StatefulWidget {
@@ -174,7 +176,7 @@ Map<String, Box> boxes = {
       x: 0,
       y: 150,
       w: 300,
-      h: 150,
+      h: 300,
       color: Color(0xFF334048AA),
       oldY: 300,
       offset: const Offset(0, 300)),
@@ -201,7 +203,7 @@ Map<String, Box> boxes = {
       x: 0,
       y: 450,
       w: 300,
-      h: 150,
+      h: 300,
       color: Color(0xFF334048AA),
       oldY: 750,
       offset: const Offset(0, 750)),
@@ -311,7 +313,7 @@ class _BoardState extends State<Board> {
               (boxes.keys.toList().indexOf(k) % 2 == 0) ? 4 : blockWidth + 4;
         } else {
           box.w = blockWidth * 2;
-          box.h = blockWidth;
+          box.h = 300;
           box.x = 4;
         }
       });
@@ -339,14 +341,22 @@ class _BoardState extends State<Board> {
               ),
             ),
             SliverToBoxAdapter(
-              child: SizedBox(
-                width: wid,
-                height: 56,
+              child: Transform.translate(
+                offset: Offset(wid - 128, 16),
+                child: AvatarStack(
+                  height: 40,
+                  settings: RestrictedAmountPositions(minCoverage: 0.4),
+                  avatars: [
+                    for (var n = 0; n < 4; n++)
+                      NetworkImage('https://i.pravatar.cc/150?img=$n',
+                          scale: 0.5),
+                  ],
+                ),
               ),
             ),
             SliverToBoxAdapter(
               child: Transform.translate(
-                offset: const Offset(24, 0),
+                offset: const Offset(24, 16),
                 child: const Text(
                   'My Home',
                   style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
@@ -356,32 +366,48 @@ class _BoardState extends State<Board> {
             SliverToBoxAdapter(
               child: Stack(
                 children: <Widget>[
-                  SizedBox(
-                    width: wid,
-                    height: 1500,
-                    child: Stack(
-                      children: boxes.entries.map((entry) {
-                        Box box = entry.value;
-                        final containerKey = GlobalKey();
-                        box.globalKey = containerKey;
-                        box.el = Positioned(
-                          key: containerKey,
-                          width: box.w,
-                          height: box.h,
-                          left: box.x,
-                          top: box.y,
-                          child: Card(
-                            margin: const EdgeInsets.all(4),
-                            child: IconButton(
-                              onPressed: () {
-                                widget.onWidgetSelect();
-                              },
-                              icon: const Icon(Icons.image),
+                  Transform.translate(
+                    offset: const Offset(0, 16),
+                    child: SizedBox(
+                      width: wid,
+                      height: 1500,
+                      child: Stack(
+                        children: boxes.entries.map((entry) {
+                          Box box = entry.value;
+                          final containerKey = GlobalKey();
+                          box.globalKey = containerKey;
+                          box.el = Positioned(
+                            key: containerKey,
+                            width: box.w,
+                            height: box.h,
+                            left: box.x,
+                            top: box.y,
+                            child: Card(
+                              margin: const EdgeInsets.all(4),
+                              child: IconButton(
+                                onPressed: () {
+                                  widget.onWidgetSelect();
+                                },
+                                icon: AnimatedAnalogClock(
+                                  size:
+                                      (box.key != 'post1' && box.key != 'post2')
+                                          ? 146
+                                          : 292,
+                                  location: 'Asia/Tehran',
+                                  backgroundColor: Color(0xff1E1E26),
+                                  hourHandColor: Colors.lightBlueAccent,
+                                  minuteHandColor: Colors.lightBlueAccent,
+                                  secondHandColor: Colors.amber,
+                                  centerDotColor: Colors.amber,
+                                  hourDashColor: Colors.lightBlue,
+                                  minuteDashColor: Colors.blueAccent,
+                                ),
+                              ),
                             ),
-                          ),
-                        );
-                        return box.el!;
-                      }).toList(),
+                          );
+                          return box.el!;
+                        }).toList(),
+                      ),
                     ),
                   ),
                   Positioned(

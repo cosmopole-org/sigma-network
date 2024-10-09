@@ -12,8 +12,8 @@ export default function BlogPost() {
                 <div className="flex gap-5 w-full">
                     <Avatar isBordered radius="full" size="md" src={getUsers()[4].avatar} />
                     <div className="flex flex-col gap-1 items-start justify-center">
-                        <h4 className="text-small font-semibold leading-none text-default-600">Zoey Lang</h4>
-                        <h5 className="text-small tracking-tight text-default-500">@zoeylang</h5>
+                        <h4 className="text-small font-semibold leading-none text-default-900">Zoey Lang</h4>
+                        <h5 className="text-small tracking-tight text-default-900">@zoeylang</h5>
                     </div>
                     <Chip
                         className="ml-auto mr-0"

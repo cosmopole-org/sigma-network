@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:pegasus/board.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     const MyApp(),
   );
@@ -16,29 +16,33 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Sigma',
       theme: ThemeData(
+        cardTheme: CardTheme(
+          elevation: 0,
+          color: Colors.lightBlue[50],
+        ),
         useMaterial3: true,
-        brightness: Brightness.light,
-        cardTheme: CardTheme(color: Colors.blue[50], elevation: 0),
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.lightBlue,
+          brightness: Brightness.light,
+        ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: CupertinoPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
           },
-        )
-        /* light theme settings */
+        ),
       ),
       darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        pageTransitionsTheme: const PageTransitionsTheme(
-          builders: {
-            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-          },
-        )
-        /* dark theme settings */
-      ),
+          useMaterial3: true,
+          brightness: Brightness.dark,
+          pageTransitionsTheme: const PageTransitionsTheme(
+            builders: {
+              TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+              TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            },
+          )
+          /* dark theme settings */
+          ),
       themeMode: ThemeMode.dark,
       home: const HomePage(title: "Sigma"),
     );
@@ -63,15 +67,19 @@ class HomePageState extends State<HomePage> {
         title: const Text('Home'),
       ),
       body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const TopicPage(title: "")),
-            );
-          },
-          child: const Text('Open Topic'),
+        child: Stack(
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const TopicPage(title: "")),
+                );
+              },
+              child: const Text("open topic !"),
+            ),
+          ]
         ),
       ),
     );
@@ -100,14 +108,13 @@ class TopicPageState extends State<TopicPage> {
       ),
       body: Center(
         child: Board(
-          onWidgetSelect: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SecondRoute()),
-            );
-          },
-          changeScrollLock: (p0) {}
-        ),
+            onWidgetSelect: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SecondRoute()),
+              );
+            },
+            changeScrollLock: (p0) {}),
       ),
     );
   }

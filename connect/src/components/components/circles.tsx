@@ -14,8 +14,8 @@ export default function Circles({ className }: Readonly<{ className?: string }>)
         return (
             <div className={className}>
                 <img alt={"wallpaper"} src={theme === "light" ?
-                    "https://i.pinimg.com/564x/93/f0/a6/93f0a6e5e70f516dc31c051238538fc7.jpg" :
-                    "https://i.pinimg.com/564x/ef/25/46/ef254691fa98c2b96a1c2ae03a6dc3b6.jpg"
+                    "https://i.pinimg.com/736x/01/fc/bf/01fcbf9fc9932a394100ee51e4cf224f.jpg" :
+                    "https://i.pinimg.com/736x/01/fc/bf/01fcbf9fc9932a394100ee51e4cf224f.jpg"
                 } className={className} />
             </div>
         )
