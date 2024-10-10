@@ -1,7 +1,6 @@
-import { Avatar, Button } from "@nextui-org/react";
+import { Avatar, Button, Chip } from "@nextui-org/react";
 import Icon from "../elements/icon";
 import { RouteSys, States, useTheme } from "@/api/client/states";
-import { getUsers } from "@/api/client/constants";
 import { useEffect, useState } from "react";
 import { Space, Topic } from "@/api/sigma/models";
 import { api } from "@/index";
@@ -26,9 +25,9 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
         }
     }, [pos.topicId]);
     return (
-        <div className={"overflow-hidden w-full h-auto absolute " + (className ?? "")} style={{ zIndex: 1}}>
-            <Avatar color="default" isBordered className="w-16 h-16 ml-6 mt-[160px]" src={space ? getUsers()[Number(space.avatar)].avatar : undefined} />
-            <p key={topic?.id} className="text-xl text-left mt-3 ml-5 text-content dark:text-white">{topic?.title}</p>
+        <div className={"overflow-hidden w-full h-[350px] absolute " + (className ?? "")} style={{ zIndex: 1 }}>
+            <p className="ml-4 mt-[156px]" style={{ fontSize: 60 }}>{space ? topic?.title.substring(0, 2).trim() : ""}</p>
+            <p key={topic?.id} className="absolute left-24 top-[204px] text-lg" ><b>{topic?.title.substring(2)}</b></p>
             <Button
                 isIconOnly
                 variant="shadow"

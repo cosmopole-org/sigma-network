@@ -44,7 +44,7 @@ export default function CommandsPalette() {
             variant="shadow"
             color="secondary"
             className="h-12 w-12"
-            radius="md"
+            radius="lg"
           >
             <Icon name="command" />
           </Button>

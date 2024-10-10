@@ -4,19 +4,18 @@ import CommandsPalette from "../home/commands-palette";
 import { Button } from "@nextui-org/button";
 
 export default function HomeAppsHeader() {
-    const showBoardBackgroundState = States.useListener(States.store.showBoardBackground);
     const editing = States.useListener(States.store.boardEditingMode);
     return (
         <div
-            className={"backdrop-blur w-full h-20 " + ("bg-content1/75")}
-            style={{ borderRadius: '32px 32px 0px 0px' }}
+            className={"backdrop-blur w-[calc(100%-16px)] h-[72px] ml-2 -mt-[8px] " + ("bg-content1/75")}
+            style={{ borderRadius: 32 }}
         >
             <div className="p-3 gap-2 flex flex-nowrap w-auto h-auto absolute left-1/2 -translate-x-1/2">
                 <Button
                     isIconOnly
                     variant="shadow"
                     className={"bg-white h-12 w-12 " + (editing ? "bg-success" : undefined)}
-                    radius="md"
+                    radius="lg"
                     onClick={() => {
                         Actions.switchBoardEditing(!editing);
                     }}
@@ -28,7 +27,7 @@ export default function HomeAppsHeader() {
                     variant="shadow"
                     color="danger"
                     className="h-12 w-12"
-                    radius="md"
+                    radius="lg"
                     onClick={() => {
                         Actions.updateSelectedDrawerApp("chat");
                         Actions.switchHomeApps(true);
@@ -41,7 +40,7 @@ export default function HomeAppsHeader() {
                     variant="shadow"
                     color="warning"
                     className="h-12 w-12"
-                    radius="md"
+                    radius="lg"
                     onClick={() => {
                         Actions.updateSelectedDrawerApp("files");
                         Actions.switchHomeApps(true);
@@ -54,7 +53,7 @@ export default function HomeAppsHeader() {
                     variant="shadow"
                     color="primary"
                     className="h-12 w-12"
-                    radius="md"
+                    radius="lg"
                     onClick={() => {
 
                     }}
@@ -66,7 +65,7 @@ export default function HomeAppsHeader() {
                     variant="shadow"
                     color="success"
                     className="h-12 w-12"
-                    radius="md"
+                    radius="lg"
                     onClick={() => {
                         RouteSys.push("/app/call")
                     }}

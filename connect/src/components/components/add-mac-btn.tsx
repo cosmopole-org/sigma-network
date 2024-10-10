@@ -8,7 +8,7 @@ export default function AddMacBtn() {
         <Button
             color="success"
             variant="shadow"
-            className={"h-[40px] w-[auto] -translate-x-1/2 absolute left-1/2 bottom-[72px] " + (edit ? "translate-y-0" : "translate-y-[200px]")}
+            className={"h-[40px] w-[auto] -translate-x-1/2 absolute left-1/2 bottom-[88px] " + (edit ? "translate-y-0" : "translate-y-[200px]")}
             radius="full"
             onClick={() => {
 

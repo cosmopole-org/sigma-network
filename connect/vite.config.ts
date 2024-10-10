@@ -10,7 +10,14 @@ export default defineConfig({
     react(),
     tsconfigPaths(),
     VitePWA({
-      injectRegister: 'auto'
+      injectRegister: 'auto',
+      manifest: {
+        name: "Sigma",
+        short_name: "Sigma",
+        description: "Welcome to Sigma Open Network",
+        display: "fullscreen",
+        start_url: "/?fullscreen=true"
+      }
     })
   ],
   optimizeDeps: {
