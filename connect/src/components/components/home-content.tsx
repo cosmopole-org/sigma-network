@@ -12,6 +12,7 @@ export default function HomeContent() {
     const { theme, wallpaper } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const showBoardBg = States.useListener(States.store.showBoardBackground);
+    const pos = States.useListener(States.store.currentPos);
     const board = useMemo(() => (
         <div
             style={{
@@ -45,7 +46,7 @@ export default function HomeContent() {
                 }} />
         </div>
     ), [wallpaper, theme, showBoardBg]);
-    const members = useMemo(() => <HomeAvatarGroup />, []);
+    const members = useMemo(() => <HomeAvatarGroup spaceId={"b7c28ed1-3a7c-42c7-9d87-a12fcd858a8e@sigma"} />, [pos.spaceId]);
     const infoBox = useMemo(() => <HomeInfoBox className="absolute top-8 left-0" />, [showBoardBg, wallpaper]);
     const backdrop = useMemo(() =>
         <Backdrop stateName="homeDrawerOpen" stateChangerName="updateHomeMenuState" />,

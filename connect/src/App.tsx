@@ -20,6 +20,7 @@ import AuthPage from "./app/auth/page";
 import SplashPage from "./app/splash/page";
 import CreateSpaceModal from "./components/modals/create-space/page";
 import CreateTopicModal from "./components/modals/create-topic/page";
+import MembersPage from "./app/members/page";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -42,6 +43,7 @@ export const mapOfRoutes: { [key: string]: any } = {
 	"/app/call": CallPage,
 	"/app/profile": ProfilePage,
 	"/app/contacts": ContactsPage,
+	"/app/members": MembersPage,
 	"/app/settings": SettingsPage,
 	"/app/chats": ChatsPage,
 	"/app/explore": ExplorePage,

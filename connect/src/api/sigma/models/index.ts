@@ -36,6 +36,12 @@ export type Member = {
     metadata: string
 }
 
+export type MemberUser = {
+    id: string
+    user: User
+    member: Member
+}
+
 export type Invite = {
     id: string
     userId: string

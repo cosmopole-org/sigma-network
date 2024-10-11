@@ -65,6 +65,46 @@ func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput
 	return outputsspaces.AddMemberOutput{Member: member}, nil
 }
 
+// ReadMembers /spaces/readMembers check [ true true false ] access [ true false false false POST ]
+func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	var members []models.Member
+	err := trx.Model(&models.Member{}).
+		Where("space_id = ?", state.Info().SpaceId()).
+		Find(&members).
+		Error()
+	if err != nil {
+		return nil, err
+	}
+	trx.Reset()
+	ids := []string{}
+	memberDict := map[string]models.Member{}
+	for _, member := range members {
+		ids = append(ids, member.UserId)
+		memberDict[member.UserId] = member
+	}
+	var users []models.User
+	err2 := trx.Model(&models.User{}).Where("id in ?", ids).Find(&users).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	memberUsers := []outputsspaces.MemberUser{}
+	for _, user := range users {
+		u := models.PublicUser{
+			Id:        user.Id,
+			Type:      user.Type,
+			Name:      user.Name,
+			Avatar:    user.Avatar,
+			Username:  user.Username,
+			PublicKey: user.PublicKey,
+		}
+		memberUsers = append(memberUsers, outputsspaces.MemberUser{User: u, Member: memberDict[user.Id]})
+	}
+	return outputsspaces.ReadMemberOutput{Members: memberUsers}, nil
+}
+
 // RemoveMember /spaces/removeMember check [ true true false ] access [ true false false false POST ]
 func (a *Actions) RemoveMember(s abstract.IState, input inputsspaces.RemoveMemberInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())

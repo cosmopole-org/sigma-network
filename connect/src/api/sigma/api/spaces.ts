@@ -2,6 +2,7 @@ import Api from "@/api";
 import Network from "../helpers/network";
 import Storage from "../helpers/storage";
 import { genRandAvatar } from "@/api/utils";
+import { MemberUser } from "../models";
 
 export default class Spaces {
     private api: Api
@@ -19,6 +20,23 @@ export default class Spaces {
                 let spaces = result.spaces;
                 this.store.db.spaces.bulkUpsert(spaces);
                 return { success: true, data: { spaces } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
+    async readMembers(body: { spaceId: string }) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "spaces/readMembers", "GET", {
+                spaceId: body.spaceId
+            });
+            if (success) {
+                let members = result.members;
+                await this.store.db.users.bulkUpsert(members.map((m: MemberUser) => m.user));
+                await this.store.db.members.bulkUpsert(members.map((m: MemberUser) => m.member));
+                return { success: true, data: { members } };
             } else {
                 return { success: false, data: { error: result.toString() } };
             }
