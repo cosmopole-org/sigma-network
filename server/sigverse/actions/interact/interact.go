@@ -6,14 +6,17 @@ import (
 	"fmt"
 	"log"
 	"sigma/sigma/abstract"
+	module_actor_model "sigma/sigma/core/module/actor/model"
 	moduleactormodel "sigma/sigma/core/module/actor/model"
 	"sigma/sigma/layer1/adapters"
 	modulestate "sigma/sigma/layer1/module/state"
 	moduletoolbox "sigma/sigma/layer1/module/toolbox"
 	inputs_interact "sigma/sigverse/inputs/interact"
+	inputs_spaces "sigma/sigverse/inputs/spaces"
 	inputs_users "sigma/sigverse/inputs/users"
 	model "sigma/sigverse/model"
 	outputs_interact "sigma/sigverse/outputs/interact"
+	outputs_spaces "sigma/sigverse/outputs/spaces"
 	outputs_users "sigma/sigverse/outputs/users"
 	"strings"
 
@@ -74,7 +77,7 @@ func (a *Actions) GetCode(s abstract.IState, _ inputs_interact.GenerateCodeDto) 
 	trx := state.Trx()
 	trx.Use()
 	res := result{}
-	err := trx.Model(&model.User{}).Select("metadata -> 'code'").Where("user_id = ?", state.Info().UserId()).First(&res).Error()
+	err := trx.Model(&model.User{}).Select("metadata -> 'code'").Where("id = ?", state.Info().UserId()).First(&res).Error()
 	if err != nil {
 		return nil, err
 	}
@@ -116,6 +119,62 @@ func (a *Actions) GetByCode(s abstract.IState, input inputs_interact.GetByCodeDt
 	}
 	user = res.(outputs_users.GetOutput).User
 	return outputs_users.GetOutput{User: user}, nil
+}
+
+// Create /interact/create check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Create(s abstract.IState, input inputs_interact.CreateDto) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	interaction, codeMap := getInteractionState(trx, state.Info().UserId(), input.UserId)
+	if codeMap[-1] {
+		interaction = model.Interaction{UserIds: getMergedUserIds(state.Info().UserId(), input.UserId)}
+		interactionState := map[string]interface{}{}
+		interactionState["areFriends"] = "true"
+		interaction.State = interactionState
+		st, err := json.Marshal(interactionState)
+		if err != nil {
+			return nil, err
+		}
+		err2 := trx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "user_ids"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{"state": string(st)}),
+		}).Create(&interaction).Error()
+		if err2 != nil {
+			return nil, err2
+		}
+	} else {
+		if interaction.State["spaceId"] != nil {
+			return nil, errors.New("you are already connected")
+		}
+	}
+	trx.Reset()
+	_, res, createGroupErr := a.Layer.Actor().FetchAction("/spaces/createGroup").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), "", ""), trx), inputs_spaces.CreateGroupInput{
+		Name: "private_space",
+	})
+	if createGroupErr != nil {
+		return nil, createGroupErr
+	}
+	groupRes := res.(outputs_spaces.CreateSpaceOutput)
+	space := groupRes.Space
+	myMember := groupRes.Member
+	topic := groupRes.Topic
+	trx.Reset()
+	_, _, addMemberErr := a.Layer.Actor().FetchAction("/spaces/addMember").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), myMember.SpaceId, ""), trx), inputs_spaces.AddMemberInput{
+		UserId:   input.UserId,
+		SpaceId:  space.Id,
+		Metadata: "",
+	})
+	if addMemberErr != nil {
+		return nil, addMemberErr
+	}
+	interaction.State["spaceId"] = space.Id
+	interaction.State["topicId"] = topic.Id
+	err2 := trx.Save(&interaction).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	return outputs_interact.InteractOutput{Interaction: interaction}, nil
 }
 
 // SendFriendRequest /interact/sendFriendRequest check [ true false false ] access [ true false false false GET ]

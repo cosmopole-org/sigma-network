@@ -32,15 +32,14 @@ export default function MembersPage({ spaceId }: Readonly<{ spaceId: string }>) 
                     })());
                 }
             });
-            Promise.all(promises);
-            ss.forEach(m => {
-                if (userCache.current[m.userId]) {
-                    mUsers.push({ member: m, user: userCache.current[m.userId] } as MemberUser);
-                }
-            })
-            if (mUsers.length > 0) {
+            Promise.all(promises).then(() => {
+                ss.forEach(m => {
+                    if (userCache.current[m.userId]) {
+                        mUsers.push({ member: m, user: userCache.current[m.userId] } as MemberUser);
+                    }
+                })
                 setMembers(mUsers);
-            }
+            });
         });
         api.sigma.services?.spaces.readMembers({ spaceId });
         return () => {

@@ -1,5 +1,6 @@
 import { getUsers } from "@/api/client/constants";
 import { RouteSys, useTheme } from "@/api/client/states";
+import { User } from "@/api/sigma/models";
 import Circles from "@/components/components/circles";
 import Icon from "@/components/elements/icon";
 import IconButton from "@/components/elements/icon-button";
@@ -7,7 +8,7 @@ import Board from "@/components/room/room-board";
 import { Avatar, Button } from "@nextui-org/react";
 import { useRef } from "react";
 
-export default function ProfilePage() {
+export default function ProfilePage({ user }: Readonly<{ user: User }>) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { theme } = useTheme();
     const color = '#fff';
@@ -20,11 +21,14 @@ export default function ProfilePage() {
             <IconButton color={color} name="more" className="absolute top-4 right-4 z-50" />
             <div className="absolute top-8 left-0 overflow-hidden w-full h-auto">
                 <Avatar className="w-32 h-32 ml-auto mr-auto mt-12" src={getUsers()[0].avatar} />
-                <p className="text-xl text-center w-full mt-6" style={{ color: color }}>Edward Kasperian</p>
+                <p className="text-xl text-center w-full mt-6" style={{ color: color }}>{user.name}</p>
             </div>
             <div className="justify-center flex w-full h-auto pl-4 pr-4 gap-4 absolute top-[280px]">
                 <Button
-                    onClick={() => RouteSys.push('/app/chat')}
+                    onClick={() => {
+                        
+                        RouteSys.push('/app/chat')
+                    }}
                     isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='message' size={[24, 24]} />
                 </Button>

@@ -7,6 +7,7 @@ import { api } from "@/index";
 const pages: { [id: string]: string } = {
     "/app/profile": "Profile",
     "/app/contacts": "Contacts",
+    "/app/members": "members",
     "/app/room-machines": "Topic Machines",
     "/app/settings": "Settings",
     "/app/chats": "Chats",

@@ -14,7 +14,7 @@ export default function PeopleList(props: Readonly<{ className?: string, people:
                         className="dark:border-white/20 border-1 relative rounded-2xl bg-content2 shadow"
                         style={{ minHeight: 170, maxHeight: 170 }}
                         onClick={() => {
-                            RouteSys.push("/app/profile")
+                            RouteSys.push("/app/profile", { user: item.user });
                         }}
                     >
                         <Image
