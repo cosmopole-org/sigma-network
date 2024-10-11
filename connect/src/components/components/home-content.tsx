@@ -46,7 +46,7 @@ export default function HomeContent() {
         </div>
     ), [wallpaper, theme, showBoardBg]);
     const members = useMemo(() => <HomeAvatarGroup />, []);
-    const infoBox = useMemo(() => <HomeInfoBox className="absolute top-8 left-0" />, [showBoardBg]);
+    const infoBox = useMemo(() => <HomeInfoBox className="absolute top-8 left-0" />, [showBoardBg, wallpaper]);
     const backdrop = useMemo(() =>
         <Backdrop stateName="homeDrawerOpen" stateChangerName="updateHomeMenuState" />,
         []
