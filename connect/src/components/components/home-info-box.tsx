@@ -7,6 +7,7 @@ import { api } from "@/index";
 
 export default function HomeInfoBox({ className }: Readonly<{ className: string }>) {
     const pos = States.useListener(States.store.currentPos);
+    const showBoardBg = States.useListener(States.store.showBoardBackground);
     const { theme } = useTheme();
     const [topic, setTopic] = useState<Topic | null>();
     const [space, setSpace] = useState<Space | null>();
@@ -27,12 +28,18 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
     return (
         <div className={"overflow-hidden w-full h-[350px] absolute " + (className ?? "")} style={{ zIndex: 1 }}>
             <p className="ml-4 mt-[156px]" style={{ fontSize: 60 }}>{space ? topic?.title.substring(0, 2).trim() : ""}</p>
-            <p key={topic?.id} className="absolute left-24 top-[204px] text-lg" ><b>{topic?.title.substring(2)}</b></p>
+            {
+                !showBoardBg ? (
+                    <Chip variant="flat" key={topic?.id} className="absolute left-24 text-lg top-[192px]">{topic?.title.substring(2)}</Chip>
+                ) : (
+                    <p key={topic?.id} className="absolute left-24 top-[204px] text-lg" ><b>{topic?.title.substring(2)}</b></p>
+                )
+            }
             <Button
                 isIconOnly
                 variant="shadow"
                 color="secondary"
-                className="h-12 w-12 absolute top-24 right-0"
+                className="h-12 w-12 absolute top-20 right-0"
                 style={{ borderRadius: '24px 0px 0px 24px' }}
                 onClick={() => {
                     RouteSys.push("/app/room-machines")

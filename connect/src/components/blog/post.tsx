@@ -7,7 +7,7 @@ import React from "react";
 
 export default function BlogPost() {
     return (
-        <Card shadow="none" isPressable isBlurred className={"w-full h-full bg-transparent"}>
+        <Card shadow="none" isPressable isBlurred className={"w-full h-full bg-transparent dark:bg-transparent"}>
             <CardHeader className="justify-between">
                 <div className="flex gap-5 w-full">
                     <Avatar isBordered radius="full" size="md" src={getUsers()[4].avatar} />

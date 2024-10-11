@@ -50,7 +50,7 @@ const measureFinal = () => {
 }
 
 const cardLightColor = "#dddddd33";
-const cardDarkColor = "#00000022";
+const cardDarkColor = "#00000011";
 
 let initialPosX = 0, initialPosY = 0, relPosX = -1, relPosY = -1;
 
@@ -165,7 +165,7 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
                             }}
                         >
                             <div
-                                className="backdrop-blur overflow-hidden w-full h-full rounded-3xl shadow-md"
+                                className="backdrop-blur overflow-hidden w-full h-full rounded-2xl shadow-md"
                                 style={{
                                     backgroundColor: dragging === k ? 'transparent' : boxes[k].color,
                                     display: draggingIdState === k ? 'none' : 'block'

@@ -46,6 +46,7 @@ export default function MessageList(props: Readonly<{ className?: string, topicI
     }
 
     useEffect(() => {
+        cache.clearAll();
         const msgsObservable = api.sigma.store.db.messages.find({
             selector: { topicId: { $eq: props.topicId } },
             sort: [
