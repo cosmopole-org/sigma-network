@@ -76,16 +76,12 @@ func (a *Actions) GetCode(s abstract.IState, _ inputs_interact.GenerateCodeDto) 
 	state := abstract.UseState[modulestate.IStateL1](s)
 	trx := state.Trx()
 	trx.Use()
-	res := result{}
+	var res string
 	err := trx.Model(&model.User{}).Select("metadata -> 'code'").Where("id = ?", state.Info().UserId()).First(&res).Error()
 	if err != nil {
 		return nil, err
 	}
-	return outputs_interact.GetCodeOutput{Code: res.Code}, nil
-}
-
-type result struct {
-	Code string
+	return outputs_interact.GetCodeOutput{Code: res}, nil
 }
 
 // GetInviteCode /interact/getInviteCode check [ true false false ] access [ true false false false GET ]
@@ -93,12 +89,12 @@ func (a *Actions) GetInviteCode(s abstract.IState, _ inputs_interact.GenerateCod
 	state := abstract.UseState[modulestate.IStateL1](s)
 	trx := state.Trx()
 	trx.Use()
-	res := result{}
-	err := trx.Model(&model.User{}).Select("metadata -> 'code'").Where("user_id = ?", state.Info().UserId()).First(&res).Error()
+	var res string
+	err := trx.Model(&model.User{}).Select("metadata -> 'code'").Where("id = ?", state.Info().UserId()).First(&res).Error()
 	if err != nil {
 		return nil, err
 	}
-	return outputs_interact.GetCodeOutput{Code: "g" + (res.Code)}, nil
+	return outputs_interact.GetCodeOutput{Code: "g" + res}, nil
 }
 
 // GetByCode /interact/getByCode check [ true false false ] access [ true false false false GET ]
