@@ -60,16 +60,6 @@ export default function BlogPost() {
                     >
                         3.5k
                     </Chip>
-                    <Chip
-                        variant="flat"
-                        avatar={
-                            <span aria-label="computer" role="img">
-                                😎
-                            </span>
-                        }
-                    >
-                        7.2k
-                    </Chip>
                 </div>
             </CardFooter>
         </Card>

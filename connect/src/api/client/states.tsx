@@ -4,17 +4,26 @@ import { useEffect } from "react";
 export function useTheme() {
 	const theme = useHookstate(States.store.theme);
 	const wallpaper = useHookstate(States.store.wallpaper);
+	const navAsHome = useHookstate(States.store.navAsHome);
 	useEffect(() => {
 		localStorage.setItem("theme", theme.get({ noproxy: true }));
 		localStorage.setItem("wallpaper", wallpaper.get({ noproxy: true }));
+		localStorage.setItem("navAsHome", navAsHome.get({ noproxy: true }));
 		let body = document.getElementsByTagName("body")[0];
 		if (body.classList.contains("light")) {
 			body.classList.replace("light", theme.get({ noproxy: true }));
 		} else {
 			body.classList.replace("dark", theme.get({ noproxy: true }));
 		}
-	}, [theme.get({ noproxy: true }), wallpaper.get({ noproxy: true })]);
-	return { theme: theme.get({ noproxy: true }), setTheme: theme.set, wallpaper: wallpaper.get({ noproxy: true }), setWallpaper: wallpaper.set };
+		setTimeout(() => {
+			Rx.notify("update-home-spaces-menu-pos", { pos: States.store.homeDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - (States.store.navAsHome.get({ noproxy: true }) === "true" ? 0 : 72)) : 0 });			
+		});
+	}, [theme.get({ noproxy: true }), wallpaper.get({ noproxy: true }), navAsHome.get({ noproxy: true })]);
+	return {
+		navAsHome: navAsHome.get({ noproxy: true }), setNavAsHome: navAsHome.set,
+		theme: theme.get({ noproxy: true }), setTheme: theme.set,
+		wallpaper: wallpaper.get({ noproxy: true }), setWallpaper: wallpaper.set
+	};
 }
 
 let hookStateStore = {
@@ -24,6 +33,7 @@ let hookStateStore = {
 	token: localStorage.getItem("token"),
 	theme: hookstate(localStorage.getItem("theme") ?? "dark"),
 	wallpaper: hookstate(localStorage.getItem("wallpaper") ?? ""),
+	navAsHome: hookstate(localStorage.getItem("navAsHome") ?? "false"),
 	showRoomLoading: hookstate(true),
 	roomSliderView: hookstate(false),
 	showLoading: hookstate(true),
@@ -110,7 +120,7 @@ export let Actions = {
 	updateHomeMenuState: (v: boolean) => {
 		States.store.homeDrawerOpen.set(v);
 		Rx.notify("update-home-swiping-lock", { locked: v });
-		Rx.notify("update-home-spaces-menu-pos", { pos: v ? (window.innerWidth - 72) : 0 });
+		Rx.notify("update-home-spaces-menu-pos", { pos: v ? (window.innerWidth - (States.store.navAsHome.get({ noproxy: true }) === "true" ? 0 : 72)) : 0 });
 	},
 	switchBoardEditing: (v: boolean) => {
 		States.store.boardEditingMode.set(v);

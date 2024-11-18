@@ -26,7 +26,7 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
         }
     }, [pos.topicId]);
     return (
-        <div className={"overflow-hidden w-full h-[350px] absolute " + (className ?? "")} style={{ zIndex: 1 }}>
+        <div className={"overflow-hidden w-full h-[250px] absolute " + (className ?? "")} style={{ zIndex: 1 }}>
             <p className="ml-4 mt-[156px]" style={{ fontSize: 60 }}>{space ? topic?.title.substring(0, 2).trim() : ""}</p>
             {
                 (!showBoardBg && (wallpaper === "true")) ? (
@@ -38,7 +38,7 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
             <Button
                 isIconOnly
                 variant="shadow"
-                color="secondary"
+                color="primary"
                 className="h-12 w-12 absolute top-20 right-0"
                 style={{ borderRadius: '24px 0px 0px 24px' }}
                 onClick={() => {

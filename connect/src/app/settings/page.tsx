@@ -3,6 +3,7 @@ import HomeSearchbar from "@/components/home/home-searchbar";
 import ThemeSwitch from "@/components/components/theme-switch";
 import BoardBgSwitch from "@/components/components/board-bg-switch";
 import WallpaperSwitch from "@/components/components/wallpaper-switch";
+import NavAsHomeSwitch from "@/components/components/nav-as-home-switch";
 
 export default function SettingsPage() {
     return (
@@ -23,6 +24,7 @@ export default function SettingsPage() {
                         <ThemeSwitch />
                         <BoardBgSwitch />
                         <WallpaperSwitch />
+                        <NavAsHomeSwitch />
                     </div>
                 </div>
             </div>

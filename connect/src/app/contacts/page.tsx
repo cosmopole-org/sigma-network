@@ -19,7 +19,7 @@ export default function ContactsPage() {
                     </div>
                 </NavbarContent>
             </Navbar >
-            <PeopleList className="absolute top-6 pt-[112px]" />
+            <PeopleList className="absolute top-6 pt-[112px]" people={[]} />
             <Button
                 color="primary"
                 variant="shadow"

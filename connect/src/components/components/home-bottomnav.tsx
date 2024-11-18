@@ -25,15 +25,15 @@ export default function HomeBottomNav({ style }: Readonly<{ style?: any }>) {
         }
     }
     return (
-        <Card className="bg-primary grid grid-cols-4 sticky bottom-0 left-0 w-full h-[72px]" style={{
+        <Card className="dark:bg-content3 bg-content3 grid grid-cols-4 sticky bottom-0 left-0 w-full h-[72px]" style={{
             borderRadius: '24px 24px 0px 0px', zIndex: 50,
             transform: `translate(0px, ${open ? '0%' : '150%'})`,
             ...style
         }}>
-            <BottomNavItem color="white" itemKey="contacts" selected={""} title="Contacts" icon="people" onClick={onItemClick('contacts')} />
-            <BottomNavItem color="white" itemKey="chats" selected={""} title="Chats" icon="chat" onClick={onItemClick('chats')} />
-            <BottomNavItem color="white" itemKey="explore" selected={""} title="Explore" icon="explore" onClick={onItemClick('explore')} />
-            <BottomNavItem color="white" pt={2} pb={3} iconSize={19} itemKey="settings" selected={""} title="Settings" icon="settings" onClick={onItemClick('settings')} />
+            <BottomNavItem itemKey="contacts" selected={""} title="Contacts" icon="people" onClick={onItemClick('contacts')} />
+            <BottomNavItem itemKey="chats" selected={""} title="Chats" icon="chat" onClick={onItemClick('chats')} />
+            <BottomNavItem itemKey="explore" selected={""} title="Explore" icon="explore" onClick={onItemClick('explore')} />
+            <BottomNavItem pt={2} pb={3} iconSize={19} itemKey="settings" selected={""} title="Settings" icon="settings" onClick={onItemClick('settings')} />
         </Card>
     )
 }

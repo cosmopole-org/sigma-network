@@ -1,7 +1,6 @@
 import { getClockWidgetData, getWindowWidth, isTouchDevice } from "@/api/client/constants";
 import { useEffect, useRef, useState } from "react";
 import AppletHost from "./applet-host";
-import { useHookstate } from "@hookstate/core";
 import BlogPost from "../blog/post";
 import { Actions, States, useTheme } from "@/api/client/states";
 
@@ -15,14 +14,17 @@ let boxes: { [id: string]: Box } = {
     red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: '#334048aa', oldY: 600 },
     post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 262, color: '#334048aa', oldY: 750 },
     green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: '#334048aa', oldY: 900 },
-    blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: '#334048aa', oldY: 1050 }
+    blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: '#334048aa', oldY: 1050 },
+    green3: { el: null, key: 'green3', x: 0, y: 0, w: 150, h: 150, color: '#334048aa', oldY: 900 },
+    blue3: { el: null, key: 'blue3', x: 0, y: 0, w: 150, h: 150, color: '#334048aa', oldY: 1050 },
+    post3: { el: null, key: 'post3', x: 0, y: 750, w: 300, h: 262, color: '#334048aa', oldY: 750 },
 }
 let dragging: string | undefined = undefined;
 let mdX = 0, mdY = 0
 let x = 0, y = 0
 
 const xColided = (b1: Box, b2: Box) => {
-    return ((b1.x <= b2.x && b2.x < (b1.x + b1.w)) || (b2.x <= b1.x && b1.x < (b2.x + b2.w)))
+    return (((b1.x) <= b2.x && b2.x < (b1.x + b1.w)) || ((b2.x) <= b1.x && b1.x < (b2.x + b2.w)))
 }
 
 const measureFinal = () => {
@@ -42,6 +44,14 @@ const measureFinal = () => {
                 }
             }
         })
+        let tempCol = Math.floor(box.x / blockWidth);
+        let prevCol = tempCol * blockWidth;
+        let nextCol = (tempCol * blockWidth) + blockWidth;
+        if (((prevCol + nextCol) / 2) > box.x) {
+            box.x = prevCol;
+        } else {
+            box.x = nextCol;
+        }
         box.y = newY >= 8 ? newY : 8
     })
     Object.keys(boxes).forEach((k: string) => {
@@ -49,17 +59,18 @@ const measureFinal = () => {
     })
 }
 
-const cardLightColor = "#dddddd33";
-const cardDarkColor = "#00000011";
+const colCount = 4;
+let blockWidth = 0;
+const cardLightColor = "#ffffff44";
+const cardDarkColor = "#33006644";
 
 let initialPosX = 0, initialPosY = 0, relPosX = -1, relPosY = -1;
 
 function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ highlightColor: string, changeScrollLock: (v: boolean) => void, getSCrollY: () => number }>) {
     let wid = 0;
-    let blockWidth = 0;
     if (typeof window !== 'undefined') {
         wid = getWindowWidth();
-        blockWidth = (wid - 8) / 2;
+        blockWidth = (wid / colCount) - 4;
     }
     const [, setUpdateTrigger] = useState(Math.random());
     const getOffset = () => getSCrollY()
@@ -78,28 +89,31 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
     useEffect(() => {
         boxes = {
             red: { el: null, key: 'red', x: 0, y: 0, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 0 },
-            green: { el: null, key: 'green', x: 0, y: 150, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 150 },
-            post1: { el: null, key: 'post1', x: 0, y: 300, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 300 },
-            blue: { el: null, key: 'blue', x: 0, y: 450, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 450 },
-            red2: { el: null, key: 'red2', x: 0, y: 600, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 600 },
-            post2: { el: null, key: 'post2', x: 0, y: 750, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 750 },
-            green2: { el: null, key: 'green2', x: 0, y: 900, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 900 },
-            blue2: { el: null, key: 'blue2', x: 0, y: 1050, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 1050 }
+            green: { el: null, key: 'green', x: blockWidth, y: 0, w: blockWidth, h: blockWidth, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 150 },
+            post1: { el: null, key: 'post1', x: blockWidth * 2, y: 0, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 300 },
+            post2: { el: null, key: 'post2', x: 0, y: blockWidth, w: 300, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 750 },
+            blue: { el: null, key: 'blue', x: 0, y: blockWidth * 4, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 450 },
+            red2: { el: null, key: 'red2', x: blockWidth, y: blockWidth * 4, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 600 },
+            green2: { el: null, key: 'green2', x: blockWidth * 2, y: blockWidth * 3, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 900 },
+            blue2: { el: null, key: 'blue2', x: blockWidth * 3, y: blockWidth * 3, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 1050 },
+            green3: { el: null, key: 'green3', x: blockWidth * 2, y: blockWidth * 4, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 900 },
+            blue3: { el: null, key: 'blue3', x: blockWidth * 3, y: blockWidth * 4, w: 150, h: 150, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 1050 },
+            post3: { el: null, key: 'post3', x: 0, y: blockWidth * 5, w: blockWidth * 4, h: 262, color: theme === "light" ? cardLightColor : cardDarkColor, oldY: 750 },
         }
         Object
             .keys(boxes)
             .sort((key1: string, key2: string) => (boxes[key1].y - boxes[key2].y))
             .forEach((k: string, index: number) => {
                 boxes[k].el = (document.getElementById(k) as HTMLDivElement);
-                if (k !== 'post1' && k !== 'post2') {
+                if (k === 'post3') {
+                    boxes[k].w = blockWidth * 4;
+                    boxes[k].h = blockWidth * 3;
+                } else if (k !== 'post1' && k !== 'post2') {
                     boxes[k].w = blockWidth;
                     boxes[k].h = blockWidth;
-                    if (index % 2 === 0) boxes[k].x = 4;
-                    else boxes[k].x = blockWidth + 4;
                 } else {
                     boxes[k].w = blockWidth * 2;
-                    boxes[k].h = 262;
-                    boxes[k].x = 4;
+                    boxes[k].h = blockWidth * 3;
                 }
             })
         measureFinal();
@@ -108,7 +122,7 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
     }, []);
     if (isTouchDevice()) {
         return (
-            <div style={{ overflowX: 'hidden', width: wid, height: 1500, minHeight: 1500, position: 'relative' }}>
+            <div style={{ overflowX: 'hidden', width: wid, height: 1500, minHeight: 1500, position: 'relative', marginLeft: 8 }}>
                 {
                     Object.keys(boxes).map((k: string, index: number) => (
                         <div
@@ -165,13 +179,14 @@ function Board({ highlightColor, changeScrollLock, getSCrollY }: Readonly<{ high
                             }}
                         >
                             <div
-                                className="backdrop-blur overflow-hidden w-full h-full rounded-2xl shadow-md"
+                                className="backdrop-blur overflow-hidden w-[calc(100%)] h-full"
                                 style={{
                                     backgroundColor: dragging === k ? 'transparent' : boxes[k].color,
-                                    display: draggingIdState === k ? 'none' : 'block'
+                                    display: draggingIdState === k ? 'none' : 'block',
+                                    borderRadius: 16
                                 }}>
                                 {loaded ?
-                                    (k === 'post1' || k === 'post2') ? (
+                                    (k === 'post1' || k === 'post2' || k === "post3") ? (
                                         <BlogPost />
                                     ) : (
                                         <AppletHost.Host key={k} appletKey={k} entry="Test" index={index} code={getClockWidgetData()} />

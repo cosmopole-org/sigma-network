@@ -7,6 +7,7 @@ import AddMacBtn from "./add-mac-btn"
 import HomeAvatarGroup from "./home-avatar-group"
 import HomeInfoBox from "./home-info-box"
 import Backdrop from "./backdrop"
+import { colors } from "@nextui-org/theme"
 
 export default function HomeContent() {
     const { theme, wallpaper } = useTheme();
@@ -20,15 +21,6 @@ export default function HomeContent() {
             }}
             className={"w-full h-auto pb-2 pt-[40px] -mt-8 gap-4 relative " + (showBoardBg ? "bg-s-white/70 dark:bg-content2/70" : "")}
         >
-            {
-                wallpaper !== "true" ? (
-                    <img style={{ objectFit: 'cover' }} alt="header" className="w-full h-screen fixed top-0 left-0" src={
-                        theme === "light" ?
-                            "https://i.pinimg.com/736x/01/fc/bf/01fcbf9fc9932a394100ee51e4cf224f.jpg" :
-                            "https://i.pinimg.com/control/564x/c0/83/92/c0839270bbdf8cdddd87aa92a33f70a2.jpg"
-                    } />
-                ) : null
-            }
             {
                 wallpaper !== "true" ? (
                     <div style={{ backdropFilter: 'blur(10px)' }} className={"w-full h-screen fixed top-0 left-0 " + (showBoardBg ? "bg-s-white/60 dark:bg-content2/60" : "")} />
@@ -53,12 +45,11 @@ export default function HomeContent() {
         []
     );
     const circles = useMemo(() => <Circles className="fixed top-0 left-0 w-full h-full" />, [wallpaper, theme, showBoardBg]);
-    const cardLightColor = "#dddddd33";
-    const cardDarkColor = "#00000011";
+    const cardLightColor = colors.blue[100];
+    const cardDarkColor = colors.purple[900];
     return (
         <div className={"w-full h-full"}>
             <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
-                {circles}
                 <div className="w-full h-[238px]" />
                 {wallpaper !== "true" ? (
                     <img style={{ objectFit: 'cover', zIndex: 1 }} alt="header" className="w-full h-[230px] absolute top-0 left-0" src={
@@ -71,10 +62,8 @@ export default function HomeContent() {
                 <div className="w-full h-[32px]" />
                 {
                     !showBoardBg ? (
-                        <div className={"absolute left-2 top-[190px] w-[calc(100%-16px)] h-[84px]"}
+                        <div className={"fixed left-0 top-0 w-full h-full"}
                             style={{
-                                borderRadius: 16,
-                                backdropFilter: 'blur(10px)',
                                 backgroundColor: theme === "light" ? cardLightColor : cardDarkColor
                             }} />
                     ) : null
