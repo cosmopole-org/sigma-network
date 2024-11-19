@@ -1,6 +1,6 @@
 import { getClockWidgetData, getWindowWidth, isTouchDevice } from "@/api/client/constants";
 import { useEffect, useRef, useState } from "react";
-import AppletHost from "./applet-host";
+import AppletHost from "../components/applet-host";
 import BlogPost from "../blog/post";
 import { Actions, States, useTheme } from "@/api/client/states";
 

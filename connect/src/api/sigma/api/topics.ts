@@ -13,6 +13,9 @@ export default class Topics {
         this.net = net;
         this.store = store;
     }
+    onPacketReceive(fn: (data: any) => void) {
+        return this.net.addWsEvent('topics/send', fn);
+    }
     async read(body: { spaceId: string }) {
         try {
             const { success, result } = await this.net.safelyRequest(1, "topics/read", "GET", body);
@@ -44,6 +47,23 @@ export default class Topics {
             } else {
                 return { success: false, data: { error: result.toString() } };
             }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
+    async send(
+        body: { type: string, recvId: string, memberId: string, spaceId: string, topicId: string, data: any }
+    ) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "topics/create", "POST", {
+                "type": body.type,
+                "data": JSON.stringify(body.data),
+                "recvId": body.recvId,
+                "spaceId": body.spaceId,
+                "topicId": body.topicId,
+                "memberId": body.memberId
+            });
+            return { success };
         } catch (ex: any) {
             return { success: false, data: { error: ex.toString() } };
         }

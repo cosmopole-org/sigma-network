@@ -3,9 +3,9 @@ import { Button } from "@nextui-org/react";
 import Icon from "./icon";
 import { IconType } from "@/types";
 
-export default function IconButton({ name, className, color, size, onClick, iconType }: Readonly<{ iconType?: IconType, onClick?: () => void, size?: number[], name: string, className?: string, color?: string }>) {
+export default function IconButton({ name, className, color, size, onClick, iconType, style }: Readonly<{ style?: any, iconType?: IconType, onClick?: () => void, size?: number[], name: string, className?: string, color?: string }>) {
     return (
-        <Button isIconOnly className={"bg-transparent" + (className ? (" " + className) : "")} onClick={onClick}>
+        <Button isIconOnly className={"bg-transparent" + (className ? (" " + className) : "")} style={style} onClick={onClick}>
             <Icon iconType={iconType} size={size} name={name} color={color} />
         </Button>
     )

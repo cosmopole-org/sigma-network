@@ -44,6 +44,46 @@ export default class Spaces {
             return { success: false, data: { error: ex.toString() } };
         }
     }
+    async createMember(
+        body: { userId: string, spaceId: string, metadata: string }
+    ) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "spaces/addMember", "POST", {
+                "userId": body.userId,
+                "spaceId": body.spaceId,
+                "metadata": body.metadata
+            });
+            if (success) {
+                let member = result.member;
+                this.store.db.members.upsert(member);
+                return { success: true, data: { member } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
+    async updateMember(
+        body: { userId: string, spaceId: string, metadata: string }
+    ) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "spaces/addMember", "POST", {
+                "userId": body.userId,
+                "spaceId": body.spaceId,
+                "metadata": body.metadata
+            });
+            if (success) {
+                let member = result.member;
+                this.store.db.members.upsert(member);
+                return { success: true, data: { member } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
     async create(
         body: { title: string, isPublic: boolean }
     ) {

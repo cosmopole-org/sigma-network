@@ -1,43 +1,29 @@
 import { States, useTheme } from "@/api/client/states"
 import MainTools from "../home/main-tools-drawer"
 import Circles from "./circles"
-import { useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Board from "../room/room-board"
 import AddMacBtn from "./add-mac-btn"
 import HomeAvatarGroup from "./home-avatar-group"
 import HomeInfoBox from "./home-info-box"
 import Backdrop from "./backdrop"
 import { colors } from "@nextui-org/theme"
+import Desk from "./desk"
+import { Topic } from "@/api/sigma/models"
+import { api } from "@/index"
 
 export default function HomeContent() {
     const { theme, wallpaper } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const showBoardBg = States.useListener(States.store.showBoardBackground);
     const pos = States.useListener(States.store.currentPos);
-    const board = useMemo(() => (
-        <div
-            style={{
-                backdropFilter: ((wallpaper === "true") && showBoardBg) ? 'blur(10px)' : undefined
-            }}
-            className={"w-full h-auto pb-2 pt-[40px] -mt-8 gap-4 relative " + (showBoardBg ? "bg-s-white/70 dark:bg-content2/70" : "")}
-        >
-            {
-                wallpaper !== "true" ? (
-                    <div style={{ backdropFilter: 'blur(10px)' }} className={"w-full h-screen fixed top-0 left-0 " + (showBoardBg ? "bg-s-white/60 dark:bg-content2/60" : "")} />
-                ) : null
-            }
-            <Board
-                highlightColor={theme === 'light' ? '#006FEE' : '#7828C8'}
-                changeScrollLock={(v: boolean) => {
-                    if (containerRef.current) {
-                        containerRef.current.style.overflow = v ? 'hidden' : '';
-                    }
-                }}
-                getSCrollY={() => {
-                    return 340 - (containerRef.current?.scrollTop ?? 0);
-                }} />
-        </div>
-    ), [wallpaper, theme, showBoardBg]);
+    const [topic, setTopic] = useState<Topic|null>(null);
+    useEffect(() => {
+        api.sigma.store.db.collections.topics.findOne({selector: { id: { $eq: pos.topicId }}}).exec().then((t: any) => {
+            setTopic(t);
+        });
+    }, [pos.topicId]);
+    const board = useMemo(() => (topic ? <Desk room={topic} show={true} /> : null), [wallpaper, theme, showBoardBg, topic]);
     const members = useMemo(() => <HomeAvatarGroup spaceId={"b7c28ed1-3a7c-42c7-9d87-a12fcd858a8e@sigma"} />, [pos.spaceId]);
     const infoBox = useMemo(() => <HomeInfoBox className="absolute top-8 left-0" />, [showBoardBg, wallpaper]);
     const backdrop = useMemo(() =>
