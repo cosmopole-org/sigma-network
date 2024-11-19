@@ -67,65 +67,74 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 				break
 			}
 			var dataStr = string(p[:])
+			log.Println(dataStr)
 			var splittedMsg = strings.Split(dataStr, " ")
 			var uri = splittedMsg[0]
-			if uri == "authenticate" {
-				var token = splittedMsg[1]
-				var requestId = splittedMsg[2]
-				userId, _, _ := security.AuthWithToken(token)
-				if userId != "" {
-					uid = userId
-					signaler.ListenToSingle(&module_model.Listener{
-						Id: userId,
-						Signal: func(b any) {
-							err := conn.WriteMessage(websocket.TextMessage, b.([]byte))
-							if err != nil {
-								return
+			if len(splittedMsg) > 1 {
+				if uri == "authenticate" {
+					if len(splittedMsg) >= 3 {
+						var token = splittedMsg[1]
+						var requestId = splittedMsg[2]
+						userId, _, _ := security.AuthWithToken(token)
+						if userId != "" {
+							uid = userId
+							signaler.ListenToSingle(&module_model.Listener{
+								Id: userId,
+								Signal: func(b any) {
+									err := conn.WriteMessage(websocket.TextMessage, b.([]byte))
+									if err != nil {
+										return
+									}
+								},
+							})
+							var members []model.Member
+							storage.Where("user_id = ?", userId).Find(&members)
+							for _, member := range members {
+								signaler.JoinGroup(member.SpaceId, uid)
 							}
-						},
-					})
-					var members []model.Member
-					storage.Where("user_id = ?", userId).Find(&members)
-					for _, member := range members {
-						signaler.JoinGroup(member.SpaceId, uid)
+							AnswerSocket(conn, "response", requestId, module_model.ResponseSimpleMessage{Message: "authenticated"})
+						} else {
+							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "authentication failed"})
+						}
 					}
-					AnswerSocket(conn, "response", requestId, module_model.ResponseSimpleMessage{Message: "authenticated"})
 				} else {
-					AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "authentication failed"})
-				}
-			} else {
-				var origin = splittedMsg[1]
-				var requestId = splittedMsg[2]
-				var layerNumStr = splittedMsg[3]
-				layerNum, err := strconv.Atoi(layerNumStr)
-				if err != nil {
-					log.Println(err)
-					layerNum = 1
-					return
-				}
-				var body = dataStr[(len(uri) + 1 + len(origin) + 1 + len(requestId) + 1 + len(layerNumStr)):]	
-				layer := core.Get(layerNum)
-				action := layer.Actor().FetchAction(uri)
-				if action == nil {
-					AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "action not found"})
-					return
-				}
-				input, err := action.(*moduleactormodel.SecureAction).ParseInput("ws", body)
-				if err != nil {
-					log.Println(err)
-					AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "parsing input failed"})
-					return
-				}
-				res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, ws.Tokens[uid], origin, requestId, input, "")
-				if err2 != nil {
-					AnswerSocket(conn, "error", requestId, module_model.BuildErrorJson(err2.Error()))
-				} else {
-					AnswerSocket(conn, "response", requestId, ws.PrepareAnswer(res))
+					if len(splittedMsg) >= 4 {
+						var origin = splittedMsg[1]
+						var requestId = splittedMsg[2]
+						var layerNumStr = splittedMsg[3]
+						layerNum, err := strconv.Atoi(layerNumStr)
+						if err != nil {
+							log.Println(err)
+							layerNum = 1
+							return
+						}
+						var body = dataStr[(len(uri) + 1 + len(origin) + 1 + len(requestId) + 1 + len(layerNumStr)):]
+						layer := core.Get(layerNum)
+						action := layer.Actor().FetchAction(uri)
+						if action == nil {
+							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "action not found"})
+							return
+						}
+						input, err := action.(*moduleactormodel.SecureAction).ParseInput("ws", body)
+						if err != nil {
+							log.Println(err)
+							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "parsing input failed"})
+							return
+						}
+						res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, ws.Tokens[uid], origin, requestId, input, "")
+						if err2 != nil {
+							AnswerSocket(conn, "error", requestId, module_model.BuildErrorJson(err2.Error()))
+						} else {
+							AnswerSocket(conn, "response", requestId, ws.PrepareAnswer(res))
+						}
+					}
 				}
 			}
 		}
 		if uid != "" {
+			signaler.Lock.Lock()
 			delete(signaler.Listeners, uid)
+			signaler.Lock.Unlock()
 		}
 		log.Println("socket broken")
 	}))

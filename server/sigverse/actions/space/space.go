@@ -26,6 +26,7 @@ type Actions struct {
 }
 
 func Install(s abstract.IState, a *Actions) error {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
 	state := abstract.UseState[modulestate.IStateL1](s)
 	err := state.Trx().AutoMigrate(&models.Space{})
 	if err != nil {
@@ -39,6 +40,50 @@ func Install(s abstract.IState, a *Actions) error {
 	if err3 != nil {
 		return err3
 	}
+	err4 := state.Trx().AutoMigrate(&models.Topic{})
+	if err4 != nil {
+		return err4
+	}
+	trx := state.Trx()
+	trx.Use()
+	space := models.Space{}
+	errFind := trx.Where("id = ?", "main@"+a.Layer.Core().Id()).First(&space).Error()
+	if errFind == nil {
+		trx.Reset()
+		var members []models.Member
+		trx.Model(&models.Member{}).Find(&members)
+		go (func ()  {
+			for _, member := range members {
+				toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+				toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
+			}				
+		})()
+		return nil
+	}
+	trx.Reset()
+	space = models.Space{Id: "main@" + a.Layer.Core().Id(), Tag: "main@" + a.Layer.Core().Id(), Title: "main", Avatar: "0", IsPublic: true}
+	errSpace := trx.Create(&space).Error()
+	if errSpace != nil {
+		trx.Revert()
+		return errSpace
+	}
+	topic := models.Topic{Id: "main@" + a.Layer.Core().Id(), Title: "hall", Avatar: "0", SpaceId: space.Id}
+	errTopic := trx.Create(&topic).Error()
+	if errTopic != nil {
+		trx.Revert()
+		return errTopic
+	}
+	toolbox.Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
+
+	trx.Reset()
+	var members []models.Member
+	trx.Model(&models.Member{}).Find(&members)
+	for _, member := range members {
+		toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+		toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
+	}
+
+	trx.Push()
 	return nil
 }
 
@@ -53,15 +98,19 @@ func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput
 	if err != nil {
 		return nil, err
 	}
-	member = models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: state.Info().SpaceId(), TopicId: "*", Metadata: input.Metadata}
+	ti := state.Info().TopicId()
+	if ti == "" {
+		ti = "*"
+	}
+	member = models.Member{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), UserId: input.UserId, SpaceId: state.Info().SpaceId(), TopicId: ti, Metadata: input.Metadata}
 	err2 := trx.Create(&member).Error()
 	if err2 != nil {
 		return nil, err2
 	}
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	toolbox.Signaler().SignalUser("spaces/addMemberMe", "", member.UserId, updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), Member: member}, true)
-	go toolbox.Signaler().SignalGroup("spaces/addMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), Member: member}, true, []string{state.Info().UserId()})
+	toolbox.Signaler().SignalUser("spaces/addMemberMe", "", member.UserId, updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true)
+	go toolbox.Signaler().SignalGroup("spaces/addMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true, []string{state.Info().UserId()})
 	return outputsspaces.AddMemberOutput{Member: member}, nil
 }
 
@@ -94,7 +143,7 @@ func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberIn
 	for _, user := range users {
 		u := models.PublicUser{
 			Id:        user.Id,
-			Type:      user.Type,
+			Type:      user.Typ,
 			Name:      user.Name,
 			Avatar:    user.Avatar,
 			Username:  user.Username,
@@ -122,13 +171,20 @@ func (a *Actions) RemoveMember(s abstract.IState, input inputsspaces.RemoveMembe
 	if err2 != nil {
 		return nil, err2
 	}
+	ti := state.Info().TopicId()
+	if ti == "" {
+		ti = "*"
+	}
+	if ti != member.TopicId {
+		return nil, errors.New("topic id does not match")
+	}
 	err3 := trx.Delete(&member).Error()
 	if err3 != nil {
 		return nil, err3
 	}
 	toolbox.Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
 	toolbox.Signaler().LeaveGroup(member.SpaceId, state.Info().UserId())
-	go toolbox.Signaler().SignalGroup("spaces/removeMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), Member: member}, true, []string{state.Info().UserId()})
+	go toolbox.Signaler().SignalGroup("spaces/removeMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true, []string{state.Info().UserId()})
 	return outputsspaces.AddMemberOutput{Member: member}, nil
 }
 
@@ -139,6 +195,7 @@ func (a *Actions) Create(s abstract.IState, input inputsspaces.CreateInput) (any
 	var (
 		space  models.Space
 		member models.Member
+		topic  models.Topic
 	)
 	trx := state.Trx()
 	trx.Use()
@@ -157,9 +214,16 @@ func (a *Actions) Create(s abstract.IState, input inputsspaces.CreateInput) (any
 	if err3 != nil {
 		return nil, err3
 	}
+	topic = models.Topic{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Title: "hall", Avatar: "0", SpaceId: space.Id}
+	err4 := trx.Create(&topic).Error()
+	if err4 != nil {
+		return nil, err4
+	}
+	toolbox.Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
-	return outputsspaces.CreateOutput{Space: space, Member: member}, nil
+	toolbox.Signaler().SignalUser("spaces/addMemberMe", "", member.UserId, updatesspaces.AddMember{SpaceId: space.Id, TopicId: topic.Id, Member: member}, true)
+	return outputsspaces.CreateOutput{Space: space, Member: member, Topic: topic}, nil
 }
 
 // Update /spaces/update check [ true false false ] access [ true false false false PUT ]
@@ -240,29 +304,6 @@ func (a *Actions) Get(s abstract.IState, input inputsspaces.GetInput) (any, erro
 		return nil, err2
 	}
 	return outputsspaces.GetOutput{Space: space}, nil
-}
-
-// Read /spaces/read check [ true false false ] access [ true false false false GET ]
-func (a *Actions) Read(s abstract.IState, input inputsspaces.ReadInput) (any, error) {
-	state := abstract.UseState[modulestate.IStateL1](s)
-	var members []models.Member
-	trx := state.Trx()
-	trx.Use()
-	err := trx.Model(&models.Member{}).Where("user_id = ?", state.Info().UserId()).Find(&members).Error()
-	if err != nil {
-		return nil, err
-	}
-	trx.Reset()
-	ids := []string{}
-	for i := 0; i < len(members); i++ {
-		ids = append(ids, members[i].SpaceId)
-	}
-	var spaces []models.Space
-	err2 := trx.Model(&models.Space{}).Where("id in ?", ids).Find(&spaces).Error()
-	if err2 != nil {
-		return nil, err2
-	}
-	return outputsspaces.ReadOutput{Spaces: spaces}, nil
 }
 
 // Join /spaces/join check [ true false false ] access [ true false false false POST ]

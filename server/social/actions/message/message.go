@@ -1,15 +1,20 @@
 package social_services
 
 import (
+	"encoding/json"
 	"errors"
+	"log"
 	"sigma/sigma/abstract"
 	module_state "sigma/sigma/layer1/module/state"
 	"sigma/sigma/layer2/model"
 	"sigma/sigma/utils/crypto"
+	"sigma/sigverse/model"
 	inputs_message "sigma/social/inputs/message"
 	models "sigma/social/model"
 	outputs_message "sigma/social/outputs/message"
 	"time"
+
+	"gorm.io/datatypes"
 )
 
 type Actions struct {
@@ -26,6 +31,31 @@ func (a *Actions) CreateMessage(s abstract.IState, input inputs_message.CreateMe
 	state := abstract.UseState[module_state.IStateL1](s)
 	trx := state.Trx()
 	trx.Use()
+	type sender struct {
+		Id   string         `json:"id"`
+		Data datatypes.JSON `json:"data"`
+	}
+	senderUser := sender{}
+	state.Trx().Model(&model.User{}).Select("id, metadata -> '"+"hokm"+"' as data").Where("id = ?", state.Info().UserId()).First(&senderUser)
+	log.Println(senderUser)
+	str, convErr := json.Marshal(senderUser.Data)
+	if convErr != nil {
+		log.Println(convErr)
+	}
+	dict := map[string]any{}
+	convErr2 := json.Unmarshal(str, &dict)
+	if convErr2 != nil {
+		log.Println(convErr2)
+	}
+	lastBuy, ok := dict["lastChatPointBuy"]
+	chatPoint, ok2 := dict["chatPoint"]
+	if !ok || !ok2 {
+		log.Println("field not found")
+	}
+	if (float64(time.Now().UnixMilli()) - lastBuy.(float64)) > (chatPoint.(float64) * 60 * 1000) {
+		return nil, errors.New("not enough chat points")
+	}
+	trx.Reset()
 	message := models.Message{
 		Id:       crypto.SecureUniqueId(a.Layer.Core().Id()),
 		AuthorId: state.Info().UserId(),
@@ -39,7 +69,24 @@ func (a *Actions) CreateMessage(s abstract.IState, input inputs_message.CreateMe
 		return nil, err
 	}
 	tb := abstract.UseToolbox[*module_model.ToolboxL2](a.Layer.Tools())
-	tb.Signaler().SignalGroup("/messages/create", state.Info().SpaceId(), message, true, []string{state.Info().UserId()})
+
+	type author struct {
+		Id      string         `json:"id"`
+		Profile datatypes.JSON `json:"profile"`
+	}
+	authorUser := author{}
+	state.Trx().Reset()
+	state.Trx().Model(&model.User{}).Select("id, metadata -> '"+"hokm"+"' -> 'profile' as profile").Where("id = ?", message.AuthorId).First(&authorUser)
+	result := models.ResultMessage{
+		Id:       message.Id,
+		SpaceId:  message.SpaceId,
+		TopicId:  message.TopicId,
+		AuthorId: message.AuthorId,
+		Data:     message.Data,
+		Time:     message.Time,
+		Author:   authorUser.Profile,
+	}
+	tb.Signaler().SignalGroup("/messages/create", state.Info().SpaceId(), result, true, []string{state.Info().UserId()})
 	return outputs_message.CreateMessageOutput{Message: message}, nil
 }
 
@@ -89,13 +136,42 @@ func (a *Actions) DeleteMessage(s abstract.IState, input inputs_message.DeleteMe
 	}
 	tb := abstract.UseToolbox[*module_model.ToolboxL2](a.Layer.Tools())
 	tb.Signaler().SignalGroup("/messages/delete", state.Info().SpaceId(), message, true, []string{state.Info().UserId()})
-	return outputs_message.UpdateMessageOutput{}, nil
+	return outputs_message.DeleteMessageOutput{}, nil
 }
 
 // ReadMessages /messages/read check [ true true true ] access [ true false false false PUT ]
 func (a *Actions) ReadMessages(s abstract.IState, input inputs_message.ReadMessagesInput) (any, error) {
 	state := abstract.UseState[module_state.IStateL1](s)
 	messages := []models.Message{}
+	state.Trx().Use()
 	state.Trx().Where("topic_id = ?", state.Info().TopicId()).Offset(*input.Offset).Limit(*input.Count).Find(&messages)
-	return outputs_message.ReadMessagesOutput{Messages: messages}, nil
+	state.Trx().Reset()
+	authorIds := []string{}
+	for _, msg := range messages {
+		authorIds = append(authorIds, msg.AuthorId)
+	}
+	type author struct {
+		Id      string
+		Profile datatypes.JSON
+	}
+	authors := []author{}
+	state.Trx().Model(&model.User{}).Select("id as id, metadata -> '"+"hokm"+"' -> 'profile' as profile").Where("id in ?", authorIds).Find(&authors)
+	state.Trx().Reset()
+	authorDict := map[string]author{}
+	for _, a := range authors {
+		authorDict[a.Id] = a
+	}
+	result := []models.ResultMessage{}
+	for _, msg := range messages {
+		result = append(result, models.ResultMessage{
+			Id:       msg.Id,
+			SpaceId:  msg.SpaceId,
+			TopicId:  msg.TopicId,
+			AuthorId: msg.AuthorId,
+			Data:     msg.Data,
+			Time:     msg.Time,
+			Author:   authorDict[msg.AuthorId].Profile,
+		})
+	}
+	return outputs_message.ReadMessagesOutput{Messages: result}, nil
 }

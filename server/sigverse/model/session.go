@@ -5,3 +5,7 @@ type Session struct {
 	UserId string `json:"userId" gorm:"column:user_id"`
 	Token  string `json:"token" gorm:"column:token"`
 }
+
+func (d Session) Type() string {
+	return "Session"
+}

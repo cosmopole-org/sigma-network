@@ -8,13 +8,14 @@ import (
 	moduleactormodel "sigma/sigma/core/module/actor/model"
 	modulestate "sigma/sigma/layer1/module/state"
 	toolbox2 "sigma/sigma/layer1/module/toolbox"
-	"sigma/sigma/lib/datatypes"
 	"sigma/sigma/utils/crypto"
+	inputs_spaces "sigma/sigverse/inputs/spaces"
 	inputsusers "sigma/sigverse/inputs/users"
-	"sigma/sigverse/model"
 	models "sigma/sigverse/model"
 	outputsusers "sigma/sigverse/outputs/users"
 	"strconv"
+
+	"gorm.io/datatypes"
 )
 
 func convertRowIdToCode(rowId uint) string {
@@ -56,7 +57,8 @@ func Install(s abstract.IState, a *Actions) error {
 	state.Trx().Use()
 	for _, godUsername := range a.Layer.Core().Gods() {
 		var user = models.User{}
-		err := state.Trx().Where("username = ?", godUsername+"@"+a.Layer.Core().Id()).First(&user).Error()
+		userId := ""
+		err := state.Trx().Where("username = ?", godUsername + "@" + a.Layer.Core().Id()).First(&user).Error()
 		if err != nil {
 			log.Println(err)
 			state.Trx().Reset()
@@ -72,10 +74,21 @@ func Install(s abstract.IState, a *Actions) error {
 				log.Println(err)
 				panic(err)
 			}
-			toolbox.Cache().Put("god::"+(res.(outputsusers.CreateOutput).User.Id), "true")
+			userId = res.(outputsusers.CreateOutput).User.Id
+		} else {
+			userId = user.Id
 		}
+		toolbox.Cache().Put("god::"+userId, "true")
 		state.Trx().Reset()
 	}
+	state.Trx().Reset()
+	users := []models.User{}
+	state.Trx().Model(&models.User{}).Find(&users)
+	go (func ()  {
+		for _, user := range users {
+			toolbox.Cache().Put("code::"+convertRowIdToCode(uint(user.Number)), user.Id)
+		}			
+	})()
 	state.Trx().Push()
 	return nil
 }
@@ -84,9 +97,6 @@ func Install(s abstract.IState, a *Actions) error {
 func (a *Actions) Authenticate(s abstract.IState, _ inputsusers.AuthenticateInput) (any, error) {
 	state := abstract.UseState[modulestate.IStateL1](s)
 	_, res, _ := a.Layer.Actor().FetchAction("/users/get").Act(a.Layer.Sb().NewState(moduleactormodel.NewInfo("", "", ""), state.Trx()), inputsusers.GetInput{UserId: state.Info().UserId()})
-	if res == nil {
-		return nil, errors.New("user not found")
-	}
 	return outputsusers.AuthenticateOutput{Authenticated: true, User: res.(outputsusers.GetOutput).User}, nil
 }
 
@@ -113,13 +123,13 @@ func (a *Actions) Create(s abstract.IState, input inputsusers.CreateInput) (any,
 	}
 	trx.Reset()
 	token := crypto.SecureUniqueString()
-	user = models.User{Metadata: datatypes.JSON([]byte(`{}`)), Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Type: "human", PublicKey: input.PublicKey, Username: input.Username + "@" + a.Layer.Core().Id(), Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
+	user = models.User{Metadata: datatypes.JSON([]byte(`{}`)), Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Typ: "human", PublicKey: input.PublicKey, Username: input.Username + "@" + a.Layer.Core().Id(), Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
 	err := trx.Create(&user).Error()
 	if err != nil {
 		return nil, err
 	}
 	code := convertRowIdToCode(uint(user.Number))
-	err2 := trx.Model(&model.User{}).Where("id = ?", user.Id).UpdateJson(&user, "metadata", "code", code).Error()
+	err2 := trx.Model(&models.User{}).Where("id = ?", user.Id).UpdateJson(&user, "metadata", "code", code).Error()
 	if err2 != nil {
 		return nil, err2
 	}
@@ -128,6 +138,11 @@ func (a *Actions) Create(s abstract.IState, input inputsusers.CreateInput) (any,
 	err3 := trx.Create(&session).Error()
 	if err3 != nil {
 		return nil, err3
+	}
+	trx.Reset()
+	_, _, errJoin := a.Layer.Actor().FetchAction("/spaces/join").Act(a.Layer.Sb().NewState(moduleactormodel.NewInfo(user.Id, "", ""), state.Trx()), inputs_spaces.JoinInput{SpaceId: "main@" + a.Layer.Core().Id()})
+	if errJoin != nil {
+		return nil, err
 	}
 	toolbox.Cache().Put("auth::"+session.Token, fmt.Sprintf("human/%s", user.Id))
 	toolbox.Cache().Put("code::"+code, user.Id)
@@ -145,7 +160,7 @@ func (a *Actions) UpdateMeta(s abstract.IState, input inputsusers.UpdateMetaInpu
 		return nil, err
 	}
 	for key, value := range input.Data {
-		err2 := trx.Model(&model.User{}).Where("id = ?", state.Info().UserId()).UpdateJson(&user, "metadata", key, value).Error()
+		err2 := trx.Model(&models.User{}).Where("id = ?", state.Info().UserId()).UpdateJson(&user, "metadata", key, value).Error()
 		if err2 != nil {
 			log.Println(err2)
 			trx.Reset()
@@ -174,7 +189,7 @@ func (a *Actions) Update(s abstract.IState, input inputsusers.UpdateInput) (any,
 		return nil, err2
 	}
 	return outputsusers.UpdateOutput{
-		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
+		User: models.PublicUser{Id: user.Id, Type: user.Typ, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
 	}, nil
 }
 
@@ -190,7 +205,7 @@ func (a *Actions) Get(s abstract.IState, input inputsusers.GetInput) (any, error
 		return nil, err
 	}
 	return outputsusers.GetOutput{
-		User: models.PublicUser{Id: user.Id, Type: user.Type, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
+		User: models.PublicUser{Id: user.Id, Type: user.Typ, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
 	}, nil
 }
 

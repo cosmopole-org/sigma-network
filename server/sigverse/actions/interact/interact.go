@@ -6,17 +6,14 @@ import (
 	"fmt"
 	"log"
 	"sigma/sigma/abstract"
-	module_actor_model "sigma/sigma/core/module/actor/model"
 	moduleactormodel "sigma/sigma/core/module/actor/model"
 	"sigma/sigma/layer1/adapters"
 	modulestate "sigma/sigma/layer1/module/state"
 	moduletoolbox "sigma/sigma/layer1/module/toolbox"
 	inputs_interact "sigma/sigverse/inputs/interact"
-	inputs_spaces "sigma/sigverse/inputs/spaces"
 	inputs_users "sigma/sigverse/inputs/users"
 	model "sigma/sigverse/model"
 	outputs_interact "sigma/sigverse/outputs/interact"
-	outputs_spaces "sigma/sigverse/outputs/spaces"
 	outputs_users "sigma/sigverse/outputs/users"
 	"strings"
 
@@ -73,6 +70,7 @@ func Install(s abstract.IState, a *Actions) error {
 
 // GetCode /interact/generateCode check [ true false false ] access [ true false false false GET ]
 func (a *Actions) GetCode(s abstract.IState, _ inputs_interact.GenerateCodeDto) (any, error) {
+
 	state := abstract.UseState[modulestate.IStateL1](s)
 	trx := state.Trx()
 	trx.Use()
@@ -81,7 +79,16 @@ func (a *Actions) GetCode(s abstract.IState, _ inputs_interact.GenerateCodeDto) 
 	if err != nil {
 		return nil, err
 	}
-	return outputs_interact.GetCodeOutput{Code: res}, nil
+	var code string
+	err2 := json.Unmarshal([]byte(res), &code)
+	if err2 != nil {
+		return nil, err2
+	}
+	return outputs_interact.GetCodeOutput{Code: code}, nil
+}
+
+type result struct {
+	Code string
 }
 
 // GetInviteCode /interact/getInviteCode check [ true false false ] access [ true false false false GET ]
@@ -94,7 +101,12 @@ func (a *Actions) GetInviteCode(s abstract.IState, _ inputs_interact.GenerateCod
 	if err != nil {
 		return nil, err
 	}
-	return outputs_interact.GetCodeOutput{Code: "g" + res}, nil
+	var code string
+	err2 := json.Unmarshal([]byte(res), &code)
+	if err2 != nil {
+		return nil, err2
+	}
+	return outputs_interact.GetCodeOutput{Code: "g" + code}, nil
 }
 
 // GetByCode /interact/getByCode check [ true false false ] access [ true false false false GET ]
@@ -115,62 +127,6 @@ func (a *Actions) GetByCode(s abstract.IState, input inputs_interact.GetByCodeDt
 	}
 	user = res.(outputs_users.GetOutput).User
 	return outputs_users.GetOutput{User: user}, nil
-}
-
-// Create /interact/create check [ true false false ] access [ true false false false GET ]
-func (a *Actions) Create(s abstract.IState, input inputs_interact.CreateDto) (any, error) {
-	state := abstract.UseState[modulestate.IStateL1](s)
-	trx := state.Trx()
-	trx.Use()
-	interaction, codeMap := getInteractionState(trx, state.Info().UserId(), input.UserId)
-	if codeMap[-1] {
-		interaction = model.Interaction{UserIds: getMergedUserIds(state.Info().UserId(), input.UserId)}
-		interactionState := map[string]interface{}{}
-		interactionState["areFriends"] = "true"
-		interaction.State = interactionState
-		st, err := json.Marshal(interactionState)
-		if err != nil {
-			return nil, err
-		}
-		err2 := trx.Clauses(clause.OnConflict{
-			Columns:   []clause.Column{{Name: "user_ids"}},
-			DoUpdates: clause.Assignments(map[string]interface{}{"state": string(st)}),
-		}).Create(&interaction).Error()
-		if err2 != nil {
-			return nil, err2
-		}
-	} else {
-		if interaction.State["spaceId"] != nil {
-			return nil, errors.New("you are already connected")
-		}
-	}
-	trx.Reset()
-	_, res, createGroupErr := a.Layer.Actor().FetchAction("/spaces/createGroup").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), "", ""), trx), inputs_spaces.CreateGroupInput{
-		Name: "private_space",
-	})
-	if createGroupErr != nil {
-		return nil, createGroupErr
-	}
-	groupRes := res.(outputs_spaces.CreateSpaceOutput)
-	space := groupRes.Space
-	myMember := groupRes.Member
-	topic := groupRes.Topic
-	trx.Reset()
-	_, _, addMemberErr := a.Layer.Actor().FetchAction("/spaces/addMember").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), myMember.SpaceId, ""), trx), inputs_spaces.AddMemberInput{
-		UserId:   input.UserId,
-		SpaceId:  space.Id,
-		Metadata: "",
-	})
-	if addMemberErr != nil {
-		return nil, addMemberErr
-	}
-	interaction.State["spaceId"] = space.Id
-	interaction.State["topicId"] = topic.Id
-	err2 := trx.Save(&interaction).Error()
-	if err2 != nil {
-		return nil, err2
-	}
-	return outputs_interact.InteractOutput{Interaction: interaction}, nil
 }
 
 // SendFriendRequest /interact/sendFriendRequest check [ true false false ] access [ true false false false GET ]
@@ -413,18 +369,22 @@ func (a *Actions) ReadBlockedList(s abstract.IState, input inputs_interact.ReadB
 	var users = []model.User{}
 	trx.Reset()
 	trx.Where("id in ?", ids).Find(&users)
+	trx.Reset()
 	for _, user := range users {
-		gameData := map[string]interface{}{}
-		err := trx.Model(&model.User{}).Select("metadata -> 'hokm'").Where("id = ?", user.Id).First(&gameData).Error()
+		var profileStr string
+		err := trx.Model(&model.User{}).Select("metadata -> 'hokm' -> 'profile'").Where("id = ?", user.Id).First(&profileStr).Error()
 		if err != nil {
+			log.Println(err)
 			trx.Reset()
 			continue
 		}
-		profile, ok2 := gameData["profile"]
-		if !ok2 {
-			continue
+		profile := map[string]any{}
+		err2 := json.Unmarshal([]byte(profileStr), &profile)
+		if err2 != nil {
+			log.Println(err2)
 		}
-		partiDict[user.Id].Profile = profile.(map[string]interface{})
+		partiDict[user.Id].Profile = profile
+		trx.Reset()
 	}
 	return outputs_interact.InteractsOutput{Interactions: result}, nil
 }
@@ -462,18 +422,22 @@ func (a *Actions) ReadFriendList(s abstract.IState, input inputs_interact.ReadBl
 	var users = []model.User{}
 	trx.Reset()
 	trx.Where("id in ?", ids).Find(&users)
+	trx.Reset()
 	for _, user := range users {
-		gameData := map[string]interface{}{}
-		err := trx.Model(&model.User{}).Select("metadata -> 'hokm'").Where("id = ?", user.Id).First(&gameData).Error()
+		var profileStr string
+		err := trx.Model(&model.User{}).Select("metadata -> 'hokm' -> 'profile'").Where("id = ?", user.Id).First(&profileStr).Error()
 		if err != nil {
+			log.Println(err)
 			trx.Reset()
 			continue
 		}
-		profile, ok2 := gameData["profile"]
-		if !ok2 {
-			continue
+		profile := map[string]any{}
+		err2 := json.Unmarshal([]byte(profileStr), &profile)
+		if err2 != nil {
+			log.Println(err2)
 		}
-		partiDict[user.Id].Profile = profile.(map[string]interface{})
+		partiDict[user.Id].Profile = profile
+		trx.Reset()
 	}
 	return outputs_interact.InteractsOutput{Interactions: result}, nil
 }
@@ -511,18 +475,22 @@ func (a *Actions) ReadFriendRequestList(s abstract.IState, input inputs_interact
 	var users = []model.User{}
 	trx.Reset()
 	trx.Where("id in ?", ids).Find(&users)
+	trx.Reset()
 	for _, user := range users {
-		gameData := map[string]interface{}{}
-		err := trx.Model(&model.User{}).Select("metadata -> 'hokm'").Where("id = ?", user.Id).First(&gameData).Error()
+		var profileStr string
+		err := trx.Model(&model.User{}).Select("metadata -> 'hokm' -> 'profile'").Where("id = ?", user.Id).First(&profileStr).Error()
 		if err != nil {
+			log.Println(err)
 			trx.Reset()
 			continue
 		}
-		profile, ok2 := gameData["profile"]
-		if !ok2 {
-			continue
+		profile := map[string]any{}
+		err2 := json.Unmarshal([]byte(profileStr), &profile)
+		if err2 != nil {
+			log.Println(err2)
 		}
-		partiDict[user.Id].Profile = profile.(map[string]interface{})
+		partiDict[user.Id].Profile = profile
+		trx.Reset()
 	}
 	return outputs_interact.InteractsOutput{Interactions: result}, nil
 }

@@ -6,3 +6,7 @@ type Topic struct {
 	Avatar  string `json:"avatar" gorm:"column:avatar"`
 	SpaceId string `json:"spaceId" gorm:"column:space_id"`
 }
+
+func (d Topic) Type() string {
+	return "Topic"
+}

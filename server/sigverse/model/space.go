@@ -7,3 +7,7 @@ type Space struct {
 	Avatar   string `json:"avatar" gorm:"column:avatar"`
 	IsPublic bool   `json:"isPublic" gorm:"column:is_public"`
 }
+
+func (d Space) Type() string {
+	return "Space"
+}

@@ -55,7 +55,7 @@ export default class Topics {
         body: { type: string, recvId: string, memberId: string, spaceId: string, topicId: string, data: any }
     ) {
         try {
-            const { success, result } = await this.net.safelyRequest(1, "topics/create", "POST", {
+            const { success } = await this.net.safelyRequest(1, "topics/send", "POST", {
                 "type": body.type,
                 "data": JSON.stringify(body.data),
                 "recvId": body.recvId,

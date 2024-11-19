@@ -3,6 +3,7 @@ package inputs_spaces
 type RemoveMemberInput struct {
 	MemberId string `json:"memberId" validate:"required"`
 	SpaceId  string `json:"spaceId" validate:"required"`
+	TopicId  string `json:"topicId"`
 }
 
 func (d RemoveMemberInput) GetData() any {

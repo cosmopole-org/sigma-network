@@ -7,3 +7,7 @@ type Member struct {
 	TopicId  string `json:"topicId" gorm:"column:topic_ids"`
 	Metadata string `json:"metadata" gorm:"column:metadata"`
 }
+
+func (d Member) Type() string {
+	return "Member"
+}

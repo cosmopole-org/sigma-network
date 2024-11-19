@@ -3,6 +3,7 @@ package net_http
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
 	modulemodel "sigma/sigma/layer1/model"
@@ -15,6 +16,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 type HttpServer struct {
@@ -123,6 +125,9 @@ func (hs *HttpServer) handleRequest(c *fiber.Ctx) error {
 		}
 		input = i
 	}
+	log.Println("input of request : ---------------------")
+	log.Println(input)
+	log.Println("----------------------------------------")
 	statusCode, result, err := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, token, org, requestId, input, realip.FromRequest(c.Context()))
 	if statusCode == 1 {
 		return handleResultOfFunc(c, result)
@@ -143,11 +148,17 @@ func (hs *HttpServer) Listen(port int) {
 	hs.Server.Get("/", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).Send([]byte("hello world"))
 	})
+    hs.Server.Use(recover.New())
+	hs.Server.Get("/.well-known/acme-challenge/uU81TC5JID6hR4sxcXq0-aiXv-JrkKVkfbTDNdpnyu0", func(c *fiber.Ctx) error {
+		c.Status(fiber.StatusOK).SendString("uU81TC5JID6hR4sxcXq0-aiXv-JrkKVkfbTDNdpnyu0.STrdEMUitBXXsTS69K9R85ZIe4IQBqIGDBkgJdRB1hk")
+		return nil
+	})
 	hs.Server.Use(func(c *fiber.Ctx) error {
 		return hs.handleRequest(c)
 	})
 	hs.logger.Println("Listening to rest port ", port, "...")
 	go func() {
+		// err := hs.Server.ListenTLS(fmt.Sprintf(":%d", port), "./cert.pem", "./cert.key")
 		err := hs.Server.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			hs.logger.Println(err)

@@ -13,6 +13,7 @@ import (
 	"sigma/sigma/layer1/tools/signaler"
 	"sigma/sigma/utils/crypto"
 	"sigma/sigma/utils/vaidate"
+	"sigma/sigverse/model"
 
 	"strings"
 
@@ -285,5 +286,23 @@ func New(storageRoot string, storage adapters.IStorage, cache adapters.ICache, s
 		keys:        make(map[string][][]byte),
 	}
 	s.LoadKeys()
+	go (func ()  {
+		trx := storage.CreateTrx()
+		trx.Use()
+		sessions := []model.Session{}
+		trx.Model(&model.Session{}).Find(&sessions)
+		for _, session := range sessions {
+			cache.Put("auth::" + session.Token, "human/" + session.UserId)
+		}
+		trx.Reset()
+		topics := []model.Topic{}
+		trx.Model(&model.Topic{}).Find(&topics)
+		go (func() {
+			for _, topic := range topics {
+				cache.Put(fmt.Sprintf(cityTemplate, topic.Id), topic.SpaceId)
+			}	
+		})()
+		trx.Push()			
+	})()
 	return s
 }

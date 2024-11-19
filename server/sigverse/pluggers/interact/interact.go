@@ -27,10 +27,6 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.GetByCode)
 		}
 		
-		func (c *Plugger) Create() abstract.IAction {
-			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Create)
-		}
-		
 		func (c *Plugger) SendFriendRequest() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.SendFriendRequest)
 		}

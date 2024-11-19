@@ -19,10 +19,6 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.AddMember)
 		}
 		
-		func (c *Plugger) ReadMembers() abstract.IAction {
-			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.ReadMembers)
-		}
-		
 		func (c *Plugger) RemoveMember() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.RemoveMember)
 		}
@@ -41,10 +37,6 @@
 		
 		func (c *Plugger) Get() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Get)
-		}
-		
-		func (c *Plugger) Read() abstract.IAction {
-			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Read)
 		}
 		
 		func (c *Plugger) Join() abstract.IAction {

@@ -1,5 +1,5 @@
 package outputs_auth
 
 type GetServerKeyOutput struct {
-	PublicKey string
+	PublicKey string `json:"publicKey"`
 }

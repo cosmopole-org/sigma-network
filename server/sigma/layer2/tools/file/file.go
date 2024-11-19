@@ -2,6 +2,7 @@ package tool_file
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -49,6 +50,24 @@ func (g *File) SaveFileToStorage(storageRoot string, fh *multipart.FileHeader, t
 	return nil
 }
 
+func (g *File) CheckFileFromGlobalStorage(storageRoot string, key string) bool {
+	var dirPath = storageRoot
+	if _, err := os.Stat(fmt.Sprintf("%s/%s", dirPath, key)); errors.Is(err, os.ErrNotExist) {
+		return false
+	} else {
+		return true
+	}
+}
+
+func (g *File) ReadFileFromGlobalStorage(storageRoot string, key string) (string, error) {
+	var dirPath = storageRoot
+	content, err := os.ReadFile(fmt.Sprintf("%s/%s", dirPath, key))
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
 func (g *File) SaveFileToGlobalStorage(storageRoot string, fh *multipart.FileHeader, key string, overwrite bool) error {
 	var dirPath = storageRoot
 	err := os.MkdirAll(dirPath, os.ModePerm)
@@ -68,6 +87,12 @@ func (g *File) SaveFileToGlobalStorage(storageRoot string, fh *multipart.FileHea
 	buf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(buf, f); err != nil {
 		return err
+	}
+	if g.CheckFileFromGlobalStorage(storageRoot, key) {
+		err := os.Remove(fmt.Sprintf("%s/%s", dirPath, key))
+		if err != nil {
+			g.logger.Println(err)
+		}
 	}
 	var flags = 0
 	if overwrite {

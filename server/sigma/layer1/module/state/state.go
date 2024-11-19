@@ -23,6 +23,10 @@ func (s *StateL1) Info() abstract.IInfo {
 	return s.info
 }
 
+func (s *StateL1) SetInfo(i abstract.IInfo) {
+	s.info = i
+}
+
 func (s *StateL1) Trx() adapters.ITrx {
 	return s.trx
 }

@@ -20,3 +20,7 @@ type Report struct {
 	ReporterId string `json:"reporterId" gorm:"column:reporter_id"`
 	Data       Json   `json:"data" gorm:"column:data"`
 }
+
+func (m Report) Type() string {
+	return "Message"
+}

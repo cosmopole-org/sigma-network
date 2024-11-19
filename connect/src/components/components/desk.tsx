@@ -43,23 +43,12 @@ let saveLayouts = (layouts: ReactGridLayout.Layouts) => {
 }
 
 let buildLayoutOfWorkers = () => {
-    let filtered: any[] = [];
-    cachedWorkers.forEach(w => {
-        let md = w.metadata;
-        if (md.length > 0) {
-            let obj = JSON.parse(md);
-            if (obj.secret) {
-                w.secret = obj.secret;
-                filtered.push(w);
-            }
-        }
-    })
     return {
-        lg: filtered.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
-        md: filtered.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
-        sm: filtered.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
-        xs: filtered.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
-        xxs: filtered.map((w: any) => ({ ...w.secret.grid.xxs, i: w.id, static: false }))
+        lg: cachedWorkers.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
+        md: cachedWorkers.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
+        sm: cachedWorkers.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
+        xs: cachedWorkers.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
+        xxs: cachedWorkers.map((w: any) => ({ ...w.secret.grid.xxs, i: w.id, static: false }))
     }
 }
 
@@ -88,7 +77,7 @@ const measureWidgetSize = (worker: any) => {
 
 let desktop: any = undefined
 
-export const addWidgetToSDesktop = (room: Topic, machineId: string) => {
+export const addWidgetToSDesktop = (spaceId: string, topicId: string, machineId: string) => {
     let workersMax = 0
     if (cachedWorkers.length > 0) {
         workersMax = Math.max(...cachedWorkers.map(w => w.secret.grid[sizeKey].y + w.secret.grid[sizeKey].h)) + 1
@@ -102,7 +91,7 @@ export const addWidgetToSDesktop = (room: Topic, machineId: string) => {
         }
     }
     api.sigma.services?.spaces.createMember({
-        spaceId: room.spaceId,
+        spaceId: spaceId,
         userId: machineId,
         metadata: JSON.stringify({
             secret: {
@@ -116,11 +105,20 @@ export const addWidgetToSDesktop = (room: Topic, machineId: string) => {
                 frameUrl: url
             }
         })
-    }).then((body: any) => {
-        cachedWorkers.push(body.member)
-        api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: room.spaceId } } }).exec().then((member: any) => {
-            api.sigma.services?.topics.send({ type: "single", spaceId: room.spaceId, topicId: room.id, memberId: member.id, recvId: body.member.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(body.worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-        });
+    }).then(async (body: any) => {
+        let m = body.data.member;
+        let md = m.metadata;
+        if (md.length > 0) {
+            let obj = JSON.parse(md);
+            if (obj.secret) {
+                m.secret = obj.secret;
+            }
+        }
+        cachedWorkers.push(m)
+        let member = await api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: spaceId } } }).exec();
+        if (member) {
+            api.sigma.services?.topics.send({ type: "single", spaceId: spaceId, topicId: topicId, memberId: member?.id, recvId: m.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(m), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+        }
     }).catch(ex => {
         console.log(ex)
     })
@@ -129,6 +127,7 @@ export const addWidgetToSDesktop = (room: Topic, machineId: string) => {
 const Desk = (props: { show: boolean, room: any }) => {
     const desktopWrapperRef = useRef(null)
     const [loadDesktop, setLoadDesktop] = useState(false)
+    const [trigger, setTrigger] = useState(Math.random().toString());
     const editMode = useHookstate(desktopEditMode).get({ noproxy: true })
     const DesktopHolder = useDesk(
         props.show,
@@ -176,27 +175,19 @@ const Desk = (props: { show: boolean, room: any }) => {
     //     });
     // }, [themeColorName.get({ noproxy: true })])
     useEffect(() => {
-        api.sigma.services?.topics.onPacketReceive((data: any) => {
-            if (data.type === 'get/widget') {
-                if (!desktop.appletExists(data.workerId)) {
-                    let gridData = cachedWorkers.filter(w => w.id === data.workerId)[0]?.secret?.grid
+        api.sigma.services?.topics.onPacketReceive((packet: any) => {
+            let data = packet.data;
+            if (data.tag === 'get/widget') {
+                if (!desktop.appletExists(packet.memberId)) {
+                    let gridData = cachedWorkers.filter(w => w.id === packet.member.id)[0]?.secret?.grid
                     if (gridData) {
-                        desktop.addWidget({ id: data.workerId, jsxCode: data.code, gridData: gridData[sizeKey] })
+                        desktop.addWidget({ id: packet.member.id, jsxCode: data.code, gridData: gridData[sizeKey] })
                     }
                 } else {
-                    desktop.updateWidget(data.workerId, data.code)
+                    desktop.updateWidget(packet.member.id, data.code)
                 }
             }
         });
-        api.sigma.services?.spaces.readMembers({ spaceId: props.room.spaceId }).then((body: any) => {
-            cachedWorkers = body.data.members.map((m: any) => m.member);
-            desktop.fill(buildLayoutOfWorkers())
-            cachedWorkers.forEach(worker => {
-                api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-                    api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.member.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-                });
-            })
-        })
         setTimeout(() => {
             setLoadDesktop(true)
         }, 750);
@@ -204,7 +195,31 @@ const Desk = (props: { show: boolean, room: any }) => {
             // switchSwipeable(true)
             cachedWorkers = []
         }
-    }, [])
+    }, []);
+
+    useEffect(() => {
+        api.sigma.services?.spaces.readMembers({ spaceId: props.room.spaceId }).then((body: any) => {
+            let filtered: any[] = [];
+            body.data.members.map((m: any) => m.member).forEach((w: any) => {
+                let md = w.metadata;
+                if (md.length > 0) {
+                    let obj = JSON.parse(md);
+                    if (obj.secret) {
+                        w.secret = obj.secret;
+                        filtered.push(w);
+                    }
+                }
+            });
+            cachedWorkers = filtered;
+            setTrigger(Math.random().toString());
+            desktop.fill(buildLayoutOfWorkers());
+            cachedWorkers.forEach(worker => {
+                api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
+                    api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+                });
+            })
+        })
+    }, [props.room.id]);
 
     let wd: { [id: string]: any } = {}
     cachedWorkers.forEach(worker => wd[worker.id] = worker)

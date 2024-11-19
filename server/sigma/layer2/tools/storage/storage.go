@@ -3,12 +3,14 @@ package tool_storage
 import (
 	"log"
 	"os"
+	"sigma/sigma/abstract"
 	modulelogger "sigma/sigma/core/module/logger"
 	"sigma/sigma/layer1/adapters"
+	adapters_model "sigma/sigma/layer1/adapters/model"
 	"strings"
 	"time"
 
-	datatypes "sigma/sigma/lib/datatypes"
+	datatypes "gorm.io/datatypes"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -16,13 +18,18 @@ import (
 )
 
 type StorageManager struct {
+	core        abstract.ICore
 	logger      *modulelogger.Logger
 	storageRoot string
 	db          *gorm.DB
+	chain       chan []abstract.Change
 }
 
 func (sm *StorageManager) StorageRoot() string {
 	return sm.storageRoot
+}
+func (sm *StorageManager) Db() *gorm.DB {
+	return sm.db
 }
 func (sm *StorageManager) Create(args ...interface{}) adapters.IStorage {
 	sm.db.Create(args[0])
@@ -30,6 +37,10 @@ func (sm *StorageManager) Create(args ...interface{}) adapters.IStorage {
 }
 func (sm *StorageManager) Save(args ...interface{}) adapters.IStorage {
 	sm.db.Save(args[0])
+	return sm
+}
+func (sm *StorageManager) Count(args ...interface{}) adapters.IStorage {
+	sm.db.Count(args[0].(*int64))
 	return sm
 }
 func (sm *StorageManager) Delete(args ...interface{}) adapters.IStorage {
@@ -80,6 +91,14 @@ func (sm *StorageManager) First(args ...interface{}) adapters.IStorage {
 	}
 	return sm
 }
+func (sm *StorageManager) Last(args ...interface{}) adapters.IStorage {
+	if len(args) > 1 {
+		sm.db.Last(args[0], args[1:]...)
+	} else {
+		sm.db.Last(args[0])
+	}
+	return sm
+}
 func (sm *StorageManager) AutoMigrate(args ...interface{}) error {
 	return sm.db.AutoMigrate(args...)
 }
@@ -89,7 +108,7 @@ func (sm *StorageManager) UpdateJson(entity any, column string, pathDot string, 
 	var finalValue = value
 	if entity == nil {
 		sm.db.UpdateColumn(column, datatypes.JSONSet(column).Set(path, finalValue))
-		return sm	
+		return sm
 	}
 	for i := 1; i < len(pathParts); i++ {
 		err := sm.db.First(entity, datatypes.JSONQuery(column).HasKey(pathParts[0:i]...)).Error
@@ -98,12 +117,12 @@ func (sm *StorageManager) UpdateJson(entity any, column string, pathDot string, 
 			path = "{" + strings.Join(pathParts[0:i], ",") + "}"
 			root := map[string]interface{}{}
 			rootTemp := root
-			for j := i; j < len(pathParts) - 1; j++ {
+			for j := i; j < len(pathParts)-1; j++ {
 				next := map[string]interface{}{}
 				rootTemp[pathParts[j]] = next
 				rootTemp = next
 			}
-			rootTemp[pathParts[len(pathParts) - 1]] = value
+			rootTemp[pathParts[len(pathParts)-1]] = value
 			finalValue = root
 			break
 		} else {
@@ -119,15 +138,18 @@ func (sm *StorageManager) Model(args ...interface{}) adapters.IStorage {
 }
 
 func (sm *StorageManager) CreateTrx() adapters.ITrx {
-	return &TrxWrapper{trx: sm.db, db: sm.db, used: false}
+	return &TrxWrapper{core: sm.core, trx: sm.db, db: sm.db, used: false, changes: []abstract.Change{}, chain: sm.chain}
 }
 
 type TrxWrapper struct {
-	db   *gorm.DB
-	bTrx *gorm.DB
-	trx  *gorm.DB
-	err  error
-	used bool
+	chain   chan []abstract.Change
+	core    abstract.ICore
+	db      *gorm.DB
+	bTrx    *gorm.DB
+	trx     *gorm.DB
+	err     error
+	used    bool
+	changes []abstract.Change
 }
 
 func (sm *TrxWrapper) Error() error {
@@ -152,7 +174,10 @@ func (sm *TrxWrapper) Use() {
 func (sm *TrxWrapper) Used() bool {
 	return sm.used
 }
-func (sm *TrxWrapper) Push() {
+
+func (sm *TrxWrapper) Push(options ...bool) {
+	sm.Reset()
+	//sm.chain <- sm.changes
 	sm.trx.Commit()
 }
 func (sm *TrxWrapper) Revert() {
@@ -166,31 +191,43 @@ func (sm *TrxWrapper) Clauses(args ...interface{}) adapters.ITrx {
 	sm.trx = sm.trx.Clauses(convertedArr...)
 	return sm
 }
-func (sm *TrxWrapper) UpdateJson(entity any, column string, pathDot string, value any) adapters.ITrx {
+func (sm *TrxWrapper) UpdateJson(entity abstract.IModel, column string, pathDot string, value any) adapters.ITrx {
+	log.Println("-----------------------------")
+	log.Println(entity)
+	log.Println(column)
+	log.Println(pathDot)
+	log.Println(value)
+	log.Println("-----------------------------")
 	sm.err = nil
-	pathParts := strings.Split(pathDot, ".")
-	path := "{" + strings.Join(pathParts, ",") + "}"
 	var finalValue = value
 	trx := sm.trx
 	sm.Reset()
+	object := abstract.JsonUpdate{Entity: entity, Column: column, Path: pathDot, Value: value}
+	sm.changes = append(sm.changes, abstract.Change{Method: "update-json", Typ: object.Type(), Model: object})
+	if pathDot == "" {
+		sm.err = trx.UpdateColumn(column, finalValue).Error
+		sm.trx = trx
+		return sm
+	}
+	pathParts := strings.Split(pathDot, ".")
+	path := "{" + strings.Join(pathParts, ",") + "}"
 	if entity == nil {
 		sm.err = trx.UpdateColumn(column, datatypes.JSONSet(column).Set(path, finalValue)).Error
 		sm.trx = trx
-		return sm	
+		return sm
 	}
 	for i := 1; i < len(pathParts); i++ {
 		err := sm.trx.First(entity, datatypes.JSONQuery(column).HasKey(pathParts[0:i]...)).Error
 		if err != nil {
-			log.Println(err, i)
 			path = "{" + strings.Join(pathParts[0:i], ",") + "}"
 			root := map[string]interface{}{}
 			rootTemp := root
-			for j := i; j < len(pathParts) - 1; j++ {
+			for j := i; j < len(pathParts)-1; j++ {
 				next := map[string]interface{}{}
 				rootTemp[pathParts[j]] = next
 				rootTemp = next
 			}
-			rootTemp[pathParts[len(pathParts) - 1]] = value
+			rootTemp[pathParts[len(pathParts)-1]] = value
 			finalValue = root
 			sm.Reset()
 			break
@@ -199,15 +236,18 @@ func (sm *TrxWrapper) UpdateJson(entity any, column string, pathDot string, valu
 			sm.Reset()
 		}
 	}
-	log.Println(column, path, finalValue)
 	sm.err = trx.UpdateColumn(column, datatypes.JSONSet(column).Set(path, finalValue)).Error
 	sm.trx = trx
 	return sm
 }
-func (sm *TrxWrapper) Create(args ...interface{}) adapters.ITrx {
-	log.Println(sm.trx.Error, sm.err)
+func (sm *TrxWrapper) SaveDataUnit(arg *adapters_model.DataUnit) adapters.ITrx {
+	sm.changes = append(sm.changes, abstract.Change{Method: "create", Typ: arg.Type(), Model: arg})
+	return sm.Create(arg)
+}
+func (sm *TrxWrapper) Create(arg abstract.IModel) adapters.ITrx {
+	sm.changes = append(sm.changes, abstract.Change{Method: "create", Typ: arg.Type(), Model: arg})
 	sm.err = nil
-	sm.err = sm.trx.Create(args[0]).Error
+	sm.err = sm.trx.Create(arg).Error
 	log.Println(sm.trx.Error, sm.err)
 	return sm
 }
@@ -239,18 +279,16 @@ func (sm *TrxWrapper) Or(args ...interface{}) adapters.ITrx {
 	sm.err = sm.trx.Error
 	return sm
 }
-func (sm *TrxWrapper) Save(args ...interface{}) adapters.ITrx {
+func (sm *TrxWrapper) Save(arg abstract.IModel) adapters.ITrx {
+	sm.changes = append(sm.changes, abstract.Change{Method: "update", Typ: arg.Type(), Model: arg})
 	sm.err = nil
-	sm.err = sm.trx.Save(args[0]).Error
+	sm.err = sm.trx.Save(arg).Error
 	return sm
 }
-func (sm *TrxWrapper) Delete(args ...interface{}) adapters.ITrx {
+func (sm *TrxWrapper) Delete(arg abstract.IModel) adapters.ITrx {
+	sm.changes = append(sm.changes, abstract.Change{Method: "delete", Typ: arg.Type(), Model: arg})
 	sm.err = nil
-	if len(args) > 1 {
-		sm.trx.Delete(args[0], args[1:]...)
-	} else {
-		sm.trx.Delete(args[0])
-	}
+	sm.trx.Delete(arg)
 	sm.err = sm.trx.Error
 	return sm
 }
@@ -300,11 +338,23 @@ func (sm *TrxWrapper) First(args ...interface{}) adapters.ITrx {
 	sm.err = sm.trx.Error
 	return sm
 }
+func (sm *TrxWrapper) Last(args ...interface{}) adapters.ITrx {
+	sm.err = nil
+	if len(args) > 1 {
+		sm.trx.Last(args[0], args[1:]...)
+	} else {
+		sm.trx.Last(args[0])
+	}
+	sm.err = sm.trx.Error
+	return sm
+}
 func (sm *TrxWrapper) AutoMigrate(args ...interface{}) error {
 	return sm.trx.AutoMigrate(args...)
 }
 
-func NewStorage(logger2 *modulelogger.Logger, storageRoot string, dialector gorm.Dialector) *StorageManager {
+// var blockCount = int64(0)
+
+func NewStorage(core abstract.ICore, logger2 *modulelogger.Logger, storageRoot string, dialector gorm.Dialector, chain chan []abstract.Change) *StorageManager {
 	logger2.Println("connecting to database...")
 	newLogger := logger.New(
 		log.New(os.Stdout, "\r\n", log.LstdFlags), // tools writer
@@ -322,5 +372,5 @@ func NewStorage(logger2 *modulelogger.Logger, storageRoot string, dialector gorm
 	if err != nil {
 		panic("failed to connect database")
 	}
-	return &StorageManager{db: db, storageRoot: storageRoot, logger: logger2}
+	return &StorageManager{core: core, db: db, storageRoot: storageRoot, logger: logger2, chain: chain}
 }

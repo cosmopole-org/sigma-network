@@ -55,7 +55,7 @@ export default class Spaces {
             });
             if (success) {
                 let member = result.member;
-                this.store.db.members.upsert(member);
+                await this.store.db.members.upsert(member);
                 return { success: true, data: { member } };
             } else {
                 return { success: false, data: { error: result.toString() } };
@@ -91,7 +91,7 @@ export default class Spaces {
             const { success, result } = await this.net.safelyRequest(1, "spaces/create", "POST", {
                 "title": body.title,
                 "avatar": genRandAvatar(),
-                "isPublic": body.isPublic,
+                "isPublic": true,
                 "tag": body.title
             });
             if (success) {

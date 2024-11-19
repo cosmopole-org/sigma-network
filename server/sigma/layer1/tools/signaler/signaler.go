@@ -6,6 +6,7 @@ import (
 	"sigma/sigma/layer1/adapters"
 	models "sigma/sigma/layer1/model"
 	"strings"
+	"sync"
 
 	cmap "github.com/orcaman/concurrent-map/v2"
 )
@@ -21,6 +22,7 @@ type Group struct {
 }
 
 type Signaler struct {
+	Lock           sync.Mutex
 	appId          string
 	Listeners      map[string]*models.Listener
 	Groups         *cmap.ConcurrentMap[string, *Group]
@@ -32,7 +34,9 @@ type Signaler struct {
 }
 
 func (p *Signaler) ListenToSingle(listener *models.Listener) {
+	p.Lock.Lock()
 	p.Listeners[listener.Id] = listener
+	p.Lock.Unlock()
 }
 
 func (p *Signaler) ListenToGroup(listener *models.Listener, overrideFunctionaly bool) {
@@ -51,8 +55,15 @@ func (p *Signaler) ListenToJoin(listener *models.JoinListener) {
 }
 
 func (p *Signaler) SignalUser(key string, respondToId string, listenerId string, data any, pack bool) {
+	if !strings.Contains(listenerId, "@") {
+		return
+	}
+	var isVm = false
+	if listenerId[0:2] == "b_" {
+		isVm = true
+	}
 	origin := strings.Split(listenerId, "@")[1]
-	if origin == p.appId {
+	if origin == p.appId || isVm {
 		listener := p.Listeners[listenerId]
 		if listener != nil {
 			if pack {
@@ -130,8 +141,15 @@ func (p *Signaler) SignalGroup(key string, groupId string, data any, pack bool, 
 		var foreignersMap = map[string][]string{}
 		for t := range group.Points.IterBuffered() {
 			userId := t.Val
+			if !strings.Contains(userId, "@") {
+				continue
+			}
+			var isVm = false
+			if userId[0:2] == "b_" {
+				isVm = true
+			}
 			userOrigin := strings.Split(userId, "@")[1]
-			if userOrigin == p.appId {
+			if (userOrigin == p.appId) || isVm {
 				if !p.LGroupDisabled || !group.Override {
 					if !excepDict[t.Key] {
 						var listener = p.Listeners[userId]

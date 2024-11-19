@@ -19,6 +19,10 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Hello)
 		}
 		
+		func (c *Plugger) Time() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Time)
+		}
+		
 		func (c *Plugger) Ping() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Ping)
 		}

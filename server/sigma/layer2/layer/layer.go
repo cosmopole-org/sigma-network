@@ -1,15 +1,17 @@
 package layer
 
 import (
-	"gorm.io/gorm"
 	"sigma/sigma/abstract"
 	moduleactor "sigma/sigma/core/module/actor"
 	modulelogger "sigma/sigma/core/module/logger"
 	toolbox2 "sigma/sigma/layer1/module/toolbox"
 	modulemodel "sigma/sigma/layer2/model"
 	toolcache "sigma/sigma/layer2/tools/cache"
+	tool_chain "sigma/sigma/layer2/tools/chain"
 	toolfile "sigma/sigma/layer2/tools/file"
 	toolstorage "sigma/sigma/layer2/tools/storage"
+
+	"gorm.io/gorm"
 )
 
 type Layer struct {
@@ -29,10 +31,11 @@ func (l *Layer) Core() abstract.ICore {
 
 func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{} {
 	l.core = core
-	storage := toolstorage.NewStorage(args[0].(*modulelogger.Logger), args[1].(string), args[2].(gorm.Dialector))
+	chain := tool_chain.NewChain(core, args[0].(*modulelogger.Logger))
+	storage := toolstorage.NewStorage(core, args[0].(*modulelogger.Logger), args[1].(string), args[2].(gorm.Dialector), chain.TrxQueue)
 	cache := toolcache.NewCache(args[0].(*modulelogger.Logger), args[3].(string))
 	file := toolfile.NewFileTool(args[0].(*modulelogger.Logger))
-	l.toolbox = modulemodel.NewTools(core, args[0].(*modulelogger.Logger), args[1].(string), storage, cache, file)
+	l.toolbox = modulemodel.NewTools(core, args[0].(*modulelogger.Logger), args[1].(string), storage, cache, file, chain)
 	return []interface{}{
 		args[0],
 		storage,
@@ -44,6 +47,7 @@ func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{}
 func (l *Layer) ForFill(_ abstract.ICore, args ...interface{}) {
 	toolbox := abstract.UseToolbox[*modulemodel.ToolboxL2](l.toolbox)
 	toolbox.ToolboxL1 = abstract.UseToolbox[*toolbox2.ToolboxL1](args[0])
+	toolbox.Chain().Run(toolbox.Storage().Db())
 }
 
 func (l *Layer) Index() int {

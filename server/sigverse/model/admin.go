@@ -6,3 +6,7 @@ type Admin struct {
 	SpaceId string `json:"spaceId" gorm:"column:space_id"`
 	Role    string `json:"role" gorm:"column:role"`
 }
+
+func (d Admin) Type() string {
+	return "Admin"
+}

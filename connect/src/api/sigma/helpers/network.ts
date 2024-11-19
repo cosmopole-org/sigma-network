@@ -14,7 +14,7 @@ export default class Network {
             console.log("[open] Connection established");
             console.log("Sending to server");
             setInterval(() => {
-                this.send("KeepAlive");
+                this.send(`authenticate ${"EMPTY_TOKEN"} EMPTY`);
                 console.log("sent keepalive packet.");
             }, 5000);
             that.authenticate();
@@ -39,6 +39,7 @@ export default class Network {
                     let packet = JSON.parse(body);
                     let cb = that.wsHooks[a[1]];
                     if (cb) {
+                        packet.data = JSON.parse(packet.data);
                         Object.values(cb).forEach(fn => {
                             fn(packet);
                         })

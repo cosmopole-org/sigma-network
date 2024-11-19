@@ -3,6 +3,7 @@ package inputs_spaces
 type AddMemberInput struct {
 	UserId   string `json:"userId" validate:"required"`
 	SpaceId  string `json:"spaceId" validate:"required"`
+	TopicId  string `json:"topicId"`
 	Metadata string `json:"metadata" validate:"required"`
 }
 

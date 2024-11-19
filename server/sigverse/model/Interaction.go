@@ -21,9 +21,13 @@ type Interaction struct {
 	State   Json   `json:"state" gorm:"column:state"`
 }
 
+func (d Interaction) Type() string {
+	return "Interaction"
+}
+
 type PreparedInteraction struct {
-	UserId   string                 `json:"userId"`
-	Profile  map[string]interface{} `json:"profile"`
-	IsOnline bool                   `json:"isOnline"`
-	State    Json                   `json:"state"`
+	UserId   string         `json:"userId"`
+	Profile  map[string]any `json:"profile"`
+	IsOnline bool           `json:"isOnline"`
+	State    Json           `json:"state"`
 }
