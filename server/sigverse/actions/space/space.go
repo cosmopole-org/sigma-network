@@ -3,6 +3,7 @@ package actions_space
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sigma/sigma/abstract"
 	module_actor_model "sigma/sigma/core/module/actor/model"
 	"sigma/sigma/layer1/adapters"
@@ -19,7 +20,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-const memberTemplate = "member::%s::%s"
+const memberTemplate = "member::%s::%s::%s"
 
 type Actions struct {
 	Layer abstract.ILayer
@@ -52,11 +53,11 @@ func Install(s abstract.IState, a *Actions) error {
 		trx.Reset()
 		var members []models.Member
 		trx.Model(&models.Member{}).Find(&members)
-		go (func ()  {
+		go (func() {
 			for _, member := range members {
-				toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+				toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 				toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
-			}				
+			}
 		})()
 		return nil
 	}
@@ -79,7 +80,7 @@ func Install(s abstract.IState, a *Actions) error {
 	var members []models.Member
 	trx.Model(&models.Member{}).Find(&members)
 	for _, member := range members {
-		toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+		toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 		toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	}
 
@@ -107,7 +108,7 @@ func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput
 	if err2 != nil {
 		return nil, err2
 	}
-	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
 	toolbox.Signaler().SignalUser("spaces/addMemberMe", "", member.UserId, updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true)
 	go toolbox.Signaler().SignalGroup("spaces/addMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true, []string{state.Info().UserId()})
@@ -129,10 +130,10 @@ func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberIn
 	}
 	trx.Reset()
 	ids := []string{}
-	memberDict := map[string]models.Member{}
+	memberDict := map[string]string{}
 	for _, member := range members {
 		ids = append(ids, member.UserId)
-		memberDict[member.UserId] = member
+		memberDict[member.Id] = member.UserId
 	}
 	var users []models.User
 	err2 := trx.Model(&models.User{}).Where("id in ?", ids).Find(&users).Error()
@@ -140,8 +141,9 @@ func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberIn
 		return nil, err2
 	}
 	memberUsers := []outputsspaces.MemberUser{}
+	userDict := map[string]models.PublicUser{}
 	for _, user := range users {
-		u := models.PublicUser{
+		userDict[user.Id] = models.PublicUser{
 			Id:        user.Id,
 			Type:      user.Typ,
 			Name:      user.Name,
@@ -149,7 +151,9 @@ func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberIn
 			Username:  user.Username,
 			PublicKey: user.PublicKey,
 		}
-		memberUsers = append(memberUsers, outputsspaces.MemberUser{User: u, Member: memberDict[user.Id]})
+	}
+	for _, member := range members {
+		memberUsers = append(memberUsers, outputsspaces.MemberUser{ User: userDict[memberDict[member.Id]], Member: member})
 	}
 	return outputsspaces.ReadMemberOutput{Members: memberUsers}, nil
 }
@@ -166,23 +170,27 @@ func (a *Actions) RemoveMember(s abstract.IState, input inputsspaces.RemoveMembe
 	if err != nil {
 		return nil, err
 	}
+	trx.Reset()
 	member = models.Member{Id: input.MemberId}
 	err2 := trx.First(&member).Error()
 	if err2 != nil {
 		return nil, err2
 	}
-	ti := state.Info().TopicId()
+	ti := input.TopicId
 	if ti == "" {
 		ti = "*"
 	}
+	log.Println(member)
+	log.Println(ti)
 	if ti != member.TopicId {
 		return nil, errors.New("topic id does not match")
 	}
+	trx.Reset()
 	err3 := trx.Delete(&member).Error()
 	if err3 != nil {
 		return nil, err3
 	}
-	toolbox.Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId))
+	toolbox.Cache().Del(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id))
 	toolbox.Signaler().LeaveGroup(member.SpaceId, state.Info().UserId())
 	go toolbox.Signaler().SignalGroup("spaces/removeMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: ti, Member: member}, true, []string{state.Info().UserId()})
 	return outputsspaces.AddMemberOutput{Member: member}, nil
@@ -221,7 +229,7 @@ func (a *Actions) Create(s abstract.IState, input inputsspaces.CreateInput) (any
 	}
 	toolbox.Cache().Put(fmt.Sprintf("city::%s", topic.Id), topic.SpaceId)
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 	toolbox.Signaler().SignalUser("spaces/addMemberMe", "", member.UserId, updatesspaces.AddMember{SpaceId: space.Id, TopicId: topic.Id, Member: member}, true)
 	return outputsspaces.CreateOutput{Space: space, Member: member, Topic: topic}, nil
 }
@@ -327,7 +335,7 @@ func (a *Actions) Join(s abstract.IState, input inputsspaces.JoinInput) (any, er
 		return nil, err2
 	}
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 	go toolbox.Signaler().SignalGroup("spaces/join", member.SpaceId, updatesspaces.Join{Member: member}, true, []string{member.UserId})
 	return outputsspaces.JoinOutput{Member: member}, nil
 }

@@ -1,22 +1,26 @@
-import { CircularProgress, Paper, Typography } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
-import Desktop, { columnsDict, rowHeight, sizeKey } from './desktop';
-import useDesk from "./use-desk";
-import { hookstate, useHookstate } from "@hookstate/core";
-import AppHostUtils from './applet-host';
 import { api } from "@/index";
-import { Topic } from "@/api/sigma/models";
-import { Document } from "@/api/sigma/models/member";
 import { colors } from "@nextui-org/theme";
+import { States } from "@/api/client/states";
+import * as RGL from "react-grid-layout";
+import 'react-grid-layout/css/styles.css'
+import 'react-resizable/css/styles.css'
+import IconButton from "../elements/icon-button";
+import AppletHost from "./applet-host";
 
-let cachedWorkers: Array<any> = []
+const ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
+export const rowHeight = 8
+export const columnsDict: { [id: string]: number } = { lg: 14, md: 12, sm: 10, xs: 6, xxs: 4 }
+export let sizeKey = window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'
+window.onresize = () => {
+    sizeKey = window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'
+}
 
-let saveLayouts = (layouts: ReactGridLayout.Layouts) => {
+let saveLayouts = (bots: { [id: string]: any }, layouts: ReactGridLayout.Layouts) => {
     let updates: Array<any> = []
-    let workersDict: { [id: string]: any } = {}
-    cachedWorkers?.forEach((worker: any) => { workersDict[worker.id] = worker });
     layouts.lg.map(sampleItem => sampleItem.i).forEach(itemId => {
-        let worker = workersDict[itemId]
+        let worker = bots[itemId]
         let anyNew = false
         Object.keys(layouts).forEach(layoutKey => {
             let item = layouts[layoutKey].filter(item => item.i === itemId)[0]
@@ -42,19 +46,18 @@ let saveLayouts = (layouts: ReactGridLayout.Layouts) => {
     return updates
 }
 
-let buildLayoutOfWorkers = () => {
+let buildLayoutOfWorkers = (workers: any[]) => {
     return {
-        lg: cachedWorkers.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
-        md: cachedWorkers.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
-        sm: cachedWorkers.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
-        xs: cachedWorkers.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
-        xxs: cachedWorkers.map((w: any) => ({ ...w.secret.grid.xxs, i: w.id, static: false }))
+        lg: workers.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
+        md: workers.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
+        sm: workers.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
+        xs: workers.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
+        xxs: workers.map((w: any) => ({ ...w.secret.grid.xxs, i: w.id, static: false }))
     }
 }
 
-export let desktopEditMode = hookstate(false)
-const measureWidgetSize = (worker: any) => {
-    let rowWorkersCount = cachedWorkers.filter(w => {
+const measureWidgetSize = (bots: { [id: string]: any }, worker: any) => {
+    let rowWorkersCount = Object.values(bots).filter(w => {
         return (
             (
                 w.secret.grid[sizeKey].y >= worker.secret.grid[sizeKey].y &&
@@ -75,116 +78,94 @@ const measureWidgetSize = (worker: any) => {
     return widSize
 }
 
-let desktop: any = undefined
-
-export const addWidgetToSDesktop = (spaceId: string, topicId: string, machineId: string) => {
-    let workersMax = 0
-    if (cachedWorkers.length > 0) {
-        workersMax = Math.max(...cachedWorkers.map(w => w.secret.grid[sizeKey].y + w.secret.grid[sizeKey].h)) + 1
-    }
-    let unit = window.innerWidth / columnsDict[sizeKey] - 16
-    let url = "";
-    if (machineId === "5c23a6dea8c7e58ec93459e85bb64de8") {
-        let str = prompt("input the url to embed:");
-        if (str) {
-            url = str;
-        }
-    }
-    api.sigma.services?.spaces.createMember({
-        spaceId: spaceId,
-        userId: machineId,
-        metadata: JSON.stringify({
-            secret: {
-                grid: {
-                    lg: { x: 0, y: workersMax, w: 2, h: unit / 8 },
-                    md: { x: 0, y: workersMax, w: 2, h: unit / 8 },
-                    sm: { x: 0, y: workersMax, w: 2, h: unit / 8 },
-                    xs: { x: 0, y: workersMax, w: 2, h: unit / 8 },
-                    xxs: { x: 0, y: workersMax, w: 2, h: unit / 8 }
-                },
-                frameUrl: url
-            }
-        })
-    }).then(async (body: any) => {
-        let m = body.data.member;
-        let md = m.metadata;
-        if (md.length > 0) {
-            let obj = JSON.parse(md);
-            if (obj.secret) {
-                m.secret = obj.secret;
-            }
-        }
-        cachedWorkers.push(m)
-        let member = await api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: spaceId } } }).exec();
-        if (member) {
-            api.sigma.services?.topics.send({ type: "single", spaceId: spaceId, topicId: topicId, memberId: member?.id, recvId: m.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(m), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-        }
-    }).catch(ex => {
-        console.log(ex)
-    })
-}
+export let addWidgetToSDesktop = async (spaceId: string, topicId: string, machineId: string): Promise<any> => { };
 
 const Desk = (props: { show: boolean, room: any }) => {
-    const desktopWrapperRef = useRef(null)
+    const [bots, setBots] = useState<{ [id: string]: any }>({});
+    const deskLayout = useRef<any>({});
     const [loadDesktop, setLoadDesktop] = useState(false)
+    const editMode = States.useListener(States.store.boardEditingMode)
     const [trigger, setTrigger] = useState(Math.random().toString());
-    const editMode = useHookstate(desktopEditMode).get({ noproxy: true })
-    const DesktopHolder = useDesk(
-        props.show,
-        editMode,
-        (layouts: ReactGridLayout.Layouts) => {
-            saveLayouts(layouts).forEach((worker: any) => {
-                //api.sigma.services?.spaces.update({ towerId: props.room.towerId, roomId: props.room.id, worker })
-                api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-                    api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.member.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-                });
+    const rerender = () => {
+        setTrigger(Math.random().toString());
+    }
+    addWidgetToSDesktop = async (spaceId: string, topicId: string, machineId: string): Promise<any> => {
+        let workersMax = 0
+        let workers = Object.values(bots);
+        if (workers.length > 0) {
+            workersMax = Math.max(...workers.map(w => w.secret.grid[sizeKey].y + w.secret.grid[sizeKey].h)) + 1
+        }
+        let unit = window.innerWidth / columnsDict[sizeKey] - 16
+        let url = "";
+        if (machineId === "5c23a6dea8c7e58ec93459e85bb64de8") {
+            let str = prompt("input the url to embed:");
+            if (str) {
+                url = str;
+            }
+        }
+        api.sigma.services?.spaces.createMember({
+            spaceId: spaceId,
+            userId: machineId,
+            metadata: JSON.stringify({
+                secret: {
+                    grid: {
+                        lg: { x: 0, y: workersMax, w: 2, h: unit / 8 },
+                        md: { x: 0, y: workersMax, w: 2, h: unit / 8 },
+                        sm: { x: 0, y: workersMax, w: 2, h: unit / 8 },
+                        xs: { x: 0, y: workersMax, w: 2, h: unit / 8 },
+                        xxs: { x: 0, y: workersMax, w: 2, h: unit / 8 }
+                    },
+                    frameUrl: url
+                }
             })
-        },
-        () => buildLayoutOfWorkers()
-    )
-    desktop = DesktopHolder.desktop
+        }).then(async (body: any) => {
+            let m = body.data.member;
+            let md = m.metadata;
+            if (md.length > 0) {
+                let obj = JSON.parse(md);
+                if (obj.secret) {
+                    m.secret = obj.secret;
+                }
+            }
+            bots[m.id] = m;
+            setBots({ ...bots });
+            setTimeout(() => {
+                deskLayout.current = buildLayoutOfWorkers(Object.values(bots));
+                rerender();
+                api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: spaceId } } }).exec().then(member => {
+                    if (member) {
+                        api.sigma.services?.topics.send({ type: "single", spaceId: spaceId, topicId: topicId, memberId: member?.id, recvId: m.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(bots, m), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+                    }
+                });
+            });
+        }).catch(ex => {
+            console.log(ex)
+        })
+    }
     useEffect(() => {
-        // switchSwipeable(!editMode)
-    }, [editMode])
-    // useEffect(() => {
-    //     desktop.clear()
-    //     AppHostUtils.unloadAllHosts()
-    //     setTimeout(() => {
-    //         api.sigma.services?.topics.onPacketReceive((data: any) => {
-    //             if (data.type === 'get/widget') {
-    //                 metadataRef.current[data.workerId] = { onClick: data.onClick }
-    //                 if (!desktop.appletExists(data.workerId)) {
-    //                     let gridData = cachedWorkers.filter(w => w.id === data.workerId)[0]?.secret?.grid
-    //                     if (gridData) {
-    //                         desktop.addWidget({ id: data.workerId, jsxCode: data.code, gridData: gridData[sizeKey] })
-    //                     }
-    //                 } else {
-    //                     desktop.updateWidget(data.workerId, data.code)
-    //                 }
-    //             }
-    //         })
-    //         api.sigma.services?.spaces.readMembers({ spaceId: props.room.towerId }).then((body: any) => {
-    //             cachedWorkers = body.workers
-    //             desktop.fill(buildLayoutOfWorkers())
-    //             cachedWorkers.forEach(worker => {
-    // api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-    //                     api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.member.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-    //                 });
-    //             })
-    //         })
-    //     });
-    // }, [themeColorName.get({ noproxy: true })])
-    useEffect(() => {
-        api.sigma.services?.topics.onPacketReceive((packet: any) => {
+        let packetReceiver = api.sigma.services?.topics.onPacketReceive((packet: any) => {
             let data = packet.data;
             if (data.tag === 'get/widget') {
-                if (!desktop.appletExists(packet.memberId)) {
-                    let gridData = cachedWorkers.filter(w => w.id === packet.member.id)[0]?.secret?.grid
-                    if (gridData) {
-                        desktop.addWidget({ id: packet.member.id, jsxCode: data.code, gridData: gridData[sizeKey] })
+                console.log(bots);
+                if (bots[packet.member.id]) {
+                    if (!bots[packet.member.id].code) {
+                        bots[packet.member.id].code = data.code;
+                        setBots({ ...bots });
+                        rerender();
                     }
                 } else {
-                    desktop.updateWidget(packet.member.id, data.code)
+                    let m = packet.targetMember;
+                    let md = m.metadata;
+                    if (md.length > 0) {
+                        let obj = JSON.parse(md);
+                        if (obj.secret) {
+                            m.secret = obj.secret;
+                        }
+                    }
+                    bots[packet.member.id] = m;
+                    bots[packet.member.id].code = data.code;
+                    setBots({ ...bots });
+                    rerender();
                 }
             }
         });
@@ -192,69 +173,156 @@ const Desk = (props: { show: boolean, room: any }) => {
             setLoadDesktop(true)
         }, 750);
         return () => {
-            // switchSwipeable(true)
-            cachedWorkers = []
+            packetReceiver?.remove();
         }
     }, []);
 
     useEffect(() => {
         api.sigma.services?.spaces.readMembers({ spaceId: props.room.spaceId }).then((body: any) => {
-            let filtered: any[] = [];
+            let filtered: { [id: string]: any } = {};
             body.data.members.map((m: any) => m.member).forEach((w: any) => {
                 let md = w.metadata;
                 if (md.length > 0) {
                     let obj = JSON.parse(md);
                     if (obj.secret) {
                         w.secret = obj.secret;
-                        filtered.push(w);
+                        filtered[w.id] = w;
+                        bots[w.id] = w;
                     }
                 }
             });
-            cachedWorkers = filtered;
-            setTrigger(Math.random().toString());
-            desktop.fill(buildLayoutOfWorkers());
-            cachedWorkers.forEach(worker => {
-                api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-                    api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
-                });
-            })
+            deskLayout.current = buildLayoutOfWorkers(Object.values(filtered));
+            setBots({ ...bots });
+            rerender();
+            setTimeout(() => {
+                Object.values(filtered).forEach(worker => {
+                    api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
+                        api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(bots, worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+                    });
+                })
+            });
         })
     }, [props.room.id]);
 
-    let wd: { [id: string]: any } = {}
-    cachedWorkers.forEach(worker => wd[worker.id] = worker)
     return (
         <div
             style={{ width: '100%', height: '100%', position: 'relative' }}
         >
             <div
-                ref={desktopWrapperRef}
                 style={{ width: '100%', height: '100%', position: 'relative', overflowY: 'auto' }}
             >
-                <Desktop.Host
-                    workersDict={wd}
-                    room={props.room}
-                    showDesktop={loadDesktop}
-                    editMode={editMode}
-                    style={{ width: window.innerWidth, marginTop: 32 }}
-                    desktopKey={desktop.key}
-                    onWidgetClick={(workerId: string) => {
-                        // let onClickOfMetadata = metadataRef.current[workerId]?.onClick
-                        // if (onClickOfMetadata) {
-                        //     overlaySafezoneData.set({ code: onClickOfMetadata.code, workerId, room: props.room })
-                        // } else {
-                        //     openAppletSheet(props.room, workerId)
-                        // }
-                    }}
-                    onWidgetRemove={(workerId: string) => {
-                        if (window.confirm('do you to delete this widget ?')) {
-                            // api.services.worker.remove({ towerId: props.room.towerId, roomId: props.room.id, workerId }).then((body: any) => {
-                            //     cachedWorkers = cachedWorkers.filter(w => w.id !== workerId)
-                            //     desktop.removeWidget(workerId)
-                            // })
-                        }
-                    }}
-                />
+                {
+                    deskLayout.current.lg ?
+                        <ResponsiveReactGridLayout
+                            key={props.room.id}
+                            className="layout"
+                            style={{ width: window.innerWidth, marginTop: 32, minWidth: window.innerWidth + 'px', display: loadDesktop ? 'block' : 'hidden', paddingBottom: 200 }}
+                            cols={{ lg: 14, md: 12, sm: 10, xs: 6, xxs: 4 }}
+                            rowHeight={rowHeight}
+                            width={window.innerWidth}
+                            layouts={structuredClone(deskLayout.current)}
+                            isDraggable={editMode}
+                            isResizable={editMode}
+                            draggableCancel=".cancelSelectorName"
+                            draggableHandle=".drag-handle"
+                            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+                            onLayoutChange={(currentLayout: RGL.Layout[], layouts: RGL.Layouts) => {
+                                let updates: Array<any> = []
+                                const oldLayouts = deskLayout.current;
+                                let clonedLayouts = structuredClone(layouts)
+                                for (let sizeKey in oldLayouts) {
+                                    let dict: { [id: string]: RGL.Layout } = {}
+                                    for (let i = 0; i < oldLayouts[sizeKey].length; i++) {
+                                        let item = oldLayouts[sizeKey][i]
+                                        dict[item.i] = item
+                                    }
+                                    clonedLayouts[sizeKey].forEach((item: RGL.Layout) => {
+                                        let oldItem = dict[item.i]
+                                        if (oldItem) {
+                                            if (JSON.stringify(item) !== JSON.stringify(oldItem)) {
+                                                updates.push({ sizeKey, item, __action__: 'updated' })
+                                            }
+                                        } else {
+                                            updates.push({ sizeKey, item, __action__: 'created' })
+                                        }
+                                    })
+                                }
+                                deskLayout.current = clonedLayouts;
+                                // todo: send changes to server.
+                            }}
+                        >
+                            {
+                                deskLayout.current[window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'].map((item: any) => item.i).map((key: string, index: number) => {
+                                    return (
+                                        <div key={key} style={{ overflow: 'hidden', borderRadius: 4 }} data-grid={deskLayout.current[window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'][index]}>
+                                            {
+                                                (bots[key]?.id === "5c23a6dea8c7e58ec93459e85bb64de8") ? (
+                                                    <iframe
+                                                        frameBorder={'none'}
+                                                        src={bots[key]?.secret?.frameUrl}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%'
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <AppletHost.Host
+                                                        isWidget
+                                                        appletKey={key}
+                                                        onClick={() => {
+                                                            if (!editMode) {
+                                                                // let onClickOfMetadata = metadataRef.current[workerId]?.onClick
+                                                                // if (onClickOfMetadata) {
+                                                                //     overlaySafezoneData.set({ code: onClickOfMetadata.code, workerId, room: props.room })
+                                                                // } else {
+                                                                //     openAppletSheet(props.room, workerId)
+                                                                // })
+                                                            }
+                                                        }}
+                                                        entry={bots[key]?.code ? 'Test' : 'Dummy'}
+                                                        code={
+                                                            bots[key]?.code ?? 'class Dummy { constructor() {} onMount() {} render() { return "" } }'
+                                                        }
+                                                        index={index}
+                                                    />
+                                                )
+                                            }
+                                            {
+                                                editMode ? (
+                                                    <IconButton
+                                                        name="delete"
+                                                        size={[16, 16]}
+                                                        style={{ transform: 'translate(8px, -68px)' }}
+                                                        onClick={() => {
+                                                            if (window.confirm('do you want to delete this widget ?')) {
+                                                                api.sigma.services?.spaces.removeMember({ spaceId: props.room.spaceId, memberId: key }).then((body: any) => {
+                                                                    Object.keys(deskLayout.current).forEach(lk => {
+                                                                        deskLayout.current[lk] = deskLayout.current[lk].filter((item: any) => item.i !== key);
+                                                                    })
+                                                                    delete bots[key];
+                                                                    setBots({ ...bots });
+                                                                })
+                                                            }
+                                                        }}
+                                                        className="cancelSelectorName" />
+                                                ) : null
+                                            }
+                                            {
+                                                editMode ? (
+                                                    <IconButton
+                                                        name="drag"
+                                                        size={[16, 16]}
+                                                        className="drag-handle"
+                                                        style={{ transform: 'translate(16px, -68px)' }} />
+                                                ) : null
+                                            }
+                                        </div>
+                                    )
+                                })
+                            }
+                        </ResponsiveReactGridLayout >
+                        : null
+                }
                 {
                     loadDesktop ?
                         null : (

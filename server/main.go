@@ -21,7 +21,7 @@ var noExit = make(chan int)
 
 func main() {
 
-	err := godotenv.Load()
+	err := godotenv.Load("main.env")
 	if err != nil {
 		panic(err)
 	}

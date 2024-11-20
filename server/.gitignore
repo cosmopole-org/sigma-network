@@ -31,3 +31,5 @@ local.env
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+main.env

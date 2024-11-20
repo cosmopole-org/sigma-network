@@ -15,9 +15,9 @@ func (d RemoveMemberInput) GetSpaceId() string {
 }
 
 func (d RemoveMemberInput) GetTopicId() string {
-	return ""
+	return d.TopicId
 }
 
 func (d RemoveMemberInput) GetMemberId() string {
-	return ""
+	return d.MemberId
 }

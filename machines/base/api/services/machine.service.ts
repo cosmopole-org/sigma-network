@@ -27,7 +27,7 @@ class MachineService {
                 data: data,
                 answer: async (answerPacket: any, otherTag?: string) => {
                     answerPacket.tag = data.tag;
-                    let { space, topic, member, targetMember } = packet;
+                    let { topic, member, targetMember } = packet;
                     let res = await this.send({ spaceId: topic.spaceId, topicId: topic.id, memberId: targetMember.id, recvId: member.id, packet: answerPacket });
                     console.log(res);
                 },

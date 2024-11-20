@@ -64,6 +64,26 @@ export default class Spaces {
             return { success: false, data: { error: ex.toString() } };
         }
     }
+    async removeMember(
+        body: { memberId: string, spaceId: string }
+    ) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "spaces/removeMember", "POST", {
+                "memberId": body.memberId,
+                "spaceId": body.spaceId,
+                "topicId": "*"
+            });
+            if (success) {
+                let member = await this.store.db.members.findOne({ selector: { id: { $eq: body.memberId } } }).exec();
+                member?.remove();
+                return { success: true };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
     async updateMember(
         body: { userId: string, spaceId: string, metadata: string }
     ) {

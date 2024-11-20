@@ -1,11 +1,13 @@
 package security
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+	"log"
 	"os"
 	modulelogger "sigma/sigma/core/module/logger"
 	"sigma/sigma/layer1/adapters"
@@ -18,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/redis/go-redis/v9"
 )
 
 type Security struct {
@@ -47,7 +50,7 @@ type Location struct {
 	MemberId string
 }
 
-const memberTemplate = "member::%s::%s"
+const memberTemplate = "member::%s::%s::%s"
 const cityTemplate = "city::%s"
 const keysFolderName = "keys"
 
@@ -148,16 +151,20 @@ func (sm *Security) AuthorizeFedHumanWithProcessed(userId string, spaceId string
 	if spaceId == "" {
 		return Location{SpaceId: "", TopicId: ""}
 	}
-	var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
-	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
-	if memberData != "" {
-		if cityData != "" && cityData == spaceId {
-			return Location{SpaceId: spaceId, TopicId: topicId}
-		} else {
-			return Location{SpaceId: spaceId, TopicId: ""}
-		}
-	} else {
+	keys, err := sm.cache.Infra().(*redis.Client).Keys(context.Background(), fmt.Sprintf(memberTemplate, spaceId, userId, "*")).Result()
+	if err != nil {
+		log.Println(err)
 		return Location{SpaceId: "", TopicId: ""}
+	}
+	if len(keys) == 0 {
+		log.Println("keys arr is empty")
+		return Location{SpaceId: "", TopicId: ""}
+	}
+	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
+	if cityData != "" && cityData == spaceId {
+		return Location{SpaceId: spaceId, TopicId: topicId}
+	} else {
+		return Location{SpaceId: spaceId, TopicId: ""}
 	}
 }
 
@@ -171,23 +178,32 @@ func (sm *Security) AuthorizeHumanWithProcessed(token string, userId string, spa
 			if cityData == "" {
 				return Location{SpaceId: "", TopicId: ""}
 			}
-			var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, cityData, userId))
-			if memberData == "" {
+			keys, err := sm.cache.Infra().(*redis.Client).Keys(context.Background(), fmt.Sprintf(memberTemplate, cityData, userId, "*")).Result()
+			if err != nil {
+				log.Println(err)
 				return Location{SpaceId: "", TopicId: ""}
 			}
-			return Location{SpaceId: cityData, TopicId: topicId}	
+			if len(keys) == 0 {
+				log.Println("keys arr is empty")
+				return Location{SpaceId: "", TopicId: ""}
+			}
+			return Location{SpaceId: cityData, TopicId: topicId}
 		}
 	}
-	var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
-	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
-	if memberData != "" {
-		if cityData != "" && cityData == spaceId {
-			return Location{SpaceId: spaceId, TopicId: topicId}
-		} else {
-			return Location{SpaceId: spaceId, TopicId: ""}
-		}
-	} else {
+	keys, err := sm.cache.Infra().(*redis.Client).Keys(context.Background(), fmt.Sprintf(memberTemplate, spaceId, userId, "*")).Result()
+	if err != nil {
+		log.Println(err)
 		return Location{SpaceId: "", TopicId: ""}
+	}
+	if len(keys) == 0 {
+		log.Println("keys arr is empty")
+		return Location{SpaceId: "", TopicId: ""}
+	}
+	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
+	if cityData != "" && cityData == spaceId {
+		return Location{SpaceId: spaceId, TopicId: topicId}
+	} else {
+		return Location{SpaceId: spaceId, TopicId: ""}
 	}
 }
 
@@ -200,16 +216,20 @@ func (sm *Security) AuthorizeHuman(token string, userId string, headers map[stri
 	if headers["Topic_id"] != nil {
 		topicId = string(headers["Topic_id"][0])
 	}
-	var memberData = sm.cache.Get(fmt.Sprintf(memberTemplate, spaceId, userId))
-	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
-	if memberData != "" {
-		if cityData != "" && cityData == spaceId {
-			return Location{SpaceId: spaceId, TopicId: topicId}
-		} else {
-			return Location{SpaceId: spaceId, TopicId: ""}
-		}
-	} else {
+	keys, err := sm.cache.Infra().(*redis.Client).Keys(context.Background(), fmt.Sprintf(memberTemplate, spaceId, userId, "*")).Result()
+	if err != nil {
+		log.Println(err)
 		return Location{SpaceId: "", TopicId: ""}
+	}
+	if len(keys) == 0 {
+		log.Println("keys arr is empty")
+		return Location{SpaceId: "", TopicId: ""}
+	}
+	var cityData = sm.cache.Get(fmt.Sprintf(cityTemplate, topicId))
+	if cityData != "" && cityData == spaceId {
+		return Location{SpaceId: spaceId, TopicId: topicId}
+	} else {
+		return Location{SpaceId: spaceId, TopicId: ""}
 	}
 }
 
@@ -286,13 +306,13 @@ func New(storageRoot string, storage adapters.IStorage, cache adapters.ICache, s
 		keys:        make(map[string][][]byte),
 	}
 	s.LoadKeys()
-	go (func ()  {
+	go (func() {
 		trx := storage.CreateTrx()
 		trx.Use()
 		sessions := []model.Session{}
 		trx.Model(&model.Session{}).Find(&sessions)
 		for _, session := range sessions {
-			cache.Put("auth::" + session.Token, "human/" + session.UserId)
+			cache.Put("auth::"+session.Token, "human/"+session.UserId)
 		}
 		trx.Reset()
 		topics := []model.Topic{}
@@ -300,9 +320,9 @@ func New(storageRoot string, storage adapters.IStorage, cache adapters.ICache, s
 		go (func() {
 			for _, topic := range topics {
 				cache.Put(fmt.Sprintf(cityTemplate, topic.Id), topic.SpaceId)
-			}	
+			}
 		})()
-		trx.Push()			
+		trx.Push()
 	})()
 	return s
 }

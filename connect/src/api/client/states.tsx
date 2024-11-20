@@ -47,7 +47,7 @@ let hookStateStore = {
 	exploreSelectedTab: hookstate(0),
 	homeAppsOpen: hookstate(false),
 	authStep: hookstate(""),
-	selectedDrawerApp: hookstate("chat"),
+	selectedDrawerApp: hookstate("chat")
 };
 
 export let States = {

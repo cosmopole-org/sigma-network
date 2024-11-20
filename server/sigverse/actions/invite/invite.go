@@ -15,7 +15,7 @@ import (
 
 const inviteNotFoundError = "invite not found"
 
-var memberTemplate = "member::%s::%s"
+var memberTemplate = "member::%s::%s::%s"
 
 type Actions struct {
 	Layer abstract.ILayer
@@ -100,7 +100,7 @@ func (a *Actions) Accept(s abstract.IState, input inputsinvites.AcceptInput) (an
 		return nil, err3
 	}
 	toolbox.Signaler().JoinGroup(member.SpaceId, member.UserId)
-	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId), "true")
+	toolbox.Cache().Put(fmt.Sprintf(memberTemplate, member.SpaceId, member.UserId, member.Id), "true")
 	var admins []model.Admin
 	err4 := trx.Where("space_id = ?", invite.SpaceId).Find(&admins).Error()
 	if err4 != nil {
