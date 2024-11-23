@@ -64,6 +64,27 @@ export default class Spaces {
             return { success: false, data: { error: ex.toString() } };
         }
     }
+    async updateMember(
+        body: { memberId: string, spaceId: string, topicId: string, metadata: string }
+    ) {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "spaces/updateMember", "POST", {
+                "memberId": body.memberId,
+                "spaceId": body.spaceId,
+                "topicId": body.topicId,
+                "metadata": body.metadata
+            });
+            if (success) {
+                let member = result.member;
+                await this.store.db.members.upsert(member);
+                return { success: true, data: { member } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
     async removeMember(
         body: { memberId: string, spaceId: string }
     ) {
@@ -77,26 +98,6 @@ export default class Spaces {
                 let member = await this.store.db.members.findOne({ selector: { id: { $eq: body.memberId } } }).exec();
                 member?.remove();
                 return { success: true };
-            } else {
-                return { success: false, data: { error: result.toString() } };
-            }
-        } catch (ex: any) {
-            return { success: false, data: { error: ex.toString() } };
-        }
-    }
-    async updateMember(
-        body: { userId: string, spaceId: string, metadata: string }
-    ) {
-        try {
-            const { success, result } = await this.net.safelyRequest(1, "spaces/addMember", "POST", {
-                "userId": body.userId,
-                "spaceId": body.spaceId,
-                "metadata": body.metadata
-            });
-            if (success) {
-                let member = result.member;
-                this.store.db.members.upsert(member);
-                return { success: true, data: { member } };
             } else {
                 return { success: false, data: { error: result.toString() } };
             }

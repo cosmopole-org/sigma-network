@@ -11,9 +11,11 @@ import (
 	"sigma/sigma/layer1/tools/security"
 	"sigma/sigma/layer1/tools/signaler"
 	net_http "sigma/sigma/layer3/tools/network/http"
+	"sigma/sigma/utils/crypto"
 	"sigma/sigverse/model"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/contrib/websocket"
 )
@@ -58,9 +60,12 @@ func (ws *WsServer) PrepareAnswer(answer any) []byte {
 	return answerBytes
 }
 
+var queue = map[string]chan any{}
+
 func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, security *security.Security, signaler *signaler.Signaler, storage adapters.IStorage) {
 	httpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
 		var uid string = ""
+		qk := crypto.SecureUniqueString()
 		for {
 			_, p, err := conn.ReadMessage()
 			if err != nil {
@@ -78,13 +83,26 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 						userId, _, _ := security.AuthWithToken(token)
 						if userId != "" {
 							uid = userId
+							queue[qk] = make(chan any)
+							go func() {
+								for {
+									select {
+									case b := <-queue[qk]:
+										err := conn.WriteMessage(websocket.TextMessage, b.([]byte))
+										if err != nil {
+											return
+										}
+									case <-time.After(5 * time.Second):
+									}
+									if queue[qk] == nil {
+										break
+									}
+								}
+							}()
 							signaler.ListenToSingle(&module_model.Listener{
 								Id: userId,
 								Signal: func(b any) {
-									err := conn.WriteMessage(websocket.TextMessage, b.([]byte))
-									if err != nil {
-										return
-									}
+									queue[qk] <- b
 								},
 							})
 							var members []model.Member
@@ -133,6 +151,7 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 		}
 		if uid != "" {
 			signaler.Lock.Lock()
+			delete(queue, qk)
 			delete(signaler.Listeners, uid)
 			signaler.Lock.Unlock()
 		}

@@ -48,7 +48,10 @@ let saveLayouts = (bots: { [id: string]: any }, layouts: ReactGridLayout.Layouts
 
 let buildLayoutOfWorkers = (workers: any[]) => {
     return {
-        lg: workers.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
+        lg: workers.map((w: any) => {
+            console.log(w);
+            return ({ ...w.secret.grid.lg, i: w.id, static: false })
+        }),
         md: workers.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
         sm: workers.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
         xs: workers.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
@@ -78,10 +81,11 @@ const measureWidgetSize = (bots: { [id: string]: any }, worker: any) => {
     return widSize
 }
 
+let cachedMembers: { [id: string]: any } = {};
+
 export let addWidgetToSDesktop = async (spaceId: string, topicId: string, machineId: string): Promise<any> => { };
 
 const Desk = (props: { show: boolean, room: any }) => {
-    const [bots, setBots] = useState<{ [id: string]: any }>({});
     const deskLayout = useRef<any>({});
     const [loadDesktop, setLoadDesktop] = useState(false)
     const editMode = States.useListener(States.store.boardEditingMode)
@@ -91,7 +95,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     }
     addWidgetToSDesktop = async (spaceId: string, topicId: string, machineId: string): Promise<any> => {
         let workersMax = 0
-        let workers = Object.values(bots);
+        let workers = Object.values(cachedMembers);
         if (workers.length > 0) {
             workersMax = Math.max(...workers.map(w => w.secret.grid[sizeKey].y + w.secret.grid[sizeKey].h)) + 1
         }
@@ -127,14 +131,15 @@ const Desk = (props: { show: boolean, room: any }) => {
                     m.secret = obj.secret;
                 }
             }
-            bots[m.id] = m;
-            setBots({ ...bots });
+            cachedMembers[m.id] = m;
             setTimeout(() => {
-                deskLayout.current = buildLayoutOfWorkers(Object.values(bots));
+                ['lg', 'md', 'sm', 'xs', 'xxs'].forEach(cat => {
+                    deskLayout.current[cat].push({ ...m.secret.grid[cat], i: m.id, static: false })
+                })
                 rerender();
                 api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: spaceId } } }).exec().then(member => {
                     if (member) {
-                        api.sigma.services?.topics.send({ type: "single", spaceId: spaceId, topicId: topicId, memberId: member?.id, recvId: m.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(bots, m), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+                        api.sigma.services?.topics.send({ type: "single", spaceId: spaceId, topicId: topicId, memberId: member?.id, recvId: m.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(cachedMembers, m), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
                     }
                 });
             });
@@ -146,26 +151,12 @@ const Desk = (props: { show: boolean, room: any }) => {
         let packetReceiver = api.sigma.services?.topics.onPacketReceive((packet: any) => {
             let data = packet.data;
             if (data.tag === 'get/widget') {
-                console.log(bots);
-                if (bots[packet.member.id]) {
-                    if (!bots[packet.member.id].code) {
-                        bots[packet.member.id].code = data.code;
-                        setBots({ ...bots });
+                console.log(cachedMembers);
+                if (cachedMembers[packet.member.id]) {
+                    if (!cachedMembers[packet.member.id].code) {
+                        cachedMembers[packet.member.id].code = data.code;
                         rerender();
                     }
-                } else {
-                    let m = packet.targetMember;
-                    let md = m.metadata;
-                    if (md.length > 0) {
-                        let obj = JSON.parse(md);
-                        if (obj.secret) {
-                            m.secret = obj.secret;
-                        }
-                    }
-                    bots[packet.member.id] = m;
-                    bots[packet.member.id].code = data.code;
-                    setBots({ ...bots });
-                    rerender();
                 }
             }
         });
@@ -180,6 +171,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     useEffect(() => {
         api.sigma.services?.spaces.readMembers({ spaceId: props.room.spaceId }).then((body: any) => {
             let filtered: { [id: string]: any } = {};
+            cachedMembers = {};
             body.data.members.map((m: any) => m.member).forEach((w: any) => {
                 let md = w.metadata;
                 if (md.length > 0) {
@@ -187,17 +179,16 @@ const Desk = (props: { show: boolean, room: any }) => {
                     if (obj.secret) {
                         w.secret = obj.secret;
                         filtered[w.id] = w;
-                        bots[w.id] = w;
+                        cachedMembers[w.id] = w;
                     }
                 }
             });
             deskLayout.current = buildLayoutOfWorkers(Object.values(filtered));
-            setBots({ ...bots });
             rerender();
             setTimeout(() => {
                 Object.values(filtered).forEach(worker => {
                     api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-                        api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(bots, worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
+                        api.sigma.services?.topics.send({ type: "single", spaceId: props.room.spaceId, topicId: props.room.id, memberId: member.id, recvId: worker.id, data: { tag: 'get/widget', widgetSize: measureWidgetSize(cachedMembers, worker), secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } });
                     });
                 })
             });
@@ -227,28 +218,32 @@ const Desk = (props: { show: boolean, room: any }) => {
                             draggableHandle=".drag-handle"
                             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
                             onLayoutChange={(currentLayout: RGL.Layout[], layouts: RGL.Layouts) => {
-                                let updates: Array<any> = []
                                 const oldLayouts = deskLayout.current;
                                 let clonedLayouts = structuredClone(layouts)
                                 for (let sizeKey in oldLayouts) {
-                                    let dict: { [id: string]: RGL.Layout } = {}
                                     for (let i = 0; i < oldLayouts[sizeKey].length; i++) {
-                                        let item = oldLayouts[sizeKey][i]
-                                        dict[item.i] = item
-                                    }
-                                    clonedLayouts[sizeKey].forEach((item: RGL.Layout) => {
-                                        let oldItem = dict[item.i]
-                                        if (oldItem) {
-                                            if (JSON.stringify(item) !== JSON.stringify(oldItem)) {
-                                                updates.push({ sizeKey, item, __action__: 'updated' })
-                                            }
-                                        } else {
-                                            updates.push({ sizeKey, item, __action__: 'created' })
+                                        if (JSON.stringify(oldLayouts[sizeKey][i]) !== JSON.stringify(clonedLayouts[sizeKey[i]])) {
+                                            let md = JSON.parse(cachedMembers[oldLayouts[sizeKey][i].i].metadata);
+                                            ['lg', 'md', 'sm', 'xs', 'xxs'].forEach(cat => {
+                                                let data = clonedLayouts[sizeKey][i];
+                                                md.secret.grid[cat] = {
+                                                    x: data.x, y: data.y, w: data.w, h: data.h
+                                                };
+                                            });
+                                            let memberId = oldLayouts[sizeKey][i].i;
+                                            cachedMembers[memberId].metadata = JSON.stringify(md);
+                                            cachedMembers[memberId].secret = md.secret;
+                                            api.sigma.services?.spaces.updateMember({
+                                                memberId: memberId,
+                                                spaceId: props.room.spaceId,
+                                                topicId: props.room.id,
+                                                metadata: JSON.stringify(md)
+                                            });
                                         }
-                                    })
+                                    }
                                 }
                                 deskLayout.current = clonedLayouts;
-                                // todo: send changes to server.
+                                console.log(deskLayout.current);
                             }}
                         >
                             {
@@ -256,10 +251,10 @@ const Desk = (props: { show: boolean, room: any }) => {
                                     return (
                                         <div key={key} style={{ overflow: 'hidden', borderRadius: 4 }} data-grid={deskLayout.current[window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'][index]}>
                                             {
-                                                (bots[key]?.id === "5c23a6dea8c7e58ec93459e85bb64de8") ? (
+                                                (cachedMembers[key]?.id === "5c23a6dea8c7e58ec93459e85bb64de8") ? (
                                                     <iframe
                                                         frameBorder={'none'}
-                                                        src={bots[key]?.secret?.frameUrl}
+                                                        src={cachedMembers[key]?.secret?.frameUrl}
                                                         style={{
                                                             width: '100%',
                                                             height: '100%'
@@ -279,9 +274,9 @@ const Desk = (props: { show: boolean, room: any }) => {
                                                                 // })
                                                             }
                                                         }}
-                                                        entry={bots[key]?.code ? 'Test' : 'Dummy'}
+                                                        entry={cachedMembers[key]?.code ? 'Test' : 'Dummy'}
                                                         code={
-                                                            bots[key]?.code ?? 'class Dummy { constructor() {} onMount() {} render() { return "" } }'
+                                                            cachedMembers[key]?.code ?? 'class Dummy { constructor() {} onMount() {} render() { return "" } }'
                                                         }
                                                         index={index}
                                                     />
@@ -299,8 +294,8 @@ const Desk = (props: { show: boolean, room: any }) => {
                                                                     Object.keys(deskLayout.current).forEach(lk => {
                                                                         deskLayout.current[lk] = deskLayout.current[lk].filter((item: any) => item.i !== key);
                                                                     })
-                                                                    delete bots[key];
-                                                                    setBots({ ...bots });
+                                                                    delete cachedMembers[key];
+                                                                    rerender();
                                                                 })
                                                             }
                                                         }}

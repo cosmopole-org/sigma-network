@@ -115,6 +115,26 @@ func (a *Actions) AddMember(s abstract.IState, input inputsspaces.AddMemberInput
 	return outputsspaces.AddMemberOutput{Member: member}, nil
 }
 
+// UpdateMember /spaces/updateMember check [ true true true ] access [ true false false false POST ]
+func (a *Actions) UpdateMember(s abstract.IState, input inputsspaces.UpdateMemberInput) (any, error) {
+	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[modulestate.IStateL1](s)
+	var member = models.Member{Id: input.MemberId}
+	trx := state.Trx()
+	trx.Use()
+	err := trx.First(&member).Error()
+	if err != nil {
+		return nil, err
+	}
+	if (member.TopicId != "*") && (member.TopicId == state.Info().TopicId()) {
+		return nil, errors.New("access to member denied")
+	}
+	member.Metadata = input.Metadata
+	trx.Save(&member)
+	go toolbox.Signaler().SignalGroup("spaces/updateMember", state.Info().SpaceId(), updatesspaces.AddMember{SpaceId: state.Info().SpaceId(), TopicId: state.Info().TopicId(), Member: member}, true, []string{state.Info().UserId()})
+	return outputsspaces.AddMemberOutput{Member: member}, nil
+}
+
 // ReadMembers /spaces/readMembers check [ true true false ] access [ true false false false POST ]
 func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberInput) (any, error) {
 	state := abstract.UseState[modulestate.IStateL1](s)
@@ -153,7 +173,7 @@ func (a *Actions) ReadMembers(s abstract.IState, input inputsspaces.ReadMemberIn
 		}
 	}
 	for _, member := range members {
-		memberUsers = append(memberUsers, outputsspaces.MemberUser{ User: userDict[memberDict[member.Id]], Member: member})
+		memberUsers = append(memberUsers, outputsspaces.MemberUser{User: userDict[memberDict[member.Id]], Member: member})
 	}
 	return outputsspaces.ReadMemberOutput{Members: memberUsers}, nil
 }
