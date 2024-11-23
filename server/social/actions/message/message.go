@@ -1,9 +1,7 @@
 package social_services
 
 import (
-	"encoding/json"
 	"errors"
-	"log"
 	"sigma/sigma/abstract"
 	module_state "sigma/sigma/layer1/module/state"
 	"sigma/sigma/layer2/model"
@@ -31,31 +29,6 @@ func (a *Actions) CreateMessage(s abstract.IState, input inputs_message.CreateMe
 	state := abstract.UseState[module_state.IStateL1](s)
 	trx := state.Trx()
 	trx.Use()
-	type sender struct {
-		Id   string         `json:"id"`
-		Data datatypes.JSON `json:"data"`
-	}
-	senderUser := sender{}
-	state.Trx().Model(&model.User{}).Select("id, metadata -> '"+"hokm"+"' as data").Where("id = ?", state.Info().UserId()).First(&senderUser)
-	log.Println(senderUser)
-	str, convErr := json.Marshal(senderUser.Data)
-	if convErr != nil {
-		log.Println(convErr)
-	}
-	dict := map[string]any{}
-	convErr2 := json.Unmarshal(str, &dict)
-	if convErr2 != nil {
-		log.Println(convErr2)
-	}
-	lastBuy, ok := dict["lastChatPointBuy"]
-	chatPoint, ok2 := dict["chatPoint"]
-	if !ok || !ok2 {
-		log.Println("field not found")
-	}
-	if (float64(time.Now().UnixMilli()) - lastBuy.(float64)) > (chatPoint.(float64) * 60 * 1000) {
-		return nil, errors.New("not enough chat points")
-	}
-	trx.Reset()
 	message := models.Message{
 		Id:       crypto.SecureUniqueId(a.Layer.Core().Id()),
 		AuthorId: state.Info().UserId(),

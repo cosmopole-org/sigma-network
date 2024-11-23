@@ -222,7 +222,7 @@ const Desk = (props: { show: boolean, room: any }) => {
                                 let clonedLayouts = structuredClone(layouts)
                                 for (let sizeKey in oldLayouts) {
                                     for (let i = 0; i < oldLayouts[sizeKey].length; i++) {
-                                        if (JSON.stringify(oldLayouts[sizeKey][i]) !== JSON.stringify(clonedLayouts[sizeKey[i]])) {
+                                        if (JSON.stringify(oldLayouts[sizeKey][i]) !== JSON.stringify(clonedLayouts[sizeKey][i])) {
                                             let md = JSON.parse(cachedMembers[oldLayouts[sizeKey][i].i].metadata);
                                             ['lg', 'md', 'sm', 'xs', 'xxs'].forEach(cat => {
                                                 let data = clonedLayouts[sizeKey][i];
