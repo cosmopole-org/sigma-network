@@ -31,7 +31,7 @@ export default function HomeContent() {
         []
     );
     const circles = useMemo(() => <Circles className="fixed top-0 left-0 w-full h-full" />, [wallpaper, theme, showBoardBg]);
-    const cardLightColor = colors.blue[100];
+    const cardLightColor = '#fff';
     const cardDarkColor = colors.purple[900];
     return (
         <div className={"w-full h-full"}>
@@ -48,10 +48,7 @@ export default function HomeContent() {
                 <div className="w-full h-[32px]" />
                 {
                     !showBoardBg ? (
-                        <div className={"fixed left-0 top-0 w-full h-full"}
-                            style={{
-                                backgroundColor: theme === "light" ? cardLightColor : cardDarkColor
-                            }} />
+                        <div className={"fixed left-0 top-0 w-full h-full bg-content2 dark:bg-content2"} />
                     ) : null
                 }
                 {members}

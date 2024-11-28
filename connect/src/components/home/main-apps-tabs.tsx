@@ -15,10 +15,10 @@ export default function MainAppsTabs() {
                     <span>Chat</span>
                 </div>
             } />
-            <Tab key={"apps"} title={
+            <Tab key={"bots"} title={
                 <div className="flex items-center space-x-2">
-                    <Icon name="blocks" />
-                    <span>Apps</span>
+                    <Icon name="bot" />
+                    <span>Bots</span>
                 </div>
             } />
             <Tab key={"files"} title={

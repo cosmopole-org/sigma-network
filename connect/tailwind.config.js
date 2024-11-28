@@ -43,8 +43,8 @@ export default {
       dark: {
         colors: {
           primary: {
-            DEFAULT: "#7828C8",
-            foreground: "#ffffff",
+            DEFAULT: "#17C964",
+            foreground: "#000000",
           },
           secondary: {
             DEFAULT: "#006FEE",

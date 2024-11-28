@@ -45,7 +45,7 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
                     RouteSys.push("/app/room-machines")
                 }}
             >
-                <Icon name="blocks" />
+                <Icon name="settings" />
             </Button>
         </div>
     );

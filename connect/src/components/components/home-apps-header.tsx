@@ -14,13 +14,14 @@ export default function HomeAppsHeader() {
                 <Button
                     isIconOnly
                     variant="shadow"
-                    className={"bg-white h-12 w-12 " + (editing ? "bg-success" : undefined)}
+                    color="success"
+                    className="h-12 w-12"
                     radius="lg"
                     onClick={() => {
-                        Actions.switchBoardEditing(!editing);
+                        RouteSys.push("/app/call")
                     }}
                 >
-                    <Icon name="bot" color="#000" />
+                    <Icon name="call" />
                 </Button>
                 <Button
                     isIconOnly
@@ -55,24 +56,24 @@ export default function HomeAppsHeader() {
                     className="h-12 w-12"
                     radius="lg"
                     onClick={() => {
-
+                        Actions.updateSelectedDrawerApp("bots");
+                        Actions.switchHomeApps(true);
                     }}
                 >
-                    <Icon name="settings" />
+                    <Icon name="bot" />
                 </Button>
+                <CommandsPalette />
                 <Button
                     isIconOnly
                     variant="shadow"
-                    color="success"
-                    className="h-12 w-12"
+                    className={"bg-white h-12 w-12 " + (editing ? "bg-success" : undefined)}
                     radius="lg"
                     onClick={() => {
-                        RouteSys.push("/app/call")
+                        Actions.switchBoardEditing(!editing);
                     }}
                 >
-                    <Icon name="call" />
+                    <Icon name="blocks" color="#000" />
                 </Button>
-                <CommandsPalette />
             </div>
         </div>
     );

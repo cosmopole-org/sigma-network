@@ -3,6 +3,7 @@ import { Card } from "@nextui-org/react";
 import Chat from "../room/room-chat";
 import { States } from "@/api/client/states";
 import Files from "../room/room-files";
+import MachinesList from "../home/machines-list";
 
 export default function HomeApps() {
     const pos = States.useListener(States.store.currentPos);
@@ -10,19 +11,29 @@ export default function HomeApps() {
     const selectedDrawerApp = States.useListener(States.store.selectedDrawerApp);
     const chat = useMemo(() => <Chat spaceId={pos.spaceId} topicId={pos.topicId} />, [pos.spaceId, pos.topicId]);
     const files = useMemo(() => <Files />, []);
+    const bots = useMemo(() => <MachinesList className='pt-2' />, []);
     const chatRef = useRef<HTMLDivElement>(null);
+    const botsRef = useRef<HTMLDivElement>(null);
     const filesRef = useRef<HTMLDivElement>(null);
     useEffect(() => {
-        if (containerRef.current && chatRef.current && filesRef.current) {
+        if (containerRef.current && botsRef.current && chatRef.current && filesRef.current) {
             if (selectedDrawerApp === "chat") {
-                chatRef.current.style.transform = (selectedDrawerApp === "chat" ? 'translateX(0px)' : 'translateX(-100%)');
+                chatRef.current.style.transform = 'translateX(0px)';
+                botsRef.current.style.transform = 'translateX(-100%)';
+                filesRef.current.style.transform = 'translateX(-100%)';
+            } else if (selectedDrawerApp === "bots") {
+                chatRef.current.style.transform = 'translateX(-100%)';
+                botsRef.current.style.transform = 'translateX(0%)';
+                filesRef.current.style.transform = 'translateX(-100%)';
             } else {
-                filesRef.current.style.transform = (selectedDrawerApp === "files" ? 'translateX(0px)' : 'translateX(+100%)');
+                chatRef.current.style.transform = 'translateX(-100%)';
+                botsRef.current.style.transform = 'translateX(-100%)';
+                filesRef.current.style.transform = 'translateX(0%)';
             }
         }
     }, [selectedDrawerApp]);
     return (
-        <Card className="overflow-hidden w-full h-full bg-white">
+        <Card className="overflow-hidden w-full h-full bg-content1">
             <div
                 style={{
                     height: 'calc(100% - 48px)'
@@ -42,7 +53,8 @@ export default function HomeApps() {
                     </div>
                     <div ref={containerRef} style={{ width: '100%', height: `calc(100% - 40px)`, position: 'relative' }}>
                         <div ref={chatRef} className="w-screen h-full absolute left-0 top-0" style={{ transform: selectedDrawerApp === "chat" ? 'translateX(0px)' : 'translateX(-100%)' }}>{chat}</div>
-                        <div ref={filesRef} className="w-screen h-full absolute left-0 top-0" style={{ transform: selectedDrawerApp === "files" ? 'translateX(0px)' : 'translateX(+100%)' }}>{files}</div>
+                        <div ref={botsRef} className="w-screen h-full absolute left-0 top-0" style={{ transform: selectedDrawerApp === "bots" ? 'translateX(0px)' : 'translateX(-100%)' }}>{bots}</div>
+                        <div ref={filesRef} className="w-screen h-full absolute left-0 top-0" style={{ transform: selectedDrawerApp === "files" ? 'translateX(0px)' : 'translateX(-100%)' }}>{files}</div>
                     </div>
                 </div>
             </div>
