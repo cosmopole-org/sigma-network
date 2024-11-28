@@ -41,7 +41,7 @@ export default function HomeContent() {
                     <img style={{ objectFit: 'cover', zIndex: 1 }} alt="header" className="w-full h-[230px] absolute top-0 left-0" src={
                         theme === 'light' ?
                             'https://i.pinimg.com/originals/80/ec/77/80ec77932091113c4970a88f69b9bb4f.gif' :
-                            'https://i.pinimg.com/originals/bc/87/e5/bc87e5124f8d2cfe810d403adc96ad01.gif'
+                            'https://i.pinimg.com/originals/14/26/57/142657a12799dbc12e031b1b9d4622df.gif'
                     } />
                 ) : null
                 }
