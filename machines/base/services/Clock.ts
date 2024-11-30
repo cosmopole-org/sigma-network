@@ -92,8 +92,8 @@ export default {
         console.log("starting clock...");
         Api.initilize('d3e0df88-f566-461a-97a4-665cc401ab7c-a2ae7070-7dbf-498f-85c7-fb7599a27ce9').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
-                console.log(packetHolder.data)
-                if (packetHolder.data.tag === 'get/applet' || packetHolder.data.tag === 'get/globalApplet') {
+                console.log(packetHolder.packet)
+                if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
                     let { colors } = packetHolder.packet
                     packetHolder.answer({
                         code: `
@@ -223,8 +223,8 @@ export default {
                 }
                     `
                     })
-                } else if (packetHolder.data.tag === 'get/widget') {
-                    let { colors, theme, secondaryColor } = packetHolder.data
+                } else if (packetHolder.packet.tag === 'get/widget') {
+                    let { colors, theme, secondaryColor } = packetHolder.packet
                     let handColors = theme === 'light' ? 'rgba(0, 106, 255, 1)' : 'rgba(0, 255, 170, 1)';
                     packetHolder.answer({
                         code: `
@@ -256,7 +256,7 @@ export default {
                 render() {
                     return (
                         <Box style={{
-                            backgroundColor: '${theme === 'light' ? colors[100] : ('#213037')}',
+                            backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}',
                             width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden', display: 'flex', flexWrap: 'wrap',
                             color: '#fff', position: 'relative', backdropFilter: 'blur(5px)', textAlign: 'center', containerType: 'size', resize: 'both'
                         }}>

@@ -3,6 +3,7 @@ import HomePage from "../../components/home/home-spaces";
 import HomeBottomNav from "@/components/components/home-bottomnav";
 import HomeMenuDrawer from "@/components/components/home-menu-drawer";
 import { States, useTheme } from "@/api/client/states";
+import { AppletSheet } from "@/components/components/AppletSheet";
 
 export default function HomeMain() {
     const homeDrawerOpen = States.useListener(States.store.homeDrawerOpen);
@@ -16,6 +17,7 @@ export default function HomeMain() {
                 <HomeContent />
             } />
             <HomeBottomNav />
+            <AppletSheet />
         </div>
     );
 }

@@ -8,6 +8,8 @@ import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import IconButton from "../elements/icon-button";
 import AppletHost from "./applet-host";
+import { overlaySafezoneData } from "./Overlay";
+import { openAppletSheet } from "./AppletSheet";
 
 const ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
 export const rowHeight = 8
@@ -91,6 +93,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     const [loadDesktop, setLoadDesktop] = useState(false)
     const editMode = States.useListener(States.store.boardEditingMode)
     const { theme } = useTheme();
+    const metadataRef: any = useRef({})
     const [trigger, setTrigger] = useState(Math.random().toString());
     const rerender = () => {
         setTrigger(Math.random().toString());
@@ -152,6 +155,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     useEffect(() => {
         let packetReceiver = api.sigma.services?.topics.onPacketReceive((packet: any) => {
             let data = packet.data;
+            metadataRef.current[packet.member.id] = { onClick: data.onClick }
             if (data.tag === 'get/widget') {
                 console.log(cachedMembers);
                 if (cachedMembers[packet.member.id]) {
@@ -256,67 +260,74 @@ const Desk = (props: { show: boolean, room: any }) => {
                             deskLayout.current[window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'].map((item: any) => item.i).map((key: string, index: number) => {
                                 return (
                                     <div key={key} style={{ overflow: 'hidden', borderRadius: 4 }} data-grid={deskLayout.current[window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'][index]}>
-                                        {
-                                            (cachedMembers[key]?.id === "5c23a6dea8c7e58ec93459e85bb64de8") ? (
-                                                <iframe
-                                                    frameBorder={'none'}
-                                                    src={cachedMembers[key]?.secret?.frameUrl}
-                                                    style={{
-                                                        width: '100%',
-                                                        height: '100%'
-                                                    }}
-                                                />
-                                            ) : (
-                                                <AppletHost.Host
-                                                    isWidget
-                                                    appletKey={key}
-                                                    onClick={() => {
-                                                        if (!editMode) {
-                                                            // let onClickOfMetadata = metadataRef.current[workerId]?.onClick
-                                                            // if (onClickOfMetadata) {
-                                                            //     overlaySafezoneData.set({ code: onClickOfMetadata.code, workerId, room: props.room })
-                                                            // } else {
-                                                            //     openAppletSheet(props.room, workerId)
-                                                            // })
+                                        <div className="w-full h-full" style={{ position: 'relative' }}>
+                                            {
+                                                (cachedMembers[key]?.id === "5c23a6dea8c7e58ec93459e85bb64de8") ? (
+                                                    <iframe
+                                                        frameBorder={'none'}
+                                                        src={cachedMembers[key]?.secret?.frameUrl}
+                                                        style={{
+                                                            width: '100%',
+                                                            height: '100%'
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <AppletHost.Host
+                                                        isWidget
+                                                        appletKey={key}
+                                                        onClick={() => {
+                                                            if (!editMode) {
+                                                                let onClickOfMetadata = metadataRef.current[key]?.onClick
+                                                                if (onClickOfMetadata) {
+                                                                    overlaySafezoneData.set({ code: onClickOfMetadata.code, workerId: key, room: props.room })
+                                                                } else {
+                                                                    openAppletSheet(props.room, key)
+                                                                }
+                                                            }
+                                                        }}
+                                                        entry={cachedMembers[key]?.code ? 'Test' : 'Dummy'}
+                                                        code={
+                                                            cachedMembers[key]?.code ?? 'class Dummy { constructor() {} onMount() {} render() { return "" } }'
                                                         }
-                                                    }}
-                                                    entry={cachedMembers[key]?.code ? 'Test' : 'Dummy'}
-                                                    code={
-                                                        cachedMembers[key]?.code ?? 'class Dummy { constructor() {} onMount() {} render() { return "" } }'
-                                                    }
-                                                    index={index}
-                                                />
-                                            )
-                                        }
-                                        {
-                                            editMode ? (
-                                                <IconButton
-                                                    name="delete"
-                                                    size={[16, 16]}
-                                                    style={{ transform: 'translate(8px, -68px)' }}
-                                                    onClick={() => {
-                                                        if (window.confirm('do you want to delete this widget ?')) {
-                                                            api.sigma.services?.spaces.removeMember({ spaceId: props.room.spaceId, memberId: key }).then((body: any) => {
-                                                                Object.keys(deskLayout.current).forEach(lk => {
-                                                                    deskLayout.current[lk] = deskLayout.current[lk].filter((item: any) => item.i !== key);
+                                                        index={index}
+                                                    />
+                                                )
+                                            }
+                                            {
+                                                editMode ? (
+                                                    <div className="w-full h-full" style={{ position: 'absolute', left: 0, top: 0 }} />
+                                                ) : null
+                                            }
+                                            {
+                                                editMode ? (
+                                                    <IconButton
+                                                        name="delete"
+                                                        size={[16, 16]}
+                                                        style={{ transform: 'translate(8px, -68px)' }}
+                                                        onClick={() => {
+                                                            if (window.confirm('do you want to delete this widget ?')) {
+                                                                api.sigma.services?.spaces.removeMember({ spaceId: props.room.spaceId, memberId: key }).then((body: any) => {
+                                                                    Object.keys(deskLayout.current).forEach(lk => {
+                                                                        deskLayout.current[lk] = deskLayout.current[lk].filter((item: any) => item.i !== key);
+                                                                    })
+                                                                    delete cachedMembers[key];
+                                                                    rerender();
                                                                 })
-                                                                delete cachedMembers[key];
-                                                                rerender();
-                                                            })
-                                                        }
-                                                    }}
-                                                    className="cancelSelectorName" />
-                                            ) : null
-                                        }
-                                        {
-                                            editMode ? (
-                                                <IconButton
-                                                    name="drag"
-                                                    size={[16, 16]}
-                                                    className="drag-handle"
-                                                    style={{ transform: 'translate(16px, -68px)' }} />
-                                            ) : null
-                                        }
+                                                            }
+                                                        }}
+                                                        className="cancelSelectorName" />
+                                                ) : null
+                                            }
+                                            {
+                                                editMode ? (
+                                                    <IconButton
+                                                        name="drag"
+                                                        size={[16, 16]}
+                                                        className="drag-handle"
+                                                        style={{ transform: 'translate(16px, -68px)' }} />
+                                                ) : null
+                                            }
+                                        </div>
                                     </div>
                                 )
                             })

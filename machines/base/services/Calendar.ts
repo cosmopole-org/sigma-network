@@ -89,7 +89,7 @@ render() {
 
 export default {
     start: () => {
-        Api.initilize('058ca2e54be78132257f46a8ee311c26').then((api: Api) => {
+        Api.initilize('37004a67-dcb8-4670-a10c-c89de50bfb54-b374b716-65df-47a0-8b8a-b73fccd5574f').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log(packetHolder.packet)
                 let { colors, colorName, secondaryColor } = packetHolder.packet
@@ -216,6 +216,7 @@ export default {
             }
             ` })
                 } else if (packetHolder.packet.tag === 'get/widget') {
+                    let { colors, theme, secondaryColor } = packetHolder.packet
                     packetHolder.answer({
                         code: `
                 ${tools}
@@ -270,13 +271,13 @@ export default {
               
                     return (
                         <Box style={{
-                            width: 'calc(100% - 16px)', height: 'calc(100% - 16px)', borderRadius: 16, overflow: 'hidden',
+                            width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden',
                             color: '#000', position: 'relative', textAlign: 'center', backdropFilter: 'blur(5px)',
                             padding: 8, maxHeight: container.width, containerType: 'size', resize: 'both'
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0, opacity: 0.25
+                                backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{ width: '100%', height: 'auto', position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)' }}> 
                                 <Box style={{ width: '85%', marginTop: '5%', marginLeft: '7.5%' }}>

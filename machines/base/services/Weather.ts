@@ -93,7 +93,7 @@ let storage: { [id: string]: any[] } = {}
 
 export default {
     start: () => {
-        Api.initilize('77c9f5c41301325aa094be358068812d').then((api: Api) => {
+        Api.initilize("250adf1e-71aa-4c31-b42f-3ed27563a222-3b4732cb-b147-492a-a2cf-ab1f3931e718").then((api: Api) => {
             const apiKey = 'cbfa9c4664f4dd3a7606424c7022bae3'
             let weather = new OpenWeatherAPI({
                 key: apiKey,
@@ -105,9 +105,9 @@ export default {
             })
             api.services.machine.onRequest(async (packetHolder: any) => {
                 console.log('received', packetHolder.packet)
-                let { colors, colorName, secondaryColor } = packetHolder.packet
+                let { colors, theme } = packetHolder.packet
                 if (packetHolder.packet.tag === 'get/url') {
-                    packetHolder.answer({ questionId: 'get/url', inside: true, url: '1LSdzuKyef1CtPvHjGsmP8Y0pSVA5PGx4OkC4MT3t-5c' }, 'response')
+                    packetHolder.answer({ questionId: 'get/url', inside: true, url: '1LSdzuKyef1CtPvHjGsmP8Y0pSVA5PGx4OkC4MT3t-5c' })
                 } else if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
                     let fn = async () => {
                         let data = await weather.getCurrent();
@@ -122,7 +122,7 @@ export default {
                             foreacst += `
                                             \n<Box style= {{
                                                 width: 'calc(100% - 32px)', height: 250, overflow: 'hidden', marginLeft: 16, marginRight: 16, marginTop: 12, marginBottom: 12, borderRadius: 16,
-                                                color: '${colors['activeText']}', position: 'relative', textAlign: 'center', display: 'flex', flexWrap: 'wrap', backgroundColor: '${colors['absolutePlain']}'
+                                                color: '${colors['activeText']}', position: 'relative', textAlign: 'center', display: 'flex', flexWrap: 'wrap', backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}'
                                             }}>
                                                 <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>
                                                     <Box style={{ width: '100%', paddingTop: 4, height: 'auto', textAlign: 'center', transform: 'translateY(-16px)' }}>${day.dt_txt}</Box>
@@ -160,7 +160,7 @@ export default {
                                         <Box style={{ width: 'calc(100% - 32px)', height: 250, position: 'relative', marginLeft: 16, marginRight: 16, marginTop: 16, borderRadius: 16, overflow: 'hidden' }}>
                                         <Box style={{
                                                 width: '100%', height: '100%', borderRadius: 4,
-                                                backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0,
+                                                backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
                                         }} />
                                         <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>
                                             <Box style={{ width: '100%', paddingTop: 4, height: 'auto', textAlign: 'center', transform: 'translateY(-16px)' }}>Today</Box>  
@@ -219,7 +219,7 @@ class Test {
         <Box style={
             {
                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                    backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0, opacity: 0.25,
+                    backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
                                         }
 } />
     <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>

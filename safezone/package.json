@@ -1,0 +1,17 @@
+{
+  "name": "safezone",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "cd ./excalidraw && npm run build && cd .. && cd ./trello && npm run build && cd .. && cd ./gdrive && npm run build && cd .. && cd ./codepen && npm run build && cd .. && cd ./spotify && npm run build && cd .. &&  cd ./weather && npm run build && cd .. && liara deploy",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}

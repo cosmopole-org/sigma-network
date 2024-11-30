@@ -4,6 +4,7 @@ import { Applet, Controls } from "applet-vm"
 import Native, { intervalHolder, timeoutHolder } from "./native"
 // import Safezone from "./safezone"
 import { Topic } from "../../api/sigma/models";
+import Safezone from "./safezone";
 
 let hostLoaded: { [id: string]: boolean } = {}
 
@@ -101,7 +102,7 @@ const Host = (props: { isWidget?: boolean, appletKey: string, code: string, inde
             }}
             onClick={props.onClick}
         >
-            {/* {
+            {
                 isSafezone ? (
                     <Safezone
                         isWidget={props.isWidget}
@@ -113,7 +114,7 @@ const Host = (props: { isWidget?: boolean, appletKey: string, code: string, inde
                         room={props.room}
                     />
                 ) : null
-            } */}
+            }
         </div>
     )
 }

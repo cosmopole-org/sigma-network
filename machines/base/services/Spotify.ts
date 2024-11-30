@@ -91,7 +91,7 @@ let storage: { [id: string]: any[] } = {}
 
 export default {
     start: () => {
-        Api.initilize('6d5f1d7912fa6cbe3602c2502e56c96d').then((api: Api) => {
+        Api.initilize('9c1ba6f2-a61f-4fc1-a8db-38b81f86b635-9c9644ca-f08a-433b-a2ae-55e7a7e8363a').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log('received', packetHolder.packet)
                 let { colors, colorName, secondaryColor } = packetHolder.packet

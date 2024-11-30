@@ -1,0 +1,41 @@
+{
+  "name": "weather",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "./",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "mkdir -p ../files/weather && BUILD_PATH='../files/weather' react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.59",
+    "@types/react": "^18.2.33",
+    "@types/react-dom": "^18.2.14",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-spotify-embed": "^2.0.3"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.3.95",
+    "@types/jquery": "^3.5.29",
+    "@types/react-dom": "^18.2.18",
+    "react-scripts": "^5.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ]
+}

@@ -91,16 +91,17 @@ let storage: { [id: string]: any[] } = {}
 
 export default {
     start: () => {
-        Api.initilize('203c3253f76a6636297a0d87fc3b8aea').then((api: Api) => {
+        Api.initilize('be79cd38-69cf-4a8e-a435-87ce0ba5f023-d87a70e4-3149-47e7-80f8-50a5d50a2114').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log('received', packetHolder.packet)
-                let { colors, colorName, secondaryColor } = packetHolder.packet
+                let { colors, theme } = packetHolder.packet
+                let workerId = packetHolder.myMemberId;
                 if (packetHolder.packet.tag === 'put/element') {
-                    let { workerId, updatesList, humanId } = packetHolder.packet
-                    if (!storage[workerId ? workerId : humanId]) storage[workerId ? workerId : humanId] = []
-                    let workspace = storage[workerId ? workerId : humanId]
+                    let { updatesList } = packetHolder.packet
+                    if (!storage[workerId]) storage[workerId] = []
+                    let workspace = storage[workerId]
                     updatesList.forEach(update => {
-                        update.modifier = humanId
+                        update.modifier = packetHolder.userMemberId;
                         let found = false
                         for (let i = 0; i < workspace.length; i++) {
                             if (workspace[i].id === update.id) {
@@ -111,12 +112,11 @@ export default {
                         }
                         if (!found) workspace.push(update)
                     });
-                    packetHolder.push({ key: 'update', updatesList }, 'push')
+                    packetHolder.broadcast({ key: 'update', updatesList })
                 } else if (packetHolder.packet.tag === 'get/elements') {
-                    let { workerId, updatesList, humanId } = packetHolder.packet
-                    if (!storage[workerId ? workerId : humanId]) storage[workerId ? workerId : humanId] = []
-                    let workspace = storage[workerId ? workerId : humanId]
-                    packetHolder.answer({ questionId: 'get/elements', elements: workspace }, 'response')
+                    if (!storage[workerId]) storage[workerId] = []
+                    let workspace = storage[workerId]
+                    packetHolder.answer({ questionId: 'get/elements', elements: workspace })
                 } else if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
                     packetHolder.answer({ code: `safezone/excalidraw` })
                 } else if (packetHolder.packet.tag === 'get/widget') {
@@ -144,7 +144,7 @@ export default {
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0, opacity: 0.25
+                                backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{
                                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',

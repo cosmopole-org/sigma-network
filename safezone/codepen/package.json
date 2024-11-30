@@ -1,0 +1,41 @@
+{
+  "name": "codepen",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "./",
+  "main": "index.js",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "mkdir -p ../files/codepen && BUILD_PATH='../files/codepen' react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/jest": "^27.5.2",
+    "@types/node": "^16.18.59",
+    "@types/react": "^18.2.33",
+    "@types/react-dom": "^18.2.14",
+    "react": "^18.2.0",
+    "react-codepen-prefill-embed": "^0.0.2",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.3.95",
+    "@types/jquery": "^3.5.29",
+    "@types/react-dom": "^18.2.18",
+    "react-scripts": "^5.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": [
+    ">0.2%",
+    "not dead",
+    "not op_mini all"
+  ]
+}

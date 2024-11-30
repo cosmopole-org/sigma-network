@@ -1,0 +1,8 @@
+{
+  "name": "gdrive",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "build": "mkdir -p ../files/gdrive && cp -a ./public/. ../files/gdrive/"
+  }
+}
