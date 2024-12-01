@@ -74,4 +74,19 @@ export default class Users {
             return { success: false, data: { error: ex.toString() } };
         }
     }
+    public async read(
+        body: { typ: string }
+    ):
+        Promise<{ success: boolean, data?: { error?: string, users?: User[] } }> {
+        try {
+            let { success, result } = await this.net.safelyRequest(1, "users/read", "GET", body);
+            if (success) {
+                return { success: true, data: { users: result.users } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
 }

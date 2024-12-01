@@ -4,6 +4,7 @@ import { api } from '../..';
 import { State, hookstate } from '@hookstate/core';
 import { Topic } from '@/api/sigma/models';
 import { States } from '@/api/client/states';
+import { colors } from '@nextui-org/theme';
 
 let safezoneRunning = false
 class SafeZoneController {

@@ -58,7 +58,7 @@ func Install(s abstract.IState, a *Actions) error {
 	for _, godUsername := range a.Layer.Core().Gods() {
 		var user = models.User{}
 		userId := ""
-		err := state.Trx().Where("username = ?", godUsername + "@" + a.Layer.Core().Id()).First(&user).Error()
+		err := state.Trx().Where("username = ?", godUsername+"@"+a.Layer.Core().Id()).First(&user).Error()
 		if err != nil {
 			log.Println(err)
 			state.Trx().Reset()
@@ -84,10 +84,10 @@ func Install(s abstract.IState, a *Actions) error {
 	state.Trx().Reset()
 	users := []models.User{}
 	state.Trx().Model(&models.User{}).Find(&users)
-	go (func ()  {
+	go (func() {
 		for _, user := range users {
 			toolbox.Cache().Put("code::"+convertRowIdToCode(uint(user.Number)), user.Id)
-		}			
+		}
 	})()
 	state.Trx().Push()
 	return nil
@@ -110,7 +110,7 @@ func (a *Actions) Create(s abstract.IState, input inputsusers.CreateInput) (any,
 	)
 	trx := state.Trx()
 	trx.Use()
-	findErr := trx.Model(&models.User{}).Where("username = ?", input.Username + "@" + a.Layer.Core().Id()).First(&user).Error()
+	findErr := trx.Model(&models.User{}).Where("username = ?", input.Username+"@"+a.Layer.Core().Id()).First(&user).Error()
 	if findErr == nil {
 		if user.Secret == input.Secret {
 			trx.Reset()
@@ -123,7 +123,11 @@ func (a *Actions) Create(s abstract.IState, input inputsusers.CreateInput) (any,
 	}
 	trx.Reset()
 	token := crypto.SecureUniqueString()
-	user = models.User{Metadata: datatypes.JSON([]byte(`{}`)), Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Typ: "human", PublicKey: input.PublicKey, Username: input.Username + "@" + a.Layer.Core().Id(), Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
+	typ := "human"
+	if input.Typ != "" {
+		typ = input.Typ
+	}
+	user = models.User{Metadata: datatypes.JSON([]byte(`{}`)), Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Typ: typ, PublicKey: input.PublicKey, Username: input.Username + "@" + a.Layer.Core().Id(), Secret: input.Secret, Name: input.Name, Avatar: input.Avatar}
 	err := trx.Create(&user).Error()
 	if err != nil {
 		return nil, err
@@ -206,6 +210,25 @@ func (a *Actions) Get(s abstract.IState, input inputsusers.GetInput) (any, error
 	}
 	return outputsusers.GetOutput{
 		User: models.PublicUser{Id: user.Id, Type: user.Typ, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey},
+	}, nil
+}
+
+// Read /users/read check [ false false false ] access [ true false false false GET ]
+func (a *Actions) Read(s abstract.IState, input inputsusers.ReadInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	users := []models.User{}
+	err := trx.Where("type = ?", input.Typ).Find(&users).Error()
+	if err != nil {
+		return nil, err
+	}
+	publicUsers := []models.PublicUser{}
+	for _, user := range users {
+		publicUsers = append(publicUsers, models.PublicUser{Id: user.Id, Type: user.Typ, Username: user.Username, Name: user.Name, Avatar: user.Avatar, PublicKey: user.PublicKey})
+	}
+	return outputsusers.ReadOutput{
+		Users: publicUsers,
 	}, nil
 }
 

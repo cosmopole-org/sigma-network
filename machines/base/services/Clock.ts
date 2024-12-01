@@ -94,7 +94,9 @@ export default {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log(packetHolder.packet)
                 if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
-                    let { colors } = packetHolder.packet
+                    let { colors, theme, secondaryColor } = packetHolder.packet
+                    colors["activeText"] = (theme === 'light' ? '#333' : '#fff');
+                    let handColors = theme === 'light' ? 'rgba(0, 106, 255, 1)' : 'rgba(0, 255, 170, 1)';
                     packetHolder.answer({
                         code: `
                 ${tools}
@@ -137,13 +139,13 @@ export default {
                             }}>
                                 <Box style={{
                                     width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                    backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0, opacity: 0.25,
+                                    backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
                                 }} />
-                                <Image style={{ backgroundColor: '#fff', borderRadius: '50%', width: '80%', aspectRatio: '1 / 1', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }} src={'https://illustoon.com/photo/dl/5054.png'} />
+                                <Image style={{ borderRadius: '50%', width: '80%', aspectRatio: '1 / 1', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }} src={'${theme === 'light' ? 'https://i.postimg.cc/13BzqPpH/clock-3.png' : 'https://i.postimg.cc/SRBTywTF/clock-2.png'}'} />
                                 <Box style={{  
-                                    transform: 'rotate(' + this.state.hoursDeg + 'deg) translateY(-50%)',
+                                    transform: 'rotate(' + this.state.hoursDeg + 'deg)',
                                     transition: 'transform 0.5s',
-                                    width: '66%', height: '6cqmin', maxHeight: 16, position: 'absolute', left: '16%',
+                                    width: '36%', height: '4cqmin', maxHeight: 16, position: 'absolute', left: '32%',
                                     top: '50%'
                                 }}>
                                     <Box
@@ -151,13 +153,13 @@ export default {
                                             width: '100%', height: '100%', position: 'relative',
                                         }}
                                      >
-                                        <Box style={{ backgroundColor: '#000', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
+                                        <Box style={{ borderRadius: '1cqmin', backgroundColor: '${handColors}', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
                                     </Box>
                                 </Box>
                                 <Box style={{  
-                                    transform: 'rotate(' + this.state.minutesDeg + 'deg) translateY(-50%)',
+                                    transform: 'rotate(' + this.state.minutesDeg + 'deg)',
                                     transition: 'transform 0.5s',
-                                    width: '66%', height: '5cqmin', maxHeight: 12, position: 'absolute', left: '16%',
+                                    width: '50%', height: '3cqmin', maxHeight: 12, position: 'absolute', left: '25%',
                                     top: '50%'
                                 }}>
                                     <Box
@@ -165,13 +167,13 @@ export default {
                                             width: '100%', height: '100%', position: 'relative',
                                         }}
                                      >
-                                        <Box style={{ backgroundColor: '#000', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
+                                        <Box style={{ borderRadius: '1cqmin', backgroundColor: '${handColors}', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
                                     </Box>
                                 </Box>
                                 <Box style={{  
-                                    transform: 'rotate(' + this.state.secondsDeg + 'deg) translateY(-50%)',
+                                    transform: 'rotate(' + this.state.secondsDeg + 'deg)',
                                     transition: 'transform 0.5s',
-                                    width: '66%', height: '4cqmin', maxHeight: 8, position: 'absolute', left: '16%',
+                                    width: '60%', height: '2cqmin', maxHeight: 8, position: 'absolute', left: '20%',
                                     top: '50%'
                                 }}>
                                     <Box
@@ -179,7 +181,7 @@ export default {
                                             width: '100%', height: '100%', position: 'relative',
                                         }}
                                      >
-                                        <Box style={{ backgroundColor: '#000', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
+                                        <Box style={{ borderRadius: '1cqmin', backgroundColor: '${handColors}', width: '50%', height: '100%', position: 'absolute', left: '50%' }} />
                                     </Box>
                                 </Box>
                             </Box>
@@ -225,6 +227,7 @@ export default {
                     })
                 } else if (packetHolder.packet.tag === 'get/widget') {
                     let { colors, theme, secondaryColor } = packetHolder.packet
+                    colors["activeText"] = (theme === 'light' ? '#333' : '#fff');
                     let handColors = theme === 'light' ? 'rgba(0, 106, 255, 1)' : 'rgba(0, 255, 170, 1)';
                     packetHolder.answer({
                         code: `
@@ -256,7 +259,7 @@ export default {
                 render() {
                     return (
                         <Box style={{
-                            backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}',
+                            backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}',
                             width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden', display: 'flex', flexWrap: 'wrap',
                             color: '#fff', position: 'relative', backdropFilter: 'blur(5px)', textAlign: 'center', containerType: 'size', resize: 'both'
                         }}>

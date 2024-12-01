@@ -35,6 +35,10 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Get)
 		}
 		
+		func (c *Plugger) Read() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Read)
+		}
+		
 		func (c *Plugger) Delete() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Delete)
 		}

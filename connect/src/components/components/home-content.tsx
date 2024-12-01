@@ -2,8 +2,6 @@ import { States, useTheme } from "@/api/client/states"
 import MainTools from "../home/main-tools-drawer"
 import Circles from "./circles"
 import { useEffect, useMemo, useRef, useState } from "react"
-import Board from "../room/room-board"
-import AddMacBtn from "./add-mac-btn"
 import HomeAvatarGroup from "./home-avatar-group"
 import HomeInfoBox from "./home-info-box"
 import Backdrop from "./backdrop"
@@ -11,6 +9,7 @@ import { colors } from "@nextui-org/theme"
 import Desk from "./desk"
 import { Topic } from "@/api/sigma/models"
 import { api } from "@/index"
+import MachinesPalette from "./machines-palette"
 
 export default function HomeContent() {
     const { theme, wallpaper } = useTheme();
@@ -55,7 +54,7 @@ export default function HomeContent() {
                 {board}
                 {infoBox}
             </div>
-            <AddMacBtn />
+            <MachinesPalette />
             <MainTools />
             {backdrop}
         </div>

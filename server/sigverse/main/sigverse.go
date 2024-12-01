@@ -22,6 +22,9 @@
 			plugger_space "sigma/sigverse/pluggers/space"
 			action_space "sigma/sigverse/actions/space"
 			
+			plugger_storage "sigma/sigverse/pluggers/storage"
+			action_storage "sigma/sigverse/actions/storage"
+			
 			plugger_topic "sigma/sigverse/pluggers/topic"
 			action_topic "sigma/sigverse/actions/topic"
 			
@@ -68,6 +71,11 @@
 				p_space := plugger_space.New(a_space, logger, core)
 				PlugThePlugger(layer, p_space)
 				p_space.Install(layer, a_space)
+			
+				a_storage := &action_storage.Actions{Layer: layer}
+				p_storage := plugger_storage.New(a_storage, logger, core)
+				PlugThePlugger(layer, p_storage)
+				p_storage.Install(layer, a_storage)
 			
 				a_topic := &action_topic.Actions{Layer: layer}
 				p_topic := plugger_topic.New(a_topic, logger, core)

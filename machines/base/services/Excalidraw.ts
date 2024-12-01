@@ -138,13 +138,13 @@ export default {
 
                     return (
                         <Box style={{
-                            width: 'calc(100% - 16px)', height: 'calc(100% - 16px)', borderRadius: 16, overflow: 'hidden',
+                            width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden',
                             color: '#000', position: 'relative', textAlign: 'center', backdropFilter: 'blur(5px)',
                             padding: 8, maxHeight: container.width, position: 'relative'
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{
                                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',

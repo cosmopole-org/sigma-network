@@ -92,7 +92,9 @@ export default {
         Api.initilize('37004a67-dcb8-4670-a10c-c89de50bfb54-b374b716-65df-47a0-8b8a-b73fccd5574f').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log(packetHolder.packet)
-                let { colors, colorName, secondaryColor } = packetHolder.packet
+                let { colors, colorName, secondaryColor, theme } = packetHolder.packet
+                if (colors) colors["activeText"] = (theme === 'light' ? '#333' : '#fff');
+                let primaryColor = theme === 'light' ? 'rgba(0, 106, 255, 1)' : 'rgba(0, 255, 170, 1)';
                 if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
                     packetHolder.answer({
                         code: `
@@ -191,7 +193,7 @@ export default {
                                 days.map((day, index) => {
                                     return (
                                         <Box style={{ borderRadius: '25%', marginLeft: 8, marginRight: 8, width: 'calc(${100 / 7}% - 17px)', aspectRatio: '1 / 1', position: 'relative' }}>
-                                            <Box style={{ backgroundColor: today === index ? '${secondaryColor}' : 'transparent', borderRadius: '50%', width: '70%', padding: '15%', aspectRatio: '1 / 1', position: 'relative', fontSize: '5cqmin', color: today === index ? '#000' : '${colors['activeText']}' }}>
+                                            <Box style={{ backgroundColor: today === index ? '${primaryColor}' : 'transparent', borderRadius: '50%', width: '70%', padding: '15%', aspectRatio: '1 / 1', position: 'relative', fontSize: '5cqmin', color: today === index ? '${theme === 'light' ? '#fff' : '#213037'}' : '${colors['activeText']}' }}>
                                                 {day.getDate()}
                                             </Box>
                                         </Box>
@@ -216,7 +218,6 @@ export default {
             }
             ` })
                 } else if (packetHolder.packet.tag === 'get/widget') {
-                    let { colors, theme, secondaryColor } = packetHolder.packet
                     packetHolder.answer({
                         code: `
                 ${tools}
@@ -277,7 +278,7 @@ export default {
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${theme === 'light' ? colors[50] : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{ width: '100%', height: 'auto', position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)' }}> 
                                 <Box style={{ width: '85%', marginTop: '5%', marginLeft: '7.5%' }}>

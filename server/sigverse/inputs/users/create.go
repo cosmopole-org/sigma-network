@@ -6,6 +6,7 @@ type CreateInput struct {
 	Name      string `json:"name" validate:"required"`
 	Avatar    string `json:"avatar" validate:"required"`
 	PublicKey string `json:"publicKey" validate:"required"`
+	Typ       string `json:"type"`
 }
 
 func (d CreateInput) GetData() any {
