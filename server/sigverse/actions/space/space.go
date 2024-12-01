@@ -11,10 +11,8 @@ import (
 	tb "sigma/sigma/layer1/module/toolbox"
 	"sigma/sigma/utils/crypto"
 	inputsspaces "sigma/sigverse/inputs/spaces"
-	inputs_topics "sigma/sigverse/inputs/topics"
 	models "sigma/sigverse/model"
 	outputsspaces "sigma/sigverse/outputs/spaces"
-	outputs_topics "sigma/sigverse/outputs/topics"
 	updatesspaces "sigma/sigverse/updates/spaces"
 
 	"gorm.io/gorm/clause"
@@ -242,7 +240,7 @@ func (a *Actions) Create(s abstract.IState, input inputsspaces.CreateInput) (any
 	if err3 != nil {
 		return nil, err3
 	}
-	topic = models.Topic{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Title: "hall", Avatar: "0", SpaceId: space.Id}
+	topic = models.Topic{Id: crypto.SecureUniqueId(a.Layer.Core().Id()), Title: "🏛️ hall", Avatar: "0", SpaceId: space.Id}
 	err4 := trx.Create(&topic).Error()
 	if err4 != nil {
 		return nil, err4
@@ -334,6 +332,29 @@ func (a *Actions) Get(s abstract.IState, input inputsspaces.GetInput) (any, erro
 	return outputsspaces.GetOutput{Space: space}, nil
 }
 
+// Read /spaces/read check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Read(s abstract.IState, input inputsspaces.ReadInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	members := []models.Member{}
+	err := trx.Model(&models.Member{}).Where("user_id = ?", state.Info().UserId()).Find(&members).Error()
+	if err != nil {
+		return nil, err
+	}
+	spaceIds := []string{}
+	for _, member := range members {
+		spaceIds = append(spaceIds, member.SpaceId)
+	}
+	spaces := []models.Space{}
+	trx.Reset()
+	err2 := trx.Where("id in ?", spaceIds).Find(&spaces).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	return outputsspaces.ReadOutput{Spaces: spaces}, nil
+}
+
 // Join /spaces/join check [ true false false ] access [ true false false false POST ]
 func (a *Actions) Join(s abstract.IState, input inputsspaces.JoinInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())
@@ -380,17 +401,8 @@ func (a *Actions) CreateGroup(s abstract.IState, input inputsspaces.CreateGroupI
 		return nil, spaceErr
 	}
 	space = rawSpaceRes.(outputsspaces.CreateOutput).Space
+	topic = rawSpaceRes.(outputsspaces.CreateOutput).Topic
 	member = rawSpaceRes.(outputsspaces.CreateOutput).Member
-	_, rawTopicRes, topicErr := a.Layer.Core().Get(1).Actor().FetchAction("/topics/create").Act(a.Layer.Sb().NewState(module_actor_model.NewInfo(state.Info().UserId(), space.Id, ""), trx), inputs_topics.CreateInput{
-		Title:    "main",
-		Avatar:   "0",
-		Metadata: "{}",
-		SpaceId:  space.Id,
-	})
-	if topicErr != nil {
-		return nil, topicErr
-	}
-	topic = rawTopicRes.(outputs_topics.CreateOutput).Topic
 	return outputsspaces.CreateSpaceOutput{Space: space, Topic: topic, Member: member}, nil
 }
 

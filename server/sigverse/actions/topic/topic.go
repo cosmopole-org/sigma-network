@@ -131,6 +131,34 @@ func (a *Actions) Get(s abstract.IState, input inputstopics.GetInput) (any, erro
 	return outputstopics.GetOutput{Topic: topic}, nil
 }
 
+// Read /topics/read check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Read(s abstract.IState, input inputstopics.ReadInput) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	trx := state.Trx()
+	trx.Use()
+	space := model.Space{Id: input.SpaceId}
+	err := trx.First(&space).Error()
+	if err != nil {
+		return nil, err
+	}
+	topics := []model.Topic{}
+	trx.Reset()
+	err2 := trx.Where("space_id = ?", space.Id).Find(&topics).Error()
+	if err2 != nil {
+		return nil, err2
+	}
+	if space.IsPublic {
+		return outputstopics.ReadOutput{Topics: topics}, nil
+	}
+	member := model.Member{}
+	trx.Reset()
+	err3 := trx.Where("space_id = ?", space.Id).Where("user_id = ?", state.Info().UserId()).First(&member).Error()
+	if err3 != nil {
+		return nil, errors.New("access to space denied")
+	}
+	return outputstopics.ReadOutput{Topics: topics}, nil
+}
+
 // Send /topics/send check [ true true true ] access [ true false false false POST ]
 func (a *Actions) Send(s abstract.IState, input inputstopics.SendInput) (any, error) {
 	toolbox := abstract.UseToolbox[*tb.ToolboxL1](a.Layer.Tools())

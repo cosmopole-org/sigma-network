@@ -91,10 +91,12 @@ let storage: { [id: string]: any[] } = {}
 
 export default {
     start: () => {
-        Api.initilize('0a812bbf05a400fd8e6945ad28c70495').then((api: Api) => {
+        Api.initilize('f22bda2b-47b3-47bd-b078-6f37caebc3bc-41ed6577-c741-4b3c-9726-8459b24d456a').then((api: Api) => {
             api.services.machine.onRequest((packetHolder: any) => {
                 console.log('received', packetHolder.packet)
-                let { colors, colorName, secondaryColor } = packetHolder.packet
+                let { colors, colorName, secondaryColor, theme, widgetSize } = packetHolder.packet
+                if (colors) colors["activeText"] = (theme === 'light' ? '#333' : '#fff');
+                // let primaryColor = theme === 'light' ? 'rgba(0, 106, 255, 1)' : 'rgba(0, 255, 170, 1)';
                 if (packetHolder.packet.tag === 'get/url') {
                     packetHolder.answer({ questionId: 'get/url', inside: true, url: '1LSdzuKyef1CtPvHjGsmP8Y0pSVA5PGx4OkC4MT3t-5c' }, 'response')
                 } else if (packetHolder.packet.tag === 'get/applet' || packetHolder.packet.tag === 'get/globalApplet') {
@@ -119,13 +121,13 @@ export default {
 
                     return (
                         <Box style={{
-                            width: 'calc(100% - 16px)', height: 'calc(100% - 16px)', borderRadius: 16, overflow: 'hidden',
+                            width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden',
                             color: '#000', position: 'relative', textAlign: 'center', backdropFilter: 'blur(5px)',
                             padding: 8, maxHeight: container.width, position: 'relative'
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${colors['absolutePlain']}', position: 'absolute', left: 0, top: 0, opacity: 0.25
+                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{
                                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',

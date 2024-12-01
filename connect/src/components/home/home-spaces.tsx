@@ -37,7 +37,7 @@ export default function HomePage() {
 							setSelectedSpaceId(spaces[0].id);
 						}}
 						key={homeSpace.id} className="w-12 h-12 mt-6 ml-2" style={{ borderRadius: '50%' }}>
-						<Card className="w-full h-full bg-content3 pt-2 pl-2 pr-2" shadow="md" style={{borderRadius: '50%'}}>
+						<Card className="w-full h-full bg-content3 pt-2 pl-2 pr-2" shadow="md" style={{borderRadius: '50%', minHeight: 48}}>
 							<Icon name="home" size={[32,32]} />
 						</Card>
 					</div>
@@ -47,7 +47,7 @@ export default function HomePage() {
 						Actions.openCreateSpaceModal();
 					}}
 					key={"add"} className="w-12 h-12 mt-6 ml-2" style={{ borderRadius: '50%' }}>
-					<Card className="w-full h-full bg-content3 pt-2 pl-2 pr-2" shadow="md" style={{borderRadius: '50%'}}>
+					<Card className="w-full h-full bg-content3 pt-2 pl-2 pr-2" shadow="md" style={{borderRadius: '50%', minHeight: 48}}>
 						<Icon name="add" size={[32,32]} />
 					</Card>
 				</div>
