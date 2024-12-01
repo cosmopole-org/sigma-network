@@ -68,4 +68,17 @@ export default class Topics {
             return { success: false, data: { error: ex.toString() } };
         }
     }
+    async ask(
+        body: { recvId: string, spaceId: string, topicId: string, data: any }
+    ) {
+        try {
+            let member = await this.store.db.collections.members.findOne({ selector: { userId: { $eq: this.store.myUserId }, spaceId: { $eq: body.spaceId } } }).exec();
+            if (member === null) {
+                return { success: false, data: { error: "member not found" } };    
+            }
+            return await this.send({ data: body.data, spaceId: body.spaceId, topicId: body.topicId, memberId: member.id, type: 'single', recvId: body.recvId });
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
 }

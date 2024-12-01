@@ -2,14 +2,13 @@ import { CircularProgress } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/index";
 import { colors } from "@nextui-org/theme";
-import { States, useTheme } from "@/api/client/states";
+import { Actions, States, useTheme } from "@/api/client/states";
 import * as RGL from "react-grid-layout";
 import 'react-grid-layout/css/styles.css'
 import 'react-resizable/css/styles.css'
 import IconButton from "../elements/icon-button";
 import AppletHost from "./applet-host";
-import { overlaySafezoneData } from "./Overlay";
-import { openAppletSheet } from "./AppletSheet";
+import { openAppletSheet } from "./applet-sheet";
 
 const ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
 export const rowHeight = 8
@@ -19,41 +18,9 @@ window.onresize = () => {
     sizeKey = window.innerWidth >= 1200 ? 'lg' : window.innerWidth >= 996 ? 'md' : window.innerWidth >= 768 ? 'sm' : window.innerWidth >= 480 ? 'xs' : 'xxs'
 }
 
-let saveLayouts = (bots: { [id: string]: any }, layouts: ReactGridLayout.Layouts) => {
-    let updates: Array<any> = []
-    layouts.lg.map(sampleItem => sampleItem.i).forEach(itemId => {
-        let worker = bots[itemId]
-        let anyNew = false
-        Object.keys(layouts).forEach(layoutKey => {
-            let item = layouts[layoutKey].filter(item => item.i === itemId)[0]
-            if (
-                worker && (
-                    worker.secret.grid[layoutKey].x !== item.x ||
-                    worker.secret.grid[layoutKey].y !== item.y ||
-                    worker.secret.grid[layoutKey].w !== item.w ||
-                    worker.secret.grid[layoutKey].h !== item.h
-                )
-            ) {
-                anyNew = true
-                worker.secret.grid[layoutKey].x = item.x
-                worker.secret.grid[layoutKey].y = item.y
-                worker.secret.grid[layoutKey].w = item.w
-                worker.secret.grid[layoutKey].h = item.h
-            }
-        })
-        if (anyNew) {
-            updates.push(worker)
-        }
-    })
-    return updates
-}
-
 let buildLayoutOfWorkers = (workers: any[]) => {
     return {
-        lg: workers.map((w: any) => {
-            console.log(w);
-            return ({ ...w.secret.grid.lg, i: w.id, static: false })
-        }),
+        lg: workers.map((w: any) => ({ ...w.secret.grid.lg, i: w.id, static: false })),
         md: workers.map((w: any) => ({ ...w.secret.grid.md, i: w.id, static: false })),
         sm: workers.map((w: any) => ({ ...w.secret.grid.sm, i: w.id, static: false })),
         xs: workers.map((w: any) => ({ ...w.secret.grid.xs, i: w.id, static: false })),
@@ -85,7 +52,7 @@ const measureWidgetSize = (bots: { [id: string]: any }, worker: any) => {
 
 let cachedMembers: { [id: string]: any } = {};
 
-export let addWidgetToSDesktop = async (spaceId: string, topicId: string, machineId: string): Promise<any> => { };
+export let addWidgetToSDesktop = async (_spaceId: string, _topicId: string, _machineId: string): Promise<any> => { };
 
 const Desk = (props: { show: boolean, room: any }) => {
 
@@ -94,7 +61,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     const editMode = States.useListener(States.store.boardEditingMode)
     const { theme } = useTheme();
     const metadataRef: any = useRef({})
-    const [trigger, setTrigger] = useState(Math.random().toString());
+    const [, setTrigger] = useState(Math.random().toString());
     const rerender = () => {
         setTrigger(Math.random().toString());
     }
@@ -227,7 +194,7 @@ const Desk = (props: { show: boolean, room: any }) => {
                         draggableCancel=".cancelSelectorName"
                         draggableHandle=".drag-handle"
                         breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-                        onLayoutChange={(currentLayout: RGL.Layout[], layouts: RGL.Layouts) => {
+                        onLayoutChange={(_: RGL.Layout[], layouts: RGL.Layouts) => {
                             const oldLayouts = deskLayout.current;
                             let clonedLayouts = structuredClone(layouts)
                             for (let sizeKey in oldLayouts) {
@@ -279,7 +246,7 @@ const Desk = (props: { show: boolean, room: any }) => {
                                                             if (!editMode) {
                                                                 let onClickOfMetadata = metadataRef.current[key]?.onClick
                                                                 if (onClickOfMetadata) {
-                                                                    overlaySafezoneData.set({ code: onClickOfMetadata.code, workerId: key, room: props.room })
+                                                                    Actions.updateOverlayData({ code: onClickOfMetadata.code, workerId: key, room: props.room })
                                                                 } else {
                                                                     openAppletSheet(props.room, key)
                                                                 }
@@ -306,7 +273,7 @@ const Desk = (props: { show: boolean, room: any }) => {
                                                         style={{ transform: 'translate(8px, -68px)' }}
                                                         onClick={() => {
                                                             if (window.confirm('do you want to delete this widget ?')) {
-                                                                api.sigma.services?.spaces.removeMember({ spaceId: props.room.spaceId, memberId: key }).then((body: any) => {
+                                                                api.sigma.services?.spaces.removeMember({ spaceId: props.room.spaceId, memberId: key }).then((_body: any) => {
                                                                     Object.keys(deskLayout.current).forEach(lk => {
                                                                         deskLayout.current[lk] = deskLayout.current[lk].filter((item: any) => item.i !== key);
                                                                     })

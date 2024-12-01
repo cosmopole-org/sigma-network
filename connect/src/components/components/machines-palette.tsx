@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Popover, PopoverTrigger, PopoverContent, Button } from "@nextui-org/react";
 import Icon from "../elements/icon";
 import { api } from "@/index";

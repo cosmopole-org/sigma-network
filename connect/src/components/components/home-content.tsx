@@ -1,15 +1,15 @@
 import { States, useTheme } from "@/api/client/states"
 import MainTools from "../home/main-tools-drawer"
-import Circles from "./circles"
 import { useEffect, useMemo, useRef, useState } from "react"
 import HomeAvatarGroup from "./home-avatar-group"
 import HomeInfoBox from "./home-info-box"
 import Backdrop from "./backdrop"
-import { colors } from "@nextui-org/theme"
 import Desk from "./desk"
 import { Topic } from "@/api/sigma/models"
 import { api } from "@/index"
 import MachinesPalette from "./machines-palette"
+import { AppletSheet } from "./applet-sheet"
+import Overlay from "./Overlay"
 
 export default function HomeContent() {
     const { theme, wallpaper } = useTheme();
@@ -29,9 +29,6 @@ export default function HomeContent() {
         <Backdrop stateName="homeDrawerOpen" stateChangerName="updateHomeMenuState" />,
         []
     );
-    const circles = useMemo(() => <Circles className="fixed top-0 left-0 w-full h-full" />, [wallpaper, theme, showBoardBg]);
-    const cardLightColor = '#fff';
-    const cardDarkColor = colors.purple[900];
     return (
         <div className={"w-full h-full"}>
             <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
@@ -57,6 +54,8 @@ export default function HomeContent() {
             <MachinesPalette />
             <MainTools />
             {backdrop}
+            <AppletSheet />
+            <Overlay />
         </div>
     )
 }

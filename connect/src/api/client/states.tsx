@@ -1,5 +1,6 @@
 import { hookstate, State, useHookstate } from "@hookstate/core";
 import { useEffect } from "react";
+import { Topic } from "../sigma/models";
 
 export function useTheme() {
 	const theme = useHookstate(States.store.theme);
@@ -16,7 +17,7 @@ export function useTheme() {
 			body.classList.replace("dark", theme.get({ noproxy: true }));
 		}
 		setTimeout(() => {
-			Rx.notify("update-home-spaces-menu-pos", { pos: States.store.homeDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - (States.store.navAsHome.get({ noproxy: true }) === "true" ? 0 : 72)) : 0 });			
+			Rx.notify("update-home-spaces-menu-pos", { pos: States.store.homeDrawerOpen.get({ noproxy: true }) ? (window.innerWidth - (States.store.navAsHome.get({ noproxy: true }) === "true" ? 0 : 72)) : 0 });
 		});
 	}, [theme.get({ noproxy: true }), wallpaper.get({ noproxy: true }), navAsHome.get({ noproxy: true })]);
 	return {
@@ -47,7 +48,11 @@ let hookStateStore = {
 	exploreSelectedTab: hookstate(0),
 	homeAppsOpen: hookstate(false),
 	authStep: hookstate(""),
-	selectedDrawerApp: hookstate("chat")
+	selectedDrawerApp: hookstate("chat"),
+	appletShown: hookstate(false),
+	appletLoaded: hookstate(false),
+	overlayData: hookstate<{ workerId: string, code: string, room: Topic } | null>(null),
+	overlayLoaded: hookstate(false),
 };
 
 export let States = {
@@ -69,6 +74,18 @@ export let States = {
 };
 
 export let Actions = {
+	switchAppletShown: (v: boolean) => {
+		States.store.appletShown.set(v);
+	},
+	switchAppletLoaded: (v: boolean) => {
+		States.store.appletLoaded.set(v);
+	},
+	updateOverlayData: (v: { workerId: string, code: string, room: Topic } | null) => {
+		States.store.overlayData.set(v);
+	},
+	switchOverlayLoaded: (v: boolean) => {
+		States.store.overlayLoaded.set(v);
+	},
 	updatePos: (spaceId: string, topicId: string) => {
 		States.store.currentPos.set({ spaceId, topicId });
 	},

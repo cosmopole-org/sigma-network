@@ -112,7 +112,7 @@ export default {
                         }
                         if (!found) workspace.push(update)
                     });
-                    packetHolder.broadcast({ key: 'update', updatesList })
+                    //packetHolder.broadcast({ key: 'update', updatesList })
                 } else if (packetHolder.packet.tag === 'get/elements') {
                     if (!storage[workerId]) storage[workerId] = []
                     let workspace = storage[workerId]

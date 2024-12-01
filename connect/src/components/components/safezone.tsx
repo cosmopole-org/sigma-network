@@ -1,11 +1,8 @@
-import { memo, useEffect, useRef } from "react"
-import { useHookstate } from "@hookstate/core"
+import { memo, useEffect, useRef, useState } from "react"
 import $ from 'jquery'
-import useSafezone from "./useSafezone"
-import { States } from "@/api/client/states"
+import { Actions, States } from "@/api/client/states"
 import { colors } from "@nextui-org/theme"
 import { api } from "@/index"
-import { overlaySafezoneData } from "./Overlay"
 import Loading from "./Loading"
 import { Topic } from "@/api/sigma/models"
 
@@ -21,18 +18,11 @@ const isSafe = (u: string) => {
 }
 
 const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string, workerId?: string, room?: Topic, onCancel: () => void, overlay?: boolean }) => {
-    const safezoneRepo = useSafezone()
     const randomPostFix = useRef(Math.random())
     let id = props.room ? props.workerId : props.machineId
     if (!id) id = ''
-    if (!safezoneRepo.accessSafeZoneController().findById(id)) {
-        safezoneRepo.accessSafeZoneController().create({ room: props.room, id })
-    }
-    let safezone = safezoneRepo.accessSafeZoneController().findById(id)
-    const showState = useHookstate(safezone?.shown)
-    const readyState = useHookstate(safezone?.ready)
-    const show = showState?.get({ noproxy: true })
-    const ready = readyState?.get({ noproxy: true })
+    const [show, setShow] = useState(false)
+    const [ready, setReady] = useState(false)
     const preparedIframeData = useRef('')
     const identifier = props.room ? `safezone-${props.workerId}` : `safezone-${props.machineId}`
     let url = props.code.substring('safezone/'.length)
@@ -49,13 +39,13 @@ const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string,
                 xmlEl.onload = 'alert("loaded")';
                 if (isSafe(xmlEl.src)) {
                     preparedIframeData.current = xmlEl.outerHTML
-                    showState.set(true)
-                    readyState.set(true)
+                    setShow(true)
+                    setReady(true)
                 }
             }
         } else {
-            if (!show) showState.set(true)
-            if (!ready) readyState.set(true)
+            if (!show) setShow(true)
+            if (!ready) setReady(true)
         }
     }
     useEffect(() => {
@@ -77,51 +67,45 @@ const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string,
                 } else if (data.key === 'ready') {
                     if (!show) {
                         (document.getElementById(`safezone-${workerId}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://safezone.liara.run/')
-                        showState.set(true)
+                        setShow(true)
                     }
                 } else if (data.key === 'ask') {
-                    let packet = data.packet
                     if (props.room) {
-                        let wi = workerId.startsWith('desktop-sheet-') ? workerId.substring('desktop-sheet-'.length) : workerId
-                        api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: props.room.spaceId } } }).exec().then((member: any) => {
-                            api.sigma.services?.topics.send({ data: packet, spaceId: props.room?.spaceId ?? "", topicId: props.room?.id ?? "", memberId: member.id, type: 'single', recvId: wi });
-                        });
+                        api.sigma.services?.topics.ask({ recvId: workerId.startsWith('desktop-sheet-') ? workerId.substring('desktop-sheet-'.length) : workerId, data: data.packet, spaceId: props.room.spaceId, topicId: props.room.id });
                     }
                 } else if (data.key === 'done') {
-                    overlaySafezoneData.set(undefined)
+                    Actions.updateOverlayData(null)
                 } else if (data.key === 'onAuthorize') {
-                    readyState.set(true)
+                    setReady(true)
                 }
             }
         }
         window.addEventListener('message', messageCallback)
         let packetReceiver = api.sigma.services?.topics.onPacketReceive((packet: any) => {
             let data = packet.data;
+            if (data.tag === 'get/widget' || data.tag === 'get/applet') return;
             if (data.type === "response") {
-                if (data.tag === 'get/widget') {
-                    if (props.workerId) {
-                        let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
-                        if (packet.member.id === wi) {
-                            (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://safezone.liara.run/')
-                        }
-                    } else {
+                if (props.workerId) {
+                    let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
+                    if (packet.member.id === wi) {
                         (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://safezone.liara.run/')
                     }
-                } else if (data.type === "push") {
-                    if (props.workerId) {
-                        let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
-                        if (packet.member.id === wi) {
-                            (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://safezone.liara.run/')
-                        }
-                    } else {
+                } else {
+                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://safezone.liara.run/')
+                }
+            } else if (data.type === "push") {
+                if (props.workerId) {
+                    let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
+                    if (packet.member.id === wi) {
                         (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://safezone.liara.run/')
                     }
+                } else {
+                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://safezone.liara.run/')
                 }
             }
         });
         return () => {
             packetReceiver?.remove();
-            safezone.reset()
             window.removeEventListener('message', messageCallback)
         }
     }, [])
@@ -158,17 +142,13 @@ const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string,
                             height="100%"
                             src={`https://safezone.liara.run/${url}?random=${randomPostFix.current}`}
                             style={{ opacity: show ? 1 : 0, transition: 'opacity 500ms' }}
-                            onLoad={() => {
-                                readyState.set(true)
-                                showState.set(true)
-                            }}
                         />
                     )
             }
             {
                 (!props.code || (props.code && props.code?.startsWith('safezone/') && !ready)) ? (
                     <Loading isWidget={props.isWidget} overlay={props.overlay} key={'safezone-loading'} onCancel={() => {
-                        readyState.set(false)
+                        setReady(false)
                         props.onCancel()
                     }} />
                 ) : null
