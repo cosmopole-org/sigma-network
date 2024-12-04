@@ -1,4 +1,3 @@
-
 const Child = () => {
     let [obj, setObj] = useState(0);
     useEffect(() => {
@@ -11,19 +10,23 @@ const Child = () => {
     )
 }
 const Main = () => {
-    let [arr, setArr] = useState([Math.random().toString(), Math.random().toString()]);
-    let [b, setB] = useState(false);
+    let [show, setShow] = useState(false);
     useEffect(() => {
-        setInterval(() => {
-            if (arr.value.length > 5) setB(true);
-            if (!b.value) setArr([...arr.value, Math.random().toString()]);
-            else if (arr.value.length > 0) setArr(arr.value.slice(1, arr.value.length));
-        }, 3000)
+        setTimeout(() => {
+            setShow(true);
+            setTimeout(() => {
+                setShow(false);
+            }, 3000);
+        }, 3000);
     }, []);
     return (
-        <div style={'background-color: blue;'}>{arr.value.map(i => <Child key={i} />)}</div>
+        <div style={'background-color: blue;'}>
+            {
+                show.value ? <Child /> : null
+            }
+            <Child />
+        </div>
     )
 }
-
 
 React.init(<Main />);

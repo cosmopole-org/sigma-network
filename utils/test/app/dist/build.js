@@ -12,19 +12,18 @@ const Child = () => {
   }, obj.value);
 };
 const Main = () => {
-  let [arr, setArr] = useState([Math.random().toString(), Math.random().toString()]);
-  let [b, setB] = useState(false);
+  let [show, setShow] = useState(false);
   useEffect(() => {
-    setInterval(() => {
-      if (arr.value.length > 5) setB(true);
-      if (!b.value) setArr([...arr.value, Math.random().toString()]);else if (arr.value.length > 0) setArr(arr.value.slice(1, arr.value.length));
+    setTimeout(() => {
+      setShow(true);
+      setTimeout(() => {
+        setShow(false);
+      }, 3000);
     }, 3000);
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: blue;'
-  }, arr.value.map(i => /*#__PURE__*/React.createElement(Child, {
-    key: i
-  })));
+  }, show.value ? /*#__PURE__*/React.createElement(Child, null) : null, /*#__PURE__*/React.createElement(Child, null));
 };
 React.init( /*#__PURE__*/React.createElement(Main, null));
 /******/ })()

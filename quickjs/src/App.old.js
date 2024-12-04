@@ -31,6 +31,7 @@ function App() {
         let elIndexer = {};
 
         const render = (data) => {
+          if (data === null) return null;
           if (typeof data === 'string' || typeof data === 'number' || typeof data === 'bigint' || typeof data === 'boolean') {
             return document.createTextNode(data);
           }
@@ -42,7 +43,9 @@ function App() {
           }
           if (data.props.children) {
             for (let i = 0; i < data.props.children.length; i++) {
-              el.appendChild(render(data.props.children[i]));
+              let res = render(data.props.children[i]);
+              if (res === null) continue;
+              el.appendChild(res);
             }
           }
           return el;
@@ -111,7 +114,11 @@ function App() {
             callbacks[key] = fn;
             apiSetInterval(key, t);
           }
-          const findAndReplaceComp = (key, path, parent, index, node, child) => {
+          const findAndReplaceComp = (key, parent, index, node, child) => {
+            if (node === null) {
+              parent.props.children[index] = null;
+              return false;
+            }
             if (!node.props) return false;
             if (node.props['box-key'] === key) {
               if (parent) {
@@ -123,14 +130,15 @@ function App() {
             }
             if (node.props?.children) {
               for (let i = 0; i < node.props.children.length; i++) {
-                let res = findAndReplaceComp(key, path + "/" + (node.props.children[i].tag + ":" + i), node, i, node.props.children[i], child);
+                let res = findAndReplaceComp(key, node, i, node.props.children[i], child);
                 if (res) return true;
               }
             }
             return false;
           }
           const replace = (data) => {
-            findAndReplaceComp(data.props['box-key'], 'root:0', null, 0, root, data);
+            if (data === null) return;
+            findAndReplaceComp(data.props['box-key'], null, 0, root, data);
             rep(JSON.stringify(data));
           }
           const setCurrComp = (c) => {
@@ -250,6 +258,7 @@ const React = {
             return { tag: '_', fn: () => runComp(tag, props?.key), fnName: tag.name };
         } else {
             if (props) {
+            console.log(children);
                 children = children.flat()
                 if (children && children.length > 0) props.children = children;
                 else props.children = [];
@@ -260,6 +269,7 @@ const React = {
         }
     },
     infer: (res) => {
+        if (res === null) return null;
         let result = undefined;
         let pushed = false;
         if (res.tag === '_') {
@@ -314,19 +324,18 @@ const Child = () => {
   }, obj.value);
 };
 const Main = () => {
-  let [arr, setArr] = useState([Math.random().toString(), Math.random().toString()]);
-  let [b, setB] = useState(false);
+  let [show, setShow] = useState(false);
   useEffect(() => {
-    setInterval(() => {
-      if (arr.value.length > 5) setB(true);
-      if (!b.value) setArr([...arr.value, Math.random().toString()]);else if (arr.value.length > 0) setArr(arr.value.slice(1, arr.value.length));
+    setTimeout(() => {
+      setShow(true);
+      setTimeout(() => {
+        setShow(false);
+      }, 3000);
     }, 3000);
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: blue;'
-  }, arr.value.map(i => /*#__PURE__*/React.createElement(Child, {
-    key: i
-  })));
+  }, show.value ? /*#__PURE__*/React.createElement(Child, null) : null, /*#__PURE__*/React.createElement(Child, null));
 };
 React.init( /*#__PURE__*/React.createElement(Main, null));
 /******/ })()
