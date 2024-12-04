@@ -276,7 +276,10 @@ function App() {
             }, []);
             return { "tag": "div", "props": { "style": "background-color: blue;", "children": arr.value.map(i => runComp(child1, i)) } };
           }
-          let res = runComp(comp);
+          const main = () => {
+            return { "tag": "div", "props": { "style": "background-color: green;", "children": [runComp(comp), runComp(comp)] } };
+          }
+          let res = runComp(main);
           root = res;
           jsx(JSON.stringify(root));
           runFnQueue();
@@ -288,7 +291,7 @@ function App() {
   }, []);
   return (
     <div className="App">
-
+      
     </div>
   );
 }
