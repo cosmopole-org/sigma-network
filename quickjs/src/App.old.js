@@ -152,6 +152,7 @@ function App() {
           });
           const useState = (value) => {
             try {
+              let copiedStack = [...tagStack];
               let savedKey = currentKey;
               let data = metaCache[currentKey];
               let cc = currComp;
@@ -163,7 +164,7 @@ function App() {
               data.hookCounter++;
               return [
                 prx,
-                (newVal) => { data.hookMeta[hookIndex].value = newVal; prx.value = newVal; fnQueue = []; counter = 0; let res = runComp(cc, savedKey); replace(res); runFnQueue(); }
+                (newVal) => { data.hookMeta[hookIndex].value = newVal; prx.value = newVal; fnQueue = []; counter = 0; let bs = [...tagStack]; tagStack = [...copiedStack]; let res = runComp(cc, savedKey); replace(React.infer(res)); tagStack = bs; runFnQueue(); }
               ]
             } catch (ex) { console.log(ex); }
           };
@@ -178,14 +179,9 @@ function App() {
             } catch (ex) { console.log(ex); }
           };
 
-          let counter = 0;
-
           const runComp = (c, key) => {
-
-            console.log(counter);
             
-            stack.push(c.name + ":" + counter);
-            let path = stack.join("/");
+            let path = tagStack.join("/");
             
             let oldCurrComp = currComp;
 
@@ -211,13 +207,8 @@ function App() {
 
             setCurrComp(c);
 
-            let bc = counter;
-            counter = 0;
-
             let res = currComp();
 
-            counter = bc;
-            
             res.props['box-key'] = currentKey;
 
             let data = metaCache[currentKey];
@@ -238,10 +229,6 @@ function App() {
             setCurrComp(oldCurrComp);
 
             fnQueue.push(next);
-
-            stack.pop();
-
-            counter++;
             
             return res;
           }
@@ -252,38 +239,98 @@ function App() {
           let metaCache = {};
           let keyCache = {};
           let currentKey = undefined;
-          let stack = [];
+
+          let tagStack = [];
+
+let counter = 0;
+
+const React = {
+    createElement: (tag, props, ...children) => {
+        if (typeof tag === 'function') {
+            return { tag: '_', fn: () => runComp(tag, props?.key), fnName: tag.name };
+        } else {
+            if (props) {
+                children = children.flat()
+                if (children && children.length > 0) props.children = children;
+                else props.children = [];
+                return { tag, props };
+            } else {
+                return { tag, props: { children: [] } };
+            }
+        }
+    },
+    infer: (res) => {
+        let result = undefined;
+        let pushed = false;
+        if (res.tag === '_') {
+            tagStack.push(res.fnName + ":" + counter);
+            pushed = true;
+            let cb = counter;
+            counter = 0;
+            result = React.infer(res.fn());
+            counter = cb;
+        } else {
+            if (res.tag) {
+              tagStack.push(res.tag + ":" + counter);
+              pushed = true;
+            }
+            result = res;
+        }
+        if (result?.props?.children) {
+            let children = [];
+            let cb = counter;
+            counter = 0;
+            result.props.children.forEach(c => {
+                children.push(React.infer(c));
+                counter++;
+            });
+            counter = cb;
+            result.props.children = children;
+        }
+        if (pushed) tagStack.pop();
+        return result;
+    },
+    init: (res) => {
+        root = React.infer(res);
+        jsx(JSON.stringify(root));
+        runFnQueue();
+        console.log("initialized");
+    },
+};
+
         `);
         vm.evalCode(`
-          const child1 = () => {
-            let [obj, setObj] = useState(0);
-            useEffect(() => {
-              setInterval(() => {
-                setObj(obj.value + 1);
-              }, 1000)
-            }, []);
-            return { "tag": "div", "props": { "style": "background-color: red;", "children": [obj.value] } };
-          }
-          const comp = () => {
-            let [arr, setArr] = useState([]);
-            let [b, setB] = useState(false);
-            useEffect(() => {
-              setInterval(() => {
-                if (arr.value.length > 5) setB(true);
-                if (!b.value) setArr([...arr.value, Math.random().toString()]);
-                else if (arr.value.length > 0) setArr(arr.value.slice(1, arr.value.length));
-              }, 3000)
-            }, []);
-            return { "tag": "div", "props": { "style": "background-color: blue;", "children": arr.value.map(i => runComp(child1, i)) } };
-          }
-          const main = () => {
-            return { "tag": "div", "props": { "style": "background-color: green;", "children": [runComp(comp), runComp(comp)] } };
-          }
-          let res = runComp(main);
-          root = res;
-          jsx(JSON.stringify(root));
-          runFnQueue();
-          console.log("hello");
+     /******/ (() => { // webpackBootstrap
+var __webpack_exports__ = {};
+const Child = () => {
+  let [obj, setObj] = useState(0);
+  useEffect(() => {
+    setInterval(() => {
+      setObj(obj.value + 1);
+    }, 1000);
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    style: 'background-color: red;'
+  }, obj.value);
+};
+const Main = () => {
+  let [arr, setArr] = useState([Math.random().toString(), Math.random().toString()]);
+  let [b, setB] = useState(false);
+  useEffect(() => {
+    setInterval(() => {
+      if (arr.value.length > 5) setB(true);
+      if (!b.value) setArr([...arr.value, Math.random().toString()]);else if (arr.value.length > 0) setArr(arr.value.slice(1, arr.value.length));
+    }, 3000);
+  }, []);
+  return /*#__PURE__*/React.createElement("div", {
+    style: 'background-color: blue;'
+  }, arr.value.map(i => /*#__PURE__*/React.createElement(Child, {
+    key: i
+  })));
+};
+React.init( /*#__PURE__*/React.createElement(Main, null));
+/******/ })()
+;
         `);
       }
       main()
