@@ -1,15 +1,15 @@
 /******/ (() => { // webpackBootstrap
 var __webpack_exports__ = {};
-const Child = () => {
+const Child = props => {
   let [obj, setObj] = useState(0);
   useEffect(() => {
-    setInterval(() => {
+    setTimeout(() => {
       setObj(obj.value + 1);
     }, 1000);
-  }, []);
+  }, [obj.value]);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: red;'
-  }, obj.value);
+  }, props.name, " ", obj.value);
 };
 const Main = () => {
   let [show, setShow] = useState(false);
@@ -23,7 +23,13 @@ const Main = () => {
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: blue;'
-  }, show.value ? /*#__PURE__*/React.createElement(Child, null) : null, /*#__PURE__*/React.createElement(Child, null));
+  }, show.value ? /*#__PURE__*/React.createElement(Child, {
+    key: 'keyhan',
+    name: 'keyhan'
+  }) : /*#__PURE__*/React.createElement(Child, {
+    key: 'mamad',
+    name: "mamad"
+  }));
 };
 React.init( /*#__PURE__*/React.createElement(Main, null));
 /******/ })()

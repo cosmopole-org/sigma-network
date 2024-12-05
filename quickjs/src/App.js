@@ -8,7 +8,7 @@ const Child = (props) => {
     }, 1000)
   }, [obj]);
   return (
-    <div style={{ backgroundColor: 'red' }}>{obj}</div>
+    <div style={{ backgroundColor: 'red' }}>{props.name} {obj}</div>
   )
 }
 const Main = () => {
@@ -23,10 +23,7 @@ const Main = () => {
   }, []);
   return (
     <div style={{ backgroundColor: 'blue' }}>
-      {
-        show ? <Child /> : null
-      }
-      <Child />
+      {show ? <Child name={'keyhan'} /> : <Child name={"mamad"} />}
     </div>
   )
 }

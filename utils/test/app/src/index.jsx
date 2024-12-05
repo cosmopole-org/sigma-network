@@ -1,12 +1,12 @@
-const Child = () => {
+const Child = (props) => {
     let [obj, setObj] = useState(0);
     useEffect(() => {
-        setInterval(() => {
+        setTimeout(() => {
             setObj(obj.value + 1);
-        }, 1000)
-    }, []);
+        }, 1000);
+    }, [obj.value]);
     return (
-        <div style={'background-color: red;'}>{obj.value}</div>
+        <div style={'background-color: red;'}>{props.name} {obj.value}</div>
     )
 }
 const Main = () => {
@@ -21,10 +21,7 @@ const Main = () => {
     }, []);
     return (
         <div style={'background-color: blue;'}>
-            {
-                show.value ? <Child /> : null
-            }
-            <Child />
+            {show.value ? <Child key={'keyhan'} name={'keyhan'} /> : <Child key={'mamad'} name={"mamad"} />}
         </div>
     )
 }

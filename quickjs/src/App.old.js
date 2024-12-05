@@ -98,7 +98,6 @@ function App() {
           let root = undefined;
           let currComp = undefined;
           let callbacks = {};
-          let currPath = '';
           const runCallback = (key) => {
             try {
               callbacks[key]();
@@ -151,28 +150,91 @@ function App() {
               data.hookCounter = 0;
             }
           }
-          const createOptions = () => ({
+          const createOptions = (data) => ({
             get(target, key) {
-              if (typeof target[key] === "object")
-                return new Proxy(target[key], createOptions());
-              return target[key];
+              if (typeof data[key] === "object")
+                return new Proxy(target[key], createOptions(data[key]));
+              return data[key];
             },
           });
+          let ud = {};
           const useState = (value) => {
             try {
               let copiedStack = [...tagStack];
               let savedKey = currentKey;
               let data = metaCache[currentKey];
               let cc = currComp;
+              let firstTrue = ud[data.hookMeta[data.hookCounter]?.updaterId]?.first;
+              let updaterId = firstTrue ? data.hookMeta[data.hookCounter]?.updaterId : Math.random().toString();
+              let updater = firstTrue ? data.hookMeta[data.hookCounter]?.updater : (newVal) => {
+                try {
+                setTimeout(() => {
+                if (ud[updaterId]?.second && metaCache[savedKey]) {
+                  data.hookMeta[hookIndex].value = newVal;
+                  prx.value = newVal;
+                  fnQueue = [];
+                  counter = 0;
+                  let bs = [...tagStack];
+                  tagStack = [...copiedStack];
+                  let modifiedPathes = {};
+                  let p = copiedStack.join("/");
+                  Object.keys(keyCache).forEach(path => {
+                    if (path.startsWith(p + "/")) {
+                      modifiedPathes[path] = keyCache[path];
+                    }
+                  });
+                  let res = runComp(cc, {...propCache[savedKey]}, savedKey);
+                  console.log(res);
+                  replace(React.infer(res));
+                  tagStack = bs;
+                  runFnQueue();
+                  Object.keys(keyCache).forEach(path => {
+                    if (path.startsWith(p + "/")) {
+                      if (modifiedPathes[path] && (modifiedPathes[path] !== keyCache[path])) {
+                        let k = modifiedPathes[path];
+                        delete metaCache[k];
+                        delete keyCache[path];
+                      }
+                    }
+                  });
+                } else {
+                  delete ud[updaterId];
+                }
+                });
+                } catch(ex) { console.log(ex); }
+              }
+              if (ud[updaterId] === undefined) {
+                ud[updaterId] = { first: true, second: true };
+              }
+              let oldKey = undefined;
               if (!data.hookMeta[data.hookCounter]) {
-                data.hookMeta.push({type: 'useState', value });
+                data.hookMeta.push({type: 'useState', value, updater, updaterId, savedKey });
+              } else {
+                let oldUpdaterId = data.hookMeta[data.hookCounter].updaterId;
+                oldKey = data.hookMeta[data.hookCounter].savedKey;
+                data.hookMeta[data.hookCounter].savedKey = savedKey;
+                data.hookMeta[data.hookCounter].updater = updater;
+                data.hookMeta[data.hookCounter].updaterId = updaterId;
+                ud[oldUpdaterId].first = false;
+                if (oldUpdaterId !== updaterId) {
+                  setTimeout(() => {
+                    ud[oldUpdaterId].second = false;
+                  })
+                }
               }
               let hookIndex = data.hookCounter;
-              let prx = new Proxy({ value: data.hookMeta[data.hookCounter].value }, createOptions());
+              let co = data.hookCounter;
+              let prx = new Proxy({ value: data.hookMeta[data.hookCounter].value }, createOptions(metaCache[savedKey].hookMeta[co]));
               data.hookCounter++;
               return [
                 prx,
-                (newVal) => { data.hookMeta[hookIndex].value = newVal; prx.value = newVal; fnQueue = []; counter = 0; let bs = [...tagStack]; tagStack = [...copiedStack]; let res = runComp(cc, savedKey); replace(React.infer(res)); tagStack = bs; runFnQueue(); }
+                (newVal) => {
+                  if (oldKey === metaCache[savedKey].hookMeta[co].savedKey) {
+                    updater(newVal);
+                  } else {
+                    metaCache[savedKey].hookMeta[co].updater(newVal);
+                  }
+                }
               ]
             } catch (ex) { console.log(ex); }
           };
@@ -181,14 +243,22 @@ function App() {
               let data = metaCache[currentKey];
               let cc = currComp;
               if (!data.hookMeta[data.hookCounter]) {
-                data.hookMeta.push({type: 'useEffect', fn });
+                data.hookMeta.push({type: 'useEffect', fn, deps });
+              } else {
+                data.hookMeta[data.hookCounter].fn = fn;
+                for (let i = 0; i < deps.length; i++) {
+                  if (deps[i] !== data.hookMeta[data.hookCounter].deps[i]) {
+                    fn();
+                    break;
+                  }
+                }
               }
               data.hookCounter++;
             } catch (ex) { console.log(ex); }
           };
 
-          const runComp = (c, key) => {
-            
+          const runComp = (c, props, key) => {
+
             let path = tagStack.join("/");
             
             let oldCurrComp = currComp;
@@ -206,16 +276,15 @@ function App() {
               currentKey = key;
             }
 
-            if (!keyCache[path]) {
-              keyCache[path] = currentKey;
-            }
+            keyCache[path] = currentKey;
             if (!metaCache[currentKey]) {
               metaCache[currentKey] = {};
             }
+            propCache[currentKey] = props;
 
             setCurrComp(c);
 
-            let res = currComp();
+            let res = currComp(props);
 
             res.props['box-key'] = currentKey;
 
@@ -243,85 +312,83 @@ function App() {
           const runFnQueue = () => {
             fnQueue.forEach(fn => fn());
           }
+          
           let fnQueue = [];
           let metaCache = {};
           let keyCache = {};
+          let propCache = {};
           let currentKey = undefined;
-
           let tagStack = [];
+          let counter = 0;
 
-let counter = 0;
-
-const React = {
-    createElement: (tag, props, ...children) => {
-        if (typeof tag === 'function') {
-            return { tag: '_', fn: () => runComp(tag, props?.key), fnName: tag.name };
-        } else {
-            if (props) {
-            console.log(children);
-                children = children.flat()
-                if (children && children.length > 0) props.children = children;
-                else props.children = [];
-                return { tag, props };
-            } else {
-                return { tag, props: { children: [] } };
-            }
-        }
-    },
-    infer: (res) => {
-        if (res === null) return null;
-        let result = undefined;
-        let pushed = false;
-        if (res.tag === '_') {
-            tagStack.push(res.fnName + ":" + counter);
-            pushed = true;
-            let cb = counter;
-            counter = 0;
-            result = React.infer(res.fn());
-            counter = cb;
-        } else {
-            if (res.tag) {
-              tagStack.push(res.tag + ":" + counter);
-              pushed = true;
-            }
-            result = res;
-        }
-        if (result?.props?.children) {
-            let children = [];
-            let cb = counter;
-            counter = 0;
-            result.props.children.forEach(c => {
-                children.push(React.infer(c));
-                counter++;
-            });
-            counter = cb;
-            result.props.children = children;
-        }
-        if (pushed) tagStack.pop();
-        return result;
-    },
-    init: (res) => {
-        root = React.infer(res);
-        jsx(JSON.stringify(root));
-        runFnQueue();
-        console.log("initialized");
-    },
-};
-
+          const React = {
+            createElement: (tag, props, ...children) => {
+              if (typeof tag === 'function') {
+                return { tag: '_', fn: () => runComp(tag, props, props?.key), fnName: tag.name };
+              } else {
+                if (props) {
+                  children = children.flat()
+                  if (children && children.length > 0) props.children = children;
+                  else props.children = [];
+                  return { tag, props };
+                } else {
+                  return { tag, props: { children: [] } };
+                }
+              }
+            },
+            infer: (res) => {
+              if (res === null) return null;
+              let result = undefined;
+              let pushed = false;
+              if (res.tag === '_') {
+                tagStack.push(res.fnName + ":" + counter);
+                pushed = true;
+                let cb = counter;
+                counter = 0;
+                result = React.infer(res.fn());
+                counter = cb;
+              } else {
+                if (res.tag) {
+                  tagStack.push(res.tag + ":" + counter);
+                  pushed = true;
+                }
+                result = res;
+              }
+              if (result?.props?.children) {
+                let children = [];
+                let cb = counter;
+                counter = 0;
+                result.props.children.forEach(c => {
+                  children.push(React.infer(c));
+                  counter++;
+                });
+                counter = cb;
+                result.props.children = children;
+              }
+              if (pushed) tagStack.pop();
+              return result;
+            },
+            init: (res) => {
+              root = React.infer(res);
+              jsx(JSON.stringify(root));
+              runFnQueue();
+              console.log("initialized");
+            },
+          };
         `);
         vm.evalCode(`
-     /******/ (() => { // webpackBootstrap
+/******/ (() => { // webpackBootstrap
 var __webpack_exports__ = {};
-const Child = () => {
+const Child = props => {
   let [obj, setObj] = useState(0);
   useEffect(() => {
-    setInterval(() => {
+    setTimeout(() => {
       setObj(obj.value + 1);
     }, 1000);
-  }, []);
+  }, [obj.value]);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: red;'
-  }, obj.value);
+  }, props.name, " ", obj.value);
 };
 const Main = () => {
   let [show, setShow] = useState(false);
@@ -335,7 +402,13 @@ const Main = () => {
   }, []);
   return /*#__PURE__*/React.createElement("div", {
     style: 'background-color: blue;'
-  }, show.value ? /*#__PURE__*/React.createElement(Child, null) : null, /*#__PURE__*/React.createElement(Child, null));
+  }, show.value ? /*#__PURE__*/React.createElement(Child, {
+    key: 'keyhan',
+    name: 'keyhan'
+  }) : /*#__PURE__*/React.createElement(Child, {
+    key: 'mamad',
+    name: "mamad"
+  }));
 };
 React.init( /*#__PURE__*/React.createElement(Main, null));
 /******/ })()
@@ -347,7 +420,7 @@ React.init( /*#__PURE__*/React.createElement(Main, null));
   }, []);
   return (
     <div className="App">
-      
+
     </div>
   );
 }
