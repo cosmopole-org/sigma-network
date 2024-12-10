@@ -44,7 +44,7 @@ export default function ChatsList() {
             <div className="h-0" />
             {
                 topics.map((item) => (
-                    <Card onClick={() => RouteSys.push('/app/chat', { spaceId: item.spaceId, topicId: item.id })} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
+                    <Card onPress={() => RouteSys.push('/app/chat', { spaceId: item.spaceId, topicId: item.id })} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
                             <Avatar isBordered alt={item.title} className="w-[56px] h-[56px] m-1" src={getUsers()[Number(spacesDict[item.spaceId].avatar)].avatar} style={{ minWidth: 56 }} />
                             <div className="flex flex-col relative w-full">

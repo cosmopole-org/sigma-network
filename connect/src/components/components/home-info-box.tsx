@@ -41,7 +41,7 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
                 color="primary"
                 className="h-12 w-12 absolute top-20 right-0"
                 style={{ borderRadius: '24px 0px 0px 24px' }}
-                onClick={() => {
+                onPress={() => {
                     RouteSys.push("/app/room-machines")
                 }}
             >

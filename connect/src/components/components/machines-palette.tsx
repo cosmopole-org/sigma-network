@@ -28,7 +28,7 @@ export default function MachinesPalette() {
             {
               machines.map(mac => {
                 return (
-                  <Button onClick={() => addWidgetToSDesktop(pos.spaceId, pos.topicId, mac.id)}>
+                  <Button onPress={() => addWidgetToSDesktop(pos.spaceId, pos.topicId, mac.id)}>
                     <Icon name="bot" />
                     {mac.name}
                   </Button>

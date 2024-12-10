@@ -38,7 +38,7 @@ export default function HomeChatsModal() {
                                         variant="shadow"
                                         className="absolute right-2/4 translate-x-[155px]"
                                         radius="full"
-                                        onClick={() => switchHomeFoldersModal(true)}
+                                        onPress={() => switchHomeFoldersModal(true)}
                                     >
                                         <Icon name="storage" />
                                     </Button>
@@ -48,7 +48,7 @@ export default function HomeChatsModal() {
                                         variant="shadow"
                                         className="absolute left-2/4 -translate-x-[155px]"
                                         radius="full"
-                                        onClick={() => switchHomeArchiveModal(true)}
+                                        onPress={() => switchHomeArchiveModal(true)}
                                     >
                                         <Icon name="archive" />
                                     </Button>
@@ -57,7 +57,7 @@ export default function HomeChatsModal() {
                                         variant="shadow"
                                         className="absolute left-2/4 -translate-x-1/2 h-10 text-lg"
                                         radius="full"
-                                        onClick={() => switchTowerCreateModal(true)}
+                                        onPress={() => switchTowerCreateModal(true)}
                                     >
                                         <Icon name="add" />
                                         Create new space

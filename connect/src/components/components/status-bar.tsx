@@ -23,6 +23,9 @@ export default function StatusBar(props: Readonly<{ screenshotCallback: () => vo
     let hist = States.useListener(RouteSys.history);
     const pos = States.useListener(States.store.currentPos);
     const [space, setSpace] = useState<Space | null>();
+    const [, setUpdateTrigger] = useState(Math.random().toString());
+    const full = States.useListener(States.store.appletFull);
+    const appletShown = States.useListener(States.store.appletShown);
     useEffect(() => {
         const spaceObservable = api.sigma.store.db.spaces.findOne(pos.spaceId).$;
         let spaceSub = spaceObservable.subscribe(s => {
@@ -47,7 +50,7 @@ export default function StatusBar(props: Readonly<{ screenshotCallback: () => vo
         title = pages[hist[hist.length - 1]?.path];
     }
     return (
-        <div style={{ zIndex: 99998 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
+        <div style={{ zIndex: 99999 }} className="shadow-medium flex w-[calc(100%-32px)] h-9 left-4 top-3 bg-white dark:bg-background absolute rounded-3xl pl-1 pr-1">
             {leftSideBtn}
             <IconButton color={'#006FEE'} name="connected" className="-mt-[2px]" />
             <div className="flex-1">
@@ -55,7 +58,43 @@ export default function StatusBar(props: Readonly<{ screenshotCallback: () => vo
             <div className="absolute left-1/2 -translate-x-1/2 text-center pt-[7px] dark:text-white">
                 {title}
             </div>
-            <IconButton name="more" className="-mt-[2px]" onClick={props.screenshotCallback}/>
+            {
+                appletShown ? (
+                    <IconButton
+                        name={full ? "shrink" : "fullscreen"}
+                        className="-mt-[2px]"
+                        onClick={() => {
+                            Actions.switchAppletFull(!full);
+                        }}
+                    />
+                ) : (
+                    <IconButton
+                        size={States.isFullscreen() ? [18, 18] : [22, 22]}
+                        name={States.isFullscreen() ? "out-fullscreen" : "in-fullscreen"}
+                        className="-mt-[2px]"
+                        onClick={() => {
+                            if (States.isFullscreen()) {
+                                document.exitFullscreen();
+                            } else {
+                                document.body.requestFullscreen()
+                            }
+                            setTimeout(() => {
+                                setUpdateTrigger(Math.random().toString());
+                            }, 100);
+                        }}
+                    />
+                )
+            }
+            {
+                appletShown ? (
+                    <IconButton name="close" className="-mt-[2px]" onClick={() => {
+                        Actions.switchAppletLoaded(false)
+                        Actions.switchAppletShown(false)
+                    }} />
+                ) : (
+                    <IconButton name="more" className="-mt-[2px]" onClick={props.screenshotCallback} />
+                )
+            }
         </div>
     )
 }

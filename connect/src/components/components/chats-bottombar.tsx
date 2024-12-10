@@ -1,4 +1,4 @@
-import { Button } from "@nextui-org/button";
+import { Button } from "@nextui-org/react";
 import Icon from "../elements/icon";
 import { Actions } from "@/api/client/states";
 
@@ -12,7 +12,7 @@ export default function ChatsBottomBar() {
                     variant="shadow"
                     className="absolute right-2/4 translate-x-[155px]"
                     radius="full"
-                    onClick={() => Actions.switchChatsFoldersModal(true)}
+                    onPress={() => Actions.switchChatsFoldersModal(true)}
                 >
                     <Icon name="storage" />
                 </Button>
@@ -22,7 +22,7 @@ export default function ChatsBottomBar() {
                     variant="shadow"
                     className="absolute left-2/4 -translate-x-[155px]"
                     radius="full"
-                    onClick={() => Actions.switchChatsArchiveModal(true)}
+                    onPress={() => Actions.switchChatsArchiveModal(true)}
                 >
                     <Icon name="archive" />
                 </Button>
@@ -31,7 +31,7 @@ export default function ChatsBottomBar() {
                     variant="shadow"
                     className="absolute left-2/4 -translate-x-1/2 h-10 text-lg"
                     radius="full"
-                    onClick={() => Actions.openCreateSpaceModal()}
+                    onPress={() => Actions.openCreateSpaceModal()}
                 >
                     <Icon name="add" />
                     Create new space

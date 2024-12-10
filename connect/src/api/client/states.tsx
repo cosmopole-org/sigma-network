@@ -51,8 +51,9 @@ let hookStateStore = {
 	selectedDrawerApp: hookstate("chat"),
 	appletShown: hookstate(false),
 	appletLoaded: hookstate(false),
+	appletFull: hookstate(false),
 	overlayData: hookstate<{ workerId: string, code: string, room: Topic } | null>(null),
-	overlayLoaded: hookstate(false),
+	overlayLoaded: hookstate(false)
 };
 
 export let States = {
@@ -70,10 +71,19 @@ export let States = {
 	},
 	getToken() {
 		return this.store.token ?? "";
-	}
+	},
+	isFullscreen: () => Boolean(
+		document.fullscreenElement ||
+		(document as any).webkitFullscreenElement ||
+		(document as any).mozFullScreenElement ||
+		(document as any).msFullscreenElement
+	),
 };
 
 export let Actions = {
+	switchAppletFull: (v: boolean) => {
+		States.store.appletFull.set(v);
+	},
 	switchAppletShown: (v: boolean) => {
 		States.store.appletShown.set(v);
 	},

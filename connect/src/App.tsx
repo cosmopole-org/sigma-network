@@ -61,12 +61,7 @@ const Container = (props: { type: string, state: any }) => {
 }
 
 export default function Main() {
-	const isFullscreen = () => Boolean(
-		document.fullscreenElement ||
-		(document as any).webkitFullscreenElement ||
-		(document as any).mozFullScreenElement ||
-		(document as any).msFullscreenElement
-	);
+	const [startLoading, setStartLoading] = useState(false);
 	const [, setUpddateTrigger] = useState(Math.random());
 	const [preAuthStepChange, setPreAuthStepChange] = useState("");
 	useTheme();
@@ -115,9 +110,16 @@ export default function Main() {
 
 	let content = null;
 
-	if (!isFullscreen()) {
-		content = <SplashPage update={() => { setStartLoading(true) }} />
+	if (window.location.pathname === "/?mode=standalone") {
+		if (!States.isFullscreen()) {
+			content = <SplashPage update={() => { setStartLoading(true) }} />
+		} else {
+			setStartLoading(true);
+		}
 	} else {
+		if (!startLoading) {
+			setStartLoading(true);
+		}
 		switch (preAuthStepChange) {
 			case "passed": {
 				content = (
@@ -154,8 +156,6 @@ export default function Main() {
 
 	const shadowRef = useRef<HTMLDivElement>(null);
 
-	const [startLoading, setStartLoading] = useState(false);
-
 	useEffect(() => {
 		if (startLoading) {
 			if (shadowRef.current) {
@@ -176,7 +176,7 @@ export default function Main() {
 
 	return (
 		<main className="w-full h-screen">
-			<div ref={opacityRef} className="w-full h-full" style={{ opacity: 1, transition: 'opacity 0.25s' }}>
+			<div ref={opacityRef} className="w-full h-full" style={{ opacity: 1, transition: 'opacity 0.25s', overflow: 'hidden' }}>
 				<div ref={shadowRef} className="w-full h-full" style={{ transform: 'scale(1)', transition: 'transform 0.25s' }}>
 					{content}
 				</div>

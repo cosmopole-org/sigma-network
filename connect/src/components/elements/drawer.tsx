@@ -7,7 +7,7 @@ export default function Drawer({ items, open, onOpenStateChange }: Readonly<{ it
   return (
     <Card className={(open ? 'w-72' : 'w-20') + ` h-full rounded-none pl-[14px] pr-[14px] pt-5 gap-4 fixed`}
       style={{ backgroundColor: '#581c87', transition: 'width 250ms' }}>
-      <Button size="lg" className={open ? 'ml-[100px] mb-4 bg-white' : 'mb-4 bg-white'} isIconOnly onClick={() => {
+      <Button size="lg" className={open ? 'ml-[100px] mb-4 bg-white' : 'mb-4 bg-white'} isIconOnly onPress={() => {
         if (onOpenStateChange) onOpenStateChange(!open)
       }}>
         <Icon name="asqme-logo" />

@@ -1,4 +1,3 @@
-import { CircularProgress } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/index";
 import { colors } from "@nextui-org/theme";
@@ -9,6 +8,7 @@ import 'react-resizable/css/styles.css'
 import IconButton from "../elements/icon-button";
 import AppletHost from "./applet-host";
 import { openAppletSheet } from "./applet-sheet";
+import { Spinner } from "@nextui-org/react";
 
 const ResponsiveReactGridLayout = RGL.WidthProvider(RGL.Responsive);
 export const rowHeight = 8
@@ -306,12 +306,12 @@ const Desk = (props: { show: boolean, room: any }) => {
                 loadDesktop ?
                     null : (
                         <div style={{ width: '100%', height: '100%', position: 'absolute', left: '50%', top: 'calc(50% - 32px)', transform: 'translate(-50%, -50%)' }}>
-                            <CircularProgress style={{
+                            <Spinner style={{
                                 width: 40,
                                 height: 40,
                                 position: 'absolute',
-                                left: 'calc(50% - 16px)',
-                                top: 'calc(50% - 16px)',
+                                left: '50%',
+                                top: '50%',
                                 transform: 'translate(-50%, -50%)'
                             }} />
                         </div>

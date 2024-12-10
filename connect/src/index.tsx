@@ -28,9 +28,11 @@ let al = window.alert;
 
 window.alert = (...params) => {
   al(...params);
-  setTimeout(() => {
-    document.body.requestFullscreen();
-  }, 100);
+  if (window.location.pathname === "/?mode=standalone") {
+    setTimeout(() => {
+      document.body.requestFullscreen();
+    }, 100);
+  }
 }
 
 export let api: Api;

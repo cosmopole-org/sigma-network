@@ -1,7 +1,7 @@
 import { Actions, RouteSys, States } from "@/api/client/states";
 import Icon from "../elements/icon";
 import CommandsPalette from "../home/commands-palette";
-import { Button } from "@nextui-org/button";
+import { Button } from "@nextui-org/react";
 
 export default function HomeAppsHeader() {
     const editing = States.useListener(States.store.boardEditingMode);
@@ -17,7 +17,7 @@ export default function HomeAppsHeader() {
                     color="success"
                     className="h-12 w-12"
                     radius="lg"
-                    onClick={() => {
+                    onPress={() => {
                         RouteSys.push("/app/call")
                     }}
                 >
@@ -29,7 +29,7 @@ export default function HomeAppsHeader() {
                     color="danger"
                     className="h-12 w-12"
                     radius="lg"
-                    onClick={() => {
+                    onPress={() => {
                         Actions.updateSelectedDrawerApp("chat");
                         Actions.switchHomeApps(true);
                     }}
@@ -42,7 +42,7 @@ export default function HomeAppsHeader() {
                     color="warning"
                     className="h-12 w-12"
                     radius="lg"
-                    onClick={() => {
+                    onPress={() => {
                         Actions.updateSelectedDrawerApp("files");
                         Actions.switchHomeApps(true);
                     }}
@@ -55,7 +55,7 @@ export default function HomeAppsHeader() {
                     color="primary"
                     className="h-12 w-12"
                     radius="lg"
-                    onClick={() => {
+                    onPress={() => {
                         Actions.updateSelectedDrawerApp("bots");
                         Actions.switchHomeApps(true);
                     }}
@@ -68,7 +68,7 @@ export default function HomeAppsHeader() {
                     variant="shadow"
                     className={"bg-white h-12 w-12 " + (editing ? "bg-success" : undefined)}
                     radius="lg"
-                    onClick={() => {
+                    onPress={() => {
                         Actions.switchBoardEditing(!editing);
                     }}
                 >

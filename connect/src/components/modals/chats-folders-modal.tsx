@@ -20,7 +20,7 @@ export default function ChatsFoldersModal() {
                         <ModalBody className="p-0">
                             <div className="w-full h-[400px] overflow-x-hidden overflow-y-auto pl-4 pr-4">
                                 {getUsers().map(item => (
-                                    <Card onClick={
+                                    <Card onPress={
                                         () => {
                                             Actions.switchChatsFoldersModal(false);
                                         }

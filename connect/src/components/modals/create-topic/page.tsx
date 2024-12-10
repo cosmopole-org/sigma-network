@@ -2,7 +2,7 @@ import { RouteSys } from "@/api/client/states";
 import Icon from "@/components/elements/icon";
 import TextField from "@/components/elements/textfield";
 import { api } from "@/index";
-import { Button } from "@nextui-org/button";
+import { Button } from "@nextui-org/react";
 import { useCallback, useRef } from "react";
 
 export default function CreateTopicModal({ spaceId }: Readonly<{ spaceId: string }>) {

@@ -16,7 +16,7 @@ export default defineConfig({
         short_name: "Sigma",
         description: "Welcome to Sigma Open Network",
         display: "standalone",
-        start_url: "/"
+        start_url: "/?mode=standalone"
       }
     })
   ],

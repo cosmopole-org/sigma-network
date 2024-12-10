@@ -54,7 +54,7 @@ export default function HomeRoomsList(props: Readonly<{ isNavAsHome: boolean, sp
                     <Divider className="mt-3" />
                 </div>
                 {topics.map((item: Topic) => (
-                    <Card onClick={() => {
+                    <Card onPress={() => {
                         Actions.updatePos(props.spaceId, item.id);
                         Actions.updateHomeMenuState(false);
                     }} className="mt-2 w-full bg-transparent" key={item.id} isPressable shadow="none">

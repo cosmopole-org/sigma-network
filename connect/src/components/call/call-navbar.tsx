@@ -1,13 +1,9 @@
-"use client"
-
 import React from "react";
 import { Avatar, Navbar, NavbarContent } from "@nextui-org/react";
 import IconButton from "../elements/icon-button";
-import { useRouter } from "next/navigation";
 import { getUsers } from '../../api/client/constants';
 
 export default function CallNavbar() {
-    const router = useRouter();
     return (
         <Navbar
             isBordered
@@ -18,7 +14,7 @@ export default function CallNavbar() {
                 <div className={"w-full"}>
                     <div className="flex -ml-1">
                         <IconButton name="back" onClick={() => {
-                            router.back();
+                            
                         }} />
                         <p className="text-xl flex-1 text-center flex text-center items-center justify-center">
                             <Avatar

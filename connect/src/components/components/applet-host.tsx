@@ -27,11 +27,12 @@ const unloadAllHosts = () => {
     hostLoaded = {}
 }
 
-const Host = (props: { isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: Topic, onCancel?: () => void, overlay?: boolean }) => {
+const Host = (props: { full?: boolean, isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: Topic, onCancel?: () => void, overlay?: boolean }) => {
     const hostContainerrId = `AppletHost:${props.appletKey}`
     const appletRef = useRef(new Applet(props.appletKey))
     const rootRef = useRef(null)
     const isSafezone = props.code?.startsWith('safezone/')
+    const h = props.full ? window.innerHeight : (window.innerHeight * 8 / 10);
     useEffect(() => {
         if (props.code) {
             if (!isSafezone) {
@@ -94,7 +95,7 @@ const Host = (props: { isWidget?: boolean, appletKey: string, code: string, inde
             id={hostContainerrId}
             style={{
                 width: '100%',
-                height: '100%',
+                height: (props.isWidget || props.overlay) ? '100%' : (h - 28),
                 overflow: 'hidden',
                 transform: 'scale(0.65, 0.65)',
                 opacity: 0,

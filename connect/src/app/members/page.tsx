@@ -1,4 +1,4 @@
-import { Button } from "@nextui-org/button";
+import { Button } from "@nextui-org/react";
 import Icon from "@/components/elements/icon";
 import ContactCreateModal, { switchContactCreateModal } from "@/components/home/contact-create-modal";
 import { Navbar, NavbarContent } from "@nextui-org/navbar";
@@ -66,7 +66,7 @@ export default function MembersPage({ spaceId }: Readonly<{ spaceId: string }>) 
                 className="fixed bottom-4 left-1/2 -translate-x-1/2 h-10 text-lg"
                 radius="full"
                 style={{ zIndex: 10 }}
-                onClick={() => switchContactCreateModal(true)}
+                onPress={() => switchContactCreateModal(true)}
             >
                 <Icon name="add" />
                 Create new contact

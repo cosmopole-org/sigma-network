@@ -1,14 +1,36 @@
 import { useTheme } from "@/api/client/states"
-import { Close } from "@mui/icons-material"
-import { Button, Card, colors, Spinner } from "@nextui-org/react"
+import { Button, Card, Spinner } from "@nextui-org/react"
+import Icon from "../elements/icon";
 
 const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: boolean }) => {
     const { theme } = useTheme();
+    let loadingSection = (
+        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 99999 }}>
+            <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
+                    <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
+                </Card>
+                <div style={{ width: 56, height: 56 }} />
+                <p style={{ width: 250, textAlign: 'center', marginTop: 12, color: theme === "light" ? '#333' : '#fff' }}>
+                    Connecting to Applet...
+                </p>
+                <Button
+                    style={{ marginTop: 32 }}
+                    onPress={() => {
+                        props.onCancel()
+                    }}
+                >
+                    <Icon name='close' className='mr-3' />
+                    Cancel
+                </Button>
+            </div>
+        </div>
+    );
     return (
         <div style={{ width: '100%', height: '100%', position: 'fixed', left: 0, top: 0 }}>
             {
                 props.overlay ? (
-                    <Card style={{ position: 'absolute', left: '50%', top: 'calc(50% - 16px)', transform: 'translate(-50%, -50%)', borderRadius: 24, backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
+                    <Card style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', borderRadius: 24, backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
                         {
                             props.isWidget ? (
                                 <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
@@ -17,59 +39,23 @@ const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: bo
                                     </Card>
                                 </div>
                             ) : (
-                                <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
-                                    <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
-                                        <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
-                                    </Card>
-                                    <div style={{ width: 56, height: 56 }} />
-                                    <p style={{ width: '100%', textAlign: 'center', marginTop: 12, color: theme === "light" ? '#333' : '#fff' }}>
-                                        Loading Applet...
-                                    </p>
-                                    <Button
-                                        style={{ marginTop: 32 }}
-                                        onClick={() => {
-                                            props.onCancel()
-                                        }}
-                                    >
-                                        <Close style={{ marginRight: 12 }} />
-                                        Cancel
-                                    </Button>
-                                </div>
+                                loadingSection
                             )
                         }
                     </Card>
                 ) : (
-                    <div style={{ position: 'absolute', left: '50%', top: 'calc(50% - 16px)', transform: 'translate(-50%, -50%)' }}>
-                        <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
-                            {
-                                props.isWidget ? (
-                                    <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
-                                        <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
-                                            <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
-                                        </Card>
-                                    </div>
-                                ) : (
-                                    <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
-                                        <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
-                                            <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
-                                        </Card>
-                                        <div style={{ width: 56, height: 56 }} />
-                                        <p style={{ width: '100%', textAlign: 'center', marginTop: 12, color: theme === "light" ? '#333' : '#fff' }}>
-                                            Loading Applet...
-                                        </p>
-                                        <Button
-                                            style={{ marginTop: 32 }}
-                                            onClick={() => {
-                                                props.onCancel()
-                                            }}
-                                        >
-                                            <Close style={{ marginRight: 12 }} />
-                                            Cancel
-                                        </Button>
-                                    </div>
-                                )
-                            }
-                        </div>
+                    <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                        {
+                            props.isWidget ? (
+                                <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>
+                                    <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
+                                        <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
+                                    </Card>
+                                </div>
+                            ) : (
+                                loadingSection
+                            )
+                        }
                     </div>
                 )
             }

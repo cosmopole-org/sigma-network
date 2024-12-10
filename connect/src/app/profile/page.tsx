@@ -25,7 +25,7 @@ export default function ProfilePage({ user }: Readonly<{ user: User }>) {
             </div>
             <div className="justify-center flex w-full h-auto pl-4 pr-4 gap-4 absolute top-[280px]">
                 <Button
-                    onClick={() => {
+                    onPress={() => {
                         
                         RouteSys.push('/app/chat')
                     }}
@@ -33,12 +33,12 @@ export default function ProfilePage({ user }: Readonly<{ user: User }>) {
                     <Icon name='message' size={[24, 24]} />
                 </Button>
                 <Button
-                    onClick={() => RouteSys.push('/app/call')}
+                    onPress={() => RouteSys.push('/app/call')}
                     isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='toggleCam' size={[24, 24]} />
                 </Button>
                 <Button
-                    onClick={() => RouteSys.push('/app/call')}
+                    onPress={() => RouteSys.push('/app/call')}
                     isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='call2' size={[24, 24]} />
                 </Button>

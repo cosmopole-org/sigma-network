@@ -36,7 +36,7 @@ export default function HomeContactsModal() {
                                     variant="shadow"
                                     className="absolute left-1/2 -translate-x-1/2 h-10 text-lg"
                                     radius="full"
-                                    onClick={() => switchContactCreateModal(true)}
+                                    onPress={() => switchContactCreateModal(true)}
                                 >
                                     <Icon name="add" />
                                     Create new contact

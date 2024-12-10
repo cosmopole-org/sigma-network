@@ -7,7 +7,7 @@ import { Avatar, Card } from "@nextui-org/react"
 export default function HomePeopleList() {
     return (
         <div className="w-full h-auto pt-5 pl-4 pr-4 pb-20">
-            <Card onClick={() => {
+            <Card onPress={() => {
                 RouteSys.push('/app/profile')
             }} className="mt-0 m-h-16 w-full bg-transparent" key={'home'} isPressable shadow="none">
                 <div className="flex gap-2 w-full">
@@ -23,7 +23,7 @@ export default function HomePeopleList() {
             </Card>
             {
                 getUsers().map(item => (
-                    <Card onClick={() => {
+                    <Card onPress={() => {
                         RouteSys.push('/app/profile')
                     }} className="mt-4 m-h-16 w-full bg-transparent" key={item.id} isPressable shadow="none">
                         <div className="flex gap-2 w-full">
