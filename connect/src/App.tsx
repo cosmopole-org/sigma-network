@@ -61,7 +61,6 @@ const Container = (props: { type: string, state: any }) => {
 }
 
 export default function Main() {
-	const [startLoading, setStartLoading] = useState(false);
 	const [, setUpddateTrigger] = useState(Math.random());
 	const [preAuthStepChange, setPreAuthStepChange] = useState("");
 	useTheme();
@@ -110,69 +109,56 @@ export default function Main() {
 
 	let content = null;
 
-	if (window.location.pathname === "/?mode=standalone") {
-		if (!States.isFullscreen()) {
-			content = <SplashPage update={() => { setStartLoading(true) }} />
-		} else {
-			setStartLoading(true);
-		}
-	} else {
-		if (!startLoading) {
-			setStartLoading(true);
-		}
-		switch (preAuthStepChange) {
-			case "passed": {
-				content = (
-					<div ref={contentRef} className="w-full h-full fixed">
-						{memHome}
-						<MainSwiper
-							onOpen={() => {
+	switch (preAuthStepChange) {
+		case "passed": {
+			content = (
+				<div ref={contentRef} className="w-full h-full fixed">
+					{memHome}
+					<MainSwiper
+						onOpen={() => {
 
-							}}
-							onClose={() => {
-								setTimeout(() => {
-									RouteSys.pop({ doNotSlideBack: true });
-								}, 250);
-							}}
-							contentKey={hist[hist.length - 1]?.path}
-							bottomKey={hist[hist.length - 2]?.path}
-							content={<Container type={hist[hist.length - 1]?.path} state={hist[hist.length - 1]?.state} />}
-							bottom={<Container type={hist[hist.length - 2]?.path} state={hist[hist.length - 2]?.state} />}
-						/>
-					</div>
-				);
-				break;
-			}
-			case "auth": {
-				content = <AuthPage />;
-				break;
-			}
-			default: {
-				content = <SplashPage />;
-				break;
-			}
+						}}
+						onClose={() => {
+							setTimeout(() => {
+								RouteSys.pop({ doNotSlideBack: true });
+							}, 250);
+						}}
+						contentKey={hist[hist.length - 1]?.path}
+						bottomKey={hist[hist.length - 2]?.path}
+						content={<Container type={hist[hist.length - 1]?.path} state={hist[hist.length - 1]?.state} />}
+						bottom={<Container type={hist[hist.length - 2]?.path} state={hist[hist.length - 2]?.state} />}
+					/>
+				</div>
+			);
+			break;
+		}
+		case "auth": {
+			content = <AuthPage />;
+			break;
+		}
+		default: {
+			content = <SplashPage />;
+			break;
 		}
 	}
 
 	const shadowRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (startLoading) {
-			if (shadowRef.current) {
-				if (authStep !== "") {
-					shadowRef.current.style.opacity = "0";
+		if (shadowRef.current) {
+			if (authStep !== "") {
+				shadowRef.current.style.opacity = "0";
+				setTimeout(() => {
+					setPreAuthStepChange(authStep);
 					setTimeout(() => {
-						setPreAuthStepChange(authStep);
-						setTimeout(() => {
-							if (shadowRef.current) {
-								shadowRef.current.style.opacity = "1";
-							}
-						}, 250);
+						if (shadowRef.current) {
+							shadowRef.current.style.opacity = "1";
+						}
 					}, 250);
-				}
+				}, 250);
 			}
 		}
-	}, [authStep, startLoading]);
+	}, [authStep]);
 
 	return (
 		<main className="w-full h-screen">
