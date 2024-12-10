@@ -61,6 +61,12 @@ const Container = (props: { type: string, state: any }) => {
 }
 
 export default function Main() {
+	const isFullscreen = () => Boolean(
+		document.fullscreenElement ||
+		(document as any).webkitFullscreenElement ||
+		(document as any).mozFullScreenElement ||
+		(document as any).msFullscreenElement
+	);
 	const [, setUpddateTrigger] = useState(Math.random());
 	const [preAuthStepChange, setPreAuthStepChange] = useState("");
 	useTheme();
@@ -109,56 +115,64 @@ export default function Main() {
 
 	let content = null;
 
-	switch (preAuthStepChange) {
-		case "passed": {
-			content = (
-				<div ref={contentRef} className="w-full h-full fixed">
-					{memHome}
-					<MainSwiper
-						onOpen={() => {
+	if (!isFullscreen()) {
+		content = <SplashPage update={() => { setStartLoading(true) }} />
+	} else {
+		switch (preAuthStepChange) {
+			case "passed": {
+				content = (
+					<div ref={contentRef} className="w-full h-full fixed">
+						{memHome}
+						<MainSwiper
+							onOpen={() => {
 
-						}}
-						onClose={() => {
-							setTimeout(() => {
-								RouteSys.pop({ doNotSlideBack: true });
-							}, 250);
-						}}
-						contentKey={hist[hist.length - 1]?.path}
-						bottomKey={hist[hist.length - 2]?.path}
-						content={<Container type={hist[hist.length - 1]?.path} state={hist[hist.length - 1]?.state} />}
-						bottom={<Container type={hist[hist.length - 2]?.path} state={hist[hist.length - 2]?.state} />}
-					/>
-				</div>
-			);
-			break;
-		}
-		case "auth": {
-			content = <AuthPage />;
-			break;
-		}
-		default: {
-			content = <SplashPage />;
-			break;
+							}}
+							onClose={() => {
+								setTimeout(() => {
+									RouteSys.pop({ doNotSlideBack: true });
+								}, 250);
+							}}
+							contentKey={hist[hist.length - 1]?.path}
+							bottomKey={hist[hist.length - 2]?.path}
+							content={<Container type={hist[hist.length - 1]?.path} state={hist[hist.length - 1]?.state} />}
+							bottom={<Container type={hist[hist.length - 2]?.path} state={hist[hist.length - 2]?.state} />}
+						/>
+					</div>
+				);
+				break;
+			}
+			case "auth": {
+				content = <AuthPage />;
+				break;
+			}
+			default: {
+				content = <SplashPage />;
+				break;
+			}
 		}
 	}
 
 	const shadowRef = useRef<HTMLDivElement>(null);
 
+	const [startLoading, setStartLoading] = useState(false);
+
 	useEffect(() => {
-		if (shadowRef.current) {
-			if (authStep !== "") {
-				shadowRef.current.style.opacity = "0";
-				setTimeout(() => {
-					setPreAuthStepChange(authStep);
+		if (startLoading) {
+			if (shadowRef.current) {
+				if (authStep !== "") {
+					shadowRef.current.style.opacity = "0";
 					setTimeout(() => {
-						if (shadowRef.current) {
-							shadowRef.current.style.opacity = "1";
-						}
+						setPreAuthStepChange(authStep);
+						setTimeout(() => {
+							if (shadowRef.current) {
+								shadowRef.current.style.opacity = "1";
+							}
+						}, 250);
 					}, 250);
-				}, 250);
+				}
 			}
 		}
-	}, [authStep]);
+	}, [authStep, startLoading]);
 
 	return (
 		<main className="w-full h-screen">
@@ -167,7 +181,7 @@ export default function Main() {
 					{content}
 				</div>
 			</div>
-			<StatusBar screenshotCallback={() => {}} />
+			<StatusBar screenshotCallback={() => { }} />
 		</main >
 	);
 }

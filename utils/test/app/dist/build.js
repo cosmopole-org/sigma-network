@@ -8,7 +8,7 @@ const Child = props => {
     }, 1000);
   }, [obj.value]);
   return /*#__PURE__*/React.createElement("div", {
-    style: 'background-color: red;'
+    style: 'background-color: red; font-size: 20px;'
   }, props.name, " ", obj.value);
 };
 const Main = () => {
@@ -22,13 +22,13 @@ const Main = () => {
     }, 3000);
   }, []);
   return /*#__PURE__*/React.createElement("div", {
-    style: 'background-color: blue;'
+    style: 'background-color: blue; width: 300px; transition: transform 3000ms; transform: ' + (!show.value ? 'translateX(1000px);' : 'translateX(0px);')
   }, show.value ? /*#__PURE__*/React.createElement(Child, {
     key: 'keyhan',
     name: 'keyhan'
   }) : /*#__PURE__*/React.createElement(Child, {
-    key: 'mamad',
-    name: "mamad"
+    key: 'Mohammad',
+    name: "Mohammad"
   }));
 };
 React.init( /*#__PURE__*/React.createElement(Main, null));

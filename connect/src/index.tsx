@@ -24,6 +24,15 @@ window.addEventListener('error', e => {
   }
 });
 
+let al = window.alert;
+
+window.alert = (...params) => {
+  al(...params);
+  setTimeout(() => {
+    document.body.requestFullscreen();
+  }, 100);
+}
+
 export let api: Api;
 
 Api.load().then((a) => {

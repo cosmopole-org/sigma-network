@@ -114,7 +114,7 @@ class TopicPageState extends State<TopicPage> {
                 MaterialPageRoute(builder: (context) => const SecondRoute()),
               );
             },
-            changeScrollLock: (p0) {}),
+          ),
       ),
     );
   }

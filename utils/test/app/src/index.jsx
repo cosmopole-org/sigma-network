@@ -6,7 +6,7 @@ const Child = (props) => {
         }, 1000);
     }, [obj.value]);
     return (
-        <div style={'background-color: red;'}>{props.name} {obj.value}</div>
+        <div style={'background-color: red; font-size: 20px;'}>{props.name} {obj.value}</div>
     )
 }
 const Main = () => {
@@ -20,8 +20,8 @@ const Main = () => {
         }, 3000);
     }, []);
     return (
-        <div style={'background-color: blue;'}>
-            {show.value ? <Child key={'keyhan'} name={'keyhan'} /> : <Child key={'mamad'} name={"mamad"} />}
+        <div style={'background-color: blue; width: 300px; transition: transform 3000ms; transform: ' + (!show.value ? 'translateX(1000px);' : 'translateX(0px);')}>
+            {show.value ? <Child key={'keyhan'} name={'keyhan'} /> : <Child key={'Mohammad'} name={"Mohammad"} />}
         </div>
     )
 }
