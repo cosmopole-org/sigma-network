@@ -18,7 +18,7 @@ const pages: { [id: string]: string } = {
     "/app/create-topic": "Create Topic",
 }
 
-export default function StatusBar(props: Readonly<{ screenshotCallback: () => void }>) {
+export default function StatusBar(_: Readonly<{ screenshotCallback: () => void }>) {
     const homeDrawerOpen = States.useListener(States.store.homeDrawerOpen);
     let hist = States.useListener(RouteSys.history);
     const pos = States.useListener(States.store.currentPos);
@@ -61,6 +61,7 @@ export default function StatusBar(props: Readonly<{ screenshotCallback: () => vo
             {
                 appletShown ? (
                     <IconButton
+                        size={[18, 18]}
                         name={full ? "shrink" : "fullscreen"}
                         className="-mt-[2px]"
                         onClick={() => {
@@ -87,12 +88,28 @@ export default function StatusBar(props: Readonly<{ screenshotCallback: () => vo
             }
             {
                 appletShown ? (
+                    <IconButton size={[16, 16]} name="dropdown" className="-mt-[2px]" onClick={() => {
+                        Actions.minimizeApplet();
+                        (window as any).minmizeAppletSheet();
+                    }} />
+                ) : null
+            }
+            {
+                appletShown ? (
                     <IconButton name="close" className="-mt-[2px]" onClick={() => {
+                        let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
                         Actions.switchAppletLoaded(false)
                         Actions.switchAppletShown(false)
+                        if (currentAppletData) {
+                            let appletId = currentAppletData.id;
+                            Actions.closeApplet(appletId);
+                            (window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
+                        }
                     }} />
                 ) : (
-                    <IconButton name="more" className="-mt-[2px]" onClick={props.screenshotCallback} />
+                    <IconButton name="tabs" className="-mt-[2px]" onClick={() => {
+                        Actions.restoreApplet(Object.keys(States.store.minimizedApplets.get({ noproxy: true }))[0]);
+                    }} />
                 )
             }
         </div>

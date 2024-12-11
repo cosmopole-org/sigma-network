@@ -2,7 +2,6 @@ import MwcDriver from "applet-mwc"
 import { useEffect, useRef } from "react"
 import { Applet, Controls } from "applet-vm"
 import Native, { intervalHolder, timeoutHolder } from "./native"
-// import Safezone from "./safezone"
 import { Topic } from "../../api/sigma/models";
 import Safezone from "./safezone";
 
@@ -27,7 +26,7 @@ const unloadAllHosts = () => {
     hostLoaded = {}
 }
 
-const Host = (props: { full?: boolean, isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: Topic, onCancel?: () => void, overlay?: boolean }) => {
+const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: Topic, onCancel?: () => void, overlay?: boolean }) => {
     const hostContainerrId = `AppletHost:${props.appletKey}`
     const appletRef = useRef(new Applet(props.appletKey))
     const rootRef = useRef(null)
@@ -106,6 +105,7 @@ const Host = (props: { full?: boolean, isWidget?: boolean, appletKey: string, co
             {
                 isSafezone ? (
                     <Safezone
+                        stateKey={props.stateKey}
                         isWidget={props.isWidget}
                         overlay={props.overlay}
                         onCancel={() => props.onCancel && props.onCancel()}

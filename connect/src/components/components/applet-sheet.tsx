@@ -19,11 +19,7 @@ const AppletSheet = () => {
     const workerIdRef: any = React.useRef(undefined)
     const roomRef: any = React.useRef(undefined)
     const appletShown = States.useListener(States.store.appletShown);
-    React.useEffect(() => {
-        if (!appletShown) {
-            setCode(undefined);
-        }
-    }, [appletShown]);
+    const [newKey, setNewKey] = React.useState(Math.random().toString());
     React.useEffect(() => {
         const messageCallback = (e: any) => {
             let id = undefined
@@ -60,6 +56,8 @@ const AppletSheet = () => {
                 if (data.tag === 'get/applet') {
                     if (packet.member.id === workerIdRef.current) {
                         setCode(data.code)
+                        Actions.appletCodeLoaded(data.code);
+                        setNewKey(Math.random().toString());
                     }
                 }
             }
@@ -73,11 +71,21 @@ const AppletSheet = () => {
     openAppletSheet = (room: Topic, workerId: string) => {
         workerIdRef.current = workerId
         roomRef.current = room
-        Actions.switchAppletShown(true)
+        Actions.switchAppletShown(true, workerId, room)
         api.sigma.store.db.collections.members.findOne({ selector: { userId: { $eq: api.sigma.store.myUserId }, spaceId: { $eq: room.spaceId } } }).exec().then((member: any) => {
             api.sigma.services?.topics.send({ type: "single", spaceId: room.spaceId, topicId: room.id, memberId: member.id, recvId: workerId, data: { tag: 'get/applet', theme: appTheme, secondaryColor: colors.purple, colorName: "blue", colors: colors.blue } })
         });
     }
+    const appletData = States.useListener(States.store.currentAppletData);
+    React.useEffect(() => {
+        if (appletData?.code) {
+            if (appletData.code.length > 0) {
+                workerIdRef.current = appletData.id;
+                roomRef.current = appletData.room;
+                setCode(appletData.code);
+            }
+        }
+    }, [appletData?.code]);
     const full = States.useListener(States.store.appletFull);
     const [open, setOpen] = React.useState(false);
     React.useEffect(() => {
@@ -87,9 +95,32 @@ const AppletSheet = () => {
             setTimeout(() => setOpen(false), 250);
         }
     }, [appletShown]);
+    React.useEffect(() => {
+        if (!open) {
+            setCode(undefined);
+        }
+    }, [open]);
+    const isSafezone = code?.startsWith('safezone/')
     appletsheetOpen = appletShown;
     const h = full ? window.innerHeight : (window.innerHeight * 8 / 10);
-    return open ? (
+    if (isSafezone) {
+        return <div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
+            <AppletHost.Host
+                stateKey={newKey}
+                full={full}
+                appletKey={'desktop-sheet-' + workerIdRef.current}
+                entry={code ? 'Test' : 'Dummy'}
+                code={code ? code : 'class Dummy { constructor() {} onMount() {} render() { return "" } }'}
+                index={1}
+                room={roomRef.current}
+                onCancel={() => {
+                    setCode(undefined)
+                    Actions.switchAppletShown(false)
+                }}
+            />
+        </div >
+    }
+    return (open && code) ? (
         <div style={{ zIndex: 99998 }} onClick={() => {
             Actions.switchAppletLoaded(false)
             Actions.switchAppletShown(false)
@@ -107,8 +138,12 @@ const AppletSheet = () => {
                 hideCloseButton
                 onOpenChange={(v) => {
                     if (!v) {
+                        let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
                         Actions.switchAppletLoaded(false)
                         Actions.switchAppletShown(false)
+                        if (currentAppletData) {
+                            Actions.closeApplet(currentAppletData.id);
+                        }
                     }
                 }}
             >

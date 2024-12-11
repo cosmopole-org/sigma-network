@@ -5,7 +5,7 @@ import Icon from "../elements/icon";
 const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: boolean }) => {
     const { theme } = useTheme();
     let loadingSection = (
-        <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', zIndex: 99999 }}>
+        <div style={{ position: 'absolute', width: 'auto', height: 'auto', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
             <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32, alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                 <Card style={{ width: 56, height: 56, borderRadius: '50%', position: 'absolute', left: '50%', transform: 'translateX(-50%)', backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
                     <Spinner style={{ width: '80%', height: '80%', margin: '10%' }} />
@@ -15,7 +15,7 @@ const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: bo
                     Connecting to Applet...
                 </p>
                 <Button
-                    style={{ marginTop: 32 }}
+                    style={{ marginTop: 28 }}
                     onPress={() => {
                         props.onCancel()
                     }}
@@ -27,7 +27,7 @@ const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: bo
         </div>
     );
     return (
-        <div style={{ width: '100%', height: '100%', position: 'fixed', left: 0, top: 0 }}>
+        <div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
             {
                 props.overlay ? (
                     <Card style={{ minWidth: 200, minHeight: 200, position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', borderRadius: 24, backgroundColor: theme === "light" ? '#fff' : '#213037' }}>
@@ -44,7 +44,7 @@ const Loading = (props: { onCancel: () => void, overlay?: boolean, isWidget?: bo
                         }
                     </Card>
                 ) : (
-                    <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}>
+                    <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)', width: 200, height: 200 }}>
                         {
                             props.isWidget ? (
                                 <div style={{ width: 'auto', height: 'auto', position: 'relative', padding: 32 }}>

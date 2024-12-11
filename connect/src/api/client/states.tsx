@@ -53,7 +53,9 @@ let hookStateStore = {
 	appletLoaded: hookstate(false),
 	appletFull: hookstate(false),
 	overlayData: hookstate<{ workerId: string, code: string, room: Topic } | null>(null),
-	overlayLoaded: hookstate(false)
+	overlayLoaded: hookstate(false),
+	currentAppletData: hookstate<{ id: string, room: Topic, code: string } | undefined>(undefined),
+	minimizedApplets: hookstate<{ [id: string]: { room: Topic, code: string } }>({}),
 };
 
 export let States = {
@@ -81,10 +83,51 @@ export let States = {
 };
 
 export let Actions = {
+	closeApplet: (id: string) => {
+		let minimizedApplets = States.store.minimizedApplets.get({ noproxy: true });
+		let copied = { ...minimizedApplets };
+		delete copied[id];
+		States.store.minimizedApplets.set(copied);
+	},
+	minimizeApplet: () => {
+		let appletData = States.store.currentAppletData.get({ noproxy: true })
+		if (appletData) {
+			States.store.minimizedApplets.set({
+				...States.store.minimizedApplets.get({ noproxy: true }),
+				[appletData.id]: { room: appletData.room, code: appletData.code }
+			});
+			Actions.switchAppletShown(false);
+			Actions.switchAppletLoaded(false);
+		}
+	},
+	restoreApplet: (id: string) => {
+		let minizedApplets = States.store.minimizedApplets.get({ noproxy: true });
+		if (minizedApplets[id]) {
+			States.store.currentAppletData.set({ id, room: minizedApplets[id].room, code: minizedApplets[id].code });
+			setTimeout(() => {
+				States.store.appletShown.set(true);
+				States.store.appletLoaded.set(true);
+			});
+		}
+	},
 	switchAppletFull: (v: boolean) => {
 		States.store.appletFull.set(v);
 	},
-	switchAppletShown: (v: boolean) => {
+	appletCodeLoaded: (code: string) => {
+		let appletData = States.store.currentAppletData.get({ noproxy: true });
+		if (appletData) {
+			States.store.currentAppletData.set({
+				...appletData,
+				code
+			});
+		}
+	},
+	switchAppletShown: (v: boolean, workerId?: string, room?: Topic) => {
+		if (v && workerId && room) {
+			States.store.currentAppletData.set({ id: workerId, room: room, code: "" });
+		} else {
+			States.store.currentAppletData.set(undefined);
+		}
 		States.store.appletShown.set(v);
 	},
 	switchAppletLoaded: (v: boolean) => {

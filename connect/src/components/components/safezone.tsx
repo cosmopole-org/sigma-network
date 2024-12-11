@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import $ from 'jquery'
 import { Actions, States } from "@/api/client/states"
 import { colors } from "@nextui-org/theme"
@@ -17,15 +17,23 @@ const isSafe = (u: string) => {
     return found;
 }
 
-const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string, workerId?: string, room?: Topic, onCancel: () => void, overlay?: boolean }) => {
-    const randomPostFix = useRef(Math.random())
+export let saveFrame = () => { };
+
+const Safezone = (props: { stateKey?: string, isWidget?: boolean, code: string, machineId?: string, workerId?: string, room?: Topic, onCancel: () => void, overlay?: boolean }) => {
     let id = props.room ? props.workerId : props.machineId
     if (!id) id = ''
     const [show, setShow] = useState(false)
     const [ready, setReady] = useState(false)
     const preparedIframeData = useRef('')
     const identifier = props.room ? `safezone-${props.workerId}` : `safezone-${props.machineId}`
-    let url = props.code.substring('safezone/'.length)
+    let url = props.code.substring('safezone/'.length);
+    const lastStateKey = useRef("");
+    if (!props.isWidget) {
+        if (props.stateKey && (lastStateKey.current !== props.stateKey)) {
+            lastStateKey.current = props.stateKey;
+            (window as any).prepareFrame(identifier, url);
+        }
+    }
     if (url.startsWith('<iframe ')) {
         if (preparedIframeData.current.length === 0) {
             let doc = new DOMParser().parseFromString(url, "text/xml");
@@ -109,52 +117,58 @@ const Safezone = (props: { isWidget?: boolean, code: string, machineId?: string,
             window.removeEventListener('message', messageCallback)
         }
     }, [])
-    return (
-        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-            {
-                url.startsWith('<iframe ') ? (
-                    <div
-                        key={identifier}
-                        id={identifier}
-                        style={{ width: '100%', height: '100%' }}
-                        dangerouslySetInnerHTML={{ __html: preparedIframeData.current }}
-                    />
-                ) : url.startsWith('https://') ?
-                    isSafe(url) ?
-                        (
+    if (props.isWidget) {
+        return (
+            <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                {
+                    url.startsWith('<iframe ') ? (
+                        <div
+                            key={identifier}
+                            id={identifier}
+                            style={{ width: '100%', height: '100%' }}
+                            dangerouslySetInnerHTML={{ __html: preparedIframeData.current }}
+                        />
+                    ) : url.startsWith('https://') ?
+                        isSafe(url) ?
+                            (
+                                <iframe
+                                    slot="frameStore"
+                                    name={identifier}
+                                    key={identifier}
+                                    id={identifier}
+                                    frameBorder={0}
+                                    width="100%"
+                                    height="100%"
+                                    src={`${url}`}
+                                    style={{ opacity: show ? 1 : 0, transition: 'opacity 500ms' }}
+                                />
+                            ) : null : (
                             <iframe
+                                slot="frameStore"
                                 name={identifier}
                                 key={identifier}
                                 id={identifier}
                                 frameBorder={0}
                                 width="100%"
                                 height="100%"
-                                src={`${url}?random=${randomPostFix.current}`}
+                                src={`https://safezone.liara.run/${url}`}
                                 style={{ opacity: show ? 1 : 0, transition: 'opacity 500ms' }}
                             />
-                        ) : null : (
-                        <iframe
-                            name={identifier}
-                            key={identifier}
-                            id={identifier}
-                            frameBorder={0}
-                            width="100%"
-                            height="100%"
-                            src={`https://safezone.liara.run/${url}?random=${randomPostFix.current}`}
-                            style={{ opacity: show ? 1 : 0, transition: 'opacity 500ms' }}
-                        />
-                    )
-            }
-            {
-                (!props.code || (props.code && props.code?.startsWith('safezone/') && !ready)) ? (
-                    <Loading isWidget={props.isWidget} overlay={props.overlay} key={'safezone-loading'} onCancel={() => {
-                        setReady(false)
-                        props.onCancel()
-                    }} />
-                ) : null
-            }
-        </div>
-    )
+                        )
+                }
+                {
+                    (!props.code || (props.code && props.code?.startsWith('safezone/') && !ready)) ? (
+                        <Loading isWidget={props.isWidget} overlay={props.overlay} key={'safezone-loading'} onCancel={() => {
+                            setReady(false)
+                            props.onCancel()
+                        }} />
+                    ) : null
+                }
+            </div>
+        )
+    } else {
+        return <div/>
+    }
 }
 
-export default memo(Safezone, () => true)
+export default Safezone;
