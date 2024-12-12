@@ -51,13 +51,17 @@ const AppletSheet = () => {
         }
         window.addEventListener('message', messageCallback)
         let getAppletEvent = api.sigma.services?.topics.onPacketReceive((packet: any) => {
-            if (packet.member.id === workerIdRef.current) {
-                let data = packet.data;
-                if (data.tag === 'get/applet') {
-                    if (packet.member.id === workerIdRef.current) {
-                        setCode(data.code)
-                        Actions.appletCodeLoaded(data.code);
-                        setNewKey(Math.random().toString());
+            let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
+            if (currentAppletData && (currentAppletData.id === packet.member.id)) {
+                if (packet.member.id === workerIdRef.current) {
+                    let data = packet.data;
+                    if (data.tag === 'get/applet') {
+                        if (packet.member.id === workerIdRef.current) {
+                            Actions.hideAppletFetchingOverlay();
+                            setCode(data.code)
+                            Actions.appletCodeLoaded(data.code);
+                            setNewKey(Math.random().toString());
+                        }
                     }
                 }
             }
@@ -82,6 +86,7 @@ const AppletSheet = () => {
             if (appletData.code.length > 0) {
                 workerIdRef.current = appletData.id;
                 roomRef.current = appletData.room;
+                Actions.hideAppletFetchingOverlay();
                 setCode(appletData.code);
             }
         }
@@ -102,7 +107,7 @@ const AppletSheet = () => {
     }, [open]);
     const isSafezone = code?.startsWith('safezone/')
     appletsheetOpen = appletShown;
-    const h = full ? window.innerHeight : (window.innerHeight * 8 / 10);
+    const h = full ? window.innerHeight : (window.innerHeight * 85 / 100);
     if (isSafezone) {
         return <div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
             <AppletHost.Host
@@ -131,7 +136,6 @@ const AppletSheet = () => {
                     base: "data-[placement=bottom]:sm:m-2 data-[placement=left]:sm:m-2",
                 }}
                 radius={full ? 'none' : "lg"}
-                backdrop="blur"
                 size={'4xl'}
                 placement='bottom'
                 isOpen={appletShown}

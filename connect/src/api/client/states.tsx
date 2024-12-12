@@ -1,6 +1,7 @@
 import { hookstate, State, useHookstate } from "@hookstate/core";
 import { useEffect } from "react";
 import { Topic } from "../sigma/models";
+import { closeAppletHost, minimizeAppletHost } from "@/components/components/applet-host";
 
 export function useTheme() {
 	const theme = useHookstate(States.store.theme);
@@ -54,8 +55,10 @@ let hookStateStore = {
 	appletFull: hookstate(false),
 	overlayData: hookstate<{ workerId: string, code: string, room: Topic } | null>(null),
 	overlayLoaded: hookstate(false),
+	loadingOverlay: hookstate(false),
 	currentAppletData: hookstate<{ id: string, room: Topic, code: string } | undefined>(undefined),
 	minimizedApplets: hookstate<{ [id: string]: { room: Topic, code: string } }>({}),
+	showAppletTabs: hookstate(false),
 };
 
 export let States = {
@@ -83,13 +86,18 @@ export let States = {
 };
 
 export let Actions = {
+	switchAppletTabs: (v: boolean) => {
+		States.store.showAppletTabs.set(v);
+	},
 	closeApplet: (id: string) => {
+		closeAppletHost(id);
 		let minimizedApplets = States.store.minimizedApplets.get({ noproxy: true });
 		let copied = { ...minimizedApplets };
 		delete copied[id];
 		States.store.minimizedApplets.set(copied);
 	},
 	minimizeApplet: () => {
+		minimizeAppletHost();
 		let appletData = States.store.currentAppletData.get({ noproxy: true })
 		if (appletData) {
 			States.store.minimizedApplets.set({
@@ -113,6 +121,9 @@ export let Actions = {
 	switchAppletFull: (v: boolean) => {
 		States.store.appletFull.set(v);
 	},
+	hideAppletFetchingOverlay: () => {
+		States.store.loadingOverlay.set(false);
+	},
 	appletCodeLoaded: (code: string) => {
 		let appletData = States.store.currentAppletData.get({ noproxy: true });
 		if (appletData) {
@@ -124,8 +135,10 @@ export let Actions = {
 	},
 	switchAppletShown: (v: boolean, workerId?: string, room?: Topic) => {
 		if (v && workerId && room) {
+			States.store.loadingOverlay.set(true);
 			States.store.currentAppletData.set({ id: workerId, room: room, code: "" });
 		} else {
+			States.store.loadingOverlay.set(false);
 			States.store.currentAppletData.set(undefined);
 		}
 		States.store.appletShown.set(v);

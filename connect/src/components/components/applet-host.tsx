@@ -26,9 +26,29 @@ const unloadAllHosts = () => {
     hostLoaded = {}
 }
 
+export let appletCache: { [id: string]: { element: HTMLElement, applet: Applet } } = {};
+export let closeAppletHost = (id: string) => {
+    id = "desktop-sheet-" + id;
+    delete appletCache[id];
+    if (intervalHolder[id]) {
+        Object.values(intervalHolder[id]).forEach(interval => {
+            clearInterval(interval)
+        })
+        delete intervalHolder[id]
+    }
+    if (timeoutHolder[id]) {
+        Object.values(timeoutHolder[id]).forEach(timeout => {
+            clearTimeout(timeout)
+        })
+        delete timeoutHolder[id]
+    }
+    delete hostLoaded[id]
+};
+export let minimizeAppletHost = () => { };
+
 const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, appletKey: string, code: string, index: number, entry: string, onClick?: () => void, room?: Topic, onCancel?: () => void, overlay?: boolean }) => {
     const hostContainerrId = `AppletHost:${props.appletKey}`
-    const appletRef = useRef(new Applet(props.appletKey))
+    const appletRef = useRef(appletCache[props.appletKey] ? appletCache[props.appletKey].applet : new Applet(props.appletKey))
     const rootRef = useRef(null)
     const isSafezone = props.code?.startsWith('safezone/')
     const h = props.full ? window.innerHeight : (window.innerHeight * 8 / 10);
@@ -40,9 +60,27 @@ const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, ap
                 appletRef.current.setContextBuilder((mod) => new Native(mod, Controls))
                 let root = document.getElementById(hostContainerrId)
                 if (root !== null) {
-                    root.innerHTML = ''
-                    let driver = new MwcDriver(appletRef.current, root)
-                    driver.start(props.entry)
+                    root.innerHTML = '';
+                    if (appletCache[props.appletKey]) {
+                        root.appendChild(appletCache[props.appletKey].element);
+                    } else {
+                        let driver = new MwcDriver(appletRef.current, root)
+                        driver.start(props.entry)    
+                    }
+                }
+                if (!props.isWidget) {
+                    minimizeAppletHost = () => {
+                        if (root) {
+                            appletCache[props.appletKey] = {
+                                element: root.children[0] as HTMLElement,
+                                applet: appletRef.current
+                            }
+                        }
+                    }
+                }
+            } else {
+                if (!props.isWidget) {
+                    minimizeAppletHost = () => { };
                 }
             }
             setTimeout(() => {
@@ -56,19 +94,24 @@ const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, ap
     }, [props.code])
     useEffect(() => {
         return () => {
-            if (intervalHolder[props.appletKey]) {
-                Object.values(intervalHolder[props.appletKey]).forEach(interval => {
-                    clearInterval(interval)
-                })
-                delete intervalHolder[props.appletKey]
+            if (!appletCache[props.appletKey]) {
+                if (intervalHolder[props.appletKey]) {
+                    Object.values(intervalHolder[props.appletKey]).forEach(interval => {
+                        clearInterval(interval)
+                    })
+                    delete intervalHolder[props.appletKey]
+                }
+                if (timeoutHolder[props.appletKey]) {
+                    Object.values(timeoutHolder[props.appletKey]).forEach(timeout => {
+                        clearTimeout(timeout)
+                    })
+                    delete timeoutHolder[props.appletKey]
+                }
+                delete hostLoaded[props.appletKey]
             }
-            if (timeoutHolder[props.appletKey]) {
-                Object.values(timeoutHolder[props.appletKey]).forEach(timeout => {
-                    clearTimeout(timeout)
-                })
-                delete timeoutHolder[props.appletKey]
+            if (!props.isWidget) {
+                minimizeAppletHost = () => { };
             }
-            delete hostLoaded[props.appletKey]
         }
     }, [])
     useEffect(() => {
@@ -98,7 +141,7 @@ const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, ap
                 overflow: 'hidden',
                 transform: 'scale(0.65, 0.65)',
                 opacity: 0,
-                transition: 'transform .35s'
+                transition: props.isWidget ? 'transform .35s' : undefined
             }}
             onClick={props.onClick}
         >

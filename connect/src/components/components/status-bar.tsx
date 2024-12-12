@@ -108,7 +108,8 @@ export default function StatusBar(_: Readonly<{ screenshotCallback: () => void }
                     }} />
                 ) : (
                     <IconButton name="tabs" className="-mt-[2px]" onClick={() => {
-                        Actions.restoreApplet(Object.keys(States.store.minimizedApplets.get({ noproxy: true }))[0]);
+                        Actions.switchAppletTabs(!States.store.showAppletTabs.get({ noproxy: true }));
+                        // Actions.restoreApplet(Object.keys(States.store.minimizedApplets.get({ noproxy: true }))[0]);
                     }} />
                 )
             }

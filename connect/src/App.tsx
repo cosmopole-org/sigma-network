@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
 import { useHookstate } from "@hookstate/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { RouteSys, States, useTheme } from "./api/client/states";
+import { Actions, RouteSys, States, useTheme } from "./api/client/states";
 import { loadSizes } from "@/api/client/constants";
 import 'swiper/css';
 import 'swiper/css/effect-creative';
@@ -23,6 +23,8 @@ import CreateTopicModal from "./components/modals/create-topic/page";
 import MembersPage from "./app/members/page";
 import { Card } from "@nextui-org/react";
 import Loading from "./components/components/Loading";
+import LoadingOverlay from "./components/components/loading-overlay";
+import AppletTabs from "./components/components/applet-tabs";
 
 if (typeof window !== 'undefined') {
 	window.addEventListener('load', () => {
@@ -147,6 +149,7 @@ export default function Main() {
 		}
 	}
 
+	const appletShown = States.useListener(States.store.appletShown);
 	const shadowRef = useRef<HTMLDivElement>(null);
 	const full = States.useListener(States.store.appletFull);
 
@@ -181,6 +184,9 @@ export default function Main() {
 			let el = document.getElementById(id);
 			if (el) el.remove();
 			w.minmizeAppletSheet();
+		}
+		w.showTabs = () => {
+
 		}
 		w.prepareFrame = (identifier: string, url: string) => {
 			let frameEl = document.getElementById("frames");
@@ -221,6 +227,17 @@ export default function Main() {
 			w.loadSlots();
 		});
 	}, []);
+	const showTabs = States.useListener(States.store.showAppletTabs);
+	const [viewTabs, setViewTabs] = useState(false);
+	useEffect(() => {
+		if (showTabs) {
+			setViewTabs(true);
+		} else {
+			setTimeout(() => {
+				setViewTabs(false);
+			}, 250);
+		}
+	}, [showTabs]);
 
 	return (
 		<main className="w-full h-screen">
@@ -229,19 +246,49 @@ export default function Main() {
 					{content}
 				</div>
 			</div>
-			<div id="frames" className="w-full h-[85%] absolute left-0 bottom-0 bg-content3" style={{ borderRadius: '24px 24px 0px 0px', zIndex: 1, transform: 'translate(0px, 100%)', transition: 'transform 250ms' }}>
-				<div style={{ width: '100%', position: 'relative', height: 28 }}>
-					{full ? null : <Card style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 100, height: 6, borderRadius: 3, top: 12 }} className='bg-primary' />}
-				</div>
-				<div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
-					{frameLoaded ? null : (
-						<div style={{ width: '100%', height: '100%', position: 'relative' }}>
-							<Loading isWidget={false} overlay={false} key={'safezone-loading-iframes'} onCancel={() => { }} />
+			{
+				(appletShown || showTabs) ? (
+					<div className="w-full h-full absolute left-0 top-0" style={{ backdropFilter: 'blur(10px)' }} />
+				) : null
+			}
+			<div id="frames" className="w-full h-full absolute left-0 bottom-0" style={{ zIndex: 1, transform: 'translate(0px, 100%)', transition: 'transform 250ms' }}>
+				<div onClick={() => {
+					let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
+					Actions.switchAppletLoaded(false)
+					Actions.switchAppletShown(false)
+					if (currentAppletData) {
+						let appletId = currentAppletData.id;
+						Actions.closeApplet(appletId);
+						(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
+					}
+				}} className="w-full h-full relative">
+					<div className={"w-full h-[85%]" + " absolute left-0 bottom-0 " + (viewTabs ? "" : "bg-content3")} style={{ borderRadius: '24px 24px 0px 0px' }}>
+						{viewTabs ? null : (
+							<div style={{ width: '100%', position: 'relative', height: 28 }}>
+								{full ? null : <Card style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 100, height: 6, borderRadius: 3, top: 12 }} className='bg-primary' />}
+							</div>
+						)}
+						{(viewTabs || frameLoaded) ? null : (<div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
+							<div style={{ width: '100%', height: '100%', position: 'relative' }}>
+								<Loading isWidget={false} overlay={false} key={'safezone-loading-iframes'} onCancel={() => {
+									let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
+									Actions.switchAppletLoaded(false)
+									Actions.switchAppletShown(false)
+									if (currentAppletData) {
+										let appletId = currentAppletData.id;
+										Actions.closeApplet(appletId);
+										(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
+									}
+								}} />
+							</div>
 						</div>
-					)}
+						)}
+						<div id="framesList" className="w-full h-[calc(100%-28px)]" />
+					</div>
 				</div>
-				<div id="framesList" className="w-full h-[calc(100%-28px)]" />
 			</div>
+			<AppletTabs />
+			<LoadingOverlay />
 			<StatusBar screenshotCallback={() => { }} />
 		</main >
 	);
