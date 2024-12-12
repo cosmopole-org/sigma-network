@@ -179,14 +179,14 @@ export default function Main() {
 			}
 			if (frameEl) frameEl.style.transform = 'translate(0px, 100%)';
 		}
+		w.closeTab = (id: string) => {
+			delete framesStorage[id];
+		}
 		w.closeAppletSheet = (id: string) => {
 			delete framesStorage[id];
 			let el = document.getElementById(id);
 			if (el) el.remove();
 			w.minmizeAppletSheet();
-		}
-		w.showTabs = () => {
-
 		}
 		w.prepareFrame = (identifier: string, url: string) => {
 			let frameEl = document.getElementById("frames");
@@ -262,7 +262,7 @@ export default function Main() {
 						(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
 					}
 				}} className="w-full h-full relative">
-					<div className={"w-full h-[85%]" + " absolute left-0 bottom-0 " + (viewTabs ? "" : "bg-content3")} style={{ borderRadius: '24px 24px 0px 0px' }}>
+					<div className={"w-full h-[85%]" + " absolute left-0 bottom-0 " + (viewTabs ? "" : "bg-content3")} style={{ borderRadius: viewTabs ? "" : '24px 24px 0px 0px' }}>
 						{viewTabs ? null : (
 							<div style={{ width: '100%', position: 'relative', height: 28 }}>
 								{full ? null : <Card style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 100, height: 6, borderRadius: 3, top: 12 }} className='bg-primary' />}
