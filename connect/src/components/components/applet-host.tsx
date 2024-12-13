@@ -51,7 +51,7 @@ const Host = (props: { stateKey?: string, full?: boolean, isWidget?: boolean, ap
     const appletRef = useRef(appletCache[props.appletKey] ? appletCache[props.appletKey].applet : new Applet(props.appletKey))
     const rootRef = useRef(null)
     const isSafezone = props.code?.startsWith('safezone/')
-    const h = props.full ? window.innerHeight : (window.innerHeight * 8 / 10);
+    const h = props.full ? window.innerHeight : (window.innerHeight * 85 / 100);
     useEffect(() => {
         if (props.code) {
             if (!isSafezone) {

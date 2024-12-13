@@ -251,7 +251,7 @@ export default function Main() {
 					<div className="w-full h-full absolute left-0 top-0" style={{ backdropFilter: 'blur(10px)' }} />
 				) : null
 			}
-			<div id="frames" className="w-full h-full absolute left-0 bottom-0" style={{ zIndex: 1, transform: 'translate(0px, 100%)', transition: 'transform 250ms' }}>
+			<div id="frames" className="w-full h-full absolute left-0 bottom-0" style={{ zIndex: 1, transform: 'translate(0px, 100%)', transition: 'transform 250ms, height 250ms' }}>
 				<div onClick={() => {
 					let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
 					Actions.switchAppletLoaded(false)
@@ -262,28 +262,31 @@ export default function Main() {
 						(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
 					}
 				}} className="w-full h-full relative">
-					<div className={"w-full h-[85%]" + " absolute left-0 bottom-0 " + (viewTabs ? "" : "bg-content3")} style={{ borderRadius: viewTabs ? "" : '24px 24px 0px 0px' }}>
-						{viewTabs ? null : (
+					<div id={'sheet-holder'} className={"w-full " + " absolute left-0 bottom-0 " + (viewTabs ? "" : "bg-content3")} style={{ borderRadius: (viewTabs || full) ? "" : '24px 24px 0px 0px', height: (full || viewTabs) ? `100%` : `85%`, paddingTop: (full && !viewTabs) ? 60 : 0, transition: 'height 250ms' }}>
+						{(viewTabs || full) ? null : (
 							<div style={{ width: '100%', position: 'relative', height: 28 }}>
 								{full ? null : <Card style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 100, height: 6, borderRadius: 3, top: 12 }} className='bg-primary' />}
 							</div>
 						)}
-						{(viewTabs || frameLoaded) ? null : (<div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
-							<div style={{ width: '100%', height: '100%', position: 'relative' }}>
-								<Loading isWidget={false} overlay={false} key={'safezone-loading-iframes'} onCancel={() => {
-									let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
-									Actions.switchAppletLoaded(false)
-									Actions.switchAppletShown(false)
-									if (currentAppletData) {
-										let appletId = currentAppletData.id;
-										Actions.closeApplet(appletId);
-										(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
-									}
-								}} />
-							</div>
-						</div>
-						)}
-						<div id="framesList" className="w-full h-[calc(100%-28px)]" />
+						{
+							(viewTabs || frameLoaded) ? null : (
+								<div style={{ width: '100%', height: '100%', position: 'absolute', left: 0, top: 0 }}>
+									<div style={{ width: '100%', height: '100%', position: 'relative' }}>
+										<Loading isWidget={false} overlay={false} key={'safezone-loading-iframes'} onCancel={() => {
+											let currentAppletData = States.store.currentAppletData.get({ noproxy: true });
+											Actions.switchAppletLoaded(false)
+											Actions.switchAppletShown(false)
+											if (currentAppletData) {
+												let appletId = currentAppletData.id;
+												Actions.closeApplet(appletId);
+												(window as any).closeAppletSheet('safezone-desktop-sheet-' + appletId);
+											}
+										}} />
+									</div>
+								</div>
+							)
+						}
+						<div id="framesList" className={"w-full h-full"} style={{ paddingBottom: full ? 0 : 28 }} />
 					</div>
 				</div>
 			</div>

@@ -14,7 +14,7 @@ const AppletTabs = () => {
         if (showTabs) {
             let stageSlot = document.getElementById('frameTabsStage');
             if (stageSlot) stageSlot.style.display = 'none';
-            let items: HTMLElement[] = [];
+            let items: { original: HTMLElement, shadow: HTMLElement }[] = [];
             if (framesListEl) {
                 let children: HTMLElement[] = [];
                 for (var i = 0; i < framesListEl.children.length; i++) {
@@ -31,18 +31,22 @@ const AppletTabs = () => {
                         el.style.transform = 'translate(0px, 0px)';
                         el.style.boxShadow = 'rgba(0, 0, 0, 0.24) 0px 3px 8px';
                         el.style.minWidth = (window.innerWidth * 85 / 100) + 'px';
+                        el.style.maxHeight = (window.innerHeight * 80 / 100) + 'px';
+                        el.style.marginTop = (window.innerHeight * 25 / 100 / 2) + 'px'
                         let mxL = (i === 0) ?
                             ((window.innerWidth * 15 / 4 / 100)) :
                             ((-window.innerWidth * 65 / 100));
-                        el.style.marginLeft = mxL + 'px';
+                        el.style.marginLeft = mxL - (i === 0 ? 0 : (window.innerWidth * 15 * 3 / 100 / 4)) + 'px';
 
                         let overlay = document.createElement('div');
                         overlay.style.minWidth = (window.innerWidth * 85 / 100) + 'px';
                         overlay.style.height = (window.innerHeight * 85 / 100) + 'px';
-                        overlay.style.marginRight = (window.innerWidth * 15 / 4 / 100) + 'px';
+                        overlay.style.marginRight = (window.innerWidth * 15 / 100) + 'px';
                         overlay.style.marginLeft = (-window.innerWidth * 85 / 100) + 'px';
                         overlay.style.transition = 'transform 250ms';
                         overlay.style.transform = 'translate(0px, 0px)';
+                        overlay.style.maxHeight = (window.innerHeight * 80 / 100) + 'px';
+                        overlay.style.marginTop = (window.innerHeight * 25 / 100 / 2) + 'px'
                         overlay.id = 'overlay-' + appletKey;
 
                         overlay.onclick = () => {
@@ -79,13 +83,13 @@ const AppletTabs = () => {
                                 }
                             }
                             if (direction === "vertical") {
-                                let ml = overlay.style.marginLeft;
-                                overlay.style.transform = `translate(${Math.max(diffX + Number(ml.substring(0, ml.length - 2)), 0)}px, ${diffY}px)`;
-                                el.style.transform = `translate(${Math.max(diffX + Number(ml.substring(0, ml.length - 2)), 0)}px, ${diffY}px)`;
+                                overlay.style.transform = `translate(0px, ${diffY}px)`;
+                                el.style.transform = `translate(0px, ${diffY}px)`;
                             } else if (direction === "horizontal") {
                                 items.forEach((item, index) => {
                                     let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                    item.style.transform = `translate(${finalValX}px, 0px)`;
+                                    item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                    item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
                                 });
                             }
                         }
@@ -108,7 +112,7 @@ const AppletTabs = () => {
                                     Actions.closeApplet(el.id);
                                     let nextIndex = -1;
                                     items = items.filter((item, i) => {
-                                        if ((item instanceof HTMLIFrameElement) && (item.id === el.id)) {
+                                        if ((item.original instanceof HTMLIFrameElement) && (item.original.id === el.id)) {
                                             nextIndex = i + 1;
                                             return false;
                                         }
@@ -116,21 +120,27 @@ const AppletTabs = () => {
                                     });
                                     if (nextIndex > 0) {
                                         let newTransformX = (nextIndex === 1) ?
-                                            (window.innerWidth * 15 / 4 / 100) :
+                                            (((window.innerWidth * 15 / 4 / 100)) - (nextIndex === 1 ? 0 : (window.innerWidth * 15 * 3 / 100 / 4))) :
                                             (-window.innerWidth * 65 / 100);
                                         if (items[nextIndex - 1]) {
-                                            items[nextIndex - 1].style.marginLeft = newTransformX + 'px';
+                                            items[nextIndex - 1].original.style.marginLeft = newTransformX + 'px';
                                         }
                                     }
+                                    items.forEach((item, index) => {
+                                        let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
+                                        item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                        item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
+                                    });
                                 }, 250);
                             } else {
                                 items.forEach((item, index) => {
                                     let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                    item.style.transform = `translate(${finalValX}px, 0px)`;
+                                    item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                    item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
                                 });
                             }
                         }
-                        items.push(el);
+                        items.push({ original: el, shadow: overlay });
                     }
                 }
             }
@@ -148,10 +158,12 @@ const AppletTabs = () => {
                     let mxL = ((framesListEl?.children.length === 0) && (index === 0)) ?
                         ((window.innerWidth * 15 / 4 / 100)) :
                         ((-window.innerWidth * 65 / 100));
-                    container.style.marginLeft = mxL + 'px';
+                    container.style.marginLeft = mxL - ((framesListEl && (framesListEl.children.length > 0) && (index === 0)) ? (window.innerWidth * 15 * 3 / 100 / 4) : 0) + 'px';
                     container.style.marginRight = (window.innerWidth * 15 / 4 / 100) + 'px';
                     container.style.transition = 'transform 250ms';
                     container.style.transform = 'translate(0px, 0px)';
+                    container.style.maxHeight = (window.innerHeight * 80 / 100) + 'px';
+                    container.style.marginTop = (window.innerHeight * 25 / 100 / 2) + 'px'
                     container.id = "container-" + appletKey;
                     container.onclick = () => {
                         Actions.switchAppletTabs(false);
@@ -190,12 +202,12 @@ const AppletTabs = () => {
                             }
                         }
                         if (direction === "vertical") {
-                            let ml = container.style.marginLeft;
-                            container.style.transform = `translate(${Math.max(diffX + Number(ml.substring(0, ml.length - 2)), 0)}px, ${diffY}px)`;
+                            container.style.transform = `translate(0px, ${diffY}px)`;
                         } else if (direction === "horizontal") {
                             items.forEach((item, index) => {
                                 let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                item.style.transform = `translate(${finalValX}px, 0px)`;
+                                item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
                             });
                         }
                     }
@@ -213,7 +225,7 @@ const AppletTabs = () => {
                                 Actions.closeApplet(appletKey.substring("desktop-sheet-".length));
                                 let nextIndex = -1;
                                 items = items.filter((item, i) => {
-                                    if ((item instanceof HTMLDivElement) && (item.id === container.id)) {
+                                    if ((item.shadow instanceof HTMLDivElement) && (item.shadow.id === container.id)) {
                                         nextIndex = i + 1;
                                         return false;
                                     }
@@ -221,21 +233,28 @@ const AppletTabs = () => {
                                 });
                                 if (nextIndex > 0) {
                                     let newTransformX = (nextIndex === 1) ?
-                                        (window.innerWidth * 15 / 4 / 100) :
+                                        (window.innerWidth * 15 / 100) :
                                         (-window.innerWidth * 65 / 100);
+                                    newTransformX = newTransformX - ((framesListEl && (framesListEl.children.length > 0) && (nextIndex === 1)) ? (window.innerWidth * 15 * 3 / 100 / 4) : 0);
                                     if (items[nextIndex - 1]) {
-                                        items[nextIndex - 1].style.marginLeft = newTransformX + 'px';
+                                        items[nextIndex - 1].original.style.marginLeft = newTransformX + 'px';
                                     }
                                 }
+                                items.forEach((item, index) => {
+                                    let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
+                                    item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                    item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
+                                });
                             }, 250);
                         } else {
                             items.forEach((item, index) => {
                                 let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                item.style.transform = `translate(${finalValX}px, 0px)`;
+                                item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
                             });
                         }
                     }
-                    items.push(container);
+                    items.push({ original: container, shadow: container });
                 }
             });
             if (frameEl) frameEl.style.transform = 'translate(0px, 0%)';
@@ -248,10 +267,14 @@ const AppletTabs = () => {
                     el.slot = 'frameStore';
                     el.style.marginLeft = '0px';
                     el.style.marginRight = '0px';
-                    el.style.minWidth = '0px';
+                    el.style.minWidth = '';
                     el.style.borderRadius = '0px';
                     el.style.pointerEvents = 'auto';
                     el.style.boxShadow = '';
+                    el.style.maxHeight = '';
+                    el.style.marginTop = '0px'
+                    el.style.transition = '';
+                    el.style.transform = 'translate(0px, 0px)';
 
                     let overlay = overlays[appletKey];
                     overlay.remove();

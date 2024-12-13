@@ -153,13 +153,13 @@ const AppletSheet = () => {
             >
                 <DrawerContent onClick={e => {
                     e.stopPropagation();
-                }} style={{ paddingTop: full ? 32 : 0, minHeight: h, height: h, transition: 'min-height 250ms, height 250ms' }}>
+                }} style={{ paddingTop: full ? 52 : 0, minHeight: h, height: h, transition: 'min-height 250ms, height 250ms' }}>
                     {() => (
                         <>
                             <div style={{ width: '100%', position: 'relative', height: 28 }}>
                                 {full ? null : <Card style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', width: 100, height: 6, borderRadius: 3, top: 12 }} className='bg-primary' />}
                             </div>
-                            <DrawerBody className='p-0 w-full relative' style={{ minHeight: (window.innerHeight * 8 / 10) - 40 }}>
+                            <DrawerBody className='p-0 w-full relative' style={{ minHeight: h - 52 }}>
                                 <AppletHost.Host
                                     full={full}
                                     appletKey={'desktop-sheet-' + workerIdRef.current}
