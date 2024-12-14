@@ -5,6 +5,7 @@ import Circles from "@/components/components/circles";
 import Icon from "@/components/elements/icon";
 import IconButton from "@/components/elements/icon-button";
 import Board from "@/components/room/room-board";
+import { api } from "@/index";
 import { Avatar, Button } from "@nextui-org/react";
 import { useRef } from "react";
 
@@ -26,8 +27,9 @@ export default function ProfilePage({ user }: Readonly<{ user: User }>) {
             <div className="justify-center flex w-full h-auto pl-4 pr-4 gap-4 absolute top-[280px]">
                 <Button
                     onPress={() => {
-                        
-                        RouteSys.push('/app/chat')
+                        api.sigma.services?.interacts.create({ userId: user.id }).then(res => {
+                            RouteSys.push('/app/chat', { spaceId: res.data.space.id, topicId: res.data.topic.id });
+                        })
                     }}
                     isIconOnly className="w-12 h-12 bg-white dark:bg-s-black" radius="full">
                     <Icon name='message' size={[24, 24]} />

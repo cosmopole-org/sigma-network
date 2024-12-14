@@ -1,17 +1,31 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@nextui-org/react";
 import Chat from "../room/room-chat";
 import { States } from "@/api/client/states";
 import Files from "../room/room-files";
 import MachinesList from "../home/machines-list";
+import { api } from "@/index";
+import { Member } from "@/api/sigma/models";
 
 export default function HomeApps() {
     const pos = States.useListener(States.store.currentPos);
     const containerRef = useRef<HTMLDivElement>(null);
     const selectedDrawerApp = States.useListener(States.store.selectedDrawerApp);
+    const [members, setMembers] = useState<Member[]>([]);
+    useEffect(() => {
+        api.sigma.store.db.collections.members.find({
+            selector: {
+                spaceId: {
+                    $eq: pos.spaceId
+                }
+            }
+        }).exec().then(mems => {
+            setMembers(mems);
+        });
+    }, [pos.spaceId, pos.topicId]);
     const chat = useMemo(() => <Chat spaceId={pos.spaceId} topicId={pos.topicId} />, [pos.spaceId, pos.topicId]);
     const files = useMemo(() => <Files />, []);
-    const bots = useMemo(() => <MachinesList className='pt-2' />, []);
+    const bots = useMemo(() => <MachinesList className='pt-2' members={members} />, [members]);
     const chatRef = useRef<HTMLDivElement>(null);
     const botsRef = useRef<HTMLDivElement>(null);
     const filesRef = useRef<HTMLDivElement>(null);

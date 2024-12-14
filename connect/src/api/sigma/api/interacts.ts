@@ -1,8 +1,7 @@
 import Api from "@/api";
 import Network from "../helpers/network";
 import Storage from "../helpers/storage";
-import { genRandAvatar } from "@/api/utils";
-import { MemberUser } from "../models";
+import { States } from "@/api/client/states";
 
 export default class Interacts {
     private api: Api
@@ -13,53 +12,47 @@ export default class Interacts {
         this.net = net;
         this.store = store;
     }
-    async read() {
-        try {
-            const { success, result } = await this.net.safelyRequest(1, "spaces/read", "GET", {});
-            if (success) {
-                let spaces = result.spaces;
-                this.store.db.spaces.bulkUpsert(spaces);
-                return { success: true, data: { spaces } };
-            } else {
-                return { success: false, data: { error: result.toString() } };
-            }
-        } catch (ex: any) {
-            return { success: false, data: { error: ex.toString() } };
-        }
-    }
-    async readMembers(body: { spaceId: string }) {
-        try {
-            const { success, result } = await this.net.safelyRequest(1, "spaces/readMembers", "GET", {
-                spaceId: body.spaceId
-            });
-            if (success) {
-                let members = result.members;
-                await this.store.db.users.bulkUpsert(members.map((m: MemberUser) => m.user));
-                await this.store.db.members.bulkUpsert(members.map((m: MemberUser) => m.member));
-                return { success: true, data: { members } };
-            } else {
-                return { success: false, data: { error: result.toString() } };
-            }
-        } catch (ex: any) {
-            return { success: false, data: { error: ex.toString() } };
-        }
-    }
     async create(
-        body: { title: string, isPublic: boolean }
+        body: { userId: string }
     ) {
         try {
-            const { success, result } = await this.net.safelyRequest(1, "spaces/create", "POST", {
-                "title": body.title,
-                "avatar": genRandAvatar(),
-                "isPublic": body.isPublic,
-                "tag": body.title
+            const { success, result } = await this.net.safelyRequest(1, "interact/create", "POST", {
+                "userId": body.userId
             });
             if (success) {
+                let interaction = result.interaction;
+                interaction.id = interaction.id.toString();
                 let space = result.space;
+                let topic = result.topic;
                 let member = result.member;
+                let parts = interaction.userIds.split("|");
+                if (parts[0] === States.store.myUserId) {
+                    interaction.userId = parts[1];
+                } else {
+                    interaction.userId = parts[0];
+                }
+                this.store.db.interactions.upsert(interaction);
                 this.store.db.spaces.upsert(space);
+                this.store.db.topics.upsert(topic);
                 this.store.db.members.upsert(member);
-                return { success: true, data: { space } };
+                return { success: true, data: { space, topic, member, interaction } };
+            } else {
+                return { success: false, data: { error: result.toString() } };
+            }
+        } catch (ex: any) {
+            return { success: false, data: { error: ex.toString() } };
+        }
+    }
+    async read() {
+        try {
+            const { success, result } = await this.net.safelyRequest(1, "interact/read", "GET", {});
+            if (success) {
+                let interactions = result.interactions;
+                interactions.forEach((interaction: any) => {
+                    interaction.id = interaction.userId
+                });
+                this.store.db.interactions.bulkUpsert(interactions);
+                return { success: true, data: { interactions } };
             } else {
                 return { success: false, data: { error: result.toString() } };
             }

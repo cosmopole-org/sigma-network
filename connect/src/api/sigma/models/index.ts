@@ -66,3 +66,9 @@ export type Message = {
         text?: string
     }
 }
+
+export type Interaction = {
+    id: string,
+    userId: string,
+    state: any
+}

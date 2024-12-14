@@ -10,6 +10,7 @@ import { MemberCollection, memberSchema } from "../models/member";
 import { InviteCollection, inviteSchema } from "../models/invite";
 import { SecretCollection, secretSchema } from "../models/secret";
 import { MessageCollection, messageSchema } from "../models/message";
+import { InteractionCollection, interactionSchema } from "../models/interaction";
 
 addRxPlugin(RxDBDevModePlugin);
 
@@ -22,6 +23,7 @@ export type DatabaseCollections = {
     invites: InviteCollection
     secrets: SecretCollection,
     messages: MessageCollection,
+    interactions: InteractionCollection,
 }
 
 export default class Storage {
@@ -71,6 +73,9 @@ export default class Storage {
             },
             messages: {
                 schema: messageSchema
+            },
+            interactions: {
+                schema: interactionSchema
             }
         })
         this.db.$.subscribe(changeEvent => console.dir(changeEvent));

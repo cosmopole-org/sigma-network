@@ -439,6 +439,9 @@ func getInteractionState(trx adapters.ITrx, myUserId string, receipentId string)
 	if interaction.State["areFriends"] == "true" {
 		result[4] = true
 	}
+	if interaction.State["interacted"] == "true" {
+		result[5] = true
+	}
 	return interaction, result
 }
 
@@ -459,8 +462,8 @@ func (a *Actions) CreatePrivate(s abstract.IState, input inputsspaces.CreatePriv
 	if codeMap[2] {
 		return nil, errors.New("you are blocked by the user")
 	}
-	if !codeMap[4] {
-		return nil, errors.New("you 2 are not friends")
+	if !codeMap[4] && !codeMap[5] {
+		return nil, errors.New("you 2 are not friends and not even interacted")
 	}
 	if interaction.State["spaceId"] != nil {
 		return nil, errors.New("private room already exists")

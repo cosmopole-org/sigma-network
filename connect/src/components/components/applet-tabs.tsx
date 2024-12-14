@@ -126,11 +126,15 @@ const AppletTabs = () => {
                                             items[nextIndex - 1].original.style.marginLeft = newTransformX + 'px';
                                         }
                                     }
-                                    items.forEach((item, index) => {
-                                        let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                        item.original.style.transform = `translate(${finalValX}px, 0px)`;
-                                        item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
-                                    });
+                                    if (items.length > 0) {
+                                        items.forEach((item, index) => {
+                                            let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
+                                            item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                            item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
+                                        });
+                                    } else {
+                                        Actions.switchAppletTabs(false);
+                                    }
                                 }, 250);
                             } else {
                                 items.forEach((item, index) => {
@@ -240,11 +244,15 @@ const AppletTabs = () => {
                                         items[nextIndex - 1].original.style.marginLeft = newTransformX + 'px';
                                     }
                                 }
-                                items.forEach((item, index) => {
-                                    let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
-                                    item.original.style.transform = `translate(${finalValX}px, 0px)`;
-                                    item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
-                                });
+                                if (items.length > 0) {
+                                    items.forEach((item, index) => {
+                                        let finalValX = Math.max(Math.min(diffX, index * 10), -index * 50);
+                                        item.original.style.transform = `translate(${finalValX}px, 0px)`;
+                                        item.shadow.style.transform = `translate(${finalValX}px, 0px)`;
+                                    });
+                                } else {
+                                    Actions.switchAppletTabs(false);
+                                }
                             }, 250);
                         } else {
                             items.forEach((item, index) => {

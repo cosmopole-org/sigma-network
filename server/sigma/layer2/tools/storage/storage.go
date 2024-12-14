@@ -175,6 +175,10 @@ func (sm *TrxWrapper) Used() bool {
 	return sm.used
 }
 
+func (sm *TrxWrapper) SavePoint(name string) {
+	sm.Reset()
+	sm.trx.SavePoint(name)
+}
 func (sm *TrxWrapper) Push(options ...bool) {
 	sm.Reset()
 	//sm.chain <- sm.changes

@@ -7,7 +7,7 @@ import {
 } from "rxdb";
 
 const schema = {
-    "title": "user",
+    "title": "interaction",
     "version": 0,
     "description": "",
     "primaryKey": "id",
@@ -17,33 +17,17 @@ const schema = {
             "type": "string",
             "maxLength": 100
         },
-        "username": {
+        "userId": {
             "type": "string"
         },
-        "name": {
-            "type": "string"
-        },
-        "avatar": {
-            "type": "string"
-        },
-        "publicKey": {
-            "type": "string"
-        },
-        "secret": {
-            "type": "string"
-        },
-        "type": {
-            "type": "string"
+        "state": {
+            "type": "object"
         }
     },
     "required": [
         "id",
-        "username",
-        "secret",
-        "name",
-        "avatar",
-        "publicKey",
-        "type"
+        "userId",
+        "state"
     ]
 } as const;
 
@@ -51,7 +35,7 @@ const schemaTyped = toTypedRxJsonSchema(schema);
 
 export type DocType = ExtractDocumentTypeFromTypedRxJsonSchema<typeof schemaTyped>;
 
-export const userSchema: RxJsonSchema<DocType> = schema;
+export const interactionSchema: RxJsonSchema<DocType> = schema;
 
 export type DocMethods = {};
 
@@ -59,4 +43,4 @@ export type Document = RxDocument<DocType, DocMethods>;
 
 export type CollectionMethods = {};
 
-export type UserCollection = RxCollection<DocType, DocMethods, CollectionMethods>;
+export type InteractionCollection = RxCollection<DocType, DocMethods, CollectionMethods>;

@@ -33,6 +33,7 @@ type ITrx interface {
 	Error() error
 	Reset()
 	Use()
+	SavePoint(string)
 	Push(...bool)
 	Revert()
 	Used() bool

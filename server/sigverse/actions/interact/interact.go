@@ -11,9 +11,11 @@ import (
 	modulestate "sigma/sigma/layer1/module/state"
 	moduletoolbox "sigma/sigma/layer1/module/toolbox"
 	inputs_interact "sigma/sigverse/inputs/interact"
+	inputs_spaces "sigma/sigverse/inputs/spaces"
 	inputs_users "sigma/sigverse/inputs/users"
 	model "sigma/sigverse/model"
 	outputs_interact "sigma/sigverse/outputs/interact"
+	outputs_spaces "sigma/sigverse/outputs/spaces"
 	outputs_users "sigma/sigverse/outputs/users"
 	"strings"
 
@@ -54,6 +56,9 @@ func getInteractionState(trx adapters.ITrx, myUserId string, receipentId string)
 	}
 	if interaction.State["areFriends"] == "true" {
 		result[4] = true
+	}
+	if interaction.State["interacted"] == "true" {
+		result[5] = true
 	}
 	trx.Reset()
 	return interaction, result
@@ -127,6 +132,99 @@ func (a *Actions) GetByCode(s abstract.IState, input inputs_interact.GetByCodeDt
 	}
 	user = res.(outputs_users.GetOutput).User
 	return outputs_users.GetOutput{User: user}, nil
+}
+
+func findSpace(interaction model.Interaction, userId string, trx adapters.ITrx) outputs_interact.InteractOutput {
+	space := model.Space{Id: interaction.State["spaceId"].(string)}
+	trx.First(&space)
+	trx.Reset()
+	topic := model.Topic{Id: interaction.State["topicId"].(string)}
+	trx.First(&topic)
+	trx.Reset()
+	member := model.Member{}
+	trx.Where("user_id = ?", userId).Where("space_id = ?", space.Id).First(&member)
+	return outputs_interact.InteractOutput{Interaction: interaction, Space: &space, Topic: &topic, Member: &member}
+}
+
+// Create /interact/create check [ true false false ] access [ true false false false GET ]
+func (a *Actions) Create(s abstract.IState, input inputs_interact.InteractDto) (any, error) {
+	toolbox := abstract.UseToolbox[*moduletoolbox.ToolboxL1](a.Layer.Tools())
+	state := abstract.UseState[modulestate.IStateL1](s)
+	userId := input.UserId
+	trx := state.Trx()
+	trx.Use()
+	interaction, codeMap := getInteractionState(trx, state.Info().UserId(), userId)
+	if len(codeMap) > 0 {
+		if codeMap[2] {
+			return nil, errors.New(blockedByTheUser)
+		}
+		if codeMap[5] {
+			return findSpace(interaction, state.Info().UserId(), trx), nil
+		}
+	}
+	if codeMap[-1] {
+		interaction = model.Interaction{UserIds: getMergedUserIds(state.Info().UserId(), userId)}
+		interactionState := map[string]interface{}{}
+		interactionState["interacted"] = "true"
+		interaction.State = interactionState
+		st, err := json.Marshal(interactionState)
+		if err != nil {
+			return nil, err
+		}
+		err2 := trx.Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "user_ids"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{"state": string(st)}),
+		}).Create(&interaction).Error()
+		if err2 != nil {
+			return nil, err2
+		}
+		trx.SavePoint("step1")
+		_, res, createPrivateErr := a.Layer.Actor().FetchAction("/spaces/createPrivate").Act(a.Layer.Sb().NewState(moduleactormodel.NewInfo(state.Info().UserId(), "", ""), trx), inputs_spaces.CreatePrivateInput{
+			ParticipantId: userId,
+		})
+		if createPrivateErr != nil {
+			return nil, createPrivateErr
+		}
+		privateRes := res.(outputs_spaces.CreateSpaceOutput)
+		space := privateRes.Space
+		topic := privateRes.Topic
+		member := privateRes.Member
+		interaction.State["spaceId"] = space.Id
+		interaction.State["topicId"] = topic.Id
+		toolbox.Signaler().SignalUser("interacted", "", userId, model.PreparedInteraction{UserId: userId, State: interaction.State}, true)
+		return outputs_interact.InteractOutput{Interaction: interaction, Space: &space, Topic: &topic, Member: &member}, nil
+	} else {
+		if interaction.State["interacted"] == "true" {
+			return findSpace(interaction, state.Info().UserId(), trx), nil
+		}
+		interaction.State["interacted"] = "true"
+		err := trx.Save(&interaction).Error()
+		if err != nil {
+			return nil, err
+		}
+		var (
+			space  model.Space
+			member model.Member
+			topic  model.Topic
+		)
+		if interaction.State["spaceId"] == nil {
+			trx.SavePoint("step1")
+			_, res, createPrivateErr := a.Layer.Actor().FetchAction("/spaces/createPrivate").Act(a.Layer.Sb().NewState(moduleactormodel.NewInfo(state.Info().UserId(), "", ""), trx), inputs_spaces.CreatePrivateInput{
+				ParticipantId: userId,
+			})
+			if createPrivateErr != nil {
+				return nil, createPrivateErr
+			}
+			privateRes := res.(outputs_spaces.CreateSpaceOutput)
+			space = privateRes.Space
+			topic = privateRes.Topic
+			member = privateRes.Member
+			interaction.State["spaceId"] = space.Id
+			interaction.State["topicId"] = topic.Id
+		}
+		toolbox.Signaler().SignalUser("interacted", "", userId, model.PreparedInteraction{UserId: userId, State: interaction.State}, true)
+		return outputs_interact.InteractOutput{Interaction: interaction, Space: &space, Topic: &topic, Member: &member}, nil
+	}
 }
 
 // SendFriendRequest /interact/sendFriendRequest check [ true false false ] access [ true false false false GET ]
@@ -491,6 +589,45 @@ func (a *Actions) ReadFriendRequestList(s abstract.IState, input inputs_interact
 		}
 		partiDict[user.Id].Profile = profile
 		trx.Reset()
+	}
+	return outputs_interact.InteractsOutput{Interactions: result}, nil
+}
+
+// ReadInteractions /interact/read check [ true false false ] access [ true false false false GET ]
+func (a *Actions) ReadInteractions(s abstract.IState, input inputs_interact.ReadBlockedListDto) (any, error) {
+	state := abstract.UseState[modulestate.IStateL1](s)
+	toolbox := abstract.UseToolbox[*moduletoolbox.ToolboxL1](a.Layer.Tools())
+	var result = []*model.PreparedInteraction{}
+	trx := state.Trx()
+	trx.Use()
+	var interactions = []model.Interaction{}
+	err := trx.Select("*").Where(userIdsLike, state.Info().UserId()+"|%").Or(userIdsLike, "%|"+state.Info().UserId()).Find(&interactions).Error()
+	if err != nil {
+		return nil, err
+	}
+	var ids = []string{}
+	var partiDict = map[string]*model.PreparedInteraction{}
+	for _, interaction := range interactions {
+		if interaction.State["interacted"] == "true" {
+			var participantId string
+			var idPair = strings.Split(interaction.UserIds, "|")
+			if idPair[0] == state.Info().UserId() {
+				participantId = idPair[1]
+			} else {
+				participantId = idPair[0]
+			}
+			var isOnline = (toolbox.Signaler().Listeners[participantId] != nil)
+			var participent = &model.PreparedInteraction{UserId: participantId, State: interaction.State, IsOnline: isOnline}
+			ids = append(ids, participantId)
+			partiDict[participantId] = participent
+			result = append(result, participent)
+		}
+	}
+	var users = []model.User{}
+	trx.Reset()
+	trx.Where("id in ?", ids).Find(&users)
+	for _, user := range users {
+		partiDict[user.Id].Profile = map[string]any{"name": user.Name, "avatar": user.Avatar}
 	}
 	return outputs_interact.InteractsOutput{Interactions: result}, nil
 }

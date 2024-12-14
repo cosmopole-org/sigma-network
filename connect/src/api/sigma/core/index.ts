@@ -5,11 +5,12 @@ import Spaces from "../api/spaces";
 import Topics from "../api/topics";
 import Api from "@/api";
 import Messages from "../api/messages";
+import Interacts from "../api/interacts";
 
 class Sigma {
     public store: Storage = new Storage()
     public net: Network = new Network(this.store)
-    public services?: { users: Users, spaces: Spaces, topics: Topics, messages: Messages } = undefined
+    public services?: { users: Users, spaces: Spaces, topics: Topics, messages: Messages, interacts: Interacts } = undefined
     public async run(api: Api) {
         await this.store.run();
         this.services = {
@@ -17,6 +18,7 @@ class Sigma {
             spaces: new Spaces(api, this.net, this.store),
             topics: new Topics(api, this.net, this.store),
             messages: new Messages(api, this.net, this.store),
+            interacts: new Interacts(api, this.net, this.store),
         }
     }
 }

@@ -19,7 +19,8 @@ class Api {
             res?.data.spaces.forEach((space: Space) => {
                 ps.push(this.sigma.services?.topics.read({ spaceId: space.id }));
             });
-            Promise.all(ps);
+            await Promise.all(ps);
+            await this.sigma.services?.interacts.read();
         } catch (ex) {
             console.log(ex);
         }
