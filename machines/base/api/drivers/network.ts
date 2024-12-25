@@ -10,7 +10,7 @@ class NetworkDriver {
 
     constructor(api: Api, token: string) {
         this.token = token;
-        this.ws = new WebSocket("wss://sigverse.liara.run/ws");
+        this.ws = new WebSocket("wss://gate.kproto.app/ws");
         let that = this;
         this.ws.onopen = async function (e) {
             console.log("[open] Connection established");
