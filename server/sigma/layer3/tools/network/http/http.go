@@ -158,8 +158,8 @@ func (hs *HttpServer) Listen(port int) {
 	})
 	hs.logger.Println("Listening to rest port ", port, "...")
 	go func() {
-		// err := hs.Server.ListenTLS(fmt.Sprintf(":%d", port), "./cert.pem", "./cert.key")
-		err := hs.Server.Listen(fmt.Sprintf(":%d", port))
+		err := hs.Server.ListenTLS(fmt.Sprintf(":%d", port), "./cert.pem", "./cert.key")
+		// err := hs.Server.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			hs.logger.Println(err)
 		}
