@@ -1,5 +1,5 @@
-// const serverUrl = "https://sigverse.liara.run";
-const serverUrl = "http://localhost:9010";
+const serverUrl = "https://gate.kproto.app";
+// const serverUrl = "http://localhost:9010";
 export const getServerUrl = () => serverUrl
 
 const drawerWidth = 300;

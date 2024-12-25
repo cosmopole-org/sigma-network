@@ -72,7 +72,7 @@ class NetworkDriver {
                         path += (key + "=" + body[key]);
                     })
                 }
-                let rawRes = await fetch(`https://sigverse.liara.run/${path}`, {
+                let rawRes = await fetch(`https://gate.kproto.app/${path}`, {
                     method: method,
                     headers: myHeaders,
                     redirect: "follow"
@@ -83,7 +83,7 @@ class NetworkDriver {
                 myHeaders.append("layer", layer.toString());
                 myHeaders.append("Content-Type", "application/json");
                 myHeaders.append("token", this.token);
-                let rawRes = await fetch(`https://sigverse.liara.run/${path}`, {
+                let rawRes = await fetch(`https://gate.kproto.app/${path}`, {
                     method: method,
                     headers: myHeaders,
                     body: JSON.stringify(body),
