@@ -149,8 +149,8 @@ func (hs *HttpServer) Listen(port int) {
 		return c.Status(fiber.StatusOK).Send([]byte("hello world"))
 	})
     hs.Server.Use(recover.New())
-	hs.Server.Get("/.well-known/acme-challenge/U5aSMkww6uJ6N0xD7LkfgB6rDGNrk5rEdmLRX5jsKXU", func(c *fiber.Ctx) error {
-		c.Status(fiber.StatusOK).SendString("U5aSMkww6uJ6N0xD7LkfgB6rDGNrk5rEdmLRX5jsKXU.STrdEMUitBXXsTS69K9R85ZIe4IQBqIGDBkgJdRB1hk")
+	hs.Server.Get("/.well-known/acme-challenge/MuYJk5o15dO230hVaPX6YAlbaunoYhQopdnq9ERQvUs", func(c *fiber.Ctx) error {
+		c.Status(fiber.StatusOK).SendString("MuYJk5o15dO230hVaPX6YAlbaunoYhQopdnq9ERQvUs.STrdEMUitBXXsTS69K9R85ZIe4IQBqIGDBkgJdRB1hk")
 		return nil
 	})
 	hs.Server.Use(func(c *fiber.Ctx) error {
