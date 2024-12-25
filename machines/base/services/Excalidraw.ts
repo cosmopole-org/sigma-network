@@ -153,7 +153,7 @@ export default {
                             }}
                             >
                             <Image
-                                src={'https://safezone.liara.run/excalidraw/logo192.png'}
+                                src={'https://gate.kproto.app:8443/excalidraw/logo192.png'}
                                 style={{
                                     width: '100%',
                                     height: '100%'

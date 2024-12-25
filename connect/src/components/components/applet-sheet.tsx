@@ -35,10 +35,10 @@ const AppletSheet = () => {
             let data = e.data
             if (id && (id === workerIdRef.current)) {
                 if (data.key === 'onLoad') {
-                    (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, colorName: "blue" }, 'https://safezone.liara.run/')
+                    (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, colorName: "blue" }, 'https://gate.kproto.app:8443/')
                 } else if (data.key === 'ready') {
                     if (!States.store.appletShown.get({ noproxy: true })) {
-                        (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://safezone.liara.run/')
+                        (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://gate.kproto.app:8443/')
                         setTimeout(() => {
                             Actions.switchAppletShown(false);
                             Actions.switchAppletLoaded(false);

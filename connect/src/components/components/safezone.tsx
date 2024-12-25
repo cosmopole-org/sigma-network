@@ -71,10 +71,10 @@ const Safezone = (props: { stateKey?: string, isWidget?: boolean, code: string, 
             let data = e.data
             if (workerId && (workerId === id)) {
                 if (data.key === 'onLoad') {
-                    (document.getElementById(`safezone-${workerId}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, themeColor: colors.blue, colorName: "blue" }, 'https://safezone.liara.run/')
+                    (document.getElementById(`safezone-${workerId}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, themeColor: colors.blue, colorName: "blue" }, 'https://gate.kproto.app:8443/')
                 } else if (data.key === 'ready') {
                     if (!show) {
-                        (document.getElementById(`safezone-${workerId}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://safezone.liara.run/')
+                        (document.getElementById(`safezone-${workerId}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://gate.kproto.app:8443/')
                         setShow(true)
                     }
                 } else if (data.key === 'ask') {
@@ -96,19 +96,19 @@ const Safezone = (props: { stateKey?: string, isWidget?: boolean, code: string, 
                 if (props.workerId) {
                     let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
                     if (packet.member.id === wi) {
-                        (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://safezone.liara.run/')
+                        (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://gate.kproto.app:8443/')
                     }
                 } else {
-                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://safezone.liara.run/')
+                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'response', packet: data }, 'https://gate.kproto.app:8443/')
                 }
             } else if (data.type === "push") {
                 if (props.workerId) {
                     let wi = props.workerId.startsWith('desktop-sheet-') ? props.workerId.substring('desktop-sheet-'.length) : props.workerId;
                     if (packet.member.id === wi) {
-                        (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://safezone.liara.run/')
+                        (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://gate.kproto.app:8443/')
                     }
                 } else {
-                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://safezone.liara.run/')
+                    (document.getElementById(identifier) as any)?.contentWindow.postMessage({ key: 'push', packet: data }, 'https://gate.kproto.app:8443/')
                 }
             }
         });
@@ -151,7 +151,7 @@ const Safezone = (props: { stateKey?: string, isWidget?: boolean, code: string, 
                                 frameBorder={0}
                                 width="100%"
                                 height="100%"
-                                src={`https://safezone.liara.run/${url}`}
+                                src={`https://gate.kproto.app:8443/${url}`}
                                 style={{ opacity: show ? 1 : 0, transition: 'opacity 500ms' }}
                             />
                         )

@@ -24,10 +24,10 @@ const Overlay = () => {
             let data = e.data
             if (id && overlayData?.workerId && (id === overlayData?.workerId)) {
                 if (data.key === 'onLoad') {
-                    (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, colorName: "blue" }, 'https://safezone.liara.run/')
+                    (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'setup', myHumanId: States.store.myUserId, colorName: "blue" }, 'https://gate.kproto.app:8443/')
                 } else if (data.key === 'ready') {
                     if (!overlayData) {
-                        (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://safezone.liara.run/')
+                        (document.getElementById(`safezone-${id}`) as any)?.contentWindow.postMessage({ key: 'start' }, 'https://gate.kproto.app:8443/')
                     }
                 } else if (data.key === 'ask') {
                     api.sigma.services?.topics.ask({ recvId: id, data: data.packet, spaceId: overlayData?.room.spaceId, topicId: overlayData?.room.id });

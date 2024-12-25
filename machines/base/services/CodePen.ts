@@ -135,7 +135,7 @@ export default {
                             }}
                             >
                             <Image
-                                src={'https://safezone.liara.run/codepen/logo192.png'}
+                                src={'https://gate.kproto.app:8443/codepen/logo192.png'}
                                 style={{
                                     width: '100%',
                                     height: '100%'

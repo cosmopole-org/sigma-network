@@ -137,7 +137,7 @@ export default {
                                     }}
                                 >
                                     <Image
-                                        src={'https://safezone.liara.run/trello/logo192.png'}
+                                        src={'https://gate.kproto.app:8443/trello/logo192.png'}
                                         style={{
                                             width: '100%',
                                             height: '100%'
@@ -207,7 +207,7 @@ export default {
                             }}
                             >
                             <Image
-                                src={'https://safezone.liara.run/trello/logo192.png'}
+                                src={'https://gate.kproto.app:8443/trello/logo192.png'}
                                 style={{
                                     width: '100%',
                                     height: '100%'

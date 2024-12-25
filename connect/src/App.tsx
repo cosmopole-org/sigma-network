@@ -200,7 +200,7 @@ export default function Main() {
 				f.frameBorder = "0";
 				f.width = '100%';
 				f.height = '100%';
-				f.src = url.startsWith('https://') ? url : `https://safezone.liara.run/${url}`;
+				f.src = url.startsWith('https://') ? url : `https://gate.kproto.app:8443/${url}`;
 				if (framesListEl) framesListEl.appendChild(f);
 			}
 			for (let id in framesStorage) {
