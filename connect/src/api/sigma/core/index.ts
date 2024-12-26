@@ -20,6 +20,7 @@ class Sigma {
             messages: new Messages(api, this.net, this.store),
             interacts: new Interacts(api, this.net, this.store),
         }
+        this.net.instantiate();
     }
 }
 

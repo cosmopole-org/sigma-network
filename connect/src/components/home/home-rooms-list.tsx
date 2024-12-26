@@ -6,7 +6,7 @@ import { Space, Topic } from "@/api/sigma/models"
 import { api } from "@/index"
 import HomeSearchbar from "./home-searchbar"
 
-export default function HomeRoomsList(props: Readonly<{ isNavAsHome: boolean, spaceId: string }>) {
+export default function HomeRoomsList(props: Readonly<{ title: string, isNavAsHome: boolean, spaceId: string }>) {
     const currentPos = States.useListener(States.store.currentPos);
     const [topics, setTopics] = useState<Topic[]>([]);
     const [space, setSpace] = useState<Space>();
@@ -39,7 +39,7 @@ export default function HomeRoomsList(props: Readonly<{ isNavAsHome: boolean, sp
             >
                 <div className="w-full h-auto text-lg pb-2" style={{marginTop: props.isNavAsHome ? 16 : 56}}>
                     <div className="flex flex-row w-full">
-                        <b className="pl-2">{space?.title}</b>
+                        <b className="pl-2">{props.title ?? ""}</b>
                         <IconButton name="settings" className="-mt-[6px]" size={[16, 16]} />
                     </div>
                     <div className="flex flex-row mt-1">

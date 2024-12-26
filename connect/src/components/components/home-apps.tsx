@@ -13,15 +13,19 @@ export default function HomeApps() {
     const selectedDrawerApp = States.useListener(States.store.selectedDrawerApp);
     const [members, setMembers] = useState<Member[]>([]);
     useEffect(() => {
-        api.sigma.store.db.collections.members.find({
+        const membersObservable = api.sigma.store.db.collections.members.find({
             selector: {
                 spaceId: {
                     $eq: pos.spaceId
                 }
             }
-        }).exec().then(mems => {
+        }).$;
+		let membersSub = membersObservable.subscribe(mems => {
             setMembers(mems);
-        });
+		});
+        return () => {
+            membersSub.unsubscribe()
+        }
     }, [pos.spaceId, pos.topicId]);
     const chat = useMemo(() => <Chat spaceId={pos.spaceId} topicId={pos.topicId} />, [pos.spaceId, pos.topicId]);
     const files = useMemo(() => <Files />, []);

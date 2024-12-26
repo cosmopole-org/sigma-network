@@ -24,7 +24,7 @@ export default function HomeContent() {
         });
     }, [pos.topicId]);
     const board = useMemo(() => (topic ? <Desk room={topic} show={true} /> : null), [wallpaper, theme, showBoardBg, topic?.id]);
-    const members = useMemo(() => <HomeAvatarGroup spaceId={"b7c28ed1-3a7c-42c7-9d87-a12fcd858a8e@sigma"} />, [pos.spaceId]);
+    const members = useMemo(() => <HomeAvatarGroup spaceId={pos.spaceId} />, [pos.spaceId]);
     const infoBox = useMemo(() => <HomeInfoBox className="absolute top-8 left-0" />, [showBoardBg, wallpaper]);
     const backdrop = useMemo(() =>
         <Backdrop stateName="homeDrawerOpen" stateChangerName="updateHomeMenuState" />,

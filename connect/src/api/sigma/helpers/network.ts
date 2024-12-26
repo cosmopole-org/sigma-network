@@ -3,11 +3,13 @@ import Storage from "./storage";
 
 export default class Network {
     private store: Storage
-    private ws: WebSocket
+    private ws?: WebSocket
     private wsHooks: { [key: string]: { [code: string]: (data: any) => void } }
     constructor(store: Storage) {
         this.store = store;
         this.wsHooks = {};
+    }
+    public instantiate = (callback?: () => void) => {
         this.ws = new WebSocket(env.WS_ADDRESS);
         let that = this;
         this.ws.onopen = async function (e) {
@@ -18,6 +20,7 @@ export default class Network {
                 console.log("sent keepalive packet.");
             }, 5000);
             that.authenticate();
+            callback && callback();
         };
         this.ws.onclose = function (event) {
             if (event.wasClean) {
@@ -59,7 +62,7 @@ export default class Network {
         };
     }
     public authenticate = () => {
-        this.ws.send(`authenticate ${this.store.token ?? "EMPTY_TOKEN"} EMPTY`);
+        this.ws?.send(`authenticate ${this.store.token ?? "EMPTY_TOKEN"} EMPTY`);
     }
     public async safelyRequest(layer: number, path: string, method: string, body: any): Promise<{ success: boolean, result: any }> {
         try {

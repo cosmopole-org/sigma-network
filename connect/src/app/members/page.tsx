@@ -25,7 +25,7 @@ export default function MembersPage({ spaceId }: Readonly<{ spaceId: string }>) 
                     promises.push((async () => {
                         let res = await api.sigma.services?.users.get({ userId: m.userId });
                         let user = res?.data?.user;
-                        if (user) {
+                        if (user && user.type === "human") {
                             userCache.current[user.id] = user;
                         }
                         return res?.data?.user;
@@ -45,7 +45,7 @@ export default function MembersPage({ spaceId }: Readonly<{ spaceId: string }>) 
         return () => {
             spacesSub.unsubscribe();
         }
-    }, []);
+    }, [spaceId]);
     return (
         <div className="w-full h-full relative overflow-y-auto bg-white dark:bg-content1">
             <Navbar

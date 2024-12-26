@@ -19,7 +19,6 @@ export default class Users {
             if (this.store.token.length === 0) return { success: false, data: { error: "token is empty" } };
             const { success, result } = await this.net.safelyRequest(1, "users/authenticate", "POST", {});
             if (success) {
-                Actions.updateAuthenticated(true);
                 return { success: true, data: { authenticated: result.authenticated } };
             } else {
                 return { success: false, data: { error: result.toString() } };
@@ -41,15 +40,18 @@ export default class Users {
                 ]);
                 this.store.saveMyUserId(result.user.id);
                 this.store.saveToken(result.session.token);
-                this.authenticate().then(async (res: any) => {
-                    await this.api.loadData();
-                    if ((await this.store.db.spaces.count().exec()) > 0) {
-                        let space = await this.store.db.spaces.findOne().exec();
-                        let topic = await this.store.db.topics.findOne({ selector: { spaceId: { $eq: space?.id } } }).exec();
-                        if (space && topic) Actions.updatePos(space?.id, topic?.id);
-                    }
-                    Actions.updateAuthenticated(res.data.authenticated);
-                    Actions.updateAuthStep("passed");
+                this.authenticate().then((res: any) => {
+                    this.net.instantiate(async () => {
+                        Actions.updateAuthenticated(true);
+                        await this.api.loadData();
+                        if ((await this.store.db.spaces.count().exec()) > 0) {
+                            let space = await this.store.db.spaces.findOne().exec();
+                            let topic = await this.store.db.topics.findOne({ selector: { spaceId: { $eq: space?.id } } }).exec();
+                            if (space && topic) Actions.updatePos(space?.id, topic?.id);
+                        }
+                        Actions.updateAuthenticated(res.data.authenticated);
+                        Actions.updateAuthStep("passed");
+                    });
                 });
                 return { success: true, data: { user: result.user } };
             } else {
@@ -66,6 +68,7 @@ export default class Users {
         try {
             let { success, result } = await this.net.safelyRequest(1, "users/get", "GET", body);
             if (success) {
+                this.store.db.users.upsert(result.user);
                 return { success: true, data: { user: result.user } };
             } else {
                 return { success: false, data: { error: result.toString() } };
@@ -81,6 +84,7 @@ export default class Users {
         try {
             let { success, result } = await this.net.safelyRequest(1, "users/read", "GET", body);
             if (success) {
+                this.store.db.users.bulkUpsert(result.users);
                 return { success: true, data: { users: result.users } };
             } else {
                 return { success: false, data: { error: result.toString() } };

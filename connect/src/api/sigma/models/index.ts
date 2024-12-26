@@ -5,6 +5,7 @@ export type User = {
     name: string
     avatar: string
     publicKey: string
+    type: string
 }
 
 export type Session = {
