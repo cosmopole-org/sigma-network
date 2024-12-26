@@ -12,13 +12,14 @@ import { AppletSheet } from "./applet-sheet"
 import Overlay from "./Overlay"
 
 export default function HomeContent() {
+    const tdw = States.useListener(States.store.topicDefaultWallpaper);
     const { theme, wallpaper } = useTheme();
     const containerRef = useRef<HTMLDivElement>(null);
     const showBoardBg = States.useListener(States.store.showBoardBackground);
     const pos = States.useListener(States.store.currentPos);
-    const [topic, setTopic] = useState<Topic|null>(null);
+    const [topic, setTopic] = useState<Topic | null>(null);
     useEffect(() => {
-        api.sigma.store.db.collections.topics.findOne({selector: { id: { $eq: pos.topicId }}}).exec().then((t: any) => {
+        api.sigma.store.db.collections.topics.findOne({ selector: { id: { $eq: pos.topicId } } }).exec().then((t: any) => {
             setTopic(t);
         });
     }, [pos.topicId]);
@@ -33,19 +34,24 @@ export default function HomeContent() {
         <div className={"w-full h-full"}>
             <div ref={containerRef} className="w-full h-full relative overflow-x-hidden overflow-y-auto bg-white dark:bg-background">
                 <div className="w-full h-[238px]" />
-                {wallpaper !== "true" ? (
-                    <img style={{ objectFit: 'cover', zIndex: 1 }} alt="header" className="w-full h-[230px] absolute top-0 left-0" src={
-                        theme === 'light' ?
-                            'https://i.pinimg.com/originals/80/ec/77/80ec77932091113c4970a88f69b9bb4f.gif' :
-                            'https://i.pinimg.com/originals/14/26/57/142657a12799dbc12e031b1b9d4622df.gif'
-                    } />
-                ) : null
+                {
+                    wallpaper !== "true" ? (
+                        <img style={{ objectFit: 'cover', zIndex: 1 }} alt="header" className="w-full h-[230px] absolute top-0 left-0" src={
+                            theme === 'light' ?
+                                'https://i.pinimg.com/originals/80/ec/77/80ec77932091113c4970a88f69b9bb4f.gif' :
+                                'https://i.pinimg.com/originals/14/26/57/142657a12799dbc12e031b1b9d4622df.gif'
+                        } />
+                    ) : null
                 }
                 <div className="w-full h-[32px]" />
                 {
-                    !showBoardBg ? (
+                    wallpaper === "true" ? (
+                        <img className={"fixed left-0 top-0 w-full h-full"} style={{ objectFit: 'cover' }} src={
+                            tdw.length > 0 ? tdw : "/wallpaper.jpg"
+                        } />
+                    ) : (
                         <div className={"fixed left-0 top-0 w-full h-full bg-content2 dark:bg-content2"} />
-                    ) : null
+                    )
                 }
                 {members}
                 {board}

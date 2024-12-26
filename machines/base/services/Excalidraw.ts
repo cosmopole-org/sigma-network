@@ -144,7 +144,7 @@ export default {
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{
                                 position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',

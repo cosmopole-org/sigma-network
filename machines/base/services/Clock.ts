@@ -139,7 +139,7 @@ export default {
                             }}>
                                 <Box style={{
                                     width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                    backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                    backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}', position: 'absolute', left: 0, top: 0,
                                 }} />
                                 <Image style={{ borderRadius: '50%', width: '80%', aspectRatio: '1 / 1', position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }} src={'${theme === 'light' ? 'https://i.postimg.cc/13BzqPpH/clock-3.png' : 'https://i.postimg.cc/SRBTywTF/clock-2.png'}'} />
                                 <Box style={{  
@@ -259,7 +259,7 @@ export default {
                 render() {
                     return (
                         <Box style={{
-                            backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}',
+                            backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}',
                             width: '100%', height: '100%', borderRadius: 16, overflow: 'hidden', display: 'flex', flexWrap: 'wrap',
                             color: '#fff', position: 'relative', backdropFilter: 'blur(5px)', textAlign: 'center', containerType: 'size', resize: 'both'
                         }}>

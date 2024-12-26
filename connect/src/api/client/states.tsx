@@ -59,6 +59,7 @@ let hookStateStore = {
 	currentAppletData: hookstate<{ id: string, room: Topic, code: string } | undefined>(undefined),
 	minimizedApplets: hookstate<{ [id: string]: { room: Topic, code: string } }>({}),
 	showAppletTabs: hookstate(false),
+	topicDefaultWallpaper: hookstate(localStorage.getItem("topicDefaultWallpaper") ?? "")
 };
 
 export let States = {
@@ -166,6 +167,10 @@ export let Actions = {
 	},
 	updateAuthenticated: (v: boolean) => {
 		States.store.authenticated.set(v);
+	},
+	saveTopicDefaultWallpaper: (t: string) => {
+		localStorage.setItem("topicDefaultWallpaper", t);
+		States.store.topicDefaultWallpaper.set(t);
 	},
 	saveToken: (t: string) => {
 		localStorage.setItem("token", t);

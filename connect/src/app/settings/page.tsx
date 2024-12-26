@@ -4,8 +4,11 @@ import ThemeSwitch from "@/components/components/theme-switch";
 import BoardBgSwitch from "@/components/components/board-bg-switch";
 import WallpaperSwitch from "@/components/components/wallpaper-switch";
 import NavAsHomeSwitch from "@/components/components/nav-as-home-switch";
+import TextField from "@/components/elements/textfield";
+import { Actions, States } from "@/api/client/states";
 
 export default function SettingsPage() {
+    const tdw = States.useListener(States.store.topicDefaultWallpaper);
     return (
         <div className="w-full h-full relative overflow-y-auto bg-white dark:bg-content2">
             <Navbar
@@ -25,6 +28,13 @@ export default function SettingsPage() {
                         <BoardBgSwitch />
                         <WallpaperSwitch />
                         <NavAsHomeSwitch />
+                        <TextField
+                            text={tdw}
+                            onChange={text => {
+                                Actions.saveTopicDefaultWallpaper(text);
+                            }}
+                            label="Topic Default Wallpaper"
+                        />
                     </div>
                 </div>
             </div>

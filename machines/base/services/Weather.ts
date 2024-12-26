@@ -123,7 +123,7 @@ export default {
                             foreacst += `
                                             \n<Box style= {{
                                                 width: 'calc(100% - 32px)', height: 250, overflow: 'hidden', marginLeft: 16, marginRight: 16, marginTop: 12, marginBottom: 12, borderRadius: 16,
-                                                color: '${colors['activeText']}', position: 'relative', textAlign: 'center', display: 'flex', flexWrap: 'wrap', backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}'
+                                                color: '${colors['activeText']}', position: 'relative', textAlign: 'center', display: 'flex', flexWrap: 'wrap', backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}'
                                             }}>
                                                 <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>
                                                     <Box style={{ width: '100%', paddingTop: 4, height: 'auto', textAlign: 'center', transform: 'translateY(-16px)' }}>${day.dt_txt}</Box>
@@ -161,7 +161,7 @@ export default {
                                         <Box style={{ width: 'calc(100% - 32px)', height: 250, position: 'relative', marginLeft: 16, marginRight: 16, marginTop: 16, borderRadius: 16, overflow: 'hidden' }}>
                                         <Box style={{
                                                 width: '100%', height: '100%', borderRadius: 4,
-                                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                                backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}', position: 'absolute', left: 0, top: 0,
                                         }} />
                                         <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>
                                             <Box style={{ width: '100%', paddingTop: 4, height: 'auto', textAlign: 'center', transform: 'translateY(-16px)' }}>Today</Box>  
@@ -220,7 +220,7 @@ class Test {
         <Box style={
             {
                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                    backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                    backgroundColor: '${theme === 'light' ? '#fff7' : ('#21303777')}', position: 'absolute', left: 0, top: 0,
                                         }
 } />
     <Box style = {{ textAlign: 'center', alignItems: 'center', justifyContent: 'center', borderRadius: 16, paddingTop: 16, width: 'calc(100% - 32px)', height: 250, margin: 16 }}>

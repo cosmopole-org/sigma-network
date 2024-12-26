@@ -1,6 +1,6 @@
 import { Input } from "@nextui-org/react";
 
-export default function TextField({ label, onChange }: Readonly<{ label?: string, onChange?: (text: string) => void }>) {
+export default function TextField({ label, onChange, text }: Readonly<{ text?: string, label?: string, onChange?: (text: string) => void }>) {
     return (
         <Input
             onChange={e => onChange && onChange(e.target.value)}
@@ -9,6 +9,7 @@ export default function TextField({ label, onChange }: Readonly<{ label?: string
                 mainWrapper: "w-full",
                 base: "w-full"
             }}
+            value={text ?? ""}
             label={label}
             size="lg"
         />

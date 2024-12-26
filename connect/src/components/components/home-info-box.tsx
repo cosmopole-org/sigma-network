@@ -1,4 +1,4 @@
-import { Avatar, Button, Chip } from "@nextui-org/react";
+import { Button, Chip } from "@nextui-org/react";
 import Icon from "../elements/icon";
 import { RouteSys, States, useTheme } from "@/api/client/states";
 import { useEffect, useState } from "react";
@@ -27,12 +27,17 @@ export default function HomeInfoBox({ className }: Readonly<{ className: string 
     }, [pos.topicId]);
     return (
         <div className={"overflow-hidden w-full h-[250px] absolute " + (className ?? "")} style={{ zIndex: 1 }}>
-            <p className="ml-4 mt-[156px]" style={{ fontSize: 60 }}>{space ? topic?.title.substring(0, 2).trim() : ""}</p>
+            {
+                wallpaper === "true" ? (
+                    <div className="w-[calc(100%-32px)] h-12 ml-4 mr-4 top-[174px] bg-content3/70 absolute" style={{ borderRadius: 24, backdropFilter: 'blur(5px)' }} />
+                ) : null
+            }
+            <p className="top-[0px] absolute" style={{ marginLeft: wallpaper === "true" ? 24 : 16, fontSize: wallpaper === "true" ? 30 : 60, marginTop: wallpaper === "true" ? 174 : 156 }}>{space ? topic?.title.substring(0, 2).trim() : ""}</p>
             {
                 (!showBoardBg && (wallpaper === "true")) ? (
-                    <Chip variant="flat" key={topic?.id} className="absolute left-24 text-lg top-[192px]">{topic?.title.substring(2)}</Chip>
+                    <Chip variant="flat" key={topic?.id} className="absolute text-lg" style={{ left: wallpaper === "true" ? 72 : 96, top: wallpaper === "true" ? 184 : 192 }}>{topic?.title.substring(2)}</Chip>
                 ) : (
-                    <p key={topic?.id} className="absolute left-24 top-[204px] text-lg" ><b>{topic?.title.substring(2)}</b></p>
+                    <p key={topic?.id} className="absolute left-24 text-lg" style={{ left: wallpaper === "true" ? 72 : 96, top: wallpaper === "true" ? 196 : 204 }}><b>{topic?.title.substring(2)}</b></p>
                 )
             }
             <Button

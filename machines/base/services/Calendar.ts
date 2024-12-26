@@ -193,7 +193,7 @@ export default {
                                 days.map((day, index) => {
                                     return (
                                         <Box style={{ borderRadius: '25%', marginLeft: 8, marginRight: 8, width: 'calc(${100 / 7}% - 17px)', aspectRatio: '1 / 1', position: 'relative' }}>
-                                            <Box style={{ backgroundColor: today === index ? '${primaryColor}' : 'transparent', borderRadius: '50%', width: '70%', padding: '15%', aspectRatio: '1 / 1', position: 'relative', fontSize: '5cqmin', color: today === index ? '${theme === 'light' ? '#fff' : '#213037'}' : '${colors['activeText']}' }}>
+                                            <Box style={{ backgroundColor: today === index ? '${primaryColor}' : 'transparent', borderRadius: '50%', width: '70%', padding: '15%', aspectRatio: '1 / 1', position: 'relative', fontSize: '5cqmin', color: today === index ? '${theme === 'light' ? '#fff7' : '#21303777'}' : '${colors['activeText']}' }}>
                                                 {day.getDate()}
                                             </Box>
                                         </Box>
@@ -278,7 +278,7 @@ export default {
                         }}>
                             <Box style={{
                                 width: '100%', height: '100%', borderRadius: 4, display: 'flex', flexWrap: 'wrap',
-                                backgroundColor: '${theme === 'light' ? '#fff' : ('#213037')}', position: 'absolute', left: 0, top: 0,
+                                backgroundColor: '${theme === 'light' ? '#fff7' : '#21303777'}', position: 'absolute', left: 0, top: 0,
                             }} />
                             <Box style={{ width: '100%', height: 'auto', position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)' }}> 
                                 <Box style={{ width: '85%', marginTop: '5%', marginLeft: '7.5%' }}>

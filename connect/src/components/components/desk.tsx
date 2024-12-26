@@ -59,7 +59,7 @@ const Desk = (props: { show: boolean, room: any }) => {
     const deskLayout = useRef<any>({});
     const [loadDesktop, setLoadDesktop] = useState(false)
     const editMode = States.useListener(States.store.boardEditingMode)
-    const { theme } = useTheme();
+    const { theme, wallpaper } = useTheme();
     const metadataRef: any = useRef({})
     const [, setTrigger] = useState(Math.random().toString());
     const rerender = () => {
@@ -184,7 +184,7 @@ const Desk = (props: { show: boolean, room: any }) => {
                     <ResponsiveReactGridLayout
                         key={props.room.id}
                         className="layout"
-                        style={{ minHeight: 'auto', paddingTop: 16, width: window.innerWidth, minWidth: window.innerWidth + 'px', display: loadDesktop ? 'block' : 'hidden' }}
+                        style={{ minHeight: 'auto', paddingTop: wallpaper === "true" ? 56 : 56, width: window.innerWidth, minWidth: window.innerWidth + 'px', display: loadDesktop ? 'block' : 'hidden' }}
                         cols={{ lg: 14, md: 12, sm: 10, xs: 6, xxs: 4 }}
                         rowHeight={rowHeight}
                         width={window.innerWidth}
@@ -220,7 +220,6 @@ const Desk = (props: { show: boolean, room: any }) => {
                                 }
                             }
                             deskLayout.current = clonedLayouts;
-                            console.log(deskLayout.current);
                         }}
                     >
                         {
