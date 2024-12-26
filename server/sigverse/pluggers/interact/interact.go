@@ -27,6 +27,10 @@
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.GetByCode)
 		}
 		
+		func (c *Plugger) Create() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.Create)
+		}
+		
 		func (c *Plugger) SendFriendRequest() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.SendFriendRequest)
 		}
@@ -61,6 +65,10 @@
 		
 		func (c *Plugger) ReadFriendRequestList() abstract.IAction {
 			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.ReadFriendRequestList)
+		}
+		
+		func (c *Plugger) ReadInteractions() abstract.IAction {
+			return utils.ExtractSecureAction(c.Logger, c.Core, c.Actions.ReadInteractions)
 		}
 		
 	func (c *Plugger) Install(layer abstract.ILayer, a *actions.Actions) *Plugger {
