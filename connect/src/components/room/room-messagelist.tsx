@@ -57,7 +57,7 @@ export default function MessageList(props: Readonly<{ className?: string, topicI
             setMsgs(ms);
         });
         setTimeout(() => {
-            listRef.current?.scrollToRow(msgs.length - 1);
+            listRef.current?.scrollToRow(msgs.length);
         }, 250);
         return () => {
             msgsSub.unsubscribe();
@@ -71,9 +71,7 @@ export default function MessageList(props: Readonly<{ className?: string, topicI
             cache.clear(msgs.length - 1, 0);
         }
         oldLength.current = msgs.length;
-        if (msgs[msgs.length - 1]?.authorId === myHumanId) {
-            listRef.current?.scrollToRow(msgs.length);
-        }
+        listRef.current?.scrollToRow(msgs.length);
     }, [msgs]);
 
     const listRef = useRef<List>(null);

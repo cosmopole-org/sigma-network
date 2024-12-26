@@ -42,7 +42,6 @@ export default class Network {
                     let packet = JSON.parse(body);
                     let cb = that.wsHooks[a[1]];
                     if (cb) {
-                        packet.data = JSON.parse(packet.data);
                         Object.values(cb).forEach(fn => {
                             fn(packet);
                         })

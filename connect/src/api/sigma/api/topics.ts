@@ -14,7 +14,12 @@ export default class Topics {
         this.store = store;
     }
     onPacketReceive(fn: (data: any) => void) {
-        return this.net.addWsEvent('topics/send', fn);
+        return this.net.addWsEvent('topics/send', (packet) => {
+            if (typeof packet.data === "string") {
+                packet.data = JSON.parse(packet.data);
+            }
+            fn(packet);
+        });
     }
     async read(body: { spaceId: string }) {
         try {
@@ -74,7 +79,7 @@ export default class Topics {
         try {
             let member = await this.store.db.collections.members.findOne({ selector: { userId: { $eq: this.store.myUserId }, spaceId: { $eq: body.spaceId } } }).exec();
             if (member === null) {
-                return { success: false, data: { error: "member not found" } };    
+                return { success: false, data: { error: "member not found" } };
             }
             return await this.send({ data: body.data, spaceId: body.spaceId, topicId: body.topicId, memberId: member.id, type: 'single', recvId: body.recvId });
         } catch (ex: any) {

@@ -11,6 +11,9 @@ export default class Messages {
         this.api = api;
         this.net = net;
         this.store = store;
+        this.net.addWsEvent('/messages/create', (data) => {
+            this.store.db.messages.upsert(data);
+        });
     }
     async read(body: { topicId: string, offset: number, count: number }) {
         try {
