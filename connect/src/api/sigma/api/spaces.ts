@@ -2,7 +2,7 @@ import Api from "@/api";
 import Network from "../helpers/network";
 import Storage from "../helpers/storage";
 import { genRandAvatar } from "@/api/utils";
-import { MemberUser } from "../models";
+import { MemberUser, User } from "../models";
 
 export default class Spaces {
     private api: Api
@@ -34,13 +34,14 @@ export default class Spaces {
             });
             if (success) {
                 let members = result.members;
-                await this.store.db.users.bulkUpsert(members.map((m: MemberUser) => m.user));
+                await this.store.db.users.bulkUpsert(members.map((m: MemberUser) => m.user).filter((u: User) => (u.id.length > 0)));
                 await this.store.db.members.bulkUpsert(members.map((m: MemberUser) => m.member));
                 return { success: true, data: { members } };
             } else {
                 return { success: false, data: { error: result.toString() } };
             }
         } catch (ex: any) {
+            console.log(ex);
             return { success: false, data: { error: ex.toString() } };
         }
     }
