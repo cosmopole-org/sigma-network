@@ -2,16 +2,19 @@
   "name": "quickjs",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
+    "@rollup/plugin-commonjs": "^28.0.2",
+    "@rollup/plugin-node-resolve": "^16.0.0",
     "quickjs-emscripten": "^0.31.0",
     "quickjs-emscripten-sync": "^1.5.2",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-reconciler": "^0.31.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-postcss": "^4.0.2"
   },
   "scripts": {
     "start": "react-scripts start",
