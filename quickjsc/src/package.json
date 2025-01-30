@@ -1,0 +1,27 @@
+{
+  "name": "react-sample-app",
+  "version": "0.0.0",
+  "description": "React Sample Demo App",
+  "main": "index.js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "rollup -c lib/rollup.config.js"
+  },
+  "keywords": [],
+  "author": "Yifeng Wang",
+  "license": "MIT",
+  "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@mui/material": "^6.4.1",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    
+  },
+  "browserslist": [
+    "last 1 Chrome versions"
+  ]
+}
