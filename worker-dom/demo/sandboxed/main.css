@@ -1,0 +1,58 @@
+/*!******************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[1].use[1]!./src/candidateTable.css ***!
+  \******************************************************************************************************/
+.candidateTable_victor {
+  padding-right: 6px;
+  vertical-align: middle;
+  display: inline;
+  opacity: 0;
+}
+.candidateTable_displayVictor {
+  opacity: 1;
+}
+
+.candidateTable_name,
+.candidateTable_shortName {
+  color: #000;
+  vertical-align: middle;
+}
+
+.candidateTable_party,
+.candidateTable_shortParty {
+  color: #000;
+}
+.candidateTable_shortParty {
+  display: none;
+}
+
+.candidateTable_votes {
+  color: #000;
+}
+
+.candidateTable_percent {
+  color: #000;
+  font-weight: bold;
+}
+
+/*!****************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[1].use[1]!./src/candidateMap.css ***!
+  \****************************************************************************************************/
+.candidateMap_tooltip {
+  position: absolute;
+  top: -30px;
+  width: 360px;
+  display: none;
+  text-align: center;
+  background: #ff0;
+  padding: 1em 0;
+  pointer-events: none;
+}
+
+.candidateMap_showTooltip {
+  display: block;
+}
+
+.candidateMap_wrapper {
+  position: relative;
+}
+

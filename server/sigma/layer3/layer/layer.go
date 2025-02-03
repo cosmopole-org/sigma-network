@@ -34,7 +34,7 @@ func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{}
 	l.logger = args[0].(*modulelogger.Logger)
 	l.wellKnownServers = args[4].([]string)
 	return []interface{}{
-		args[0], args[1], args[2], args[3], netfederation.FirstStageBackFill(core, l.wellKnownServers, l.logger),
+		args[0], args[1], args[2], args[3], netfederation.FirstStageBackFill(core, l.wellKnownServers, l.logger), args[5],
 	}
 }
 

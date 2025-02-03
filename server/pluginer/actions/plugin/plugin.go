@@ -5,8 +5,8 @@ import (
 	"sigma/sigma/abstract"
 	modulemodel "sigma/sigma/layer2/model"
 	"sigma/sigma/layer2/tools/wasm"
-	inputsexternal "sigma/sigverse/inputs/external"
-	outputsexternal "sigma/sigverse/outputs/external"
+	inputsexternal "sigma/pluginer/inputs/plugin"
+	outputsexternal "sigma/pluginer/outputs/plugin"
 )
 
 const pluginsTemplateName = "/plugins/"
@@ -37,7 +37,7 @@ func (a *Actions) Plug(_ abstract.IState, input inputsexternal.PlugInput) (any, 
 		return nil, err3
 	}
 
-	toolbox.Wasm().Plug(toolbox.Storage().StorageRoot()+pluginsTemplateName+input.Key+"/module.wasm", meta)
+	toolbox.Wasm().Plug(toolbox.Storage().StorageRoot()+pluginsTemplateName+input.Key+"/module.wasm", input.Key, meta)
 
 	return outputsexternal.PlugInput{}, nil
 }

@@ -17,7 +17,7 @@ let extra = {
     "@rollup/plugin-json": "^6.1.0",
     "@rollup/plugin-node-resolve": "^16.0.0",
     "babel-plugin-transform-es2015-spread": "^6.22.0",
-    "react-reconciler": "^0.26.0",
+    "react-reconciler": "^0.29.0",
     "rollup-plugin-delete": "^2.1.0",
     "rollup-plugin-esbuild": "^6.1.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",

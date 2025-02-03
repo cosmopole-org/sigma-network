@@ -1,24 +1,25 @@
 {
-  "name": "react-sample-app",
-  "version": "0.0.0",
-  "description": "React Sample Demo App",
-  "main": "index.js",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "build": "rollup -c lib/rollup.config.js"
-  },
-  "keywords": [],
-  "author": "Yifeng Wang",
-  "license": "MIT",
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/material": "^6.4.2",
-    "react": "^17.0.0",
-    "react-dom": "^17.0.0"
-  },
-  "browserslist": [
-    "last 1 Chrome versions"
-  ]
+    "name": "react-sample-app",
+    "version": "0.0.0",
+    "description": "React Sample Demo App",
+    "main": "index.js",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "rollup -c lib/rollup.config.js"
+    },
+    "keywords": [],
+    "author": "Yifeng Wang",
+    "license": "MIT",
+    "dependencies": {
+        "@heroui/react": "^2.6.14",
+        "framer-motion": "^12.0.6",
+        "intl": "^1.2.5",
+        "queue-microtask": "^1.2.3",
+        "react": "^18.0.0",
+        "react-dom": "^18.0.0"
+    },
+    "browserslist": [
+        "last 1 Chrome versions"
+    ]
 }

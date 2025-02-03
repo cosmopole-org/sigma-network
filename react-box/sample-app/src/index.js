@@ -1,21 +1,15 @@
 import "./essentials.js";
 import React from 'react';
 import { Renderer } from './renderer.js'
-import Button from '@mui/material/Button';
 
-let App = () => {
+function Button(props) {
+  return <button>{props.children}</button>
+}
 
-  let [title, setTitle] = React.useState("hello");
-
-  React.useEffect(() => {
-    setTimeout(() => setTitle("test"), 2000);
-  }, []);
-
+function App() {
   return (
-    <div>
-      <Button onClick={() => alert("testooooooooooooooooooooooooooooooooooooooo")}>keyhan {title}</Button>
-    </div>
-  )
+    <Button>Hello World !</Button>
+  );
 }
 
 Renderer.render(<App />)

@@ -1,10 +1,33 @@
 /* global globalThis */
+import 'intl';
+import queueMicrotask from 'queue-microtask';
+
+globalThis.queueMicrotask = queueMicrotask;
 
 let timeoutCallbacks = {};
 
 globalThis.window = {
+    document: { addEventListener: () => { }, },
     addEventListener: () => { },
     navigator: { userAgent: {} }
+}
+
+globalThis.document = globalThis.window.document;
+
+let scanEvent = (e) => {
+    if (e) {
+        for (let prop in e) {
+            if (typeof e[prop] === 'object' && typeof e[prop] !== 'function' && typeof e[prop] !== 'string' && prop !== "functions") {
+                scanEvent(e[prop]);
+            }
+        }
+        if (e.functions) {
+            for (let meth in e.functions) {
+                console.log(meth);
+                e[meth] = new Function("(" + e.functions[meth] + ")");
+            }
+        }
+    }
 }
 
 api.triggerCallback = (k, ...args) => {
@@ -20,14 +43,9 @@ api.triggerCallback = (k, ...args) => {
     } else {
         cb = globalThis.callbacks[k];
         if (cb) {
-            let e = {};
-            for (let prop in args[0]) {
-                e[prop] = args[0][prop];
-            }
-            for (let meth in args[1]) {
-                e[meth] = () => { return 1; };
-            }
-            console.log(args[1]);
+            let e = args[0];
+            scanEvent(e);
+            e.nativeEvent = e;
             console.log(e);
             try {
                 cb(e);

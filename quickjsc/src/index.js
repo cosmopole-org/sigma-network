@@ -6,6 +6,24 @@ let elsDict = {};
 
 const vm = (await getQuickJS()).newContext();
 
+let cloneEvent = (e, step) => {
+    if (step >= 5) {
+        return { functions: {} };
+    }
+    let props = {};
+    let meths = {};
+    for (let p in e) {
+        if (typeof e[p] === 'number' || typeof e[p] === 'string' || typeof e[p] === 'boolean') {
+            props[p] = e[p];
+        } else if (typeof e[p] === 'function') {
+            meths[p] = e[p]?.toString() ?? "() => { return 1; }";
+        } else if (typeof e[p] === 'object') {
+            props[p] = cloneEvent(e[p], step + 1);
+        }
+    }
+    return { ...props, functions: meths };
+}
+
 let api = vm.newObject();
 vm.setProp(api, "createElement", vm.newFunction("createElement", (...rawArgs) => {
     let args = rawArgs.map(vm.dump);
@@ -25,16 +43,7 @@ vm.setProp(api, "createElement", vm.newFunction("createElement", (...rawArgs) =>
             el.innerHTML = args[0][k].__html;
         } else if (k.startsWith("on")) {
             el[k.toLowerCase()] = (e) => {
-                let props = {};
-                let meths = {};
-                for (let p in e) {
-                    if (typeof e[p] === 'number' || typeof e[p] === 'string' || typeof e[p] === 'boolean') {
-                        props[p] = e[p];
-                    } else if (typeof e[p] === 'function') {
-                        meths[p] = true;
-                    }
-                }
-                let res = vm.evalCode("api.triggerCallback('" + args[0][k] + "', " + JSON.stringify(props) + ", " + JSON.stringify(meths) + ");");
+                let res = vm.evalCode("api.triggerCallback('" + args[0][k] + "', " + JSON.stringify(cloneEvent(e, 0)) + ");");
                 if (res.error) {
                     console.log(vm.dump(res.error));
                 }
@@ -95,19 +104,12 @@ vm.setProp(api, "updateElement", vm.newFunction("updateElement", (...rawArgs) =>
             el.innerHTML = args[0][k].__html;
         } else if (k.startsWith("on")) {
             el[k.toLowerCase()] = (e) => {
-                let props = {};
-                let meths = {};
-                for (let p in e) {
-                    if (typeof e[p] === 'number' || typeof e[p] === 'string' || typeof e[p] === 'boolean') {
-                        props[p] = e[p];
-                    } else if (typeof e[p] === 'function') {
-                        meths[p] = true;
+                el[k.toLowerCase()] = (e) => {
+                    let res = vm.evalCode("api.triggerCallback('" + args[0][k] + "', " + JSON.stringify(cloneEvent(e, 0)) + ");");
+                    if (res.error) {
+                        console.log(vm.dump(res.error));
                     }
-                }
-                let res = vm.evalCode("api.triggerCallback('" + args[0][k] + "', " + JSON.stringify(props) + ", " + JSON.stringify(meths) + ");");
-                if (res.error) {
-                    console.log(vm.dump(res.error));
-                }
+                };
             };
         } else {
             el.setAttribute(k, args[0][k]);

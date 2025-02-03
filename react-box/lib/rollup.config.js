@@ -11,7 +11,8 @@ export default {
   input: 'src/index.js',
   output: {
     file: 'dist/app.js',
-    format: 'esm'
+    format: 'esm',
+    inlineDynamicImports: true,
   },
   build: {
     chunkSizeWarningLimit: 100,
