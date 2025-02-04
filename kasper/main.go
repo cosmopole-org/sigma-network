@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	pluggeradmin "sigma/admin/main"
 	pluggerpluginer "sigma/pluginer/main"
@@ -15,17 +14,23 @@ import (
 	modulemodel3 "sigma/sigma/layer3/model"
 	pluggersigverse "sigma/sigverse/main"
 	pluggersocial "sigma/social/main"
-	"time"
+	"strconv"
 
 	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
-
-	"sigma/sigma/layer2/tools/chain/hashgraph"
 )
 
 var noExit = make(chan int)
 
 func main() {
+
+	port1 := "9000"
+	port2 := 8080
+	if len(os.Args) > 2 {
+		port1 = os.Args[1]
+		port2R, _ := strconv.ParseInt(os.Args[2], 10, 64)
+		port2 = int(port2R)
+	}
 
 	err := godotenv.Load()
 	if err != nil {
@@ -55,7 +60,7 @@ func main() {
 			postgres.Open(os.Getenv("DB_URI")),
 			os.Getenv("REDIS_URI"),
 			[]string{},
-			"9001",
+			port1,
 		},
 	)
 	pluggersigverse.PlugAll(app.Get(1), logger, app)
@@ -65,22 +70,12 @@ func main() {
 
 	abstract.UseToolbox[*modulemodel3.ToolboxL3](app.Get(3).Tools()).Net().Run(
 		map[string]int{
-			"http": 8081,
+			"http": port2,
 		},
 	)
 
 	chain := abstract.UseToolbox[*modulemodel2.ToolboxL2](app.Get(2).Tools()).Chain()
 	chain.Run()
-
-	for i := 0; i < 100; i++ {
-		transactions := [][]hashgraph.Transaction{}
-		for _, e := range chain.Node.ConsensusEvents {
-			transactions = append(transactions, e.Transactions)
-		}
-		log.Println(transactions)
-
-		time.Sleep(time.Duration(2) * time.Second)
-	}
 
 	<-noExit
 }
