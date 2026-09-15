@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"os"
+	"strconv"
+	"strings"
 	pluggeradmin "sigma/admin/main"
 	pluggerpluginer "sigma/pluginer/main"
 	"sigma/sigma"
@@ -36,8 +38,38 @@ func main() {
 
 	logger.Println("Welcome to Sigma !")
 
+	// Identity, ports and the peer list are configurable so that several home
+	// servers can be run and federated (the defaults reproduce the previous
+	// single-server behaviour).
+	serverId := os.Getenv("SIGMA_ID")
+	if serverId == "" {
+		serverId = "sigma"
+	}
+	httpPort := 8081
+	if v := os.Getenv("SIGMA_HTTP_PORT"); v != "" {
+		p, err := strconv.Atoi(v)
+		if err != nil {
+			panic(err)
+		}
+		httpPort = p
+	}
+	chainPort := os.Getenv("SIGMA_CHAIN_PORT")
+	if chainPort == "" {
+		chainPort = "9001"
+	}
+	// SIGMA_PEERS is a comma-separated list of well-known servers, each either
+	// a bare domain or "<server-id>=<base-url>".
+	var peers []string
+	if v := os.Getenv("SIGMA_PEERS"); v != "" {
+		for _, p := range strings.Split(v, ",") {
+			if p = strings.TrimSpace(p); p != "" {
+				peers = append(peers, p)
+			}
+		}
+	}
+
 	app := sigma.NewApp(sigma.Config{
-		Id:  "sigma",
+		Id:  serverId,
 		Log: logger.Println,
 	})
 	app.Load(
@@ -54,8 +86,8 @@ func main() {
 			os.Getenv("STORAGE_ROOT_PATH"),
 			postgres.Open(os.Getenv("DB_URI")),
 			os.Getenv("REDIS_URI"),
-			[]string{},
-			"9001",
+			peers,
+			chainPort,
 		},
 	)
 	pluggersigverse.PlugAll(app.Get(1), logger, app)
@@ -65,7 +97,7 @@ func main() {
 
 	abstract.UseToolbox[*modulemodel3.ToolboxL3](app.Get(3).Tools()).Net().Run(
 		map[string]int{
-			"http": 8081,
+			"http": httpPort,
 		},
 	)
 

@@ -33,15 +33,20 @@ func (l *Layer) BackFill(core abstract.ICore, args ...interface{}) []interface{}
 	l.core = core
 	l.logger = args[0].(*modulelogger.Logger)
 	l.wellKnownServers = args[4].([]string)
+	fed := netfederation.FirstStageBackFill(core, l.wellKnownServers, l.logger)
+	l.federation = fed.(*netfederation.FedNet)
 	return []interface{}{
-		args[0], args[1], args[2], args[3], netfederation.FirstStageBackFill(core, l.wellKnownServers, l.logger), args[5],
+		args[0], args[1], args[2], args[3], fed, args[5],
 	}
 }
 
 func (l *Layer) ForFill(core abstract.ICore, args ...interface{}) {
 	layer1Toolbox := abstract.UseToolbox[*toolbox.ToolboxL1](core.Get(1).Tools())
 	net := tool_net.NewNetwork(core, l.logger, layer1Toolbox.Storage(), layer1Toolbox.Cache(), layer1Toolbox.Security(), layer1Toolbox.Signaler())
-	net.Fed = l.federation
+	// Register the inbound /api/federation endpoint on this server's HTTP app
+	// and hand the federation client its storage and signaler, so that packets
+	// from peer home servers are accepted and answered.
+	net.Fed = l.federation.SecondStageForFill(net.Http.Server, layer1Toolbox.Storage(), layer1Toolbox.Signaler())
 	tb := modulemodel.NewTools(net)
 	tb.ToolboxL2 = abstract.UseToolbox[*module_model.ToolboxL2](args[0])
 	l.toolbox = tb

@@ -27,15 +27,43 @@ type FedNet struct {
 	logger           *module_logger.Logger
 	ipToHostMap      map[string]string
 	hostToIpMap      map[string]string
+	baseUrlMap       map[string]string
 	wellKnownServers []string
 	fed              bool
 }
 
+// FirstStageBackFill builds the peer table. Each well-known server is given
+// either as a bare domain, which is resolved by DNS and reached over HTTPS on
+// the default port, or as "<server-id>=<base-url>", which names the peer's
+// base URL explicitly. The second form exists so that a federation can be
+// stood up on one host (for testing and for measurement) without TLS
+// certificates or distinct public addresses.
 func FirstStageBackFill(core abstract.ICore, wellKnownServers []string, logger *module_logger.Logger) adapters.IFederation {
 	fed := &FedNet{sigmaCore: core, logger: logger, wellKnownServers: wellKnownServers}
 	fed.ipToHostMap = map[string]string{}
 	fed.hostToIpMap = map[string]string{}
-	for _, domain := range wellKnownServers {
+	fed.baseUrlMap = map[string]string{}
+	fed.fed = len(wellKnownServers) > 0
+	for _, entry := range wellKnownServers {
+		domain := entry
+		if idx := strings.Index(entry, "="); idx > 0 {
+			domain = entry[:idx]
+			baseUrl := strings.TrimSuffix(entry[idx+1:], "/")
+			fed.baseUrlMap[domain] = baseUrl
+			host := baseUrl
+			if i := strings.Index(host, "://"); i >= 0 {
+				host = host[i+3:]
+			}
+			if i := strings.Index(host, ":"); i >= 0 {
+				host = host[:i]
+			}
+			if ip := net.ParseIP(host); ip != nil {
+				fed.ipToHostMap[ip.String()] = domain
+				fed.hostToIpMap[domain] = ip.String()
+				continue
+			}
+			domain = host
+		}
 		ipAddr := ""
 		ips, _ := net.LookupIP(domain)
 		for _, ip := range ips {
@@ -124,16 +152,31 @@ func (fed *FedNet) HandlePacket(channelId string, payload models.OriginPacket) {
 			} else if len(dataArr) > 0 && (dataArr[0] == "groupUpdate") {
 				fed.signaler.SignalGroup(payload.Key[len("groupUpdate "):], payload.SpaceId, payload.Data, true, payload.Exceptions)
 			} else {
-				layer := fed.sigmaCore.Get(payload.Layer)
+				// Layers are addressed from 1; a packet that carries no layer
+				// (the forwarding path does not set one) means the action
+				// layer, and an out-of-range value must not index the slice.
+				layerNum := payload.Layer
+				if layerNum < 1 || layerNum > len(fed.sigmaCore.Layers()) {
+					layerNum = 1
+				}
+				layer := fed.sigmaCore.Get(layerNum)
 				action := layer.Actor().FetchAction(payload.Key)
 				if action == nil {
 					errPack, _ := json.Marshal(models.BuildErrorJson("action not found"))
 					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					return
 				}
-				input, err := action.(*module_actor_model.SecureAction).ParseInput("fed", payload.Data)
+				// Wasm-hosted actions register one global parser instead of a
+				// parser per transport.
+				protocol := "fed"
+				if action.(*module_actor_model.SecureAction).HasGlobalParser() {
+					protocol = "*"
+				}
+				input, err := action.(*module_actor_model.SecureAction).ParseInput(protocol, payload.Data)
 				if err != nil {
 					errPack, _ := json.Marshal(models.BuildErrorJson("input could not be parsed"))
 					fed.SendInFederation(channelId, models.OriginPacket{IsResponse: true, Key: payload.Key, RequestId: payload.RequestId, Data: string(errPack), UserId: payload.UserId})
+					return
 				}
 				_, res, err := action.(*module_actor_model.SecureAction).SecurelyActFed(layer, payload.UserId, input)
 				if err != nil {
@@ -163,7 +206,11 @@ func (fed *FedNet) SendInFederation(destOrg string, packet models.OriginPacket) 
 	if fed.fed {
 		_, ok := fed.hostToIpMap[destOrg]
 		if ok {
-			statusCode, _, err := fiber.Post("https://" + destOrg + "/api/federation").JSON(packet).Bytes()
+			base, hasBase := fed.baseUrlMap[destOrg]
+			if !hasBase {
+				base = "https://" + destOrg
+			}
+			statusCode, _, err := fiber.Post(base + "/api/federation").JSON(packet).Bytes()
 			if err != nil {
 				fed.logger.Println("could not send: status: %d error: %v", statusCode, err)
 			} else {
