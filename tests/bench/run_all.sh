@@ -11,6 +11,15 @@ RUN_DIR=${SIGMA_RUN_DIR:-/home/user/sigma-run}
 
 pid_of() { pgrep -x sigma-server | sed -n "$1p"; }
 
+# Two suites running at once contend for the same cores and silently corrupt
+# every figure, so refuse to start if one is already running.
+LOCK=/tmp/sigma-bench.lock
+if ! mkdir "$LOCK" 2>/dev/null; then
+  echo "another benchmark run is in progress ($LOCK exists); refusing to start" >&2
+  exit 1
+fi
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
 restart_nodes() {
   pkill -x sigma-server 2>/dev/null
   sleep 2
