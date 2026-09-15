@@ -1,0 +1,130 @@
+{
+  "as_shipped": {
+    "snapshot_every": -1,
+    "actions_applied": 200,
+    "phases": [
+      {
+        "phase": "vm_reinstantiate",
+        "ms": 32.495263
+      }
+    ],
+    "total_ms": 32.495263,
+    "actions_lost": 200,
+    "state_matches": false,
+    "snapshot_bytes": 0,
+    "log_entries_replayed": 0
+  },
+  "checkpoint_replay": [
+    {
+      "snapshot_every": 1,
+      "actions_applied": 200,
+      "phases": [
+        {
+          "phase": "vm_reinstantiate",
+          "ms": 25.800503
+        },
+        {
+          "phase": "snapshot_restore",
+          "ms": 11.675167
+        },
+        {
+          "phase": "log_replay",
+          "ms": 0.000181
+        },
+        {
+          "phase": "first_action_served",
+          "ms": 2.324421
+        }
+      ],
+      "total_ms": 39.800272,
+      "actions_lost": 0,
+      "state_matches": true,
+      "snapshot_bytes": 236,
+      "log_entries_replayed": 0
+    },
+    {
+      "snapshot_every": 8,
+      "actions_applied": 200,
+      "phases": [
+        {
+          "phase": "vm_reinstantiate",
+          "ms": 23.302301
+        },
+        {
+          "phase": "snapshot_restore",
+          "ms": 10.608234
+        },
+        {
+          "phase": "log_replay",
+          "ms": 0.000168
+        },
+        {
+          "phase": "first_action_served",
+          "ms": 3.623378
+        }
+      ],
+      "total_ms": 37.534081,
+      "actions_lost": 0,
+      "state_matches": true,
+      "snapshot_bytes": 236,
+      "log_entries_replayed": 0
+    },
+    {
+      "snapshot_every": 16,
+      "actions_applied": 200,
+      "phases": [
+        {
+          "phase": "vm_reinstantiate",
+          "ms": 24.269539
+        },
+        {
+          "phase": "snapshot_restore",
+          "ms": 9.90677
+        },
+        {
+          "phase": "log_replay",
+          "ms": 9.859457
+        },
+        {
+          "phase": "first_action_served",
+          "ms": 1.104781
+        }
+      ],
+      "total_ms": 45.140547,
+      "actions_lost": 0,
+      "state_matches": true,
+      "snapshot_bytes": 236,
+      "log_entries_replayed": 8
+    },
+    {
+      "snapshot_every": 64,
+      "actions_applied": 200,
+      "phases": [
+        {
+          "phase": "vm_reinstantiate",
+          "ms": 24.968531
+        },
+        {
+          "phase": "snapshot_restore",
+          "ms": 10.013585
+        },
+        {
+          "phase": "log_replay",
+          "ms": 10.332621
+        },
+        {
+          "phase": "first_action_served",
+          "ms": 1.178953
+        }
+      ],
+      "total_ms": 46.49369,
+      "actions_lost": 0,
+      "state_matches": true,
+      "snapshot_bytes": 236,
+      "log_entries_replayed": 8
+    }
+  ],
+  "experiment": "E1-recovery",
+  "server_restart_ms": 1878.649266,
+  "timestamp": "2026-09-15T08:14:34Z"
+}

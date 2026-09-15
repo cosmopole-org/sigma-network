@@ -21,6 +21,7 @@ import (
 	inputs_topics "sigma/sigverse/inputs/topics"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -34,6 +35,23 @@ type Wasm struct {
 	PluginVms      map[string]*wasmedge.VM
 	PluginVmsByKey map[string]*wasmedge.VM
 	PluginMetas    map[string]abstract.IAction
+	vmLocks        map[string]*sync.Mutex
+	vmLocksMu      sync.Mutex
+}
+
+// lockFor returns the mutex guarding entry into one module's VM.
+func (wm *Wasm) lockFor(vmKey string) *sync.Mutex {
+	wm.vmLocksMu.Lock()
+	defer wm.vmLocksMu.Unlock()
+	if wm.vmLocks == nil {
+		wm.vmLocks = map[string]*sync.Mutex{}
+	}
+	l, ok := wm.vmLocks[vmKey]
+	if !ok {
+		l = &sync.Mutex{}
+		wm.vmLocks[vmKey] = l
+	}
+	return l
 }
 
 type PluginMeta struct {
@@ -118,7 +136,14 @@ func (wm *Wasm) prepareVm(wasmFilePath string, key string) (*wasmedge.VM, error)
 }
 
 func (wm *Wasm) injectModule(vm *wasmedge.VM, vmKey string, f PluginMeta) {
+	// A WasmEdge instance is not re-entrant: two requests entering the same VM
+	// at once corrupt each other's guest allocations and both fail. Actions on
+	// one module therefore serialise on this lock. Concurrency across the
+	// server comes from holding a separate VM per game, not from sharing one.
+	vmLock := wm.lockFor(vmKey)
 	action := moduleactormodel.NewAction(f.Path, func(state abstract.IState, input abstract.IInput) (any, error) {
+		vmLock.Lock()
+		defer vmLock.Unlock()
 		var body = input.(model.WasmInput).Data
 		var lengthOfSubject = len(body)
 		key := f.Key

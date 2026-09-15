@@ -1,0 +1,138 @@
+{
+  "experiment": "E5-payload",
+  "results": [
+    {
+      "name": "wasm_echo_64B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000461577,
+      "requests": 5598,
+      "errors": 0,
+      "req_per_sec": 699.7096287660854,
+      "bytes_sent": 436644,
+      "bytes_recv": 459036,
+      "kb_per_sec": 109.32962949470085,
+      "bytes_per_req": 160,
+      "latency": {
+        "n": 5598,
+        "mean_ms": 11.434772776170044,
+        "p50_ms": 11.25364,
+        "p95_ms": 12.873216,
+        "p99_ms": 14.155505,
+        "max_ms": 18.527302,
+        "std_ms": 0.7379735233748228
+      },
+      "resources": {
+        "pid": 7832,
+        "cpu_mean_pct": 109.37493995985498,
+        "cpu_peak_pct": 129.99866361373805,
+        "rss_mean_mb": 185.402001953125,
+        "rss_peak_mb": 191.9375,
+        "threads_mean": 15,
+        "samples": 80,
+        "cpu_cores_used": 1.0937493995985499
+      },
+      "payload_bytes": 78
+    },
+    {
+      "name": "wasm_echo_1024B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000957278,
+      "requests": 1157,
+      "errors": 0,
+      "req_per_sec": 144.60769627921516,
+      "bytes_sent": 1200966,
+      "bytes_recv": 1207908,
+      "kb_per_sec": 294.01681997395116,
+      "bytes_per_req": 2082,
+      "latency": {
+        "n": 1157,
+        "mean_ms": 55.35433028867757,
+        "p50_ms": 54.963953,
+        "p95_ms": 58.013638,
+        "p99_ms": 61.718078,
+        "max_ms": 65.362657,
+        "std_ms": 1.4653018406170943
+      },
+      "resources": {
+        "pid": 7832,
+        "cpu_mean_pct": 103.62497964338365,
+        "cpu_peak_pct": 110.02208253218504,
+        "rss_mean_mb": 178.227294921875,
+        "rss_peak_mb": 184.62109375,
+        "threads_mean": 15,
+        "samples": 80,
+        "cpu_cores_used": 1.0362497964338366
+      },
+      "payload_bytes": 1038
+    },
+    {
+      "name": "wasm_echo_16384B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000965471,
+      "requests": 85,
+      "errors": 0,
+      "req_per_sec": 10.623717888558302,
+      "bytes_sent": 1393830,
+      "bytes_recv": 1394425,
+      "kb_per_sec": 340.3220877913847,
+      "bytes_per_req": 32803,
+      "latency": {
+        "n": 85,
+        "mean_ms": 748.9441008352944,
+        "p50_ms": 747.653038,
+        "p95_ms": 766.600808,
+        "p99_ms": 770.377211,
+        "max_ms": 770.377211,
+        "std_ms": 8.1416490314664
+      },
+      "resources": {
+        "pid": 7832,
+        "cpu_mean_pct": 101.99986726830336,
+        "cpu_peak_pct": 110.00256525982186,
+        "rss_mean_mb": 195.051806640625,
+        "rss_peak_mb": 202.14453125,
+        "threads_mean": 15,
+        "samples": 80,
+        "cpu_cores_used": 1.0199986726830337
+      },
+      "payload_bytes": 16398
+    },
+    {
+      "name": "wasm_echo_65536B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.001191068,
+      "requests": 8,
+      "errors": 0,
+      "req_per_sec": 0.9998511386629968,
+      "bytes_sent": 524400,
+      "bytes_recv": 524456,
+      "kb_per_sec": 128.01512034832962,
+      "bytes_per_req": 131107,
+      "latency": {
+        "n": 8,
+        "mean_ms": 2814.7253326249997,
+        "p50_ms": 2944.718196,
+        "p95_ms": 2968.813625,
+        "p99_ms": 2968.813625,
+        "max_ms": 2968.813625,
+        "std_ms": 260.34777375805385
+      },
+      "resources": {
+        "pid": 7832,
+        "cpu_mean_pct": 100.24992698693784,
+        "cpu_peak_pct": 110.00437817425133,
+        "rss_mean_mb": 212.643115234375,
+        "rss_peak_mb": 213.86328125,
+        "threads_mean": 15,
+        "samples": 80,
+        "cpu_cores_used": 1.0024992698693784
+      },
+      "payload_bytes": 65550
+    }
+  ],
+  "timestamp": "2026-09-15T08:14:29Z"
+}

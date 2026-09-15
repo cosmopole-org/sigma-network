@@ -1,1 +1,34 @@
 === E5a: Wasm micro-VM vs native Go, and per-VM memory ===
+wrote ./results/e5_vm.json
+=== E3/E4: request rate, latency and resources vs concurrency ===
+wrote ./results/e3_e4_http.json
+=== E5b: payload sweep through the server ===
+wrote ./results/e5_payload.json
+=== E5c: external-VM bot over WebSocket ===
+run_all.sh: line 49:  6593 Killed                  $H ws -iters "${WS_ITERS:-300}" -out $R/e5_external.json
+=== E2: centralized vs federated, emulated link delays ===
+wrote ./results/e2_fed_0ms.json
+2026/09/15 08:03:59 delay proxy 127.0.0.1:9082 -> 127.0.0.1:8082 (+5ms each way)
+2026/09/15 08:03:59 delay proxy 127.0.0.1:9081 -> 127.0.0.1:8081 (+5ms each way)
+wrote ./results/e2_fed_5ms.json
+2026/09/15 08:04:27 delay proxy 127.0.0.1:9081 -> 127.0.0.1:8081 (+25ms each way)
+2026/09/15 08:04:27 delay proxy 127.0.0.1:9082 -> 127.0.0.1:8082 (+25ms each way)
+wrote ./results/e2_fed_25ms.json
+2026/09/15 08:05:22 delay proxy 127.0.0.1:9081 -> 127.0.0.1:8081 (+80ms each way)
+2026/09/15 08:05:22 delay proxy 127.0.0.1:9082 -> 127.0.0.1:8082 (+80ms each way)
+wrote ./results/e2_fed_80ms.json
+=== E1: failure and recovery ===
+wrote ./results/e1_recovery.json
+all experiments finished
+total 68
+drwxr-xr-x 2 root root  4096 Sep 15 08:07 .
+drwxr-xr-x 5 root root  4096 Sep 15 07:29 ..
+-rw-r--r-- 1 root root  2762 Sep 15 08:07 e1_recovery.json
+-rw-r--r-- 1 root root  1063 Sep 15 08:03 e2_fed_0ms.json
+-rw-r--r-- 1 root root  1066 Sep 15 08:05 e2_fed_25ms.json
+-rw-r--r-- 1 root root  1070 Sep 15 08:04 e2_fed_5ms.json
+-rw-r--r-- 1 root root  1080 Sep 15 08:07 e2_fed_80ms.json
+-rw-r--r-- 1 root root 21853 Sep 15 07:49 e3_e4_http.json
+-rw-r--r-- 1 root root  3392 Sep 15 07:50 e5_payload.json
+-rw-r--r-- 1 root root  7872 Sep 15 07:44 e5_vm.json
+-rw-r--r-- 1 root root  1184 Sep 15 08:07 run_all.log
