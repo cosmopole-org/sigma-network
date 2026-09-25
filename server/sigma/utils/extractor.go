@@ -61,6 +61,20 @@ func ExtractSecureAction[T abstract.IInput](logger *module_logger.Logger, core a
 			}
 			return nil, err
 		},
+		// The WebSocket transport carries the same JSON body as the federation
+		// transport; without this entry every action invoked over a socket
+		// dereferences a nil parser.
+		"ws": func(i interface{}) (abstract.IInput, error) {
+			input, err := net_federation.ParseInput[T](i.(string))
+			if err == nil {
+				err2 := vaidate.Validate.Struct(input)
+				if err2 == nil {
+					return input, nil
+				}
+				return nil, err2
+			}
+			return nil, err
+		},
 		"fed": func(i interface{}) (abstract.IInput, error) {
 			input, err := net_federation.ParseInput[T](i.(string))
 			if err == nil {

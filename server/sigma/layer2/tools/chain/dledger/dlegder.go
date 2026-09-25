@@ -153,6 +153,13 @@ func createEvaluationString(node *hashgraph.Node, rpcCallsSoFar int, startOfGoss
 
 // Infinite loop of gossip routine, each gossip delayed by a constant time.
 func gossipRoutine(node *hashgraph.Node, peerAddresses []string) {
+	// A single home server has no gossip partners; without this guard the
+	// peer draw below panics on rand.Intn(0) and takes the process down.
+	if len(peerAddresses) == 0 {
+		log.Println("dledger: no peers configured, gossip disabled")
+		return
+	}
+
 	// Get RPC clients /* V2 all together */
 
 	peerClientMap := make(map[string]*rpc.Client, len(peerAddresses))

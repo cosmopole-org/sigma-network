@@ -1,0 +1,50 @@
+{
+  "centralized": {
+    "mode": "centralized",
+    "iterations": 300,
+    "latency": {
+      "n": 300,
+      "mean_ms": 2.423697516666667,
+      "p50_ms": 1.510746,
+      "p95_ms": 1.848799,
+      "p99_ms": 43.027798,
+      "max_ms": 93.011354,
+      "std_ms": 7.2107207415750665
+    },
+    "ack_latency_ms": {
+      "n": 0,
+      "mean_ms": 0,
+      "p50_ms": 0,
+      "p95_ms": 0,
+      "p99_ms": 0,
+      "max_ms": 0,
+      "std_ms": 0
+    },
+    "errors": 0
+  },
+  "experiment": "E2-federation",
+  "federated": {
+    "mode": "federated",
+    "iterations": 300,
+    "latency": {
+      "n": 300,
+      "mean_ms": 3.640706806666666,
+      "p50_ms": 2.50297,
+      "p95_ms": 4.175259,
+      "p99_ms": 42.797992,
+      "max_ms": 91.958648,
+      "std_ms": 7.2448607524223485
+    },
+    "ack_latency_ms": {
+      "n": 300,
+      "mean_ms": 3.814563530000001,
+      "p50_ms": 2.693962,
+      "p95_ms": 4.21336,
+      "p99_ms": 43.02596,
+      "max_ms": 92.137944,
+      "std_ms": 7.248181563359186
+    },
+    "errors": 0
+  },
+  "timestamp": "2026-09-15T08:03:57Z"
+}

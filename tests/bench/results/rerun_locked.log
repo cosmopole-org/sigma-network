@@ -1,0 +1,7 @@
+=== E3/E4 with per-VM lock (server pid 7832) ===
+wrote ./results/e3_e4_http_locked.json
+=== E5b payload sweep with per-VM lock ===
+wrote ./results/e5_payload_locked.json
+=== E1 process restart after a hard kill ===
+wrote ./results/e1_recovery_locked.json
+locked re-run finished

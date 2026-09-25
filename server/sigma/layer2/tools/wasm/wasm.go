@@ -3,6 +3,7 @@ package wasm
 import (
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
@@ -20,6 +21,7 @@ import (
 	inputs_topics "sigma/sigverse/inputs/topics"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/second-state/WasmEdge-go/wasmedge"
@@ -33,6 +35,23 @@ type Wasm struct {
 	PluginVms      map[string]*wasmedge.VM
 	PluginVmsByKey map[string]*wasmedge.VM
 	PluginMetas    map[string]abstract.IAction
+	vmLocks        map[string]*sync.Mutex
+	vmLocksMu      sync.Mutex
+}
+
+// lockFor returns the mutex guarding entry into one module's VM.
+func (wm *Wasm) lockFor(vmKey string) *sync.Mutex {
+	wm.vmLocksMu.Lock()
+	defer wm.vmLocksMu.Unlock()
+	if wm.vmLocks == nil {
+		wm.vmLocks = map[string]*sync.Mutex{}
+	}
+	l, ok := wm.vmLocks[vmKey]
+	if !ok {
+		l = &sync.Mutex{}
+		wm.vmLocks[vmKey] = l
+	}
+	return l
 }
 
 type PluginMeta struct {
@@ -95,7 +114,20 @@ func (wm *Wasm) prepareVm(wasmFilePath string, key string) (*wasmedge.VM, error)
 		wm.logger.Println("failed to instantiate wasm")
 		return nil, err2
 	}
-	_, err1 := vm.Execute("_start")
+	// A WASI *command* exports _start and calls proc_exit when it returns,
+	// which terminates the instance: every later call into it then fails.
+	// A WASI *reactor* exports _initialize and stays alive to serve calls,
+	// which is what a long-lived bot needs. Prefer the reactor entry point
+	// and fall back to _start for modules that only provide that.
+	entry := "_start"
+	fnNames, _ := vm.GetFunctionList()
+	for _, name := range fnNames {
+		if name == "_initialize" {
+			entry = "_initialize"
+			break
+		}
+	}
+	_, err1 := vm.Execute(entry)
 	if err1 != nil {
 		wm.logger.Println(err1)
 		return nil, err1
@@ -104,15 +136,28 @@ func (wm *Wasm) prepareVm(wasmFilePath string, key string) (*wasmedge.VM, error)
 }
 
 func (wm *Wasm) injectModule(vm *wasmedge.VM, vmKey string, f PluginMeta) {
+	// A WasmEdge instance is not re-entrant: two requests entering the same VM
+	// at once corrupt each other's guest allocations and both fail. Actions on
+	// one module therefore serialise on this lock. Concurrency across the
+	// server comes from holding a separate VM per game, not from sharing one.
+	vmLock := wm.lockFor(vmKey)
 	action := moduleactormodel.NewAction(f.Path, func(state abstract.IState, input abstract.IInput) (any, error) {
+		vmLock.Lock()
+		defer vmLock.Unlock()
 		var body = input.(model.WasmInput).Data
 		var lengthOfSubject = len(body)
 		key := f.Key
 		var lengthOfKey = len(key)
 
-		keyAllocateResult, _ := vm.Execute("malloc", int32(lengthOfKey+1))
+		keyAllocateResult, keyAllocErr := vm.Execute("malloc", int32(lengthOfKey+1))
+		if keyAllocErr != nil || len(keyAllocateResult) == 0 {
+			return nil, errors.New("wasm guest allocation failed")
+		}
 		keyiInputPointer := keyAllocateResult[0].(int32)
-		allocateResult, _ := vm.Execute("malloc", int32(lengthOfSubject+1))
+		allocateResult, allocErr := vm.Execute("malloc", int32(lengthOfSubject+1))
+		if allocErr != nil || len(allocateResult) == 0 {
+			return nil, errors.New("wasm guest allocation failed")
+		}
 		inputPointer := allocateResult[0].(int32)
 
 		// Write the subject into the memory.
@@ -128,7 +173,14 @@ func (wm *Wasm) injectModule(vm *wasmedge.VM, vmKey string, f PluginMeta) {
 		memData[lengthOfSubject] = 0
 
 		// Run the `greet` function. Given the pointer to the subject.
-		greetResult, _ := vm.Execute("run", int32(lengthOfKey), keyiInputPointer, int32(lengthOfSubject), inputPointer)
+		greetResult, runErr := vm.Execute("run", int32(lengthOfKey), keyiInputPointer, int32(lengthOfSubject), inputPointer)
+		if runErr != nil {
+			wm.logger.Println(runErr)
+			return nil, runErr
+		}
+		if len(greetResult) == 0 {
+			return nil, errors.New("wasm module returned no result")
+		}
 		outputPointer := greetResult[0].(int32)
 
 		memData, _ = mem.GetData(uint(outputPointer), 8)
@@ -159,8 +211,11 @@ func (wm *Wasm) injectModule(vm *wasmedge.VM, vmKey string, f PluginMeta) {
 			return model.WasmInput{Data: i.(string)}, nil
 		},
 	})
+	// A module that registers several actions is injected once per action with
+	// the same VM; releasing unconditionally here frees the instance that the
+	// actions just registered are about to use.
 	oldVm, ok := wm.PluginVmsByKey[vmKey]
-	if ok {
+	if ok && oldVm != vm {
 		oldVm.Release()
 	}
 	wm.PluginVmsByKey[vmKey] = vm
@@ -325,13 +380,13 @@ func (wm *Wasm) Plug(wasmFilePath string, key string, meta []PluginMeta) {
 
 	if len(meta) == 0 {
 		oldVm, ok := wm.PluginVmsByKey[key]
-		if ok {
+		if ok && oldVm != vm {
 			oldVm.Release()
 		}
 		wm.PluginVmsByKey[key] = vm
 	} else {
 		for _, f := range meta {
-			if wm.PluginVms[f.Path] != nil {
+			if wm.PluginVms[f.Path] != nil && wm.PluginVms[f.Path] != vm {
 				wm.PluginVms[f.Path].Release()
 			}
 			wm.PluginVms[f.Path] = vm

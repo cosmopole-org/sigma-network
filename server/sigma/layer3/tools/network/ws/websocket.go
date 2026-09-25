@@ -15,6 +15,7 @@ import (
 	"sigma/sigverse/model"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gofiber/contrib/websocket"
@@ -66,6 +67,15 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 	httpServer.Server.Get("/ws", websocket.New(func(conn *websocket.Conn) {
 		var uid string = ""
 		qk := crypto.SecureUniqueString()
+		// One socket, two writers: this request loop answers actions while the
+		// signaler goroutine pushes updates. gorilla/fasthttp websockets do not
+		// permit concurrent writes, so both go through this lock.
+		var writeMu sync.Mutex
+		answer := func(t string, requestId string, payload any) {
+			writeMu.Lock()
+			defer writeMu.Unlock()
+			AnswerSocket(conn, t, requestId, payload)
+		}
 		for {
 			_, p, err := conn.ReadMessage()
 			if err != nil {
@@ -83,12 +93,19 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 						userId, _, _ := security.AuthWithToken(token)
 						if userId != "" {
 							uid = userId
+							// remember the token so that actions sent over this
+							// socket can be authorised
+							signaler.Lock.Lock()
+							ws.Tokens[uid] = token
+							signaler.Lock.Unlock()
 							queue[qk] = make(chan any)
 							go func() {
 								for {
 									select {
 									case b := <-queue[qk]:
+										writeMu.Lock()
 										err := conn.WriteMessage(websocket.TextMessage, b.([]byte))
+										writeMu.Unlock()
 										if err != nil {
 											return
 										}
@@ -110,9 +127,9 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 							for _, member := range members {
 								signaler.JoinGroup(member.SpaceId, uid)
 							}
-							AnswerSocket(conn, "response", requestId, module_model.ResponseSimpleMessage{Message: "authenticated"})
+							answer("response", requestId, module_model.ResponseSimpleMessage{Message: "authenticated"})
 						} else {
-							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "authentication failed"})
+							answer("error", requestId, module_model.ResponseSimpleMessage{Message: "authentication failed"})
 						}
 					}
 				} else {
@@ -124,26 +141,33 @@ func (ws *WsServer) Load(core abstract.ICore, httpServer *net_http.HttpServer, s
 						if err != nil {
 							log.Println(err)
 							layerNum = 1
-							return
+							continue
 						}
 						var body = dataStr[(len(uri) + 1 + len(origin) + 1 + len(requestId) + 1 + len(layerNumStr)):]
 						layer := core.Get(layerNum)
 						action := layer.Actor().FetchAction(uri)
 						if action == nil {
-							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "action not found"})
-							return
+							answer("error", requestId, module_model.ResponseSimpleMessage{Message: "action not found"})
+							continue
 						}
-						input, err := action.(*moduleactormodel.SecureAction).ParseInput("ws", body)
+						// Wasm-hosted actions register a single global parser
+						// rather than one per transport, exactly as the HTTP
+						// entry point already handles.
+						protocol := "ws"
+						if action.(*moduleactormodel.SecureAction).HasGlobalParser() {
+							protocol = "*"
+						}
+						input, err := action.(*moduleactormodel.SecureAction).ParseInput(protocol, body)
 						if err != nil {
 							log.Println(err)
-							AnswerSocket(conn, "error", requestId, module_model.ResponseSimpleMessage{Message: "parsing input failed"})
-							return
+							answer("error", requestId, module_model.ResponseSimpleMessage{Message: "parsing input failed"})
+							continue
 						}
-						res, _, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, ws.Tokens[uid], origin, requestId, input, "")
+						_, res, err2 := action.(*moduleactormodel.SecureAction).SecurelyAct(layer, ws.Tokens[uid], origin, requestId, input, "")
 						if err2 != nil {
-							AnswerSocket(conn, "error", requestId, module_model.BuildErrorJson(err2.Error()))
+							answer("error", requestId, module_model.BuildErrorJson(err2.Error()))
 						} else {
-							AnswerSocket(conn, "response", requestId, ws.PrepareAnswer(res))
+							answer("response", requestId, res)
 						}
 					}
 				}

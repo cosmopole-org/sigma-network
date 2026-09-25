@@ -1,0 +1,318 @@
+{
+  "calls": [
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 78,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 0.8896259519999999,
+        "p50_ms": 0.445616,
+        "p95_ms": 0.807907,
+        "p99_ms": 4.57122,
+        "max_ms": 46.561152,
+        "std_ms": 3.6438647219232965
+      },
+      "ops_per_sec": 1123.8041240698453
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 78,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 2.656879220000001,
+        "p50_ms": 1.293005,
+        "p95_ms": 3.971526,
+        "p99_ms": 36.964543,
+        "max_ms": 47.964148,
+        "std_ms": 6.480059543785612
+      },
+      "ops_per_sec": 376.31924110149237
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 78,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 0.003549512000000001,
+        "p50_ms": 0.001969,
+        "p95_ms": 0.010778,
+        "p99_ms": 0.01999,
+        "max_ms": 0.07087,
+        "std_ms": 0.005404786119899287
+      },
+      "ops_per_sec": 274908.3455575911
+    },
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 270,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 1.9751616760000006,
+        "p50_ms": 1.128721,
+        "p95_ms": 2.526802,
+        "p99_ms": 32.390577,
+        "max_ms": 47.425368,
+        "std_ms": 5.025574979738942
+      },
+      "ops_per_sec": 506.2307723807707
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 270,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 4.637920359999997,
+        "p50_ms": 2.440355,
+        "p95_ms": 32.630686,
+        "p99_ms": 37.238351,
+        "max_ms": 51.869521,
+        "std_ms": 8.0026871236242
+      },
+      "ops_per_sec": 215.59562507182943
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 270,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 0.003881685999999999,
+        "p50_ms": 0.003454,
+        "p95_ms": 0.005001,
+        "p99_ms": 0.009043,
+        "max_ms": 0.037502,
+        "std_ms": 0.002210183746072709
+      },
+      "ops_per_sec": 246926.13994687138
+    },
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 1038,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 6.932900431999998,
+        "p50_ms": 3.865714,
+        "p95_ms": 33.637911,
+        "p99_ms": 36.231278,
+        "max_ms": 50.360229,
+        "std_ms": 8.869221524782661
+      },
+      "ops_per_sec": 144.2278695710557
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 1038,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 13.838165684000005,
+        "p50_ms": 7.289937,
+        "p95_ms": 37.611603,
+        "p99_ms": 45.772341,
+        "max_ms": 83.962739,
+        "std_ms": 12.518174084782851
+      },
+      "ops_per_sec": 72.25536579704952
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 1038,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 0.012409088,
+        "p50_ms": 0.010259,
+        "p95_ms": 0.019181,
+        "p99_ms": 0.034828,
+        "max_ms": 0.248217,
+        "std_ms": 0.0137789211817274
+      },
+      "ops_per_sec": 79839.56718012557
+    },
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 4110,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 48.51360764999998,
+        "p50_ms": 49.69348,
+        "p95_ms": 54.543412,
+        "p99_ms": 63.152432,
+        "max_ms": 84.494357,
+        "std_ms": 4.67190583066583
+      },
+      "ops_per_sec": 20.612316504532558
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 4110,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 34.30937474599998,
+        "p50_ms": 24.763892,
+        "p95_ms": 71.489374,
+        "p99_ms": 76.340263,
+        "max_ms": 81.988357,
+        "std_ms": 18.272015274370332
+      },
+      "ops_per_sec": 29.144786778786763
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 4110,
+      "iterations": 500,
+      "latency": {
+        "n": 500,
+        "mean_ms": 0.05281943599999998,
+        "p50_ms": 0.029808,
+        "p95_ms": 0.088369,
+        "p99_ms": 0.227868,
+        "max_ms": 3.616674,
+        "std_ms": 0.1695249241833127
+      },
+      "ops_per_sec": 18886.74784518261
+    },
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 16398,
+      "iterations": 125,
+      "latency": {
+        "n": 125,
+        "mean_ms": 82.581696792,
+        "p50_ms": 86.406244,
+        "p95_ms": 109.398965,
+        "p99_ms": 118.744924,
+        "max_ms": 125.860712,
+        "std_ms": 23.890546012771086
+      },
+      "ops_per_sec": 12.108974787182483
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 16398,
+      "iterations": 125,
+      "latency": {
+        "n": 125,
+        "mean_ms": 141.63421613600002,
+        "p50_ms": 170.25935,
+        "p95_ms": 191.862807,
+        "p99_ms": 211.888143,
+        "max_ms": 232.345732,
+        "std_ms": 40.0465388199351
+      },
+      "ops_per_sec": 7.06035570594174
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 16398,
+      "iterations": 125,
+      "latency": {
+        "n": 125,
+        "mean_ms": 0.14737689599999998,
+        "p50_ms": 0.110924,
+        "p95_ms": 0.255304,
+        "p99_ms": 0.76709,
+        "max_ms": 0.807787,
+        "std_ms": 0.10072251196127502
+      },
+      "ops_per_sec": 6775.24989289685
+    },
+    {
+      "mode": "wasm_boundary_only",
+      "payload_bytes": 65550,
+      "iterations": 100,
+      "latency": {
+        "n": 100,
+        "mean_ms": 301.38592944,
+        "p50_ms": 231.543172,
+        "p95_ms": 1197.62757,
+        "p99_ms": 1219.093093,
+        "max_ms": 1224.091384,
+        "std_ms": 234.99301524842474
+      },
+      "ops_per_sec": 3.31796761571998
+    },
+    {
+      "mode": "wasm_microvm",
+      "payload_bytes": 65550,
+      "iterations": 100,
+      "latency": {
+        "n": 100,
+        "mean_ms": 499.3707650900002,
+        "p50_ms": 369.553872,
+        "p95_ms": 1545.86277,
+        "p99_ms": 1585.700738,
+        "max_ms": 1587.50443,
+        "std_ms": 356.0494971357521
+      },
+      "ops_per_sec": 2.002507472252102
+    },
+    {
+      "mode": "native_go",
+      "payload_bytes": 65550,
+      "iterations": 100,
+      "latency": {
+        "n": 100,
+        "mean_ms": 0.50614632,
+        "p50_ms": 0.456402,
+        "p95_ms": 0.81426,
+        "p99_ms": 1.006714,
+        "max_ms": 1.067599,
+        "std_ms": 0.13952744715108029
+      },
+      "ops_per_sec": 1974.5979427335396
+    }
+  ],
+  "experiment": "E5-vm",
+  "scale": [
+    {
+      "vm_count": 1,
+      "instantiate_ms_p50": 32.663555,
+      "instantiate_ms_p95": 32.663555,
+      "rss_total_mb": 13.09765625,
+      "rss_per_vm_mb": 13.09765625,
+      "call_p95_ms": 3.17223
+    },
+    {
+      "vm_count": 10,
+      "instantiate_ms_p50": 30.360374,
+      "instantiate_ms_p95": 35.546699,
+      "rss_total_mb": 119.66015625,
+      "rss_per_vm_mb": 11.966015625,
+      "call_p95_ms": 3.769711
+    },
+    {
+      "vm_count": 50,
+      "instantiate_ms_p50": 29.696246,
+      "instantiate_ms_p95": 33.636314,
+      "rss_total_mb": 540.45703125,
+      "rss_per_vm_mb": 10.809140625,
+      "call_p95_ms": 3.633054
+    },
+    {
+      "vm_count": 100,
+      "instantiate_ms_p50": 28.1552,
+      "instantiate_ms_p95": 83.991445,
+      "rss_total_mb": 716.6953125,
+      "rss_per_vm_mb": 7.166953125,
+      "call_p95_ms": 3.66311
+    },
+    {
+      "vm_count": 250,
+      "instantiate_ms_p50": 99.076043,
+      "instantiate_ms_p95": 115.972424,
+      "rss_total_mb": 2510.24609375,
+      "rss_per_vm_mb": 10.040984375,
+      "call_p95_ms": 3.682442
+    }
+  ],
+  "timestamp": "2026-09-15T07:44:54Z"
+}

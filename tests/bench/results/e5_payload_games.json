@@ -1,0 +1,270 @@
+{
+  "experiment": "E5-payload",
+  "results": [
+    {
+      "name": "native_game_echo_64B",
+      "path": "http://127.0.0.1:8081/nativegame/echo",
+      "concurrency": 8,
+      "duration_sec": 8.00002402,
+      "requests": 289612,
+      "errors": 0,
+      "req_per_sec": 36201.391305322606,
+      "bytes_sent": 22589736,
+      "bytes_recv": 23748184,
+      "kb_per_sec": 5656.467391456657,
+      "bytes_per_req": 160,
+      "latency": {
+        "n": 289612,
+        "mean_ms": 0.22062979543320027,
+        "p50_ms": 0.158613,
+        "p95_ms": 0.537385,
+        "p99_ms": 1.184507,
+        "max_ms": 9.478573,
+        "std_ms": 0.2572434478772568
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 148.9873083518418,
+        "cpu_peak_pct": 160.00232643382637,
+        "rss_mean_mb": 212.10017800632912,
+        "rss_peak_mb": 213.37109375,
+        "threads_mean": 18,
+        "samples": 79,
+        "cpu_cores_used": 1.489873083518418
+      },
+      "payload_bytes": 78
+    },
+    {
+      "name": "wasm_game_echo_64B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000655366,
+      "requests": 8648,
+      "errors": 0,
+      "req_per_sec": 1080.9114509232568,
+      "bytes_sent": 674544,
+      "bytes_recv": 709136,
+      "kb_per_sec": 168.89241420675887,
+      "bytes_per_req": 160,
+      "latency": {
+        "n": 8648,
+        "mean_ms": 6.750295206406112,
+        "p50_ms": 6.545544,
+        "p95_ms": 8.312383,
+        "p99_ms": 9.762425,
+        "max_ms": 16.183311,
+        "std_ms": 0.8344829653698463
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 120.37482736274019,
+        "cpu_peak_pct": 130.00534191949947,
+        "rss_mean_mb": 211.027294921875,
+        "rss_peak_mb": 212.1015625,
+        "threads_mean": 18,
+        "samples": 80,
+        "cpu_cores_used": 1.2037482736274019
+      },
+      "payload_bytes": 78
+    },
+    {
+      "name": "native_game_echo_1024B",
+      "path": "http://127.0.0.1:8081/nativegame/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000031269,
+      "requests": 218112,
+      "errors": 0,
+      "req_per_sec": 27263.89343566452,
+      "bytes_sent": 226400256,
+      "bytes_recv": 227708928,
+      "kb_per_sec": 55433.033333060084,
+      "bytes_per_req": 2082,
+      "latency": {
+        "n": 218112,
+        "mean_ms": 0.29302455261058596,
+        "p50_ms": 0.218858,
+        "p95_ms": 0.744784,
+        "p99_ms": 1.464592,
+        "max_ms": 9.299905,
+        "std_ms": 0.29090935829987985
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 157.46836636802436,
+        "cpu_peak_pct": 179.99835841497125,
+        "rss_mean_mb": 209.33771756329114,
+        "rss_peak_mb": 210.69140625,
+        "threads_mean": 18,
+        "samples": 79,
+        "cpu_cores_used": 1.5746836636802437
+      },
+      "payload_bytes": 1038
+    },
+    {
+      "name": "wasm_game_echo_1024B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000832875,
+      "requests": 0,
+      "errors": 0,
+      "req_per_sec": 0,
+      "bytes_sent": 0,
+      "bytes_recv": 0,
+      "kb_per_sec": 0,
+      "bytes_per_req": 0,
+      "latency": {
+        "n": 0,
+        "mean_ms": 0,
+        "p50_ms": 0,
+        "p95_ms": 0,
+        "p99_ms": 0,
+        "max_ms": 0,
+        "std_ms": 0
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 99.49990009449013,
+        "cpu_peak_pct": 110.00539906498612,
+        "rss_mean_mb": 208.66015625,
+        "rss_peak_mb": 208.66015625,
+        "threads_mean": 18,
+        "samples": 80,
+        "cpu_cores_used": 0.9949990009449013
+      },
+      "payload_bytes": 1038
+    },
+    {
+      "name": "native_game_echo_16384B",
+      "path": "http://127.0.0.1:8081/nativegame/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000010092,
+      "requests": 51251,
+      "errors": 0,
+      "req_per_sec": 6406.366918368132,
+      "bytes_sent": 840413898,
+      "bytes_recv": 840772655,
+      "kb_per_sec": 205222.7090070604,
+      "bytes_per_req": 32803,
+      "latency": {
+        "n": 51251,
+        "mean_ms": 1.248222417143079,
+        "p50_ms": 0.954354,
+        "p95_ms": 3.181303,
+        "p99_ms": 4.84001,
+        "max_ms": 14.152448,
+        "std_ms": 1.0054042159282928
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 188.98719494891117,
+        "cpu_peak_pct": 210.00191731750508,
+        "rss_mean_mb": 214.18028085443038,
+        "rss_peak_mb": 215.83984375,
+        "threads_mean": 18,
+        "samples": 79,
+        "cpu_cores_used": 1.8898719494891116
+      },
+      "payload_bytes": 16398
+    },
+    {
+      "name": "wasm_game_echo_16384B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.00122313,
+      "requests": 147,
+      "errors": 0,
+      "req_per_sec": 18.372191052744707,
+      "bytes_sent": 2410506,
+      "bytes_recv": 2411535,
+      "kb_per_sec": 588.5380694367037,
+      "bytes_per_req": 32803,
+      "latency": {
+        "n": 147,
+        "mean_ms": 433.49253682993213,
+        "p50_ms": 430.294755,
+        "p95_ms": 470.469161,
+        "p99_ms": 482.578029,
+        "max_ms": 483.072623,
+        "std_ms": 17.62294421116586
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 101.62479710550305,
+        "cpu_peak_pct": 110.00452338600162,
+        "rss_mean_mb": 228.1423828125,
+        "rss_peak_mb": 238.69921875,
+        "threads_mean": 18,
+        "samples": 80,
+        "cpu_cores_used": 1.0162479710550305
+      },
+      "payload_bytes": 16398
+    },
+    {
+      "name": "native_game_echo_65536B",
+      "path": "http://127.0.0.1:8081/nativegame/echo",
+      "concurrency": 8,
+      "duration_sec": 8.000152237,
+      "requests": 14798,
+      "errors": 0,
+      "req_per_sec": 1849.7148006209873,
+      "bytes_sent": 970008900,
+      "bytes_recv": 970112486,
+      "kb_per_sec": 236826.71715333572,
+      "bytes_per_req": 131107,
+      "latency": {
+        "n": 14798,
+        "mean_ms": 4.323407811055543,
+        "p50_ms": 3.652001,
+        "p95_ms": 9.774041,
+        "p99_ms": 13.764656,
+        "max_ms": 22.86646,
+        "std_ms": 2.848236533419391
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 208.73403732761238,
+        "cpu_peak_pct": 230.18772729912155,
+        "rss_mean_mb": 247.77131131329114,
+        "rss_peak_mb": 252.2578125,
+        "threads_mean": 18,
+        "samples": 79,
+        "cpu_cores_used": 2.087340373276124
+      },
+      "payload_bytes": 65550
+    },
+    {
+      "name": "wasm_game_echo_65536B",
+      "path": "http://127.0.0.1:8081/bench/echo",
+      "concurrency": 8,
+      "duration_sec": 8.001201959,
+      "requests": 37,
+      "errors": 0,
+      "req_per_sec": 4.624305221839983,
+      "bytes_sent": 2425350,
+      "bytes_recv": 2425609,
+      "kb_per_sec": 592.0691257029049,
+      "bytes_per_req": 131107,
+      "latency": {
+        "n": 37,
+        "mean_ms": 1710.9807260270272,
+        "p50_ms": 1678.164411,
+        "p95_ms": 1816.179617,
+        "p99_ms": 1852.419155,
+        "max_ms": 1852.419155,
+        "std_ms": 65.58832379772073
+      },
+      "resources": {
+        "pid": 2445,
+        "cpu_mean_pct": 100.49986328751159,
+        "cpu_peak_pct": 110.00717686821888,
+        "rss_mean_mb": 261.674462890625,
+        "rss_peak_mb": 271.3203125,
+        "threads_mean": 18,
+        "samples": 80,
+        "cpu_cores_used": 1.004998632875116
+      },
+      "payload_bytes": 65550
+    }
+  ],
+  "timestamp": "2026-09-25T07:06:15Z"
+}
