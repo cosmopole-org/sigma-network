@@ -16,6 +16,7 @@ import (
 	layer3 "sigma/sigma/layer3/layer"
 	modulemodel3 "sigma/sigma/layer3/model"
 	pluggersigverse "sigma/sigverse/main"
+	pluggernativegame "sigma/nativegame/main"
 	pluggersocial "sigma/social/main"
 	"time"
 
@@ -94,6 +95,9 @@ func main() {
 	pluggeradmin.PlugAll(app.Get(1), logger, app)
 	pluggerpluginer.PlugAll(app.Get(2), logger, app)
 	pluggersocial.PlugAll(app.Get(2), logger, app)
+	// the native build of the benchmark game, for comparison against the
+	// WebAssembly build of the same logic
+	pluggernativegame.PlugAll(app.Get(1), logger, app)
 
 	abstract.UseToolbox[*modulemodel3.ToolboxL3](app.Get(3).Tools()).Net().Run(
 		map[string]int{

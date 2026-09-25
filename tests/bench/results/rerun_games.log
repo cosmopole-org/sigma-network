@@ -1,0 +1,5 @@
+=== E3/E4: native game against wasm game (server pid 2445) ===
+wrote ./results/e3_e4_games.json
+=== E5: payload sweep, both builds ===
+wrote ./results/e5_payload_games.json
+games re-run finished

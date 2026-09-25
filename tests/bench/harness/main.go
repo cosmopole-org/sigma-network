@@ -95,24 +95,28 @@ func main() {
 			panic(err)
 		}
 		_, _ = s.Call("/bench/move", map[string]any{"reset": true}, dev.Token, 1)
+		_, _ = s.Call("/nativegame/move", map[string]any{"reset": true}, dev.Token, 1)
 
 		var results []HTTPResult
 		for _, c := range parseInts(*conc) {
-			// 1. native Go action, no authentication, no storage access
+			// 1. the same game implemented natively and compiled into the
+			//    server process, reached through the action router
 			results = append(results, runHTTP(HTTPJob{
-				Name: "native_ping", URL: *base + "/api/ping", Body: []byte(`{}`),
+				Name: "native_game_move", URL: *base + "/nativegame/move",
+				Body: []byte(`{"player":0,"card":0}`),
 				Concurrency: c, Duration: *dur, Warmup: *warm, ServerPID: *pid}))
 
-			// 2. native Go action that authenticates and reads storage
+			// 2. the same game hosted in a Wasm micro-VM
+			results = append(results, runHTTP(HTTPJob{
+				Name: "wasm_game_move", URL: *base + "/bench/move",
+				Body: []byte(`{"player":0,"card":0}`),
+				Concurrency: c, Duration: *dur, Warmup: *warm, ServerPID: *pid}))
+
+			// 3. a platform action that authenticates and reads storage, for
+			//    context on what the rest of the server costs
 			results = append(results, runHTTP(HTTPJob{
 				Name: "native_authenticate", URL: *base + "/users/authenticate",
 				Body: []byte(`{}`), Headers: map[string]string{"Token": dev.Token},
-				Concurrency: c, Duration: *dur, Warmup: *warm, ServerPID: *pid}))
-
-			// 3. Wasm micro-VM action: one game move
-			results = append(results, runHTTP(HTTPJob{
-				Name: "wasm_move", URL: *base + "/bench/move",
-				Body: []byte(`{"player":0,"card":0}`),
 				Concurrency: c, Duration: *dur, Warmup: *warm, ServerPID: *pid}))
 		}
 		writeResult(*out, map[string]any{
@@ -134,7 +138,11 @@ func main() {
 			payload := strings.Repeat("x", size)
 			body := mustJSON(map[string]any{"payload": payload})
 			results = append(results, runHTTP(HTTPJob{
-				Name: fmt.Sprintf("wasm_echo_%dB", size), URL: *base + "/bench/echo",
+				Name: fmt.Sprintf("native_game_echo_%dB", size), URL: *base + "/nativegame/echo",
+				Body: body, Concurrency: *conc, Duration: *dur,
+				Warmup: 2 * time.Second, ServerPID: *pid}))
+			results = append(results, runHTTP(HTTPJob{
+				Name: fmt.Sprintf("wasm_game_echo_%dB", size), URL: *base + "/bench/echo",
 				Body: body, Concurrency: *conc, Duration: *dur,
 				Warmup: 2 * time.Second, ServerPID: *pid}))
 		}
